@@ -1,0 +1,150 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// CREATOR — the Spotlite product's customer
+// (auth itself is handled by Supabase Auth; this table
+// just mirrors the creator's id + a few product-specific fields)
+// ─────────────────────────────────────────────
+model Creator {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  projects Project[]
+}
+
+// ─────────────────────────────────────────────
+// PROJECT — one client delivery (e.g. "Soundhous 2026")
+// ─────────────────────────────────────────────
+model Project {
+  id        String  @id @default(uuid())
+  slug      String  @unique // used in the URL: yourproduct.com/{slug}
+  clientName String
+
+  // access control
+  passwordHash String
+
+  // Option A payment: one-time ₦5,000 per project
+  paid           Boolean   @default(false)
+  paidAt         DateTime?
+  paystackRef    String?   @unique // Paystack transaction reference
+
+  // whether the free-tier Spotlite badge shows on this project
+  // automatically false once `paid` is true
+  badgeVisible Boolean @default(true)
+
+  // whether viewers must submit an email before the password screen
+  // defaults on for free tier, creator can toggle off once paid
+  captureViewerEmail Boolean @default(true)
+
+  // branding (all optional — falls back to default Spotlite styling)
+  logoUrl      String?
+  primaryColor String? // e.g. "#C9A84C"
+  bgColor      String? // e.g. "#080808"
+
+  // The hero banner: creator picks which uploaded file leads the page,
+  // and writes a line of copy tailored to that specific client. Plain
+  // string id (not a formal relation) — resolved against project.media
+  // in application code, so a deleted file just falls back gracefully.
+  heroMediaId String?
+  heroTagline String?
+
+  // Real page-view counter — increments on every load of the public
+  // delivery page, regardless of whether email capture is even turned
+  // on. Separate from ViewerEmail, which only records people who
+  // actually submitted their email.
+  viewCount Int @default(0)
+
+  // Counts every file replacement (revision uploads) across this
+  // project's lifetime. Capped in application code — without this, a
+  // single ₦5,000 payment could otherwise be stretched into an
+  // unlimited free pipeline by repeatedly swapping in unrelated content.
+  replaceCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator   Creator @relation(fields: [creatorId], references: [id])
+  creatorId String
+
+  media        Media[]
+  viewerEmails ViewerEmail[]
+}
+
+// ─────────────────────────────────────────────
+// MEDIA — one photo or video within a project
+// ─────────────────────────────────────────────
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  NEEDS_REVISION
+}
+
+model Media {
+  id           String    @id @default(uuid())
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String
+  type         MediaType
+  fileKey      String    // R2 object key, e.g. "projects/{projectId}/video/invisible.mp4"
+  caption      String?
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  // Client review — set by whoever's viewing the delivery page, not the
+  // creator. NEEDS_REVISION carries an optional note explaining why.
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvalNote   String?
+  reviewedAt     DateTime?
+  // The email of whoever left the most recent review on this file —
+  // captured from the mandatory viewer email gate. Used to notify them
+  // specifically once a flagged file gets replaced.
+  reviewerEmail  String?
+}
+
+// ─────────────────────────────────────────────
+// VIEWER EMAIL — captured from the client's client
+// (the lead-gen mechanism)
+// ─────────────────────────────────────────────
+model ViewerEmail {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  email     String
+  viewedAt  DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// ─────────────────────────────────────────────
+// PENDING SIGNUP — a signup that hasn't verified its email yet.
+// The real Creator row only gets created once the OTP is confirmed;
+// until then, everything (including the already-hashed password)
+// sits here so nothing is stored twice.
+// ─────────────────────────────────────────────
+model PendingSignup {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String
+  otpCode       String
+  otpExpiresAt  DateTime
+  createdAt     DateTime @default(now())
+}
