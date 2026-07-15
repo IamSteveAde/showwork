@@ -54,6 +54,20 @@ function uploadWithProgress(
   });
 }
 
+// A short list of simple, easy-to-say words for suggesting an access
+// code — better than leaving a first-time creator staring at a blank
+// field wondering what's expected of them.
+const CODE_WORDS = [
+  "sunrise", "harbor", "velvet", "cobalt", "willow", "ember",
+  "quartz", "meadow", "cipher", "lantern", "orbit", "maple",
+];
+
+function suggestCode() {
+  const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)];
+  const number = Math.floor(10 + Math.random() * 90);
+  return `${word}${number}`;
+}
+
 export default function NewProjectPage() {
   const router = useRouter();
   const [phase, setPhase] = useState<"form" | "uploading" | "done">("form");
@@ -66,7 +80,6 @@ export default function NewProjectPage() {
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // Progress tracking, keyed by localId
   const [statusMap, setStatusMap] = useState<Record<string, FileStatus>>({});
   const [loadedMap, setLoadedMap] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,7 +125,7 @@ export default function NewProjectPage() {
     setError(null);
 
     if (!clientName || !password) {
-      setError("Client name and password are required");
+      setError("Client name and an access code are required");
       return;
     }
 
@@ -214,7 +227,6 @@ export default function NewProjectPage() {
             </h1>
           </div>
 
-          {/* overall progress bar */}
           <div className="mb-8">
             <div className="mb-2 flex items-center justify-between text-xs font-medium text-white/50">
               <span>{phase === "done" ? "Complete" : "Overall progress"}</span>
@@ -231,7 +243,6 @@ export default function NewProjectPage() {
             </div>
           </div>
 
-          {/* per-file rows */}
           <div className="flex flex-col gap-2.5">
             {files.map((f) => {
               const status = statusMap[f.localId] ?? "pending";
@@ -307,53 +318,85 @@ export default function NewProjectPage() {
         <h1 className="mb-10 text-3xl font-bold text-white">Set up this project</h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {/* client details card */}
+          {/* client name card */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
             <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
 
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-                  Client name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="e.g. Soundhous"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
-                />
-              </div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Client name
+            </label>
+            <input
+              type="text"
+              required
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="e.g. Soundhous"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+            />
+          </div>
 
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-                  Access password
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="What you'll share with your client"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-                  Banner headline <span className="normal-case text-white/25">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={tagline}
-                  onChange={(e) => setTagline(e.target.value)}
-                  placeholder="e.g. Three months of work. One night to remember."
-                  maxLength={80}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
-                />
-              </div>
+          {/* ── ACCESS CODE — its own dedicated, clearly explained section ── */}
+          <div
+            className="rounded-xl p-6"
+            style={{ background: "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.25)" }}
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke={COLOR.gold} strokeWidth="1.4" />
+                <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke={COLOR.gold} strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <h2 className="text-sm font-semibold text-white">Client access code</h2>
             </div>
+
+            <p className="mb-4 text-xs leading-relaxed text-white/50">
+              This is the code your client will type in to unlock this delivery.
+              Without it, no one can view the files — even if they have the link.
+              After you publish, you&apos;ll send this exact code to your client
+              yourself, however you normally reach them (WhatsApp, email, text).
+            </p>
+
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Access code
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="e.g. sunrise42"
+                style={{ fontSize: "16px" }}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+              />
+              <button
+                type="button"
+                onClick={() => setPassword(suggestCode())}
+                className="flex-shrink-0 whitespace-nowrap rounded-lg px-3.5 py-3 text-xs font-semibold transition-colors hover:opacity-80"
+                style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+              >
+                🎲 Suggest
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-white/30">
+              Keep it simple enough to say out loud — you&apos;ll be sharing it
+              directly with your client, not asking them to guess it.
+            </p>
+          </div>
+
+          {/* banner headline card */}
+          <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Banner headline <span className="normal-case text-white/25">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g. Three months of work. One night to remember."
+              maxLength={80}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+            />
           </div>
 
           {/* upload card */}

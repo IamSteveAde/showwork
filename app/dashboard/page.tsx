@@ -42,7 +42,8 @@ export default async function DashboardPage() {
   });
 
   const liveCount = projects.filter((p) => p.paid).length;
-  const totalViews = projects.reduce((sum, p) => sum + p._count.viewerEmails, 0);
+  const totalViews = projects.reduce((sum, p) => sum + p.viewCount, 0);
+  const totalEmails = projects.reduce((sum, p) => sum + p._count.viewerEmails, 0);
   const firstName = creator.name?.split(" ")[0];
 
   return (
@@ -107,7 +108,7 @@ export default async function DashboardPage() {
               <p className="mt-3 text-base font-normal text-white/60 md:text-lg">
                 {projects.length === 0
                   ? "Nothing here yet — create your first delivery."
-                  : `${projects.length} project${projects.length === 1 ? "" : "s"} · ${liveCount} live · ${totalViews} view${totalViews === 1 ? "" : "s"} total`}
+                  : `${projects.length} project${projects.length === 1 ? "" : "s"} · ${liveCount} live · ${totalViews} view${totalViews === 1 ? "" : "s"} · ${totalEmails} email${totalEmails === 1 ? "" : "s"} captured`}
               </p>
             </div>
 
@@ -159,11 +160,14 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-8 flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <div className="h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
                 <h2 className="text-xl font-semibold text-white">Your projects</h2>
               </div>
+              <p className="text-sm text-white/40">
+                Click any project below to manage its files, publish it, or see what your client approved.
+              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -224,10 +228,20 @@ export default async function DashboardPage() {
                           />
                           <circle cx="6" cy="6" r="1.4" stroke={COLOR.midGray} strokeWidth="1" />
                         </svg>
-                        {project._count.viewerEmails}
+                        {project.viewCount}
                       </span>
                     </div>
                     <span>{relativeTime(project.createdAt)}</span>
+                  </div>
+
+                  <div
+                    className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold"
+                    style={{ background: "rgba(245,200,66,0.1)", color: COLOR.gold }}
+                  >
+                    View project
+                    <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>
+                      →
+                    </span>
                   </div>
                 </Link>
               ))}

@@ -54,3 +54,31 @@ export async function getCurrentCreator() {
     return null; // invalid/expired token
   }
 }
+
+// ── "Unlock" persistence for viewers on the public delivery page ──
+// Separate from creator sessions above. One signed cookie per project,
+// set the moment a viewer successfully enters the password, so a
+// refresh or return visit doesn't make them re-enter the email + code
+// every single time. Cookie name is scoped per-project (viewer_{id}),
+// so unlocking one project never grants access to another.
+
+export function createViewerToken(projectId: string, email: string) {
+  return jwt.sign({ projectId, email }, JWT_SECRET, { expiresIn: "30d" });
+}
+
+/** Verifies a viewer token actually belongs to this specific project. */
+export function verifyViewerToken(
+  token: string,
+  projectId: string
+): { email: string } | null {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as {
+      projectId: string;
+      email: string;
+    };
+    if (payload.projectId !== projectId) return null;
+    return { email: payload.email };
+  } catch {
+    return null;
+  }
+}

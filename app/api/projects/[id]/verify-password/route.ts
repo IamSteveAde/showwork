@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verifyPassword } from "@/lib/auth";
+import { verifyPassword, createViewerToken } from "@/lib/auth";
 
 // PUBLIC route — called by anonymous viewers on the delivery page.
 // Never expose the passwordHash itself to the client; only this
@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { password } = await req.json();
+  const { password, viewerEmail } = await req.json();
 
   const project = await db.project.findUnique({ where: { id } });
   if (!project) {
@@ -18,5 +18,21 @@ export async function POST(
   }
 
   const valid = await verifyPassword(password ?? "", project.passwordHash);
-  return NextResponse.json({ valid });
+  const response = NextResponse.json({ valid });
+
+  // On success, remember this browser as already-unlocked for this
+  // project for 30 days — so a refresh doesn't force re-entering the
+  // email and password every time.
+  if (valid && viewerEmail) {
+    const token = createViewerToken(id, viewerEmail);
+    response.cookies.set(`viewer_${id}`, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+  }
+
+  return response;
 }

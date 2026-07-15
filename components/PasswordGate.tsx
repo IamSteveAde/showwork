@@ -8,12 +8,14 @@ export default function PasswordGate({
   clientName,
   primaryColor,
   logoUrl,
+  viewerEmail,
   onUnlock,
 }: {
   projectId: string;
   clientName: string;
   primaryColor: string;
   logoUrl: string | null;
+  viewerEmail: string;
   onUnlock: () => void;
 }) {
   const [value, setValue] = useState("");
@@ -28,7 +30,7 @@ export default function PasswordGate({
     const res = await fetch(`/api/projects/${projectId}/verify-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password: value }),
+      body: JSON.stringify({ password: value, viewerEmail }),
     });
     const { valid } = await res.json();
 

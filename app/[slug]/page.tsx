@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
+import { verifyViewerToken } from "@/lib/auth";
 import DeliveryPage from "./DeliveryPage";
 
 export default async function SlugPage({
@@ -40,6 +42,12 @@ export default async function SlugPage({
     ? media.find((m) => m.id === project.heroMediaId) ?? null
     : null;
 
+  // Check whether this browser already unlocked this project before —
+  // if so, skip straight past both gates instead of asking again.
+  const cookieStore = await cookies();
+  const unlockToken = cookieStore.get(`viewer_${project.id}`)?.value;
+  const viewerSession = unlockToken ? verifyViewerToken(unlockToken, project.id) : null;
+
   return (
     <DeliveryPage
       projectId={project.id}
@@ -51,6 +59,8 @@ export default async function SlugPage({
       media={media}
       heroMedia={heroMedia}
       heroTagline={project.heroTagline}
+      initiallyUnlocked={!!viewerSession}
+      initialViewerEmail={viewerSession?.email ?? null}
     />
   );
 }

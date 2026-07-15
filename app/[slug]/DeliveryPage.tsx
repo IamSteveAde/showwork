@@ -25,6 +25,8 @@ interface DeliveryPageProps {
   media: MediaItem[];
   heroMedia: MediaItem | null;
   heroTagline: string | null;
+  initiallyUnlocked: boolean;
+  initialViewerEmail: string | null;
 }
 
 export default function DeliveryPage({
@@ -37,12 +39,14 @@ export default function DeliveryPage({
   media,
   heroMedia,
   heroTagline,
+  initiallyUnlocked,
+  initialViewerEmail,
 }: DeliveryPageProps) {
-  // Email is always required now — there's no per-project toggle
-  // anymore, since every review action needs to know who's reviewing
-  // in order to notify them back once something they flagged is fixed.
-  const [viewerEmail, setViewerEmail] = useState<string | null>(null);
-  const [unlocked, setUnlocked] = useState(false);
+  // If this browser already unlocked this project before (checked
+  // server-side via a signed cookie), start straight past both gates
+  // instead of asking again on every refresh.
+  const [viewerEmail, setViewerEmail] = useState<string | null>(initialViewerEmail);
+  const [unlocked, setUnlocked] = useState(initiallyUnlocked);
 
   return (
     <div style={{ background: bgColor, minHeight: "100vh" }}>
@@ -63,6 +67,7 @@ export default function DeliveryPage({
             clientName={clientName}
             primaryColor={primaryColor}
             logoUrl={logoUrl}
+            viewerEmail={viewerEmail}
             onUnlock={() => setUnlocked(true)}
           />
         ) : (
