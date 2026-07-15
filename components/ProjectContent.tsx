@@ -580,7 +580,7 @@ export default function ProjectContent({
       )}
 
       <footer className="flex flex-col items-center gap-3 border-t border-white/5 bg-black px-6 py-14 text-center">
-        <p className="text-sm font-light text-white/30">Presented by {clientName}</p>
+        <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
         {badgeVisible && (
           <a
             href="https://spotliteafrica.com"

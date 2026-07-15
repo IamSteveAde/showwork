@@ -74,6 +74,12 @@ model Project {
   // unlimited free pipeline by repeatedly swapping in unrelated content.
   replaceCount Int @default(0)
 
+  // Counts how many times a creator has used "Add more files" after the
+  // project was first created. Capped in application code — without this,
+  // one payment could keep growing forever into an unrelated ongoing
+  // delivery, same reasoning as the replace-file cap.
+  additionalUploadCount Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
