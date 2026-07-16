@@ -8,6 +8,17 @@ const PAYSTACK_BASE_URL = "https://api.paystack.co";
 export const PROJECT_PRICE_NGN = 5000;
 export const PROJECT_PRICE_KOBO = PROJECT_PRICE_NGN * 100;
 
+// Explicit whitelist of payment methods shown at checkout. Paystack's
+// OPay option has been causing a stuck "please close this page"
+// dead-end for customers on mobile (a known app-switch + browser
+// redirect issue, not specific to this integration). OPay isn't a
+// documented standalone channel type — it's shown either under "bank"
+// or "mobile_money" depending on Paystack's current checkout version —
+// so rather than guess which one to exclude, we whitelist only the
+// channels we actually want. Anything not listed here simply won't
+// appear as an option.
+const ALLOWED_CHANNELS = ["card", "bank_transfer", "ussd", "qr"];
+
 interface InitializeTransactionParams {
   email: string;       // the creator's email — Paystack requires this
   reference: string;   // a unique reference we generate, tied to the project
@@ -47,6 +58,7 @@ export async function initializeTransaction({
       reference,
       callback_url: callbackUrl,
       currency: "NGN",
+      channels: ALLOWED_CHANNELS,
       metadata,
     }),
   });
