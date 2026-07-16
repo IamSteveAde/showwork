@@ -3,7 +3,8 @@ import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
 import { getPresignedUploadUrl, buildMediaKey, isAllowedContentType } from "@/lib/r2";
 
-const MAX_FILE_SIZE_MB = 2000;
+// 5GB — same ceiling as the main upload presign route.
+const MAX_FILE_SIZE_MB = 5000;
 
 // Generous, but real — without a cap, a single ₦5,000 payment could be
 // stretched into an unlimited free content pipeline by repeatedly

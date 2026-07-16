@@ -36,9 +36,9 @@ export function isAllowedContentType(contentType: string) {
 
 /**
  * Generates a signed URL the browser can PUT a file to directly — the file
- * bytes never pass through your Next.js server. 30 minutes gives a large
- * (up to ~2GB) video enough time to finish uploading even on a slow
- * connection, rather than the signature expiring mid-upload.
+ * bytes never pass through your Next.js server. 8 hours gives even a large
+ * (up to 5GB) file real headroom to finish on a slow connection — a 5GB
+ * file at ~2Mbps upload can genuinely take several hours.
  */
 export async function getPresignedUploadUrl(key: string, contentType: string) {
   const command = new PutObjectCommand({
@@ -46,7 +46,7 @@ export async function getPresignedUploadUrl(key: string, contentType: string) {
     Key: key,
     ContentType: contentType,
   });
-  return getSignedUrl(r2, command, { expiresIn: 1800 });
+  return getSignedUrl(r2, command, { expiresIn: 28800 }); // 8 hours
 }
 
 /**

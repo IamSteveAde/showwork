@@ -429,7 +429,7 @@ export default function NewProjectPage() {
               <p className="text-sm font-medium text-white/70">
                 Drag files here, or <span style={{ color: COLOR.gold }}>browse</span>
               </p>
-              <p className="text-xs text-white/30">JPEG, PNG, WEBP, MP4, MOV — up to 2GB each</p>
+              <p className="text-xs text-white/30">JPEG, PNG, WEBP, MP4, MOV — up to 5GB each</p>
               <input
                 ref={fileInputRef}
                 type="file"

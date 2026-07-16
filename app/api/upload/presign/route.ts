@@ -6,7 +6,10 @@ import { getPresignedUploadUrl, buildMediaKey, isAllowedContentType } from "@/li
 // 2GB comfortably covers a 5-minute video at high bitrate (a 5-min clip at
 // ~50Mbps runs ~1.9GB). R2's hard ceiling for a single PUT (no multipart)
 // is 5GB — staying well under that with room to spare.
-const MAX_FILE_SIZE_MB = 2000;
+// 5GB stays safely under R2's hard ceiling for a single-part PUT (5GiB,
+// ≈5.37GB). If this ever needs to go higher, R2 requires switching to
+// multipart upload — a bigger change than just raising this number.
+const MAX_FILE_SIZE_MB = 5000;
 
 export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
