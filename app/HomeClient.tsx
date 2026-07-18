@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import FloatingStartButton from "@/components/FloatingStartButton";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -235,6 +236,7 @@ export default function HomeClient() {
 
   return (
     <main className={`${jakarta.variable}`} style={{ fontFamily: "var(--font-jakarta)" }}>
+      <FloatingStartButton />
       <HeroSlider />
 
       {/* ── PAIN POINT ── */}
@@ -311,7 +313,7 @@ export default function HomeClient() {
 
             <div
               onClick={() => setShowFullVideo(true)}
-              className="group relative aspect-video w-full cursor-pointer bg-black"
+              className="group relative flex w-full cursor-pointer items-center justify-center bg-black"
             >
               {/* Real screen recording — desktop and mobile use different
                   files since a mobile screen recording is usually shot
@@ -323,7 +325,7 @@ export default function HomeClient() {
                 muted
                 loop
                 playsInline
-                className="h-full w-full object-cover"
+                className="max-h-[75vh] w-full object-contain"
               />
               <div
                 className="pointer-events-none absolute inset-0 transition-colors duration-300 group-hover:bg-black/10"
@@ -356,6 +358,22 @@ export default function HomeClient() {
           <div className="mx-auto mt-6 max-w-4xl text-center">
             <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
             <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>One night to remember.</p>
+
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <a
+                href="https://showwork.spotliteafrica.com/demo-2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                View the live demo
+                <span aria-hidden>→</span>
+              </a>
+              <p className="text-xs text-white/40">
+                Passcode: <span className="rounded px-2 py-0.5 font-mono font-semibold text-white/70" style={{ background: "rgba(255,255,255,0.08)" }}>demo</span>
+              </p>
+            </div>
           </div>
         </div>
       </section>
