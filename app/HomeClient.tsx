@@ -5,18 +5,12 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
-// Per brand guidelines: Plus Jakarta Sans is the ONLY typeface used across
-// the brand. No secondary display face — personality comes from weight,
-// structure, and spacing, not font variety.
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "600", "700"],
   variable: "--font-jakarta",
 });
 
-// ─────────────────────────────────────────────
-// Brand color tokens (Brand Guidelines v1.0, Section 06)
-// ─────────────────────────────────────────────
 const COLOR = {
   black: "#0A0A0A",
   gold: "#F5C842",
@@ -42,14 +36,12 @@ const SLIDES = [
   },
   {
     image: "/images/hero3.png",
-    eyebrow: "Simple economics",
-    headline: "Choose a plan that grows with your studio.",
-    body: "From solo creators to production teams. Create projects without paying per delivery.",
+    eyebrow: "Built to grow with you",
+    headline: "One project or fifty — there's a plan that fits.",
+    body: "Start free. Move up only when your studio actually needs to.",
   },
 ];
 
-// Real pain points, phrased the way a creator would actually say them —
-// not fabricated statistics, just recognizable, specific situations.
 const PAIN_POINTS = [
   {
     title: "Underpriced, underappreciated",
@@ -101,26 +93,16 @@ const TESTIMONIALS = [
   },
 ];
 
-// ─────────────────────────────────────────────
-// WORDMARK — text only, no logo image. "Showwork" carries the weight,
-// "by Spotlite Africa" trails smaller, keeping the lineage visible
-// without competing with the product name itself.
-// ─────────────────────────────────────────────
-function Wordmark({ size = "md", dark = false }: { size?: "sm" | "md" | "lg"; dark?: boolean }) {
-  const sizes = {
-    sm: "text-base",
-    md: "text-xl",
-    lg: "text-2xl",
-  };
-  const textColor = dark ? COLOR.black : "white";
+function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const sizes = { sm: "text-base", md: "text-xl", lg: "text-2xl" };
   return (
     <div className="flex items-baseline gap-2">
-      <span className={`${sizes[size]} font-bold`} style={{ color: textColor }}>
+      <span className={`${sizes[size]} font-bold text-white`}>
         Show<span style={{ color: COLOR.gold }}>work</span>
       </span>
       <span
-        className="hidden text-xs font-medium uppercase sm:inline"
-        style={{ color: dark ? "rgba(10,10,10,0.4)" : "rgba(255,255,255,0.4)", letterSpacing: "0.1em" }}
+        className="hidden text-xs font-medium uppercase text-white/40 sm:inline"
+        style={{ letterSpacing: "0.1em" }}
       >
         by Spotlite Africa
       </span>
@@ -128,9 +110,6 @@ function Wordmark({ size = "md", dark = false }: { size?: "sm" | "md" | "lg"; da
   );
 }
 
-// ─────────────────────────────────────────────
-// HERO SLIDER
-// ─────────────────────────────────────────────
 function HeroSlider() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -138,9 +117,7 @@ function HeroSlider() {
 
   useEffect(() => {
     if (paused) return;
-    timerRef.current = setInterval(() => {
-      setActive((i) => (i + 1) % SLIDES.length);
-    }, 6000);
+    timerRef.current = setInterval(() => setActive((i) => (i + 1) % SLIDES.length), 6000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -177,7 +154,6 @@ function HeroSlider() {
         }}
       />
 
-      {/* nav */}
       <div className="relative z-10 flex items-center justify-between px-6 py-8 md:px-20">
         <Wordmark />
         <Link href="/login" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
@@ -185,7 +161,6 @@ function HeroSlider() {
         </Link>
       </div>
 
-      {/* copy */}
       <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-20 md:px-20 md:pb-28">
         <div className="mx-auto max-w-[1280px]">
           <AnimatePresence mode="wait">
@@ -196,10 +171,7 @@ function HeroSlider() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.5 }}
             >
-              <p
-                className="mb-5 text-xs font-semibold uppercase"
-                style={{ color: COLOR.gold, letterSpacing: "0.1em" }}
-              >
+              <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
                 {slide.eyebrow}
               </p>
               <h1 className="max-w-2xl text-[2.25rem] font-bold leading-[1.12] tracking-tight text-white md:text-6xl">
@@ -214,7 +186,7 @@ function HeroSlider() {
           <div className="mt-9 flex flex-wrap items-center gap-6">
             <div className="flex gap-3">
               <Link
-                href="/signup"
+                href="/start"
                 className="rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
                 style={{ background: COLOR.gold, color: COLOR.black }}
               >
@@ -236,10 +208,7 @@ function HeroSlider() {
                   onClick={() => setActive(i)}
                   aria-label={`Go to slide ${i + 1}`}
                   className="h-1.5 rounded-full transition-all duration-300"
-                  style={{
-                    width: i === active ? 24 : 8,
-                    background: i === active ? COLOR.gold : "rgba(255,255,255,0.25)",
-                  }}
+                  style={{ width: i === active ? 24 : 8, background: i === active ? COLOR.gold : "rgba(255,255,255,0.25)" }}
                 />
               ))}
             </div>
@@ -251,18 +220,17 @@ function HeroSlider() {
 }
 
 export default function HomeClient() {
+  const [showFullVideo, setShowFullVideo] = useState(false);
+
   return (
     <main className={`${jakarta.variable}`} style={{ fontFamily: "var(--font-jakarta)" }}>
       <HeroSlider />
 
-      {/* ── PAIN POINT — the cost of not doing this ── */}
+      {/* ── PAIN POINT ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p
-            className="mb-4 text-xs font-semibold uppercase"
-            style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}
-          >
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
             The part nobody talks about
           </p>
           <h2 className="mb-16 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
@@ -294,13 +262,168 @@ export default function HomeClient() {
             className="mt-14 text-lg font-semibold md:text-xl"
             style={{ color: COLOR.gold }}
           >
-            Showwork fixes the part after the work is done.
+            Showwork fixes the part after the work is done — and grows with every project after that.
           </motion.p>
         </div>
       </section>
 
-      {/* ── THREE STEPS — charcoal ── */}
+      {/* ── VIDEO — the moment they actually open it ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.charcoal }}>
+        <div className="mx-auto max-w-[1280px]">
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+            The moment they open it
+          </p>
+          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
+            This is what your client sees first.
+          </h2>
+          <p className="mb-12 max-w-lg text-base leading-relaxed text-white/50 md:text-lg">
+            No loading spinner, no folder icon. The film you delivered, playing,
+            the second the page opens.
+          </p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7 }}
+            className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl shadow-2xl"
+            style={{ border: "1px solid rgba(245,200,66,0.15)" }}
+          >
+            {/* browser chrome */}
+            <div className="flex items-center gap-1.5 bg-black px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+              <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+              <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+              <span className="ml-3 text-[11px] text-white/25">showwork.spotliteafrica.com/fashion-fest</span>
+            </div>
+
+            <div
+              onClick={() => setShowFullVideo(true)}
+              className="group relative aspect-video w-full cursor-pointer bg-black"
+            >
+              {/* Real screen recording — path corrected to start with a
+                  leading slash so it resolves from any route, not just
+                  the homepage. */}
+              <video
+                src="/images/sh.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full object-cover"
+              />
+              <div
+                className="pointer-events-none absolute inset-0 transition-colors duration-300 group-hover:bg-black/20"
+                style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.5) 100%)" }}
+              />
+
+              {/* click-to-expand affordance */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <div
+                  className="flex items-center gap-2 rounded-full px-5 py-3"
+                  style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)" }}
+                >
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    style={{ background: COLOR.gold }}
+                  >
+                    <div
+                      className="ml-0.5 h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent"
+                      style={{ borderLeftColor: "#080808" }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-white">Watch with sound</span>
+                </div>
+              </div>
+
+              <div className="absolute left-5 top-5 flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: COLOR.gold }} />
+                <span className="text-[10px] font-semibold uppercase text-white/60" style={{ letterSpacing: "0.15em" }}>
+                  Private preview
+                </span>
+              </div>
+              <div className="absolute bottom-5 left-5 right-5">
+                <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
+                <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>One night to remember.</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── IMAGE — real photography, the actual gallery treatment ── */}
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1280px]">
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
+            Every photo, presented properly
+          </p>
+          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
+            A gallery, not a grid of thumbnails.
+          </h2>
+          <p className="mb-12 max-w-lg text-base leading-relaxed text-white/50 md:text-lg">
+            Full quality, properly laid out — and your client can approve or
+            flag each one right there, with a note, so nothing gets lost in a
+            comment thread.
+          </p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7 }}
+            className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4"
+          >
+            {[
+              { seed: 21, status: "approved" as const },
+              { seed: 42, status: "none" as const },
+              { seed: 63, status: "revision" as const },
+              { seed: 84, status: "approved" as const },
+              { seed: 105, status: "none" as const },
+              { seed: 126, status: "approved" as const },
+            ].map((tile, i) => (
+              <motion.div
+                key={tile.seed}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.5, delay: i * 0.06 }}
+                className="relative aspect-[4/5] overflow-hidden rounded-xl"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://picsum.photos/seed/${tile.seed}/600/750`}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                {tile.status === "approved" && (
+                  <span
+                    className="absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                    style={{ background: "#22C55E", color: "#080808" }}
+                  >
+                    ✓ Approved
+                  </span>
+                )}
+                {tile.status === "revision" && (
+                  <span
+                    className="absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                    style={{ background: "#F97316", color: "#080808" }}
+                  >
+                    ✎ Revision
+                  </span>
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+          <p className="mt-6 text-center text-xs text-white/25">
+            Placeholder photography — shown here purely to demonstrate the gallery and approval treatment.
+          </p>
+        </div>
+      </section>
+
+      {/* ── THREE STEPS ── */}
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
           <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight text-white md:text-4xl">
@@ -328,7 +451,7 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS — warm white ── */}
+      {/* ── TESTIMONIALS ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.warmWhite }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
@@ -350,241 +473,124 @@ export default function HomeClient() {
                 <p className="mb-6 text-base font-normal leading-relaxed" style={{ color: "rgba(10,10,10,0.75)" }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
-                <p className="text-sm font-semibold" style={{ color: COLOR.black }}>
-                  {t.name}
-                </p>
-                <p className="text-xs font-normal" style={{ color: COLOR.midGray }}>
-                  {t.role}
-                </p>
+                <p className="text-sm font-semibold" style={{ color: COLOR.black }}>{t.name}</p>
+                <p className="text-xs font-normal" style={{ color: COLOR.midGray }}>{t.role}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── RATE CARD — black, framed as ROI not just a price ── */}
-      {/* ─────────────────────────────────────────────
-    PRICING
-───────────────────────────────────────────── */}
-<section
-  className="px-6 py-20 md:px-20 md:py-[120px]"
-  style={{ background: COLOR.black }}
->
-  <div className="mx-auto max-w-[1280px]">
+      {/* ── PRICING ── */}
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1280px]">
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
+            Pricing
+          </p>
+          <h2 className="max-w-2xl text-3xl font-semibold leading-tight text-white md:text-5xl">
+            Your first delivery is free.
+            <br />
+            Everything after scales with your studio.
+          </h2>
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/60">
+            No contracts, no hidden fees, cancel anytime. Whether you deliver
+            once a month or every week, there's a plan built for exactly that.
+          </p>
 
-    <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} />
+          <div className="mt-16 grid gap-8 lg:grid-cols-4">
+            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(255,255,255,.08)", background: COLOR.charcoal }}>
+              <p className="text-sm font-semibold text-white/50">Free</p>
+              <h3 className="mt-3 text-4xl font-bold text-white">₦0</h3>
+              <p className="mt-2 text-sm text-white/50">The whole experience, on us.</p>
+              <ul className="mt-8 space-y-3 text-sm text-white/70">
+                <li>✓ 1 project a month</li>
+                <li>✓ Password-protected delivery</li>
+                <li>✓ Full quality uploads</li>
+                <li>✓ Client approve/revision flow</li>
+              </ul>
+              <Link
+                href="/start"
+                className="mt-10 flex justify-center rounded-lg border py-3 font-semibold text-white transition hover:bg-white hover:text-black"
+                style={{ borderColor: "rgba(255,255,255,.15)" }}
+              >
+                Start free
+              </Link>
+            </div>
 
-    <p
-      className="mb-4 text-xs font-semibold uppercase"
-      style={{
-        color: "rgba(248,247,244,0.35)",
-        letterSpacing: "0.1em",
-      }}
-    >
-      Pricing
-    </p>
+            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(245,200,66,.2)", background: COLOR.charcoal }}>
+              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Starter</p>
+              <h3 className="mt-3 text-4xl font-bold text-white">₦5,900</h3>
+              <p className="mt-1 text-sm text-white/50">per month</p>
+              <p className="mt-3 text-sm text-white/50">For the creator picking up steady, regular clients.</p>
+              <ul className="mt-6 space-y-3 text-sm text-white/70">
+                <li>✓ Up to 5 projects a month</li>
+                <li>✓ Everything in Free</li>
+                <li>✓ Priority delivery uptime</li>
+              </ul>
+              <Link
+                href="/start"
+                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                Choose Starter
+              </Link>
+            </div>
 
-    <h2 className="max-w-2xl text-3xl font-semibold leading-tight text-white md:text-5xl">
-      Start free.
-      <br />
-      Upgrade only when your business grows.
-    </h2>
+            <div
+              className="relative rounded-2xl border p-8"
+              style={{ borderColor: COLOR.gold, background: COLOR.charcoal, boxShadow: "0 20px 60px rgba(245,200,66,.18)" }}
+            >
+              <div
+                className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                MOST POPULAR
+              </div>
+              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Growth</p>
+              <h3 className="mt-3 text-4xl font-bold text-white">₦10,500</h3>
+              <p className="mt-1 text-sm text-white/50">per month</p>
+              <p className="mt-3 text-sm text-white/50">For studios booking multiple shoots a week.</p>
+              <ul className="mt-6 space-y-3 text-sm text-white/70">
+                <li>✓ Up to 20 projects a month</li>
+                <li>✓ Everything in Starter</li>
+                <li>✓ Priority support</li>
+              </ul>
+              <Link
+                href="/start"
+                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                Choose Growth
+              </Link>
+            </div>
 
-    <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/60">
-      No hidden fees. No contracts. Cancel anytime. Choose the plan that
-      matches the way you work.
-    </p>
+            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(255,255,255,.08)", background: COLOR.charcoal }}>
+              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Unlimited</p>
+              <h3 className="mt-3 text-4xl font-bold text-white">₦15,000</h3>
+              <p className="mt-1 text-sm text-white/50">per month</p>
+              <p className="mt-3 text-sm text-white/50">For teams who stopped counting projects a while ago.</p>
+              <ul className="mt-6 space-y-3 text-sm text-white/70">
+                <li>✓ Unlimited projects</li>
+                <li>✓ Everything in Growth</li>
+                <li>✓ Highest priority support</li>
+              </ul>
+              <Link
+                href="/start"
+                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                Go Unlimited
+              </Link>
+            </div>
+          </div>
 
-    <div className="mt-16 grid gap-8 lg:grid-cols-4">
-
-      {/* FREE */}
-
-      <div
-        className="rounded-2xl border p-8"
-        style={{
-          borderColor: "rgba(255,255,255,.08)",
-          background: COLOR.charcoal,
-        }}
-      >
-        <p className="text-sm font-semibold text-white/50">
-          Free
-        </p>
-
-        <h3 className="mt-3 text-4xl font-bold text-white">
-          ₦0
-        </h3>
-
-        <p className="mt-2 text-sm text-white/50">
-          Perfect for trying Showwork.
-        </p>
-
-        <ul className="mt-8 space-y-3 text-sm text-white/70">
-          <li>✓ 1 active project</li>
-          <li>✓ Password protected delivery</li>
-          <li>✓ Full quality uploads</li>
-          <li>✓ Client access page</li>
-        </ul>
-
-        <Link
-          href="/signup"
-          className="mt-10 flex justify-center rounded-lg border py-3 font-semibold transition hover:bg-white hover:text-black"
-          style={{
-            borderColor: "rgba(255,255,255,.15)",
-          }}
-        >
-          Get Started
-        </Link>
-      </div>
-
-      {/* STARTER */}
-
-      <div
-        className="rounded-2xl border p-8"
-        style={{
-          borderColor: "rgba(245,200,66,.2)",
-          background: COLOR.charcoal,
-        }}
-      >
-        <p
-          className="text-sm font-semibold"
-          style={{ color: COLOR.gold }}
-        >
-          Starter
-        </p>
-
-        <h3 className="mt-3 text-4xl font-bold text-white">
-          ₦5,900
-        </h3>
-
-        <p className="mt-1 text-sm text-white/50">
-          per month
-        </p>
-
-        <ul className="mt-8 space-y-3 text-sm text-white/70">
-          <li>✓ Up to 10 active projects</li>
-          <li>✓ Password protection</li>
-          <li>✓ Viewer email capture</li>
-          <li>✓ Full quality delivery</li>
-        </ul>
-
-        <Link
-          href="/signup"
-          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-          style={{
-            background: COLOR.gold,
-            color: COLOR.black,
-          }}
-        >
-          Choose Starter
-        </Link>
-      </div>
-
-      {/* GROWTH */}
-
-      <div
-        className="relative rounded-2xl border p-8"
-        style={{
-          borderColor: COLOR.gold,
-          background: COLOR.charcoal,
-          boxShadow: "0 20px 60px rgba(245,200,66,.18)",
-        }}
-      >
-        <div
-          className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
-          style={{
-            background: COLOR.gold,
-            color: COLOR.black,
-          }}
-        >
-          MOST POPULAR
+          <p className="mt-10 text-center text-sm text-white/40">
+            All plans include secure hosting, password protection, and full-quality delivery. Cancel anytime.
+          </p>
         </div>
+      </section>
 
-        <p
-          className="text-sm font-semibold"
-          style={{ color: COLOR.gold }}
-        >
-          Growth
-        </p>
-
-        <h3 className="mt-3 text-4xl font-bold text-white">
-          ₦10,500
-        </h3>
-
-        <p className="mt-1 text-sm text-white/50">
-          per month
-        </p>
-
-        <ul className="mt-8 space-y-3 text-sm text-white/70">
-          <li>✓ Up to 20 active projects</li>
-          <li>✓ Everything in Starter</li>
-          <li>✓ Priority support</li>
-          <li>✓ Premium creator tools</li>
-        </ul>
-
-        <Link
-          href="/signup"
-          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-          style={{
-            background: COLOR.gold,
-            color: COLOR.black,
-          }}
-        >
-          Choose Growth
-        </Link>
-      </div>
-
-      {/* UNLIMITED */}
-
-      <div
-        className="rounded-2xl border p-8"
-        style={{
-          borderColor: "rgba(255,255,255,.08)",
-          background: COLOR.charcoal,
-        }}
-      >
-        <p
-          className="text-sm font-semibold"
-          style={{ color: COLOR.gold }}
-        >
-          Unlimited
-        </p>
-
-        <h3 className="mt-3 text-4xl font-bold text-white">
-          ₦15,000
-        </h3>
-
-        <p className="mt-1 text-sm text-white/50">
-          per month
-        </p>
-
-        <ul className="mt-8 space-y-3 text-sm text-white/70">
-          <li>✓ Unlimited active projects</li>
-          <li>✓ Unlimited client deliveries</li>
-          <li>✓ Everything in Growth</li>
-          <li>✓ Highest priority support</li>
-        </ul>
-
-        <Link
-          href="/signup"
-          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-          style={{
-            background: COLOR.gold,
-            color: COLOR.black,
-          }}
-        >
-          Go Unlimited
-        </Link>
-      </div>
-
-    </div>
-
-    <p className="mt-10 text-center text-sm text-white/40">
-      All paid plans include secure hosting, password protection, full-quality
-      delivery, and can be cancelled at any time.
-    </p>
-
-  </div>
-</section>
       {/* ── RELATIONSHIP TO SPOTLITE AFRICA ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.warmWhite }}>
         <motion.div
@@ -595,10 +601,7 @@ export default function HomeClient() {
           className="mx-auto max-w-[1280px]"
         >
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p
-            className="mb-4 text-xs font-semibold uppercase"
-            style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.1em" }}
-          >
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.1em" }}>
             Built by Spotlite Africa
           </p>
           <h2 className="mb-6 max-w-2xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.black }}>
@@ -626,10 +629,7 @@ export default function HomeClient() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer
-        className="px-6 py-14 md:px-20"
-        style={{ background: COLOR.black, borderTop: "1px solid rgba(248,247,244,0.08)" }}
-      >
+      <footer className="px-6 py-14 md:px-20" style={{ background: COLOR.black, borderTop: "1px solid rgba(248,247,244,0.08)" }}>
         <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-8 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div>
             <Wordmark size="sm" />
@@ -639,16 +639,10 @@ export default function HomeClient() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p
-              className="text-xs font-semibold uppercase"
-              style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}
-            >
+            <p className="text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
               Contact
             </p>
-            <a
-              href="mailto:info@spotliteafrica.com"
-              className="text-sm font-normal text-white/60 transition-colors hover:text-white"
-            >
+            <a href="mailto:info@spotliteafrica.com" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
               info@spotliteafrica.com
             </a>
             <a
@@ -662,13 +656,10 @@ export default function HomeClient() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p
-              className="text-xs font-semibold uppercase"
-              style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}
-            >
+            <p className="text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
               Product
             </p>
-            <Link href="/signup" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
+            <Link href="/start" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
               Start a delivery
             </Link>
             <Link href="/login" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
@@ -681,6 +672,45 @@ export default function HomeClient() {
           © {new Date().getFullYear()} Spotlite Africa Agency. Showwork is a Spotlite Africa product.
         </p>
       </footer>
+
+      {/* full-video modal, opened by clicking the "moment they open it" video */}
+      <AnimatePresence>
+        {showFullVideo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 px-4 py-8"
+            onClick={() => setShowFullVideo(false)}
+          >
+            <button
+              onClick={() => setShowFullVideo(false)}
+              aria-label="Close"
+              className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10"
+            >
+              ✕
+            </button>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[85vh] max-w-[92vw] overflow-hidden rounded-2xl bg-black"
+            >
+              <video
+                src="/images/sh.mp4"
+                controls
+                autoPlay
+                loop
+                playsInline
+                className="max-h-[85vh] max-w-[92vw] object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
