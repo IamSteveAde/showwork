@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const COLOR = {
@@ -11,8 +11,10 @@ const COLOR = {
   midGray: "#888786",
 };
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [step, setStep] = useState<"details" | "verify">("details");
 
   const [name, setName] = useState("");
@@ -56,7 +58,7 @@ export default function SignupPage() {
     });
 
     if (res.ok) {
-      router.push("/dashboard");
+      router.push(next || "/dashboard");
     } else {
       const data = await res.json();
       setError(data.error ?? "Invalid code");
@@ -186,7 +188,10 @@ export default function SignupPage() {
 
               <p className="text-center text-xs" style={{ color: COLOR.midGray }}>
                 Already have an account?{" "}
-                <Link href="/login" className="font-medium text-white/70 underline transition-colors hover:text-white">
+                <Link
+                  href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+                  className="font-medium text-white/70 underline transition-colors hover:text-white"
+                >
                   Log in
                 </Link>
               </p>
@@ -259,5 +264,13 @@ export default function SignupPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

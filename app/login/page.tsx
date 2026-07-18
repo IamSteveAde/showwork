@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const COLOR = {
@@ -11,8 +11,11 @@ const COLOR = {
   midGray: "#888786",
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +33,7 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      router.push("/dashboard");
+      router.push(next || "/dashboard");
     } else {
       const data = await res.json();
       setError(data.error ?? "Invalid email or password");
@@ -148,12 +151,23 @@ export default function LoginPage() {
 
           <p className="text-center text-xs" style={{ color: COLOR.midGray }}>
             No account yet?{" "}
-            <Link href="/signup" className="font-medium text-white/70 underline transition-colors hover:text-white">
+            <Link
+              href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+              className="font-medium text-white/70 underline transition-colors hover:text-white"
+            >
               Sign up
             </Link>
           </p>
         </form>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

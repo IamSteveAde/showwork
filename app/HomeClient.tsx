@@ -94,6 +94,99 @@ const TESTIMONIALS = [
   },
 ];
 
+const PRICING_TIERS = [
+  {
+    key: "FREE",
+    name: "Free",
+    price: "₦0",
+    priceSuffix: "",
+    tagline: "The whole experience, on us.",
+    highlight: null,
+    features: [
+      "1 project a month",
+      "Password-protected client delivery",
+      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Custom hero banner with your own tagline",
+      "Client email capture before viewing",
+      "Client approve / revision flow, with notes",
+      "Individual file downloads for your client",
+      "Dashboard views & delivery analytics",
+      "Shows the Spotlite Africa badge",
+    ],
+    cta: "Start free",
+    href: "/start",
+    style: "outline" as const,
+  },
+  {
+    key: "STARTER",
+    name: "Starter",
+    price: "₦5,900",
+    priceSuffix: "/mo",
+    tagline: "For the creator picking up steady, regular clients.",
+    highlight: null,
+    features: [
+      "Up to 5 projects a month",
+      "Password-protected client delivery",
+      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Custom hero banner with your own tagline",
+      "Client email capture before viewing",
+      "Client approve / revision flow, with notes",
+      "Individual + \"download all\" (zip) for clients",
+      "Dashboard views & delivery analytics",
+      "No Spotlite Africa badge",
+    ],
+    cta: "Choose Starter",
+    href: "/dashboard/billing?tier=STARTER",
+    style: "solid" as const,
+  },
+  {
+    key: "GROWTH",
+    name: "Growth",
+    price: "₦10,500",
+    priceSuffix: "/mo",
+    tagline: "For studios booking multiple shoots a week.",
+    highlight: "MOST POPULAR",
+    features: [
+      "Up to 20 projects a month",
+      "Password-protected client delivery",
+      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Custom hero banner with your own tagline",
+      "Client email capture before viewing",
+      "Client approve / revision flow, with notes",
+      "Individual + \"download all\" (zip) for clients",
+      "Dashboard views & delivery analytics",
+      "No Spotlite Africa badge",
+      "Priority support",
+    ],
+    cta: "Choose Growth",
+    href: "/dashboard/billing?tier=GROWTH",
+    style: "solid" as const,
+  },
+  {
+    key: "UNLIMITED",
+    name: "Unlimited",
+    price: "₦15,000",
+    priceSuffix: "/mo",
+    tagline: "For teams who stopped counting projects a while ago.",
+    highlight: null,
+    features: [
+      "Unlimited projects",
+      "Password-protected client delivery",
+      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Custom hero banner with your own tagline",
+      "Client email capture before viewing",
+      "Client approve / revision flow, with notes",
+      "Individual + \"download all\" (zip) for clients",
+      "Dashboard views & delivery analytics",
+      "No Spotlite Africa badge",
+      "Highest priority support",
+    ],
+    cta: "Go Unlimited",
+    href: "/dashboard/billing?tier=UNLIMITED",
+    style: "solid" as const,
+  },
+];
+
 function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sizes = { sm: "text-base", md: "text-xl", lg: "text-2xl" };
   return (
@@ -223,6 +316,9 @@ function HeroSlider() {
 export default function HomeClient() {
   const [showFullVideo, setShowFullVideo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [expandedTiers, setExpandedTiers] = useState<Record<string, boolean>>({});
+  const toggleTierExpanded = (key: string) =>
+    setExpandedTiers((prev) => ({ ...prev, [key]: !prev[key] }));
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -525,90 +621,74 @@ export default function HomeClient() {
           </p>
 
           <div className="mt-16 grid gap-8 lg:grid-cols-4">
-            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(255,255,255,.08)", background: COLOR.charcoal }}>
-              <p className="text-sm font-semibold text-white/50">Free</p>
-              <h3 className="mt-3 text-4xl font-bold text-white">₦0</h3>
-              <p className="mt-2 text-sm text-white/50">The whole experience, on us.</p>
-              <ul className="mt-8 space-y-3 text-sm text-white/70">
-                <li>✓ 1 project a month</li>
-                <li>✓ Password-protected delivery</li>
-                <li>✓ Full quality uploads</li>
-                <li>✓ Client approve/revision flow</li>
-              </ul>
-              <Link
-                href="/start"
-                className="mt-10 flex justify-center rounded-lg border py-3 font-semibold text-white transition hover:bg-white hover:text-black"
-                style={{ borderColor: "rgba(255,255,255,.15)" }}
-              >
-                Start free
-              </Link>
-            </div>
-
-            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(245,200,66,.2)", background: COLOR.charcoal }}>
-              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Starter</p>
-              <h3 className="mt-3 text-4xl font-bold text-white">₦5,900</h3>
-              <p className="mt-1 text-sm text-white/50">per month</p>
-              <p className="mt-3 text-sm text-white/50">For the creator picking up steady, regular clients.</p>
-              <ul className="mt-6 space-y-3 text-sm text-white/70">
-                <li>✓ Up to 5 projects a month</li>
-                <li>✓ Everything in Free</li>
-                <li>✓ Priority delivery uptime</li>
-              </ul>
-              <Link
-                href="/start"
-                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-                style={{ background: COLOR.gold, color: COLOR.black }}
-              >
-                Choose Starter
-              </Link>
-            </div>
-
-            <div
-              className="relative rounded-2xl border p-8"
-              style={{ borderColor: COLOR.gold, background: COLOR.charcoal, boxShadow: "0 20px 60px rgba(245,200,66,.18)" }}
-            >
+            {PRICING_TIERS.map((tier) => (
               <div
-                className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
-                style={{ background: COLOR.gold, color: COLOR.black }}
+                key={tier.key}
+                className="relative flex flex-col rounded-2xl border p-8"
+                style={{
+                  borderColor: tier.highlight ? COLOR.gold : "rgba(255,255,255,.08)",
+                  background: COLOR.charcoal,
+                  boxShadow: tier.highlight ? "0 20px 60px rgba(245,200,66,.18)" : undefined,
+                }}
               >
-                MOST POPULAR
-              </div>
-              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Growth</p>
-              <h3 className="mt-3 text-4xl font-bold text-white">₦10,500</h3>
-              <p className="mt-1 text-sm text-white/50">per month</p>
-              <p className="mt-3 text-sm text-white/50">For studios booking multiple shoots a week.</p>
-              <ul className="mt-6 space-y-3 text-sm text-white/70">
-                <li>✓ Up to 20 projects a month</li>
-                <li>✓ Everything in Starter</li>
-                <li>✓ Priority support</li>
-              </ul>
-              <Link
-                href="/start"
-                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-                style={{ background: COLOR.gold, color: COLOR.black }}
-              >
-                Choose Growth
-              </Link>
-            </div>
+                {tier.highlight && (
+                  <div
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
+                    style={{ background: COLOR.gold, color: COLOR.black }}
+                  >
+                    {tier.highlight}
+                  </div>
+                )}
 
-            <div className="rounded-2xl border p-8" style={{ borderColor: "rgba(255,255,255,.08)", background: COLOR.charcoal }}>
-              <p className="text-sm font-semibold" style={{ color: COLOR.gold }}>Unlimited</p>
-              <h3 className="mt-3 text-4xl font-bold text-white">₦15,000</h3>
-              <p className="mt-1 text-sm text-white/50">per month</p>
-              <p className="mt-3 text-sm text-white/50">For teams who stopped counting projects a while ago.</p>
-              <ul className="mt-6 space-y-3 text-sm text-white/70">
-                <li>✓ Unlimited projects</li>
-                <li>✓ Everything in Growth</li>
-                <li>✓ Highest priority support</li>
-              </ul>
-              <Link
-                href="/start"
-                className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
-                style={{ background: COLOR.gold, color: COLOR.black }}
-              >
-                Go Unlimited
-              </Link>
-            </div>
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: tier.key === "FREE" ? "rgba(255,255,255,0.5)" : COLOR.gold }}
+                >
+                  {tier.name}
+                </p>
+                <h3 className="mt-3 text-4xl font-bold text-white">
+                  {tier.price}
+                  {tier.priceSuffix && <span className="text-sm font-normal text-white/40">{tier.priceSuffix}</span>}
+                </h3>
+                <p className="mt-2 text-sm text-white/50">{tier.tagline}</p>
+
+                <ul className="mt-6 flex-1 space-y-2.5 text-sm text-white/70">
+                  {(expandedTiers[tier.key] ? tier.features : tier.features.slice(0, 4)).map((feature) => (
+                    <li key={feature} className="flex items-start gap-2">
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: COLOR.gold }}>✓</span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {tier.features.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => toggleTierExpanded(tier.key)}
+                    className="mt-3 text-left text-xs font-semibold underline"
+                    style={{ color: COLOR.gold }}
+                  >
+                    {expandedTiers[tier.key] ? "Show less" : `View all ${tier.features.length} features`}
+                  </button>
+                )}
+
+                <Link
+                  href={tier.href}
+                  className={
+                    tier.style === "outline"
+                      ? "mt-10 flex justify-center rounded-lg border py-3 font-semibold text-white transition hover:bg-white hover:text-black"
+                      : "mt-10 flex justify-center rounded-lg py-3 font-semibold"
+                  }
+                  style={
+                    tier.style === "outline"
+                      ? { borderColor: "rgba(255,255,255,.15)" }
+                      : { background: COLOR.gold, color: COLOR.black }
+                  }
+                >
+                  {tier.cta}
+                </Link>
+              </div>
+            ))}
           </div>
 
           <p className="mt-10 text-center text-sm text-white/40">

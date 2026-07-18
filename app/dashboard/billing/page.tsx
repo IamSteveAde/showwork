@@ -19,12 +19,18 @@ const COLOR = {
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ payment?: string; reference?: string; trxref?: string }>;
+  searchParams: Promise<{ payment?: string; reference?: string; trxref?: string; tier?: string }>;
 }) {
-  let creator = await getCurrentCreator();
-  if (!creator) redirect("/login");
+  const { payment, reference, trxref, tier: selectedTierParam } = await searchParams;
 
-  const { payment, reference, trxref } = await searchParams;
+  let creator = await getCurrentCreator();
+  if (!creator) {
+    const next = selectedTierParam
+      ? `/dashboard/billing?tier=${selectedTierParam}`
+      : "/dashboard/billing";
+    redirect(`/login?next=${encodeURIComponent(next)}`);
+  }
+
   const ref = reference ?? trxref;
 
   // Fallback confirmation path: the webhook is the normal way subscription
@@ -130,16 +136,30 @@ export default async function BillingPage({
           {PAID_TIER_ORDER.map((tierKey) => {
             const info = TIERS[tierKey];
             const isCurrent = usage.tier === tierKey;
+            const isSelected = selectedTierParam === tierKey && !isCurrent;
 
             return (
               <div
                 key={tierKey}
-                className="rounded-2xl p-6"
+                className="relative rounded-2xl p-6"
                 style={{
                   background: COLOR.charcoal,
-                  border: isCurrent ? `1px solid ${COLOR.gold}` : "1px solid transparent",
+                  border: isCurrent
+                    ? `1px solid ${COLOR.gold}`
+                    : isSelected
+                      ? `1px solid ${COLOR.gold}`
+                      : "1px solid transparent",
+                  boxShadow: isSelected ? "0 0 0 3px rgba(245,200,66,0.15)" : undefined,
                 }}
               >
+                {isSelected && (
+                  <span
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-bold uppercase"
+                    style={{ background: COLOR.gold, color: COLOR.black, letterSpacing: "0.05em" }}
+                  >
+                    Your pick
+                  </span>
+                )}
                 <p className="mb-1 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.08em" }}>
                   {info.name}
                 </p>

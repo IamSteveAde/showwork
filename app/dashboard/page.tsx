@@ -91,6 +91,12 @@ export default async function DashboardPage({
         </div>
 
         <div className="flex items-center gap-4">
+          <a
+            href="mailto:info@spotliteafrica.com?subject=Showwork%20support"
+            className="hidden text-xs font-medium text-white/40 transition-colors hover:text-white sm:inline"
+          >
+            Support
+          </a>
           <Link
             href="/dashboard/billing"
             className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold sm:flex"
@@ -351,6 +357,25 @@ export default async function DashboardPage({
             )}
           </>
         )}
+
+        {/* SUPPORT */}
+        <div
+          className="mt-12 flex flex-col items-center gap-3 rounded-xl p-6 text-center sm:flex-row sm:justify-between sm:text-left"
+          style={{ background: COLOR.charcoal }}
+        >
+          <div>
+            <p className="text-sm font-semibold text-white">Need a hand with something?</p>
+            <p className="mt-1 text-xs text-white/40">We reply within 5 hours.</p>
+          </div>
+          <a
+            href="mailto:info@spotliteafrica.com?subject=Showwork%20support"
+            className="flex w-fit items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+            style={{ background: "rgba(245,200,66,0.12)", color: COLOR.gold }}
+          >
+            Contact support
+            <span aria-hidden>→</span>
+          </a>
+        </div>
       </div>
     </main>
   );
