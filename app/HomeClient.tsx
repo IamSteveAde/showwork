@@ -43,8 +43,8 @@ const SLIDES = [
   {
     image: "/images/hero3.png",
     eyebrow: "Simple economics",
-    headline: "₦5,000 a project. A priceless first impression.",
-    body: "One flat fee. No subscription. Live the moment payment clears.",
+    headline: "Choose a plan that grows with your studio.",
+    body: "From solo creators to production teams. Create projects without paying per delivery.",
   },
 ];
 
@@ -363,49 +363,228 @@ export default function HomeClient() {
       </section>
 
       {/* ── RATE CARD — black, framed as ROI not just a price ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-2xl rounded-xl p-8 md:p-12"
-          style={{ background: COLOR.charcoal }}
+      {/* ─────────────────────────────────────────────
+    PRICING
+───────────────────────────────────────────── */}
+<section
+  className="px-6 py-20 md:px-20 md:py-[120px]"
+  style={{ background: COLOR.black }}
+>
+  <div className="mx-auto max-w-[1280px]">
+
+    <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} />
+
+    <p
+      className="mb-4 text-xs font-semibold uppercase"
+      style={{
+        color: "rgba(248,247,244,0.35)",
+        letterSpacing: "0.1em",
+      }}
+    >
+      Pricing
+    </p>
+
+    <h2 className="max-w-2xl text-3xl font-semibold leading-tight text-white md:text-5xl">
+      Start free.
+      <br />
+      Upgrade only when your business grows.
+    </h2>
+
+    <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/60">
+      No hidden fees. No contracts. Cancel anytime. Choose the plan that
+      matches the way you work.
+    </p>
+
+    <div className="mt-16 grid gap-8 lg:grid-cols-4">
+
+      {/* FREE */}
+
+      <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: "rgba(255,255,255,.08)",
+          background: COLOR.charcoal,
+        }}
+      >
+        <p className="text-sm font-semibold text-white/50">
+          Free
+        </p>
+
+        <h3 className="mt-3 text-4xl font-bold text-white">
+          ₦0
+        </h3>
+
+        <p className="mt-2 text-sm text-white/50">
+          Perfect for trying Showwork.
+        </p>
+
+        <ul className="mt-8 space-y-3 text-sm text-white/70">
+          <li>✓ 1 active project</li>
+          <li>✓ Password protected delivery</li>
+          <li>✓ Full quality uploads</li>
+          <li>✓ Client access page</li>
+        </ul>
+
+        <Link
+          href="/signup"
+          className="mt-10 flex justify-center rounded-lg border py-3 font-semibold transition hover:bg-white hover:text-black"
+          style={{
+            borderColor: "rgba(255,255,255,.15)",
+          }}
         >
-          <div className="mb-2 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p className="mb-2 text-sm font-normal text-white/40">
-            ₦5,000 to look like the agency your client already assumed you were.
-          </p>
-          <div className="mb-8 flex items-end justify-between">
-            <h2 className="text-2xl font-semibold text-white">Pricing</h2>
-            <span className="text-4xl font-bold text-white">₦5,000</span>
-          </div>
+          Get Started
+        </Link>
+      </div>
 
-          <div className="mb-8 h-px w-full" style={{ background: "rgba(245,200,66,0.3)" }} aria-hidden />
+      {/* STARTER */}
 
-          <dl className="flex flex-col gap-5 text-left">
-            {[
-              ["Billing", "Per project, one time. No subscription."],
-              ["Includes", "Password protection, viewer email capture, full-quality delivery."],
-              ["Goes live", "As soon as payment is confirmed."],
-            ].map(([label, value]) => (
-              <div key={label} className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-8">
-                <dt className="w-32 flex-shrink-0 text-sm font-semibold text-white/40">{label}</dt>
-                <dd className="text-sm font-normal leading-relaxed text-white/70">{value}</dd>
-              </div>
-            ))}
-          </dl>
+      <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: "rgba(245,200,66,.2)",
+          background: COLOR.charcoal,
+        }}
+      >
+        <p
+          className="text-sm font-semibold"
+          style={{ color: COLOR.gold }}
+        >
+          Starter
+        </p>
 
-          <Link
-            href="/signup"
-            className="mt-8 flex w-full items-center justify-center rounded-lg py-3.5 text-sm font-semibold transition-transform hover:scale-[1.01]"
-            style={{ background: COLOR.gold, color: COLOR.black }}
-          >
-            Start a delivery
-          </Link>
-        </motion.div>
-      </section>
+        <h3 className="mt-3 text-4xl font-bold text-white">
+          ₦5,900
+        </h3>
 
+        <p className="mt-1 text-sm text-white/50">
+          per month
+        </p>
+
+        <ul className="mt-8 space-y-3 text-sm text-white/70">
+          <li>✓ Up to 10 active projects</li>
+          <li>✓ Password protection</li>
+          <li>✓ Viewer email capture</li>
+          <li>✓ Full quality delivery</li>
+        </ul>
+
+        <Link
+          href="/signup"
+          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+          style={{
+            background: COLOR.gold,
+            color: COLOR.black,
+          }}
+        >
+          Choose Starter
+        </Link>
+      </div>
+
+      {/* GROWTH */}
+
+      <div
+        className="relative rounded-2xl border p-8"
+        style={{
+          borderColor: COLOR.gold,
+          background: COLOR.charcoal,
+          boxShadow: "0 20px 60px rgba(245,200,66,.18)",
+        }}
+      >
+        <div
+          className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
+          style={{
+            background: COLOR.gold,
+            color: COLOR.black,
+          }}
+        >
+          MOST POPULAR
+        </div>
+
+        <p
+          className="text-sm font-semibold"
+          style={{ color: COLOR.gold }}
+        >
+          Growth
+        </p>
+
+        <h3 className="mt-3 text-4xl font-bold text-white">
+          ₦10,500
+        </h3>
+
+        <p className="mt-1 text-sm text-white/50">
+          per month
+        </p>
+
+        <ul className="mt-8 space-y-3 text-sm text-white/70">
+          <li>✓ Up to 20 active projects</li>
+          <li>✓ Everything in Starter</li>
+          <li>✓ Priority support</li>
+          <li>✓ Premium creator tools</li>
+        </ul>
+
+        <Link
+          href="/signup"
+          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+          style={{
+            background: COLOR.gold,
+            color: COLOR.black,
+          }}
+        >
+          Choose Growth
+        </Link>
+      </div>
+
+      {/* UNLIMITED */}
+
+      <div
+        className="rounded-2xl border p-8"
+        style={{
+          borderColor: "rgba(255,255,255,.08)",
+          background: COLOR.charcoal,
+        }}
+      >
+        <p
+          className="text-sm font-semibold"
+          style={{ color: COLOR.gold }}
+        >
+          Unlimited
+        </p>
+
+        <h3 className="mt-3 text-4xl font-bold text-white">
+          ₦15,000
+        </h3>
+
+        <p className="mt-1 text-sm text-white/50">
+          per month
+        </p>
+
+        <ul className="mt-8 space-y-3 text-sm text-white/70">
+          <li>✓ Unlimited active projects</li>
+          <li>✓ Unlimited client deliveries</li>
+          <li>✓ Everything in Growth</li>
+          <li>✓ Highest priority support</li>
+        </ul>
+
+        <Link
+          href="/signup"
+          className="mt-10 flex justify-center rounded-lg py-3 font-semibold"
+          style={{
+            background: COLOR.gold,
+            color: COLOR.black,
+          }}
+        >
+          Go Unlimited
+        </Link>
+      </div>
+
+    </div>
+
+    <p className="mt-10 text-center text-sm text-white/40">
+      All paid plans include secure hosting, password protection, full-quality
+      delivery, and can be cancelled at any time.
+    </p>
+
+  </div>
+</section>
       {/* ── RELATIONSHIP TO SPOTLITE AFRICA ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.warmWhite }}>
         <motion.div

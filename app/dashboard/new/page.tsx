@@ -312,11 +312,65 @@ export default function NewProjectPage() {
           ← Back to dashboard
         </Link>
 
-        <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
-          New delivery
-        </p>
-        <h1 className="mb-10 text-3xl font-bold text-white">Set up this project</h1>
+        <p
+  className="mb-2 text-xs font-semibold uppercase"
+  style={{ color: COLOR.gold, letterSpacing: "0.1em" }}
+>
+  New delivery
+</p>
 
+<div className="mb-10 flex items-center justify-between gap-4">
+  <h1 className="text-3xl font-bold text-white">
+    Set up this project
+  </h1>
+
+  <Link
+    href="/dashboard/billing"
+    className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all hover:scale-105"
+    style={{
+      background: COLOR.gold,
+      color: COLOR.black,
+      boxShadow: "0 8px 24px rgba(245,200,66,0.25)",
+    }}
+  >
+    Upgrade Plan
+  </Link>
+</div>
+<div
+  className="mb-8 flex items-center justify-between rounded-xl p-5"
+  style={{
+    background: "rgba(245,200,66,0.08)",
+    border: "1px solid rgba(245,200,66,0.25)",
+  }}
+>
+  <div>
+    <p
+      className="text-xs font-semibold uppercase"
+      style={{ color: COLOR.gold, letterSpacing: "0.08em" }}
+    >
+      Upgrade
+    </p>
+
+    <h3 className="mt-1 text-lg font-bold text-white">
+      Need more projects?
+    </h3>
+
+    <p className="mt-1 text-sm text-white/60">
+      Unlock higher upload limits, more active projects and premium features.
+    </p>
+  </div>
+
+  <Link
+    href="/dashboard/billing"
+    className="rounded-lg px-5 py-3 text-sm font-semibold transition-all hover:scale-105"
+    style={{
+      background: COLOR.gold,
+      color: COLOR.black,
+    }}
+  >
+    Upgrade →
+  </Link>
+</div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* client name card */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>

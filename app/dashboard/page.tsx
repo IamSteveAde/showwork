@@ -119,6 +119,46 @@ export default async function DashboardPage() {
                   ? "Nothing here yet — create your first delivery."
                   : `${projects.length} project${projects.length === 1 ? "" : "s"} · ${liveCount} live · ${totalViews} view${totalViews === 1 ? "" : "s"} · ${totalEmails} email${totalEmails === 1 ? "" : "s"} captured`}
               </p>
+              {!creator.subscriptionActive && (
+  <div
+    className="mt-6 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
+    style={{
+      background: "rgba(245,200,66,0.08)",
+      border: "1px solid rgba(245,200,66,0.25)",
+      backdropFilter: "blur(10px)",
+    }}
+  >
+    <div>
+      <p
+        className="text-xs font-semibold uppercase"
+        style={{ color: COLOR.gold, letterSpacing: "0.08em" }}
+      >
+        Upgrade your workspace
+      </p>
+
+      <h3 className="mt-1 text-lg font-bold text-white">
+        Unlock unlimited client deliveries
+      </h3>
+
+      <p className="mt-1 text-sm text-white/60">
+        Upgrade your plan to create more projects, remove limits, and access premium features.
+      </p>
+    </div>
+
+    <Link
+      href="/dashboard/billing"
+      className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
+      style={{
+        background: COLOR.gold,
+        color: COLOR.black,
+        boxShadow: "0 10px 30px rgba(245,200,66,0.25)",
+      }}
+    >
+      Upgrade Plan
+      <span>→</span>
+    </Link>
+  </div>
+)}
             </div>
 
             <Link
