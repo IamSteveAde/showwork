@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       slug,
       clientName,
       passwordHash,
+      accessCode: password,
       captureViewerEmail: captureViewerEmail ?? true,
       creatorId: creator.id,
     },

@@ -556,9 +556,18 @@ export default function StartPage() {
       />
 
       <div className="relative z-10 mx-auto max-w-2xl px-6 py-12">
-        <Link href="/" className="mb-8 inline-flex items-baseline gap-2">
-          <span className="text-sm font-bold text-white">Show<span style={{ color: COLOR.gold }}>work</span></span>
-        </Link>
+        <div className="mb-8 flex items-center justify-between">
+          <Link href="/" className="inline-flex items-baseline gap-2">
+            <span className="text-sm font-bold text-white">Show<span style={{ color: COLOR.gold }}>work</span></span>
+          </Link>
+          <Link
+            href="/dashboard/billing"
+            className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors hover:opacity-80"
+            style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+          >
+            Upgrade
+          </Link>
+        </div>
 
         <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
           New delivery

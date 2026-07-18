@@ -2,10 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { verifyTransaction } from "@/lib/paystack";
 import { publicUrlFor } from "@/lib/r2";
 import { appUrl } from "@/lib/url";
-import PublishButton from "@/components/PublishButton";
 import FileGridItem from "@/components/FileGridItem";
 import AddMoreFilesButton from "@/components/AddMoreFilesButton";
 
@@ -21,52 +19,32 @@ const COLOR = {
 
 export default async function ProjectDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ payment?: string }>;
 }) {
   const creator = await getCurrentCreator();
   if (!creator) redirect("/login");
 
   const { projectId } = await params;
-  const { payment } = await searchParams;
 
-  let project = await db.project.findUnique({
+  const project = await db.project.findUnique({
     where: { id: projectId },
     include: { media: { orderBy: { displayOrder: "asc" } } },
   });
 
   if (!project || project.creatorId !== creator.id) notFound();
 
-  // Fallback confirmation path: webhooks are Paystack's servers calling
-  // ours, which can't reach localhost during local development, and even
-  // in production a webhook can be delayed.
-  if (payment === "callback" && !project.paid && project.paystackRef) {
-    try {
-      const verification = await verifyTransaction(project.paystackRef);
-      const isSuccessful =
-        verification?.data?.status === "success" &&
-        verification?.data?.reference === project.paystackRef;
+  const viewerEmails = await db.viewerEmail.findMany({
+    where: { projectId: project.id },
+    orderBy: { viewedAt: "desc" },
+  });
 
-      if (isSuccessful) {
-        project = await db.project.update({
-          where: { id: project.id },
-          data: { paid: true, paidAt: new Date(), badgeVisible: false },
-          include: { media: { orderBy: { displayOrder: "asc" } } },
-        });
-      }
-    } catch (err) {
-      console.error("Callback verification error:", err);
-    }
-  }
+  // Live if either: it was paid outright under the old one-time model
+  // (grandfathered forever), or the creator's subscription is currently
+  // active (covers every project they have, automatically).
+  const isLive = project.paid || creator.subscriptionActive;
 
   const liveUrl = `${appUrl()}/${project.slug}`;
-
-  const paidProjectsCount = await db.project.count({
-    where: { creatorId: creator.id, paid: true },
-  });
-  const isFirstFree = paidProjectsCount === 0;
 
   const totalFiles = project.media.length;
   const approvedCount = project.media.filter((m) => m.approvalStatus === "APPROVED").length;
@@ -74,7 +52,12 @@ export default async function ProjectDetailPage({
   const pendingCount = totalFiles - approvedCount - needsRevisionCount;
   const allApproved = totalFiles > 0 && approvedCount === totalFiles;
 
-  const uploadSessionsRemaining = MAX_ADDITIONAL_UPLOAD_BATCHES - project.additionalUploadCount;
+  // Unlimited add-more for active subscribers — the cap only exists to
+  // stop the old one-time-payment model being stretched into free
+  // ongoing use, which doesn't apply once someone's actually subscribed.
+  const uploadSessionsRemaining = creator.subscriptionActive
+    ? Infinity
+    : MAX_ADDITIONAL_UPLOAD_BATCHES - project.additionalUploadCount;
 
   return (
     <main className="min-h-screen" style={{ background: COLOR.black }}>
@@ -102,20 +85,20 @@ export default async function ProjectDetailPage({
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"
             style={
-              project.paid
+              isLive
                 ? { background: "rgba(245,200,66,0.15)", color: COLOR.gold }
                 : { background: "rgba(248,247,244,0.06)", color: "rgba(248,247,244,0.4)" }
             }
           >
-            {project.paid ? "Live" : "Draft"}
+            {isLive ? "Live" : "Draft"}
           </span>
         </div>
 
-        {/* live URL / publish card */}
+        {/* live URL / subscribe prompt card */}
         <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
-          {project.paid ? (
+          {isLive ? (
             <>
-              <p className="mb-2 text-sm text-green-400">✓ Live and paid</p>
+              <p className="mb-2 text-sm text-green-400">✓ Live</p>
               <a
                 href={liveUrl}
                 target="_blank"
@@ -129,12 +112,39 @@ export default async function ProjectDetailPage({
           ) : (
             <>
               <p className="mb-3 text-sm text-white/50">
-                {isFirstFree
-                  ? "This one's on us — your first project publishes free. After this, it's ₦5,000 per project."
-                  : "This project is a draft. Publish it to remove the Spotlite badge and go live for your client."}
+                This project isn&apos;t live yet. Subscribe for unlimited projects — every
+                delivery you create goes live automatically, with no per-project fee.
               </p>
-              <PublishButton projectId={project.id} creatorEmail={creator.email} isFirstFree={isFirstFree} />
+              <Link
+                href="/dashboard/billing"
+                className="inline-flex rounded-lg px-5 py-3 text-sm font-medium"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                Subscribe — ₦15,000/month
+              </Link>
             </>
+          )}
+        </div>
+
+        {/* PASSCODE */}
+        <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+          <p className="mb-2 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Client access code
+          </p>
+          {project.accessCode ? (
+            <p className="flex items-center gap-3">
+              <span
+                className="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+              >
+                {project.accessCode}
+              </span>
+              <span className="text-xs text-white/30">Share this with your client to unlock the delivery.</span>
+            </p>
+          ) : (
+            <p className="text-xs text-white/30">
+              This project was created before we started saving the plain code — you'll need to remember what you set, or share a new one by editing the project.
+            </p>
           )}
         </div>
 
@@ -147,7 +157,11 @@ export default async function ProjectDetailPage({
             <div>
               <p className="text-sm font-semibold text-white">Need to add more to this delivery?</p>
               <p className="mt-1 text-xs text-white/50">
-                You can add more files to this project up to <strong className="text-white/70">3 times total</strong> — no extra charge.
+                {creator.subscriptionActive
+                  ? "Unlimited — add as many files as you need, whenever you need to."
+                  : (
+                    <>You can add more files to this project up to <strong className="text-white/70">3 times total</strong> — no extra charge.</>
+                  )}
               </p>
             </div>
             <AddMoreFilesButton projectId={project.id} remaining={uploadSessionsRemaining} />
@@ -202,6 +216,36 @@ export default async function ProjectDetailPage({
             ))}
           </div>
         )}
+
+        {/* CLIENT EMAILS — everyone who signed in to view this delivery */}
+        <div className="mt-10">
+          <h2 className="mb-3 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
+            Viewer emails ({viewerEmails.length})
+          </h2>
+          {viewerEmails.length === 0 ? (
+            <div className="rounded-2xl p-6 text-sm text-white/40" style={{ background: COLOR.charcoal }}>
+              No one has viewed this delivery yet.
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {viewerEmails.map((v) => (
+                <div
+                  key={v.id}
+                  className="flex items-center justify-between rounded-md px-4 py-2.5 text-sm"
+                  style={{ background: COLOR.charcoal }}
+                >
+                  <span className="text-white/80">{v.email}</span>
+                  <span className="text-xs text-white/30">
+                    {new Date(v.viewedAt).toLocaleDateString("en-NG", {
+                      day: "numeric", month: "short", year: "numeric",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

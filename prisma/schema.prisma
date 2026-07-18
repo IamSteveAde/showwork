@@ -62,6 +62,12 @@ model Project {
 
   // access control
   passwordHash String
+  // Plain-text copy of the same code, saved purely so the creator can
+  // see and re-share it later. This one code only gates a client's
+  // view of their own delivery — not an account or anything sensitive —
+  // so keeping a readable copy is a reasonable tradeoff here. Older
+  // projects created before this field existed will have this as null.
+  accessCode   String?
 
   // Option A payment: one-time ₦5,000 per project
   paid           Boolean   @default(false)
