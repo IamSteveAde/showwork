@@ -221,6 +221,17 @@ function HeroSlider() {
 
 export default function HomeClient() {
   const [showFullVideo, setShowFullVideo] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const heroVideoSrc = isMobile ? "/images/shm.mov" : "/images/sh.mp4";
 
   return (
     <main className={`${jakarta.variable}`} style={{ fontFamily: "var(--font-jakarta)" }}>
@@ -302,11 +313,12 @@ export default function HomeClient() {
               onClick={() => setShowFullVideo(true)}
               className="group relative aspect-video w-full cursor-pointer bg-black"
             >
-              {/* Real screen recording — path corrected to start with a
-                  leading slash so it resolves from any route, not just
-                  the homepage. */}
+              {/* Real screen recording — desktop and mobile use different
+                  files since a mobile screen recording is usually shot
+                  vertically, and a desktop one horizontally. */}
               <video
-                src="/images/sh.mp4"
+                key={heroVideoSrc}
+                src={heroVideoSrc}
                 autoPlay
                 muted
                 loop
@@ -314,28 +326,8 @@ export default function HomeClient() {
                 className="h-full w-full object-cover"
               />
               <div
-                className="pointer-events-none absolute inset-0 transition-colors duration-300 group-hover:bg-black/20"
-                style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.5) 100%)" }}
+                className="pointer-events-none absolute inset-0 transition-colors duration-300 group-hover:bg-black/10"
               />
-
-              {/* click-to-expand affordance */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <div
-                  className="flex items-center gap-2 rounded-full px-5 py-3"
-                  style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)" }}
-                >
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-full"
-                    style={{ background: COLOR.gold }}
-                  >
-                    <div
-                      className="ml-0.5 h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent"
-                      style={{ borderLeftColor: "#080808" }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-white">Watch with sound</span>
-                </div>
-              </div>
 
               <div className="absolute left-5 top-5 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: COLOR.gold }} />
@@ -343,12 +335,28 @@ export default function HomeClient() {
                   Private preview
                 </span>
               </div>
-              <div className="absolute bottom-5 left-5 right-5">
-                <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
-                <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>One night to remember.</p>
+
+              {/* Subtle, always-visible click indicator — not hover-only,
+                  since hover doesn't exist on mobile touch devices at all. */}
+              <div
+                className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-transform duration-300 group-hover:scale-105"
+                style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)" }}
+              >
+                <div
+                  className="ml-0.5 h-0 w-0 border-y-[4px] border-l-[6px] border-y-transparent"
+                  style={{ borderLeftColor: COLOR.gold }}
+                />
+                <span className="text-[10px] font-medium text-white/80">Click to watch</span>
               </div>
             </div>
           </motion.div>
+
+          {/* copy moved below the video — the overlay text was competing
+              with the footage itself */}
+          <div className="mx-auto mt-6 max-w-4xl text-center">
+            <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
+            <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>One night to remember.</p>
+          </div>
         </div>
       </section>
 
@@ -700,7 +708,8 @@ export default function HomeClient() {
               className="relative max-h-[85vh] max-w-[92vw] overflow-hidden rounded-2xl bg-black"
             >
               <video
-                src="/images/sh.mp4"
+                key={heroVideoSrc}
+                src={heroVideoSrc}
                 controls
                 autoPlay
                 loop
