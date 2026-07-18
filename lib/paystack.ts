@@ -80,22 +80,23 @@ export async function initializeTransaction({
 
 /**
  * Starts a subscription checkout for a specific tier's plan. Passing
- * `plan` overrides any amount — Paystack charges the plan's own price
- * instead. Once the customer pays, Paystack automatically creates the
- * subscription and keeps billing them on the plan's interval.
+ * `plan` determines what actually gets charged (the plan's own
+ * configured price) — but Paystack's API still requires a valid,
+ * non-zero `amount` field to be present for the request to validate at
+ * all, even though it isn't what the customer ends up being charged.
  */
 export async function initializeSubscription({
   email,
-  amount,
   reference,
   callbackUrl,
   planCode,
+  amount,
 }: {
   email: string;
-  amount: number;
   reference: string;
   callbackUrl: string;
   planCode: string;
+  amount: number;
 }): Promise<PaystackInitializeResponse> {
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
@@ -119,6 +120,24 @@ export async function initializeSubscription({
     throw new Error(`Paystack subscription initialize failed: ${errText}`);
   }
 
+  return res.json();
+}
+
+/**
+ * Fetches a customer's subscriptions directly from Paystack. Used as a
+ * fallback right after checkout — the webhook is the normal path for
+ * getting subscription_code/email_token, but webhooks can't reach
+ * localhost during local development, and can occasionally be delayed
+ * even in production. This lets us confirm and store everything
+ * immediately instead of waiting.
+ */
+export async function fetchCustomerSubscriptions(customerCode: string) {
+  const res = await fetch(`${PAYSTACK_BASE_URL}/subscription?customer=${encodeURIComponent(customerCode)}`, {
+    headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+  });
+  if (!res.ok) {
+    throw new Error(`Paystack fetch subscriptions failed: ${await res.text()}`);
+  }
   return res.json();
 }
 

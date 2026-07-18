@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { verifyWebhookSignature, verifyTransaction } from "@/lib/paystack";
+import { verifyWebhookSignature, verifyTransaction, cancelSubscription } from "@/lib/paystack";
 import { tierFromPlanCode } from "@/lib/subscriptionTiers";
 
-// Pulls the plan_code out of a Paystack event payload, whether it comes
-// through as a plain string or a nested plan object — different event
-// types shape this slightly differently.
 function extractPlanCode(data: any): string | null {
   if (!data?.plan) return null;
   return typeof data.plan === "string" ? data.plan : data.plan?.plan_code ?? null;
@@ -22,11 +19,9 @@ export async function POST(req: NextRequest) {
 
   const event = JSON.parse(rawBody);
 
-  // ── One-time project payments (legacy per-project model — kept
-  //    working for any project still paid this way) ──
+  // ── One-time project payments (legacy per-project model) ──
   if (event.event === "charge.success" && !extractPlanCode(event.data)) {
     const reference: string = event.data.reference;
-
     const verification = await verifyTransaction(reference);
     const isActuallySuccessful =
       verification?.data?.status === "success" &&
@@ -43,7 +38,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Subscription created (the first successful charge on a plan) ──
+  // ── Subscription created (first charge on a plan — either a brand
+  //    new subscriber, or someone switching to a different tier) ──
   if (event.event === "subscription.create") {
     const data = event.data;
     const customerEmail: string | undefined = data?.customer?.email;
@@ -51,6 +47,24 @@ export async function POST(req: NextRequest) {
     const tier = planCode ? tierFromPlanCode(planCode) : null;
 
     if (customerEmail && tier) {
+      const existing = await db.creator.findUnique({ where: { email: customerEmail } });
+
+      // If they already had a different subscription on file, this is a
+      // plan switch — cancel the old one so they aren't billed for two
+      // plans going forward.
+      if (
+        existing?.paystackSubscriptionCode &&
+        existing?.paystackEmailToken &&
+        data.subscription_code &&
+        existing.paystackSubscriptionCode !== data.subscription_code
+      ) {
+        try {
+          await cancelSubscription(existing.paystackSubscriptionCode, existing.paystackEmailToken);
+        } catch (err) {
+          console.error("Failed to cancel previous subscription during switch:", err);
+        }
+      }
+
       await db.creator.updateMany({
         where: { email: customerEmail },
         data: {
@@ -66,8 +80,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Renewal charge succeeded (recurring charges also fire
-  //    charge.success, distinguishable by carrying a plan reference) ──
+  // ── Renewal charge succeeded ──
   if (event.event === "charge.success" && extractPlanCode(event.data)) {
     const customerEmail: string | undefined = event.data?.customer?.email;
     const planCode = extractPlanCode(event.data);
@@ -76,17 +89,12 @@ export async function POST(req: NextRequest) {
     if (customerEmail && tier) {
       await db.creator.updateMany({
         where: { email: customerEmail },
-        data: {
-          subscriptionActive: true,
-          subscriptionTier: tier,
-          currentCycleStart: new Date(), // a new billing cycle just began
-        },
+        data: { subscriptionActive: true, subscriptionTier: tier, currentCycleStart: new Date() },
       });
     }
   }
 
-  // ── Renewal charge failed — Paystack does not retry subscription
-  //    charges, so this is final for that billing cycle ──
+  // ── Renewal charge failed ──
   if (event.event === "invoice.payment_failed") {
     const customerEmail: string | undefined = event.data?.customer?.email;
     if (customerEmail) {

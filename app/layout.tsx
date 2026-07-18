@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
+import RouteTransitionIndicator from "@/components/RouteTransitionIndicator";
 
 export const metadata: Metadata = {
   title: "Spotlite Presenter",
@@ -13,7 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Suspense fallback={null}>
+          <RouteTransitionIndicator />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

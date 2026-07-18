@@ -45,3 +45,21 @@ export function tierFromPlanCode(planCode: string): PaidTier | null {
   }
   return null;
 }
+
+// What each tier is called for display — Free isn't in TIERS since it
+// has no plan/price, so it gets its own entry here.
+export const PLAN_DISPLAY_NAME: Record<Tier, string> = {
+  FREE: "Free",
+  STARTER: TIERS.STARTER.name,
+  GROWTH: TIERS.GROWTH.name,
+  UNLIMITED: TIERS.UNLIMITED.name,
+};
+
+// The next tier up from wherever someone currently is — lets an upgrade
+// prompt name a specific target instead of a generic "upgrade" link.
+export const NEXT_TIER: Record<Tier, PaidTier | null> = {
+  FREE: "STARTER",
+  STARTER: "GROWTH",
+  GROWTH: "UNLIMITED",
+  UNLIMITED: null,
+};

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
@@ -83,6 +83,27 @@ export default function NewProjectPage() {
   const [statusMap, setStatusMap] = useState<Record<string, FileStatus>>({});
   const [loadedMap, setLoadedMap] = useState<Record<string, number>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Usage/plan info — fetched once on load so the upgrade prompt below
+  // only appears when actually approaching the cap, not on every visit
+  // regardless of plan.
+  interface UsageInfo {
+    planName: string;
+    used: number;
+    limit: number | null;
+    remaining: number | null;
+    nearCap: boolean;
+    atCap: boolean;
+    nextTier: { name: string; priceNgn: number; limit: number | null } | null;
+  }
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
+
+  useEffect(() => {
+    fetch("/api/subscription/usage")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUsage(data))
+      .catch(() => {});
+  }, []);
 
   const addFiles = (selected: File[]) => {
     const queued: QueuedFile[] = selected.map((file) => ({
@@ -312,65 +333,58 @@ export default function NewProjectPage() {
           ← Back to dashboard
         </Link>
 
-        <p
-  className="mb-2 text-xs font-semibold uppercase"
-  style={{ color: COLOR.gold, letterSpacing: "0.1em" }}
->
-  New delivery
-</p>
+        <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+          New delivery
+        </p>
 
-<div className="mb-10 flex items-center justify-between gap-4">
-  <h1 className="text-3xl font-bold text-white">
-    Set up this project
-  </h1>
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold text-white">Set up this project</h1>
+          <Link
+            href="/dashboard/billing"
+            className="text-xs font-semibold text-white/40 underline transition-colors hover:text-white"
+          >
+            View plan
+          </Link>
+        </div>
 
-  <Link
-    href="/dashboard/billing"
-    className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all hover:scale-105"
-    style={{
-      background: COLOR.gold,
-      color: COLOR.black,
-      boxShadow: "0 8px 24px rgba(245,200,66,0.25)",
-    }}
-  >
-    Upgrade Plan
-  </Link>
-</div>
-<div
-  className="mb-8 flex items-center justify-between rounded-xl p-5"
-  style={{
-    background: "rgba(245,200,66,0.08)",
-    border: "1px solid rgba(245,200,66,0.25)",
-  }}
->
-  <div>
-    <p
-      className="text-xs font-semibold uppercase"
-      style={{ color: COLOR.gold, letterSpacing: "0.08em" }}
-    >
-      Upgrade
-    </p>
+        {/* Upgrade prompt — only appears when actually approaching or at
+            the cap for the current cycle, never shown unconditionally. */}
+        {usage && usage.nextTier && (usage.nearCap || usage.atCap) && (
+          <div
+            className="mb-8 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
+            style={{
+              background: usage.atCap ? "rgba(249,115,22,0.1)" : "rgba(245,200,66,0.08)",
+              border: usage.atCap ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(245,200,66,0.25)",
+            }}
+          >
+            <div>
+              <p
+                className="text-xs font-semibold uppercase"
+                style={{ color: usage.atCap ? "#fdba74" : COLOR.gold, letterSpacing: "0.08em" }}
+              >
+                {usage.atCap ? "You've reached your limit" : "Almost there"}
+              </p>
+              <h3 className="mt-1 text-lg font-bold text-white">
+                {usage.atCap
+                  ? `You've used all ${usage.limit} projects on ${usage.planName} this cycle.`
+                  : `Only ${usage.remaining} project${usage.remaining === 1 ? "" : "s"} left on ${usage.planName}.`}
+              </h3>
+              <p className="mt-1 text-sm text-white/60">
+                Move up to {usage.nextTier.name}
+                {usage.nextTier.limit === null ? " for unlimited projects" : ` for up to ${usage.nextTier.limit} a month`} — ₦{usage.nextTier.priceNgn.toLocaleString()}/mo.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/billing"
+              className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
+              style={{ background: COLOR.gold, color: COLOR.black }}
+            >
+              Upgrade to {usage.nextTier.name}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        )}
 
-    <h3 className="mt-1 text-lg font-bold text-white">
-      Need more projects?
-    </h3>
-
-    <p className="mt-1 text-sm text-white/60">
-      Unlock higher upload limits, more active projects and premium features.
-    </p>
-  </div>
-
-  <Link
-    href="/dashboard/billing"
-    className="rounded-lg px-5 py-3 text-sm font-semibold transition-all hover:scale-105"
-    style={{
-      background: COLOR.gold,
-      color: COLOR.black,
-    }}
-  >
-    Upgrade →
-  </Link>
-</div>
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* client name card */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>

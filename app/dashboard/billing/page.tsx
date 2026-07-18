@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
-import { TIERS, PAID_TIER_ORDER, FREE_TIER_LIMIT } from "@/lib/subscriptionTiers";
+import { TIERS, PAID_TIER_ORDER, FREE_TIER_LIMIT, tierFromPlanCode } from "@/lib/subscriptionTiers";
+import { verifyTransaction, fetchCustomerSubscriptions, cancelSubscription } from "@/lib/paystack";
 import SubscribeButton from "@/components/SubscribeButton";
 import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
 
@@ -14,9 +16,72 @@ const COLOR = {
   midGray: "#888786",
 };
 
-export default async function BillingPage() {
-  const creator = await getCurrentCreator();
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string; reference?: string; trxref?: string }>;
+}) {
+  let creator = await getCurrentCreator();
   if (!creator) redirect("/login");
+
+  const { payment, reference, trxref } = await searchParams;
+  const ref = reference ?? trxref;
+
+  // Fallback confirmation path: the webhook is the normal way subscription
+  // details get saved, but it can't reach localhost during local
+  // development, and can be delayed even in production. Runs on every
+  // callback — not just first-ever subscribes — so switching from one
+  // paid tier to another also gets picked up correctly.
+  if (payment === "callback" && ref) {
+    try {
+      const verification = await verifyTransaction(ref);
+      const isSuccessful = verification?.data?.status === "success";
+      const planCode: string | undefined =
+        typeof verification?.data?.plan === "string"
+          ? verification.data.plan
+          : verification?.data?.plan?.plan_code;
+      const tier = planCode ? tierFromPlanCode(planCode) : null;
+      const customerCode = verification?.data?.customer?.customer_code;
+
+      if (isSuccessful && tier && customerCode) {
+        const subs = await fetchCustomerSubscriptions(customerCode);
+        const matchingSub = subs?.data?.find(
+          (s: any) => (typeof s.plan === "string" ? s.plan : s.plan?.plan_code) === planCode
+        );
+
+        // Switching plans starts a brand new Paystack subscription — if
+        // there's a different one already on file, cancel it now so the
+        // creator isn't billed for two plans at once going forward.
+        if (
+          creator.paystackSubscriptionCode &&
+          creator.paystackEmailToken &&
+          matchingSub?.subscription_code &&
+          creator.paystackSubscriptionCode !== matchingSub.subscription_code
+        ) {
+          try {
+            await cancelSubscription(creator.paystackSubscriptionCode, creator.paystackEmailToken);
+          } catch (err) {
+            console.error("Failed to cancel previous subscription during switch:", err);
+          }
+        }
+
+        creator = await db.creator.update({
+          where: { id: creator.id },
+          data: {
+            subscriptionActive: true,
+            subscriptionTier: tier,
+            paystackCustomerCode: customerCode,
+            paystackSubscriptionCode: matchingSub?.subscription_code ?? null,
+            paystackEmailToken: matchingSub?.email_token ?? null,
+            subscriptionRenewsAt: matchingSub?.next_payment_date ? new Date(matchingSub.next_payment_date) : null,
+            currentCycleStart: new Date(),
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Subscription callback verification error:", err);
+    }
+  }
 
   const usage = await getCreatorUsage(creator);
 
