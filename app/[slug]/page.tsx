@@ -14,7 +14,10 @@ export default async function SlugPage({
 
   const project = await db.project.findUnique({
     where: { slug },
-    include: { media: { orderBy: { displayOrder: "asc" } } },
+    include: {
+      media: { orderBy: { displayOrder: "asc" } },
+      creator: { select: { subscriptionActive: true } },
+    },
   });
 
   if (!project) notFound();
@@ -52,7 +55,7 @@ export default async function SlugPage({
     <DeliveryPage
       projectId={project.id}
       clientName={project.clientName}
-      badgeVisible={project.badgeVisible}
+      badgeVisible={project.badgeVisible && !project.creator.subscriptionActive}
       primaryColor={project.primaryColor ?? "#C9A84C"}
       bgColor={project.bgColor ?? "#080808"}
       logoUrl={project.logoUrl}

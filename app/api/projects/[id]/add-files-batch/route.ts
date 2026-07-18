@@ -20,6 +20,13 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  if (creator.subscriptionActive) {
+    // Unlimited for active subscribers — the cap only exists to stop
+    // the old one-time-payment model being stretched into free
+    // ongoing use, which doesn't apply once someone's subscribed.
+    return NextResponse.json({ remaining: Infinity });
+  }
+
   if (project.additionalUploadCount >= MAX_ADDITIONAL_UPLOAD_BATCHES) {
     return NextResponse.json(
       { error: "You've used all 3 add-more-files sessions for this project." },

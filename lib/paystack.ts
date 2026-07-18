@@ -71,6 +71,81 @@ export async function initializeTransaction({
   return res.json();
 }
 
+// ─────────────────────────────────────────────
+// SUBSCRIPTIONS
+// ─────────────────────────────────────────────
+// Each tier's plan is created once, manually, in the Paystack dashboard —
+// not something the app creates repeatedly. Their codes are stored as
+// env vars and looked up via lib/subscriptionTiers.ts.
+
+/**
+ * Starts a subscription checkout for a specific tier's plan. Passing
+ * `plan` overrides any amount — Paystack charges the plan's own price
+ * instead. Once the customer pays, Paystack automatically creates the
+ * subscription and keeps billing them on the plan's interval.
+ */
+export async function initializeSubscription({
+  email,
+  amount,
+  reference,
+  callbackUrl,
+  planCode,
+}: {
+  email: string;
+  amount: number;
+  reference: string;
+  callbackUrl: string;
+  planCode: string;
+}): Promise<PaystackInitializeResponse> {
+  const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      amount,
+      reference,
+      callback_url: callbackUrl,
+      currency: "NGN",
+      channels: ALLOWED_CHANNELS,
+      plan: planCode,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Paystack subscription initialize failed: ${errText}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Cancels a subscription. Requires both the subscription_code and the
+ * email_token Paystack returned when the subscription was created —
+ * both get saved on the Creator row from the `subscription.create`
+ * webhook, specifically so this can be called later without needing to
+ * look anything up from Paystack first.
+ */
+export async function cancelSubscription(subscriptionCode: string, emailToken: string) {
+  const res = await fetch(`${PAYSTACK_BASE_URL}/subscription/disable`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ code: subscriptionCode, token: emailToken }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Paystack cancel subscription failed: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+
 /**
  * Verifies that a webhook request actually came from Paystack, not
  * an attacker forging a "payment succeeded" call to your endpoint.

@@ -121,7 +121,7 @@ export default function AddMoreFilesButton({
         {status ?? "+ Add more files"}
       </label>
       <p className="mt-1.5 text-xs text-white/30">
-        {remaining} of 3 sessions remaining
+        {Number.isFinite(remaining) ? `${remaining} of 3 sessions remaining` : "Unlimited — subscription active"}
       </p>
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>

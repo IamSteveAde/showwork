@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
 import { deleteObject } from "@/lib/r2";
 import { sendRevisionReadyEmail } from "@/lib/resend";
+import { appUrl } from "@/lib/url";
 
 const MAX_REPLACEMENTS_PER_PROJECT = 5;
 
@@ -31,7 +32,7 @@ export async function POST(
       { status: 403 }
     );
   }
-  if (media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT) {
+  if (media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT && !creator.subscriptionActive) {
     return NextResponse.json(
       { error: "This project has reached its revision limit. Please create a new project for further work." },
       { status: 403 }
@@ -65,7 +66,7 @@ export async function POST(
       await sendRevisionReadyEmail({
         to: notifyEmail,
         clientName: media.project.clientName,
-        publicUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${media.project.slug}`,
+        publicUrl: `${appUrl()}/${media.project.slug}`,
       });
     } catch (err) {
       console.error("Failed to send revision-ready email:", err);

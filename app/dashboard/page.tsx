@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
+import { getCreatorUsage } from "@/lib/subscriptionUsage";
 
 const COLOR = {
   black: "#0A0A0A",
@@ -41,7 +42,8 @@ export default async function DashboardPage() {
     include: { _count: { select: { media: true, viewerEmails: true } } },
   });
 
-  const liveCount = projects.filter((p) => p.paid).length;
+  const usage = await getCreatorUsage(creator);
+  const liveCount = projects.filter((p) => p.paid || creator.subscriptionActive).length;
   const totalViews = projects.reduce((sum, p) => sum + p.viewCount, 0);
   const totalEmails = projects.reduce((sum, p) => sum + p._count.viewerEmails, 0);
   const firstName = creator.name?.split(" ")[0];
@@ -63,6 +65,13 @@ export default async function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/billing"
+            className="hidden rounded-full px-3 py-1.5 text-xs font-semibold sm:inline"
+            style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+          >
+            {usage.limit === Infinity ? "Unlimited" : `${usage.used}/${usage.limit} this cycle`}
+          </Link>
           <div className="hidden items-center gap-3 sm:flex">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
@@ -171,7 +180,9 @@ export default async function DashboardPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project) => (
+              {projects.map((project) => {
+              const isLive = project.paid || creator.subscriptionActive;
+              return (
                 <Link
                   key={project.id}
                   href={`/dashboard/${project.id}`}
@@ -185,12 +196,12 @@ export default async function DashboardPage() {
                     <span
                       className="rounded-full px-3 py-1 text-xs font-semibold"
                       style={
-                        project.paid
+                        isLive
                           ? { background: "rgba(245,200,66,0.15)", color: COLOR.gold }
                           : { background: "rgba(248,247,244,0.06)", color: "rgba(248,247,244,0.4)" }
                       }
                     >
-                      {project.paid ? "Live" : "Draft"}
+                      {isLive ? "Live" : "Draft"}
                     </span>
                     <span
                       className="text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50"
@@ -244,7 +255,8 @@ export default async function DashboardPage() {
                     </span>
                   </div>
                 </Link>
-              ))}
+              );
+            })}
             </div>
           </>
         )}

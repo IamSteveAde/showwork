@@ -16,12 +16,38 @@ datasource db {
 // (auth itself is handled by Supabase Auth; this table
 // just mirrors the creator's id + a few product-specific fields)
 // ─────────────────────────────────────────────
+enum SubscriptionTier {
+  FREE
+  STARTER
+  GROWTH
+  UNLIMITED
+}
+
 model Creator {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
   name         String?
   createdAt    DateTime @default(now())
+
+  // Which paid tier they're on, and whether that tier is currently in
+  // good standing. If subscriptionActive is false (lapsed, cancelled,
+  // failed renewal), the creator is treated as FREE for cap purposes
+  // regardless of what subscriptionTier still says — that field is kept
+  // as a historical/display record, not the source of truth for access.
+  subscriptionTier         SubscriptionTier @default(FREE)
+  subscriptionActive       Boolean          @default(false)
+  paystackCustomerCode     String?
+  paystackSubscriptionCode String?
+  paystackEmailToken       String?
+  subscriptionRenewsAt     DateTime?
+
+  // The start of the current billing cycle for a paid tier — updated to
+  // "now" every time a subscription is created or renews, so project
+  // counts can be measured against it. Free tier doesn't use this; it
+  // uses a rolling 30-day window computed at read time instead, since
+  // there's no billing event to anchor a free cycle to.
+  currentCycleStart DateTime @default(now())
 
   projects Project[]
 }
