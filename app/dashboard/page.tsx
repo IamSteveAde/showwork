@@ -86,115 +86,93 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── HERO BANNER ── */}
-      <section className="relative flex min-h-[480px] w-full items-end overflow-hidden md:h-[52vh]">
-  {/* eslint-disable-next-line @next/next/no-img-element */}
-  <img
-    src="/images/hero1.png"
-    alt=""
-    className="absolute inset-0 h-full w-full object-cover"
-    style={{ opacity: 0.5 }}
-  />
-
-  <div
-    className="absolute inset-0"
-    style={{
-      background:
-        "linear-gradient(to bottom, rgba(10,10,10,0.4) 0%, rgba(10,10,10,0.2) 40%, rgba(10,10,10,0.96) 100%)",
-    }}
-  />
-
-  <div className="relative z-10 w-full px-6 pb-10 md:px-20 md:pb-14">
-    <div className="mx-auto max-w-[1200px]">
-
-      {/* HERO HEADER */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-
-        <div className="max-w-2xl">
-          <p
-            className="mb-3 text-xs font-semibold uppercase"
-            style={{
-              color: COLOR.gold,
-              letterSpacing: "0.1em",
-            }}
-          >
-            Dashboard
-          </p>
-
-          <h1 className="text-3xl font-bold leading-tight text-white md:text-5xl">
-            Welcome back{firstName ? `, ${firstName}` : ""}.
-          </h1>
-
-          <p className="mt-3 text-base text-white/60 md:text-lg">
-            {projects.length === 0
-              ? "Nothing here yet — create your first delivery."
-              : `${projects.length} project${projects.length === 1 ? "" : "s"} · ${liveCount} live · ${totalViews} view${totalViews === 1 ? "" : "s"} · ${totalEmails} email${totalEmails === 1 ? "" : "s"} captured`}
-          </p>
-        </div>
-
-        <Link
-          href="/dashboard/new"
-          className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+      <section className="relative flex min-h-[720px] md:h-[52vh] md:min-h-[380px] w-full items-end overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/hero1.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ opacity: 0.5 }}
+        />
+        <div
+          className="absolute inset-0"
           style={{
-            background: COLOR.gold,
-            color: COLOR.black,
+            background:
+              "linear-gradient(to bottom, rgba(10,10,10,0.4) 0%, rgba(10,10,10,0.2) 40%, rgba(10,10,10,0.96) 100%)",
           }}
-        >
-          <span className="text-base leading-none">+</span>
-          New project
-        </Link>
-      </div>
+        />
 
-      {/* UPGRADE CARD */}
-      {!creator.subscriptionActive && (
-        <div className="mt-8">
-          <div
-            className="flex flex-col gap-5 rounded-xl p-6 md:flex-row md:items-center md:justify-between"
-            style={{
-              background: "rgba(245,200,66,0.08)",
-              border: "1px solid rgba(245,200,66,0.22)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="max-w-2xl">
+      <div className="relative z-10 w-full px-6 pb-16 md:px-20 md:pb-14">
+          <div className="mx-auto flex max-w-[1200px] flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
               <p
-                className="text-xs font-semibold uppercase"
+                className="mb-3 text-xs font-semibold uppercase"
+                style={{ color: COLOR.gold, letterSpacing: "0.1em" }}
+              >
+                Dashboard
+              </p>
+              <h1 className="text-3xl font-bold leading-tight text-white md:text-5xl">
+                Welcome back{firstName ? `, ${firstName}` : ""}.
+              </h1>
+              <p className="mt-3 text-base font-normal text-white/60 md:text-lg">
+                {projects.length === 0
+                  ? "Nothing here yet — create your first delivery."
+                  : `${projects.length} project${projects.length === 1 ? "" : "s"} · ${liveCount} live · ${totalViews} view${totalViews === 1 ? "" : "s"} · ${totalEmails} email${totalEmails === 1 ? "" : "s"} captured`}
+              </p>
+              {!creator.subscriptionActive && (
+              <div
+                className="mt-6 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
                 style={{
-                  color: COLOR.gold,
-                  letterSpacing: "0.08em",
+                  background: "rgba(245,200,66,0.08)",
+                  border: "1px solid rgba(245,200,66,0.25)",
+                  backdropFilter: "blur(10px)",
                 }}
               >
-                Upgrade your workspace
-              </p>
+    <div>
+      <p
+        className="text-xs font-semibold uppercase"
+        style={{ color: COLOR.gold, letterSpacing: "0.08em" }}
+      >
+        Upgrade your workspace
+      </p>
 
-              <h3 className="mt-2 text-xl font-bold text-white">
-                Unlock more projects and premium features
-              </h3>
+      <h3 className="mt-1 text-lg font-bold text-white">
+        Unlock unlimited client deliveries
+      </h3>
 
-              <p className="mt-2 text-sm leading-relaxed text-white/60">
-                Upgrade your subscription to increase your active project
-                limit, unlock premium creator tools, and deliver every
-                project beautifully.
-              </p>
+      <p className="mt-1 text-sm text-white/60">
+        Upgrade your plan to create more projects, remove limits, and access premium features.
+      </p>
+    </div>
+
+    <Link
+      href="/dashboard/billing"
+      className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
+      style={{
+        background: COLOR.gold,
+        color: COLOR.black,
+        boxShadow: "0 10px 30px rgba(245,200,66,0.25)",
+      }}
+    >
+      Upgrade Plan
+      <span>→</span>
+    </Link>
+  </div>
+)}
             </div>
 
             <Link
-              href="/dashboard/billing"
-              className="flex w-full items-center justify-center rounded-lg px-7 py-3 text-sm font-semibold transition-all hover:scale-[1.02] md:w-auto"
-              style={{
-                background: COLOR.gold,
-                color: COLOR.black,
-                boxShadow: "0 10px 30px rgba(245,200,66,0.25)",
-              }}
+              href="/dashboard/new"
+              className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+              style={{ background: COLOR.gold, color: COLOR.black }}
             >
-              Upgrade Plan →
+              <span className="text-base leading-none">+</span>
+              New project
             </Link>
           </div>
         </div>
-      )}
+      </section>
 
-    </div>
-  </div>
-</section>
       {/* ── PROJECT LIST ── */}
       <div className="mx-auto max-w-[1200px] px-6 py-16 md:px-20">
         {projects.length === 0 ? (
