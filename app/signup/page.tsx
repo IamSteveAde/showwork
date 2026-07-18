@@ -58,8 +58,11 @@ function SignupForm() {
     });
 
     if (res.ok) {
-      router.push(next || "/dashboard");
-    } else {
+  if (typeof window !== "undefined" && (window as any).fbq) {
+    (window as any).fbq("track", "CompleteRegistration");
+  }
+  router.push(next || "/dashboard");
+} else {
       const data = await res.json();
       setError(data.error ?? "Invalid code");
       setLoading(false);
