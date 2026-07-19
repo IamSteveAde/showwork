@@ -16,7 +16,7 @@ export default async function SlugPage({
     where: { slug },
     include: {
       media: { orderBy: { displayOrder: "asc" } },
-      creator: { select: { subscriptionActive: true } },
+      creator: { select: { subscriptionActive: true, isComped: true } },
     },
   });
 
@@ -55,7 +55,7 @@ export default async function SlugPage({
     <DeliveryPage
       projectId={project.id}
       clientName={project.clientName}
-      badgeVisible={project.badgeVisible && !project.creator.subscriptionActive}
+      badgeVisible={project.badgeVisible && !project.creator.subscriptionActive && !project.creator.isComped}
       primaryColor={project.primaryColor ?? "#C9A84C"}
       bgColor={project.bgColor ?? "#080808"}
       logoUrl={project.logoUrl}

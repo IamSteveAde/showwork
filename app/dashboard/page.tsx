@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
 import { TIERS, PaidTier, Tier, PLAN_DISPLAY_NAME, NEXT_TIER } from "@/lib/subscriptionTiers";
+import { isAdminEmail } from "@/lib/admin";
 
 const COLOR = {
   black: "#0A0A0A",
@@ -64,7 +65,7 @@ export default async function DashboardPage({
     select: { paid: true, viewCount: true, _count: { select: { viewerEmails: true } } },
   });
   const usage = await getCreatorUsage(creator);
-  const liveCount = allProjectsForStats.filter((p) => p.paid || creator.subscriptionActive).length;
+  const liveCount = allProjectsForStats.filter((p) => p.paid || creator.subscriptionActive || creator.isComped).length;
   const totalViews = allProjectsForStats.reduce((sum, p) => sum + p.viewCount, 0);
   const totalEmails = allProjectsForStats.reduce((sum, p) => sum + p._count.viewerEmails, 0);
   const firstName = creator.name?.split(" ")[0];
@@ -91,6 +92,14 @@ export default async function DashboardPage({
         </div>
 
         <div className="flex items-center gap-4">
+          {isAdminEmail(creator.email) && (
+            <Link
+              href="/admin"
+              className="hidden text-xs font-semibold text-white/40 transition-colors hover:text-white sm:inline"
+            >
+              Admin
+            </Link>
+          )}
           <a
             href="mailto:info@spotliteafrica.com?subject=Showwork%20support"
             className="hidden text-xs font-medium text-white/40 transition-colors hover:text-white sm:inline"
@@ -255,7 +264,7 @@ export default async function DashboardPage({
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => {
-                const isLive = project.paid || creator.subscriptionActive;
+                const isLive = project.paid || creator.subscriptionActive || creator.isComped;
                 return (
                   <Link
                     key={project.id}

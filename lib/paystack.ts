@@ -124,8 +124,41 @@ export async function initializeSubscription({
 }
 
 /**
- * Fetches a customer's subscriptions directly from Paystack. Used as a
- * fallback right after checkout — the webhook is the normal path for
+ * Creates a new Paystack Plan on the fly. Used specifically for
+ * discounts — Paystack's recurring billing charges whatever a plan's
+ * own configured price is, so giving one specific creator (or everyone,
+ * for a platform-wide discount) a genuinely discounted recurring price
+ * means creating a real plan at that discounted amount rather than just
+ * showing a different number on screen.
+ */
+export async function createPlan({
+  name,
+  amountNgn,
+}: {
+  name: string;
+  amountNgn: number;
+}): Promise<{ status: boolean; data: { plan_code: string } }> {
+  const res = await fetch(`${PAYSTACK_BASE_URL}/plan`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      amount: amountNgn * 100,
+      interval: "monthly",
+      currency: "NGN",
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Paystack create plan failed: ${await res.text()}`);
+  }
+
+  return res.json();
+}
+ /* fallback right after checkout — the webhook is the normal path for
  * getting subscription_code/email_token, but webhooks can't reach
  * localhost during local development, and can occasionally be delayed
  * even in production. This lets us confirm and store everything

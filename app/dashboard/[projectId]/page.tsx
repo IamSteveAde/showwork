@@ -42,7 +42,7 @@ export default async function ProjectDetailPage({
   // Live if either: it was paid outright under the old one-time model
   // (grandfathered forever), or the creator's subscription is currently
   // active (covers every project they have, automatically).
-  const isLive = project.paid || creator.subscriptionActive;
+  const isLive = project.paid || creator.subscriptionActive || creator.isComped;
 
   const liveUrl = `${appUrl()}/${project.slug}`;
 

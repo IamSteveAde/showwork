@@ -34,6 +34,16 @@ export async function POST(req: NextRequest) {
           where: { id: project.id },
           data: { paid: true, paidAt: new Date(), badgeVisible: false },
         });
+
+        // Log the payment — this table is what revenue reporting reads from.
+        await db.paymentRecord.create({
+          data: {
+            creatorId: project.creatorId,
+            amountNgn: Math.round((verification?.data?.amount ?? 0) / 100),
+            type: "PROJECT_ONE_TIME",
+            paystackReference: reference,
+          },
+        });
       }
     }
   }
@@ -49,9 +59,6 @@ export async function POST(req: NextRequest) {
     if (customerEmail && tier) {
       const existing = await db.creator.findUnique({ where: { email: customerEmail } });
 
-      // If they already had a different subscription on file, this is a
-      // plan switch — cancel the old one so they aren't billed for two
-      // plans going forward.
       if (
         existing?.paystackSubscriptionCode &&
         existing?.paystackEmailToken &&
@@ -65,7 +72,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      await db.creator.updateMany({
+      const updated = await db.creator.update({
         where: { email: customerEmail },
         data: {
           subscriptionActive: true,
@@ -75,6 +82,16 @@ export async function POST(req: NextRequest) {
           paystackEmailToken: data.email_token ?? null,
           subscriptionRenewsAt: data.next_payment_date ? new Date(data.next_payment_date) : null,
           currentCycleStart: new Date(),
+        },
+      });
+
+      await db.paymentRecord.create({
+        data: {
+          creatorId: updated.id,
+          amountNgn: Math.round((data.amount ?? 0) / 100),
+          type: "SUBSCRIPTION_INITIAL",
+          tier,
+          paystackReference: data.reference ?? null,
         },
       });
     }
@@ -87,9 +104,19 @@ export async function POST(req: NextRequest) {
     const tier = planCode ? tierFromPlanCode(planCode) : null;
 
     if (customerEmail && tier) {
-      await db.creator.updateMany({
+      const updated = await db.creator.update({
         where: { email: customerEmail },
         data: { subscriptionActive: true, subscriptionTier: tier, currentCycleStart: new Date() },
+      });
+
+      await db.paymentRecord.create({
+        data: {
+          creatorId: updated.id,
+          amountNgn: Math.round((event.data.amount ?? 0) / 100),
+          type: "SUBSCRIPTION_RENEWAL",
+          tier,
+          paystackReference: event.data.reference ?? null,
+        },
       });
     }
   }

@@ -49,7 +49,7 @@ export async function POST(
     );
   }
 
-  if (media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT) {
+  if (media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT && !creator.subscriptionActive) {
     return NextResponse.json(
       { error: "This project has reached its revision limit. Please create a new project for further work." },
       { status: 403 }

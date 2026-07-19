@@ -6,6 +6,7 @@ interface CreatorForUsage {
   subscriptionActive: boolean;
   subscriptionTier: Tier;
   currentCycleStart: Date;
+  isComped: boolean;
 }
 
 export interface UsageInfo {
@@ -19,12 +20,18 @@ export interface UsageInfo {
 
 /**
  * Counts how many projects a creator has created in their current
- * billing cycle and compares it against their tier's cap. A lapsed or
- * cancelled paid subscription is treated as FREE here — subscriptionTier
+ * billing cycle and compares it against their tier's cap. isComped
+ * (admin-granted free access) overrides everything else — treated as
+ * Unlimited regardless of what Paystack actually says. A lapsed or
+ * cancelled paid subscription is treated as FREE — subscriptionTier
  * alone is not trusted as the source of truth for access.
  */
 export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageInfo> {
-  const effectiveTier: Tier = creator.subscriptionActive ? creator.subscriptionTier : "FREE";
+  const effectiveTier: Tier = creator.isComped
+    ? "UNLIMITED"
+    : creator.subscriptionActive
+      ? creator.subscriptionTier
+      : "FREE";
   const limit = tierLimit(effectiveTier);
 
   // Free tier has no billing event to anchor a cycle to, so it uses a

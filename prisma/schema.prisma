@@ -49,7 +49,16 @@ model Creator {
   // there's no billing event to anchor a free cycle to.
   currentCycleStart DateTime @default(now())
 
-  projects Project[]
+  // Admin controls. isComped grants full Unlimited-tier access without
+  // any real Paystack subscription — checked ahead of subscriptionActive
+  // everywhere access is gated. discountPercent (0-100) is applied the
+  // next time this creator starts or switches a subscription — it
+  // doesn't retroactively change an already-active one.
+  isComped        Boolean @default(false)
+  discountPercent Int     @default(0)
+
+  projects       Project[]
+  paymentRecords PaymentRecord[]
 }
 
 // ─────────────────────────────────────────────
@@ -115,7 +124,7 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  creator   Creator @relation(fields: [creatorId], references: [id])
+  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId String
 
   media        Media[]
@@ -185,4 +194,41 @@ model PendingSignup {
   otpCode       String
   otpExpiresAt  DateTime
   createdAt     DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// PAYMENT RECORD — a permanent log of every real charge, populated by
+// the webhook. This is the actual source of truth for revenue reporting;
+// subscriptionActive/subscriptionTier only reflect *current* state and
+// can't answer "how much did we make in March," so this table exists
+// specifically to make that answerable.
+// ─────────────────────────────────────────────
+enum PaymentType {
+  PROJECT_ONE_TIME
+  SUBSCRIPTION_INITIAL
+  SUBSCRIPTION_RENEWAL
+}
+
+model PaymentRecord {
+  id                String      @id @default(uuid())
+  creator           Creator     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId         String
+  amountNgn         Int
+  type              PaymentType
+  tier              SubscriptionTier?
+  paystackReference String?
+  createdAt         DateTime    @default(now())
+
+  @@index([creatorId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// PLATFORM SETTINGS — a single-row config table. Currently just holds
+// the platform-wide discount percentage an admin can set, applied to
+// every new subscription started while it's active.
+// ─────────────────────────────────────────────
+model PlatformSettings {
+  id                    String @id @default("singleton")
+  globalDiscountPercent Int    @default(0)
 }
