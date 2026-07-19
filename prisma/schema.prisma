@@ -58,7 +58,8 @@ model Creator {
   discountPercent Int     @default(0)
 
   projects       Project[]
-  paymentRecords PaymentRecord[]
+  paymentRecords      PaymentRecord[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // ─────────────────────────────────────────────
@@ -231,4 +232,20 @@ model PaymentRecord {
 model PlatformSettings {
   id                    String @id @default("singleton")
   globalDiscountPercent Int    @default(0)
+}
+
+// ─────────────────────────────────────────────
+// PASSWORD RESET TOKEN — short-lived, single-use. The token stored here
+// is a hash, never the plain value — same principle as passwords
+// themselves. The plain token only ever exists in the email link itself.
+// ─────────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  creator   Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([creatorId])
 }

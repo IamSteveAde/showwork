@@ -133,3 +133,35 @@ export async function sendRevisionReadyEmail({
     `,
   });
 }
+
+/**
+ * Sent when someone requests a password reset. The link contains the
+ * plain token — the only place it ever exists outside the moment of
+ * generation; the database only ever stores its hash.
+ */
+export async function sendPasswordResetEmail(to: string, resetUrl: string, name?: string | null) {
+  const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi,";
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Reset your Showwork password",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Showwork by Spotlite Africa
+        </p>
+        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
+        <p style="font-size: 15px; line-height: 1.6;">
+          Someone requested a password reset for your account. If this was you, click below to set a new password:
+        </p>
+        <a href="${resetUrl}" style="display: inline-block; margin: 20px 0; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+          Reset password
+        </a>
+        <p style="font-size: 13px; color: #888786; line-height: 1.6;">
+          This link expires in 30 minutes. If you didn't request this, you can safely ignore this email — your password won't change.
+        </p>
+      </div>
+    `,
+  });
+}
