@@ -28,6 +28,10 @@ model Creator {
   email        String   @unique
   passwordHash String
   name         String?
+  // Nigerian phone number, e.g. +2348012345678 — validated at signup
+  // (must match +234 followed by 10 digits). Nullable since accounts
+  // created before this field existed won't have one.
+  phone        String?
   createdAt    DateTime @default(now())
 
   // Which paid tier they're on, and whether that tier is currently in
@@ -196,6 +200,7 @@ model PendingSignup {
   id            String   @id @default(uuid())
   email         String   @unique
   name          String?
+  phone         String?
   passwordHash  String
   otpCode       String
   otpExpiresAt  DateTime

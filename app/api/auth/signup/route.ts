@@ -2,16 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { sendOtpEmail, generateOtpCode } from "@/lib/resend";
+import { isValidNigerianPhone } from "@/lib/phone";
 
 // Step 1 of signup: validate details, generate a code, email it, and
 // hold everything in PendingSignup. No Creator row exists yet — that
 // only happens once the code is confirmed in /api/auth/verify-otp.
 export async function POST(req: NextRequest) {
-  const { email, password, name } = await req.json();
+  const { email, password, name, phone } = await req.json();
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
       { error: "Email and a password of at least 8 characters are required" },
+      { status: 400 }
+    );
+  }
+
+  if (!phone || !isValidNigerianPhone(phone)) {
+    return NextResponse.json(
+      { error: "Enter a valid Nigerian phone number, e.g. +2348012345678" },
       { status: 400 }
     );
   }
@@ -33,8 +41,8 @@ export async function POST(req: NextRequest) {
   // erroring on the unique email constraint.
   await db.pendingSignup.upsert({
     where: { email },
-    update: { name, passwordHash, otpCode, otpExpiresAt },
-    create: { email, name, passwordHash, otpCode, otpExpiresAt },
+    update: { name, phone, passwordHash, otpCode, otpExpiresAt },
+    create: { email, name, phone, passwordHash, otpCode, otpExpiresAt },
   });
 
   try {

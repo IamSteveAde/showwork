@@ -81,6 +81,7 @@ export default function StartPage() {
   // Account details — only asked for once we actually need them.
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
@@ -257,7 +258,7 @@ export default function StartPage() {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password: authPassword, name }),
+          body: JSON.stringify({ email, password: authPassword, name, phone }),
         });
         if (!res.ok) {
           const data = await res.json();
@@ -303,7 +304,7 @@ export default function StartPage() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password: authPassword, name }),
+      body: JSON.stringify({ email, password: authPassword, name, phone }),
     });
     setResendStatus(res.ok ? "New code sent" : "Couldn't resend — try again");
     setTimeout(() => setResendStatus(null), 3000);
@@ -445,6 +446,26 @@ export default function StartPage() {
                     className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
                   />
                 </div>
+
+                {authMode === "signup" && (
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                      Phone number
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      pattern="^\+234\d{10}$"
+                      title="Enter a Nigerian number in the format +2348012345678"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+2348012345678"
+                      style={{ fontSize: "16px" }}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+                    />
+                    <p className="mt-1 text-xs text-white/30">Format: +234 followed by 10 digits</p>
+                  </div>
+                )}
 
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>

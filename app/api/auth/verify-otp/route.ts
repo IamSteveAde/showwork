@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     data: {
       email: pending.email,
       name: pending.name,
+      phone: pending.phone,
       passwordHash: pending.passwordHash,
     },
   });

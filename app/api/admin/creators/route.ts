@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { email, name, password } = await req.json();
+  const { email, name, phone, password } = await req.json();
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
       { error: "Email and a password of at least 8 characters are required" },
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await hashPassword(password);
   const creator = await db.creator.create({
-    data: { email, name: name || null, passwordHash },
+    data: { email, name: name || null, phone: phone || null, passwordHash },
   });
 
   return NextResponse.json({ creator });

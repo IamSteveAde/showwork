@@ -19,6 +19,7 @@ function SignupForm() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
 
@@ -34,7 +35,7 @@ function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, phone }),
     });
 
     if (res.ok) {
@@ -58,11 +59,8 @@ function SignupForm() {
     });
 
     if (res.ok) {
-  if (typeof window !== "undefined" && (window as any).fbq) {
-    (window as any).fbq("track", "CompleteRegistration");
-  }
-  router.push(next || "/dashboard");
-} else {
+      router.push(next || "/dashboard");
+    } else {
       const data = await res.json();
       setError(data.error ?? "Invalid code");
       setLoading(false);
@@ -74,7 +72,7 @@ function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, phone }),
     });
     setResendStatus(res.ok ? "New code sent" : "Couldn't resend — try again");
     setTimeout(() => setResendStatus(null), 3000);
@@ -160,6 +158,24 @@ function SignupForm() {
                   style={{ fontSize: "16px" }}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
                 />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                  Phone number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="+2348012345678"
+                  required
+                  pattern="^\+234\d{10}$"
+                  title="Enter a Nigerian number in the format +2348012345678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{ fontSize: "16px" }}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+                />
+                <p className="mt-1 text-xs text-white/30">Format: +234 followed by 10 digits</p>
               </div>
 
               <div>

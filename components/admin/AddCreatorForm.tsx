@@ -7,6 +7,7 @@ export default function AddCreatorForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export default function AddCreatorForm() {
     const res = await fetch("/api/admin/creators", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, phone, password }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -28,6 +29,7 @@ export default function AddCreatorForm() {
     }
     setName("");
     setEmail("");
+    setPhone("");
     setPassword("");
     setLoading(false);
     router.refresh();
@@ -48,6 +50,14 @@ export default function AddCreatorForm() {
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        style={{ fontSize: "16px" }}
+        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+      />
+      <input
+        type="tel"
+        placeholder="Phone (optional) — +2348012345678"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
         style={{ fontSize: "16px" }}
         className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
       />
