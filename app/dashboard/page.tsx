@@ -62,10 +62,12 @@ export default async function DashboardPage({
   // Site-wide stats still reflect everything, not just the current page.
   const allProjectsForStats = await db.project.findMany({
     where: { creatorId: creator.id },
-    select: { paid: true, viewCount: true, _count: { select: { viewerEmails: true } } },
+    select: { viewCount: true, _count: { select: { viewerEmails: true } } },
   });
   const usage = await getCreatorUsage(creator);
-  const liveCount = allProjectsForStats.filter((p) => p.paid || creator.subscriptionActive || creator.isComped).length;
+  // Every project is live the moment it's created (see the project
+  // detail page for the full reasoning) — so this is just the total.
+  const liveCount = totalCount;
   const totalViews = allProjectsForStats.reduce((sum, p) => sum + p.viewCount, 0);
   const totalEmails = allProjectsForStats.reduce((sum, p) => sum + p._count.viewerEmails, 0);
   const firstName = creator.name?.split(" ")[0];
@@ -264,7 +266,7 @@ export default async function DashboardPage({
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => {
-                const isLive = project.paid || creator.subscriptionActive || creator.isComped;
+                const isLive = true;
                 return (
                   <Link
                     key={project.id}

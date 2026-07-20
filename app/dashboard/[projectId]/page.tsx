@@ -42,7 +42,12 @@ export default async function ProjectDetailPage({
   // Live if either: it was paid outright under the old one-time model
   // (grandfathered forever), or the creator's subscription is currently
   // active (covers every project they have, automatically).
-  const isLive = project.paid || creator.subscriptionActive || creator.isComped;
+  // Live the moment it's created. Creation itself is already gated by
+  // the creator's tier quota (enforced in POST /api/projects) — so
+  // anything that successfully got created was already allowed under
+  // their allowance, whether that's Free, a paid tier, or comped. There's
+  // no separate "paid to publish" step left in this model.
+  const isLive = true;
 
   const liveUrl = `${appUrl()}/${project.slug}`;
 
@@ -94,36 +99,18 @@ export default async function ProjectDetailPage({
           </span>
         </div>
 
-        {/* live URL / subscribe prompt card */}
+        {/* live URL card */}
         <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
-          {isLive ? (
-            <>
-              <p className="mb-2 text-sm text-green-400">✓ Live</p>
-              <a
-                href={liveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="break-all text-sm font-medium underline"
-                style={{ color: COLOR.gold }}
-              >
-                {liveUrl}
-              </a>
-            </>
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-white/50">
-                This project isn&apos;t live yet. Subscribe for unlimited projects — every
-                delivery you create goes live automatically, with no per-project fee.
-              </p>
-              <Link
-                href="/dashboard/billing"
-                className="inline-flex rounded-lg px-5 py-3 text-sm font-medium"
-                style={{ background: COLOR.gold, color: COLOR.black }}
-              >
-                Subscribe — ₦15,000/month
-              </Link>
-            </>
-          )}
+          <p className="mb-2 text-sm text-green-400">✓ Live</p>
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-sm font-medium underline"
+            style={{ color: COLOR.gold }}
+          >
+            {liveUrl}
+          </a>
         </div>
 
         {/* PASSCODE */}
