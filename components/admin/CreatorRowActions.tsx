@@ -7,15 +7,20 @@ export default function CreatorRowActions({
   creatorId,
   isComped,
   discountPercent,
+  freeTierLimitOverride,
   expanded = false,
 }: {
   creatorId: string;
   isComped: boolean;
   discountPercent: number;
+  freeTierLimitOverride: number | null;
   expanded?: boolean;
 }) {
   const router = useRouter();
   const [discountInput, setDiscountInput] = useState(String(discountPercent));
+  const [freeLimitInput, setFreeLimitInput] = useState(
+    freeTierLimitOverride !== null ? String(freeTierLimitOverride) : ""
+  );
   const [loading, setLoading] = useState<string | null>(null);
 
   const patch = async (body: object, label: string) => {
@@ -60,6 +65,31 @@ export default function CreatorRowActions({
           style={{ background: "rgba(245,200,66,0.15)", color: "#F5C842" }}
         >
           {loading === "discount" ? "..." : "% off"}
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          placeholder="1"
+          value={freeLimitInput}
+          onChange={(e) => setFreeLimitInput(e.target.value)}
+          className="w-14 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+        />
+        <button
+          onClick={() =>
+            patch(
+              { freeTierLimitOverride: freeLimitInput === "" ? null : Number(freeLimitInput) },
+              "freeLimit"
+            )
+          }
+          disabled={loading === "freeLimit"}
+          className="rounded-md px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
+          style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+          title="How many free projects per month, instead of the standard 1. Leave blank to reset to default."
+        >
+          {loading === "freeLimit" ? "..." : "Free limit"}
         </button>
       </div>
     </div>

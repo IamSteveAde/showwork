@@ -74,6 +74,7 @@ export default async function CreatorDetailPage({
             creatorId={creator.id}
             isComped={creator.isComped}
             discountPercent={creator.discountPercent}
+            freeTierLimitOverride={creator.freeTierLimitOverride}
             expanded
           />
         </div>

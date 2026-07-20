@@ -208,7 +208,13 @@ export default async function AdminPage({
                         color: c.isComped ? "#4ade80" : COLOR.gold,
                       }}
                     >
-                      {c.isComped ? "Comped — Unlimited" : c.subscriptionActive ? c.subscriptionTier : "Free"}
+                      {c.isComped
+                        ? "Comped — Unlimited"
+                        : c.subscriptionActive
+                          ? c.subscriptionTier
+                          : c.freeTierLimitOverride !== null
+                            ? `Free (${c.freeTierLimitOverride}/mo)`
+                            : "Free"}
                     </span>
                     {c.discountPercent > 0 && (
                       <span className="ml-1.5 text-xs text-white/40">({c.discountPercent}% off)</span>
@@ -223,6 +229,7 @@ export default async function AdminPage({
                       creatorId={c.id}
                       isComped={c.isComped}
                       discountPercent={c.discountPercent}
+                      freeTierLimitOverride={c.freeTierLimitOverride}
                     />
                   </td>
                 </tr>

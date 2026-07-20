@@ -7,6 +7,7 @@ interface CreatorForUsage {
   subscriptionTier: Tier;
   currentCycleStart: Date;
   isComped: boolean;
+  freeTierLimitOverride: number | null;
 }
 
 export interface UsageInfo {
@@ -25,6 +26,9 @@ export interface UsageInfo {
  * Unlimited regardless of what Paystack actually says. A lapsed or
  * cancelled paid subscription is treated as FREE — subscriptionTier
  * alone is not trusted as the source of truth for access.
+ * freeTierLimitOverride raises (or lowers) a specific creator's Free
+ * allowance without moving them to a paid tier or full comped access —
+ * only applies while they're actually on Free.
  */
 export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageInfo> {
   const effectiveTier: Tier = creator.isComped
@@ -32,7 +36,11 @@ export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageIn
     : creator.subscriptionActive
       ? creator.subscriptionTier
       : "FREE";
-  const limit = tierLimit(effectiveTier);
+
+  const limit =
+    effectiveTier === "FREE" && creator.freeTierLimitOverride !== null
+      ? creator.freeTierLimitOverride
+      : tierLimit(effectiveTier);
 
   // Free tier has no billing event to anchor a cycle to, so it uses a
   // rolling 30-day window instead of a stored, resettable cycle start.

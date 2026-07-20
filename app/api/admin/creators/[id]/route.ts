@@ -18,15 +18,23 @@ export async function PATCH(
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { isComped, discountPercent } = await req.json();
+  const { isComped, discountPercent, freeTierLimitOverride } = await req.json();
 
-  const data: { isComped?: boolean; discountPercent?: number } = {};
+  const data: { isComped?: boolean; discountPercent?: number; freeTierLimitOverride?: number | null } = {};
   if (typeof isComped === "boolean") data.isComped = isComped;
   if (typeof discountPercent === "number") {
     if (discountPercent < 0 || discountPercent > 100) {
       return NextResponse.json({ error: "Discount must be between 0 and 100" }, { status: 400 });
     }
     data.discountPercent = discountPercent;
+  }
+  if (freeTierLimitOverride === null) {
+    data.freeTierLimitOverride = null;
+  } else if (typeof freeTierLimitOverride === "number") {
+    if (freeTierLimitOverride < 0) {
+      return NextResponse.json({ error: "Free tier limit can't be negative" }, { status: 400 });
+    }
+    data.freeTierLimitOverride = freeTierLimitOverride;
   }
 
   const updated = await db.creator.update({ where: { id }, data });
