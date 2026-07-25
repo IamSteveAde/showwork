@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ReplaceFileButton from "@/components/ReplaceFileButton";
+import ReviewsModal, { type ReviewEntry } from "@/components/ReviewsModal";
+import { AnimatePresence } from "framer-motion";
 
 interface FileGridItemProps {
   mediaId: string;
@@ -13,6 +15,7 @@ interface FileGridItemProps {
   type: "PHOTO" | "VIDEO";
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
+  reviews: ReviewEntry[];
 }
 
 export default function FileGridItem({
@@ -23,6 +26,7 @@ export default function FileGridItem({
   type,
   approvalStatus,
   approvalNote,
+  reviews,
 }: FileGridItemProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -30,6 +34,7 @@ export default function FileGridItem({
   const [captionText, setCaptionText] = useState(caption ?? "");
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
 
   const saveCaption = async () => {
     await fetch(`/api/media/${mediaId}`, {
@@ -50,7 +55,8 @@ export default function FileGridItem({
   return (
     <div className="flex flex-col gap-2">
       <div
-        className="group relative aspect-square overflow-hidden rounded-xl bg-white/5"
+        className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-white/5"
+        onClick={() => setShowReviews(true)}
         onMouseEnter={() => videoRef.current?.play().catch(() => {})}
         onMouseLeave={() => {
           if (videoRef.current) {
@@ -81,7 +87,7 @@ export default function FileGridItem({
           />
         )}
 
-        {/* approval badge */}
+        {/* approval badge — click it (or anywhere on the tile) to see who said what */}
         {approvalStatus !== "PENDING" && (
           <div
             className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -92,6 +98,15 @@ export default function FileGridItem({
             }
           >
             {approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+          </div>
+        )}
+
+        {reviews.length > 0 && (
+          <div
+            className="absolute bottom-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-medium text-white/80"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+          >
+            {reviews.length} review{reviews.length === 1 ? "" : "s"}
           </div>
         )}
 
@@ -181,6 +196,19 @@ export default function FileGridItem({
           <ReplaceFileButton mediaId={mediaId} type={type} label="↑ Upload revised version" />
         </>
       )}
+
+      <AnimatePresence>
+        {showReviews && (
+          <ReviewsModal
+            url={url}
+            filename={filename}
+            type={type}
+            caption={caption}
+            reviews={reviews}
+            onClose={() => setShowReviews(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

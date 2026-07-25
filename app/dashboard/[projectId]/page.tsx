@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { appUrl } from "@/lib/url";
 import FileGridItem from "@/components/FileGridItem";
+import CopyLinkButton from "@/components/CopyLinkButton";
 import AddMoreFilesButton from "@/components/AddMoreFilesButton";
 import SectionHeader from "@/components/SectionHeader";
 
@@ -31,10 +32,18 @@ export default async function ProjectDetailPage({
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
-      media: { orderBy: { displayOrder: "asc" } },
+      media: {
+        orderBy: { displayOrder: "asc" },
+        include: { reviews: { orderBy: { createdAt: "asc" } } },
+      },
       sections: {
         orderBy: { displayOrder: "asc" },
-        include: { media: { orderBy: { displayOrder: "asc" } } },
+        include: {
+          media: {
+            orderBy: { displayOrder: "asc" },
+            include: { reviews: { orderBy: { createdAt: "asc" } } },
+          },
+        },
       },
     },
   });
@@ -106,15 +115,18 @@ export default async function ProjectDetailPage({
         {/* live URL card */}
         <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
           <p className="mb-2 text-sm text-green-400">✓ Live</p>
-          <a
-            href={liveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="break-all text-sm font-medium underline"
-            style={{ color: COLOR.gold }}
-          >
-            {liveUrl}
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="break-all text-sm font-medium underline"
+              style={{ color: COLOR.gold }}
+            >
+              {liveUrl}
+            </a>
+            <CopyLinkButton url={liveUrl} />
+          </div>
         </div>
 
         {/* PASSCODE */}
@@ -130,6 +142,7 @@ export default async function ProjectDetailPage({
               >
                 {project.accessCode}
               </span>
+              <CopyLinkButton url={project.accessCode} />
               <span className="text-xs text-white/30">Share this with your client to unlock the delivery.</span>
             </p>
           ) : (
@@ -207,6 +220,13 @@ export default async function ProjectDetailPage({
                       type={m.type}
                       approvalStatus={m.approvalStatus}
                       approvalNote={m.approvalNote}
+                      reviews={m.reviews.map((r) => ({
+                        reviewerName: r.reviewerName,
+                        reviewerEmail: r.reviewerEmail,
+                        status: r.status as "APPROVED" | "NEEDS_REVISION",
+                        note: r.note,
+                        createdAt: r.createdAt.toISOString(),
+                      }))}
                     />
                   ))}
                 </div>
@@ -229,6 +249,13 @@ export default async function ProjectDetailPage({
                       type={m.type}
                       approvalStatus={m.approvalStatus}
                       approvalNote={m.approvalNote}
+                      reviews={m.reviews.map((r) => ({
+                        reviewerName: r.reviewerName,
+                        reviewerEmail: r.reviewerEmail,
+                        status: r.status as "APPROVED" | "NEEDS_REVISION",
+                        note: r.note,
+                        createdAt: r.createdAt.toISOString(),
+                      }))}
                     />
                   ))}
                 </div>

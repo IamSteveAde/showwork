@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
@@ -172,6 +172,21 @@ export default function StartPage() {
   };
 
   const anyVideoSection = sections.some((s) => s.mediaType === "VIDEO" && s.files.length > 0);
+  const allFilesForPreview = sections.flatMap((s) => s.files);
+  const previewFileKey = allFilesForPreview.map((f) => f.localId).join(",");
+
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const newUrls: Record<string, string> = {};
+    allFilesForPreview.forEach((f) => {
+      newUrls[f.localId] = URL.createObjectURL(f.file);
+    });
+    setPreviewUrls(newUrls);
+    return () => {
+      Object.values(newUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewFileKey]);
   const allFiles = sections.flatMap((s) => s.files);
   const totalBytes = allFiles.reduce((sum, f) => sum + f.file.size, 0);
   const loadedBytes = allFiles.reduce((sum, f) => sum + (loadedMap[f.localId] ?? 0), 0);
@@ -877,47 +892,71 @@ export default function StartPage() {
                 </div>
               </div>
             )}
-
-            {allFiles.length > 0 && (
-              <>
-                <p className="mt-5 text-xs text-white/30">
-                  {anyVideoSection
-                    ? "A video is always the banner. Click one below to choose which."
-                    : "Click a photo to make it the banner."}
-                </p>
-                <ul className="mt-2 flex flex-col gap-1.5">
-                  {sections.map((section) =>
-                    section.files.map((f) => {
-                      const selectable = !anyVideoSection || section.mediaType === "VIDEO";
-                      return (
-                        <li
-                          key={f.localId}
-                          onClick={() => selectable && setHeroLocalId(f.localId)}
-                          className={`flex items-center justify-between rounded-md px-3 py-2 text-xs transition-colors ${
-                            selectable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
-                          }`}
-                          style={{
-                            background: f.localId === heroLocalId ? "rgba(245,200,66,0.12)" : "rgba(255,255,255,0.05)",
-                            border: f.localId === heroLocalId ? "1px solid rgba(245,200,66,0.4)" : "1px solid transparent",
-                          }}
-                        >
-                          <span className="text-white/70">
-                            {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {f.file.name}
-                            <span className="ml-2 text-white/30">({section.name})</span>
-                            {f.localId === heroLocalId && (
-                              <span className="ml-2 font-medium" style={{ color: COLOR.gold }}>
-                                · Banner
-                              </span>
-                            )}
-                          </span>
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
-              </>
-            )}
           </div>
+
+          {/* CHOOSE YOUR BANNER — its own dedicated, unmissable card */}
+          {allFiles.length > 0 && (
+            <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+              <div className="mb-2 flex items-center gap-2">
+                <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+                <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                  Choose your banner
+                </label>
+              </div>
+              <p className="mb-5 text-xs text-white/50">
+                {anyVideoSection
+                  ? "This is the first thing your client sees when they open the link. A video is always used as the banner — tap one below to choose which."
+                  : "This is the first thing your client sees when they open the link. Tap a photo below to lead with it."}
+              </p>
+
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {sections.map((section) =>
+                  section.files.map((f) => {
+                    const selectable = !anyVideoSection || section.mediaType === "VIDEO";
+                    const isSelected = f.localId === heroLocalId;
+                    const previewUrl = previewUrls[f.localId];
+                    return (
+                      <button
+                        key={f.localId}
+                        type="button"
+                        disabled={!selectable}
+                        onClick={() => setHeroLocalId(f.localId)}
+                        className="relative aspect-square overflow-hidden rounded-lg bg-black/40 transition-all disabled:cursor-not-allowed disabled:opacity-30"
+                        style={{
+                          border: isSelected ? `2px solid ${COLOR.gold}` : "2px solid rgba(255,255,255,0.08)",
+                          boxShadow: isSelected ? "0 0 0 3px rgba(245,200,66,0.2)" : undefined,
+                        }}
+                      >
+                        {previewUrl && (
+                          section.mediaType === "VIDEO" ? (
+                            <video src={previewUrl} muted playsInline className="h-full w-full object-cover" />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                          )
+                        )}
+                        {section.mediaType === "VIDEO" && (
+                          <div className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">
+                            🎬
+                          </div>
+                        )}
+                        {isSelected && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                            <span
+                              className="rounded-full px-2 py-1 text-[10px] font-bold"
+                              style={{ background: COLOR.gold, color: COLOR.black }}
+                            >
+                              ✓ Banner
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
