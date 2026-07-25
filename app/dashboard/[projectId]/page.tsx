@@ -6,6 +6,7 @@ import { publicUrlFor } from "@/lib/r2";
 import { appUrl } from "@/lib/url";
 import FileGridItem from "@/components/FileGridItem";
 import AddMoreFilesButton from "@/components/AddMoreFilesButton";
+import SectionHeader from "@/components/SectionHeader";
 
 const MAX_ADDITIONAL_UPLOAD_BATCHES = 3;
 
@@ -29,7 +30,13 @@ export default async function ProjectDetailPage({
 
   const project = await db.project.findUnique({
     where: { id: projectId },
-    include: { media: { orderBy: { displayOrder: "asc" } } },
+    include: {
+      media: { orderBy: { displayOrder: "asc" } },
+      sections: {
+        orderBy: { displayOrder: "asc" },
+        include: { media: { orderBy: { displayOrder: "asc" } } },
+      },
+    },
   });
 
   if (!project || project.creatorId !== creator.id) notFound();
@@ -39,9 +46,6 @@ export default async function ProjectDetailPage({
     orderBy: { viewedAt: "desc" },
   });
 
-  // Live if either: it was paid outright under the old one-time model
-  // (grandfathered forever), or the creator's subscription is currently
-  // active (covers every project they have, automatically).
   // Live the moment it's created. Creation itself is already gated by
   // the creator's tier quota (enforced in POST /api/projects) — so
   // anything that successfully got created was already allowed under
@@ -56,6 +60,10 @@ export default async function ProjectDetailPage({
   const needsRevisionCount = project.media.filter((m) => m.approvalStatus === "NEEDS_REVISION").length;
   const pendingCount = totalFiles - approvedCount - needsRevisionCount;
   const allApproved = totalFiles > 0 && approvedCount === totalFiles;
+
+  // Any file uploaded before sections existed (or otherwise unassigned)
+  // — shown as its own fallback group rather than being hidden.
+  const ungroupedMedia = project.media.filter((m) => !m.sectionId);
 
   // Unlimited add-more for active subscribers — the cap only exists to
   // stop the old one-time-payment model being stretched into free
@@ -89,13 +97,9 @@ export default async function ProjectDetailPage({
           <h1 className="text-3xl font-bold text-white">{project.clientName}</h1>
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"
-            style={
-              isLive
-                ? { background: "rgba(245,200,66,0.15)", color: COLOR.gold }
-                : { background: "rgba(248,247,244,0.06)", color: "rgba(248,247,244,0.4)" }
-            }
+            style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
           >
-            {isLive ? "Live" : "Draft"}
+            Live
           </span>
         </div>
 
@@ -135,19 +139,19 @@ export default async function ProjectDetailPage({
           )}
         </div>
 
-        {/* ADD MORE FILES — prominent, top of page */}
+        {/* ADD SECTION — prominent, top of page */}
         <div
           className="mb-8 rounded-2xl p-6"
           style={{ background: "rgba(245,200,66,0.08)", border: "1px solid rgba(245,200,66,0.25)" }}
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-white">Need to add more to this delivery?</p>
+              <p className="text-sm font-semibold text-white">Add another section</p>
               <p className="mt-1 text-xs text-white/50">
                 {creator.subscriptionActive
-                  ? "Unlimited — add as many files as you need, whenever you need to."
+                  ? "Unlimited — add as many sections as you need, whenever you need to."
                   : (
-                    <>You can add more files to this project up to <strong className="text-white/70">3 times total</strong> — no extra charge.</>
+                    <>You can add sections to this project up to <strong className="text-white/70">3 times total</strong> — no extra charge.</>
                   )}
               </p>
             </div>
@@ -173,7 +177,7 @@ export default async function ProjectDetailPage({
           </div>
         )}
 
-        {/* files grid */}
+        {/* files, grouped by section */}
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
             Files ({totalFiles})
@@ -185,23 +189,52 @@ export default async function ProjectDetailPage({
 
         {totalFiles === 0 ? (
           <div className="rounded-2xl p-10 text-center text-sm text-white/40" style={{ background: COLOR.charcoal }}>
-            No files yet — use &ldquo;Add more files&rdquo; above to get started.
+            No files yet — use &ldquo;Add another section&rdquo; above to get started.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {project.media.map((m) => (
-              <FileGridItem
-                key={m.id}
-                mediaId={m.id}
-                url={publicUrlFor(m.fileKey)}
-                filename={m.fileKey.split("/").pop() ?? "file"}
-                caption={m.caption}
-                type={m.type}
-                approvalStatus={m.approvalStatus}
-                approvalNote={m.approvalNote}
-              />
+          <>
+            {project.sections.map((section) => (
+              <div key={section.id} className="mb-10">
+                <SectionHeader sectionId={section.id} name={section.name} fileCount={section.media.length} />
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {section.media.map((m) => (
+                    <FileGridItem
+                      key={m.id}
+                      mediaId={m.id}
+                      url={publicUrlFor(m.fileKey)}
+                      filename={m.fileKey.split("/").pop() ?? "file"}
+                      caption={m.caption}
+                      type={m.type}
+                      approvalStatus={m.approvalStatus}
+                      approvalNote={m.approvalNote}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
-          </div>
+
+            {ungroupedMedia.length > 0 && (
+              <div className="mb-10">
+                <h2 className="mb-4 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
+                  Other files ({ungroupedMedia.length})
+                </h2>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {ungroupedMedia.map((m) => (
+                    <FileGridItem
+                      key={m.id}
+                      mediaId={m.id}
+                      url={publicUrlFor(m.fileKey)}
+                      filename={m.fileKey.split("/").pop() ?? "file"}
+                      caption={m.caption}
+                      type={m.type}
+                      approvalStatus={m.approvalStatus}
+                      approvalNote={m.approvalNote}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* CLIENT EMAILS — everyone who signed in to view this delivery */}
@@ -221,7 +254,11 @@ export default async function ProjectDetailPage({
                   className="flex items-center justify-between rounded-md px-4 py-2.5 text-sm"
                   style={{ background: COLOR.charcoal }}
                 >
-                  <span className="text-white/80">{v.email}</span>
+                  <span className="text-white/80">
+                    {v.name && <span className="font-medium text-white">{v.name}</span>}
+                    {v.name && " — "}
+                    {v.email}
+                  </span>
                   <span className="text-xs text-white/30">
                     {new Date(v.viewedAt).toLocaleDateString("en-NG", {
                       day: "numeric", month: "short", year: "numeric",

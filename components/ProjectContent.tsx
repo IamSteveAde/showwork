@@ -3,7 +3,8 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Image from "next/image";
-import type { MediaItem } from "@/app/[slug]/DeliveryPage";
+import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
+import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
 import { downloadFile, downloadAllAsZip, filenameFromUrl } from "@/lib/download";
@@ -65,7 +66,7 @@ function DownloadIconButton({
 }
 
 // ─────────────────────────────────────────────
-// HEADER — persistent across the whole page.
+// HEADER
 // ─────────────────────────────────────────────
 function Header({
   clientName,
@@ -114,8 +115,7 @@ function Header({
 }
 
 // ─────────────────────────────────────────────
-// HERO — video always wins when one exists. A photo hero only happens
-// if the project has no video at all.
+// HERO
 // ─────────────────────────────────────────────
 function Hero({
   heroMedia,
@@ -295,8 +295,7 @@ function VideoTile({
 
       <div style={{ background: "#141414" }}>
         <ReviewControls
-          status={video.approvalStatus}
-          note={video.approvalNote}
+          reviews={video.reviews}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
         />
@@ -306,9 +305,7 @@ function VideoTile({
 }
 
 // ─────────────────────────────────────────────
-// PHOTO GRID TILE — next/image for real optimization: resized,
-// re-encoded (WebP/AVIF), and only loaded as it scrolls into view.
-// This is the actual fix for slow photo loading.
+// PHOTO GRID TILE
 // ─────────────────────────────────────────────
 function PhotoTile({
   photo,
@@ -360,8 +357,7 @@ function PhotoTile({
 
       <div style={{ background: "#141414" }}>
         <ReviewControls
-          status={photo.approvalStatus}
-          note={photo.approvalNote}
+          reviews={photo.reviews}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
         />
@@ -379,8 +375,11 @@ export default function ProjectContent({
   logoUrl,
   badgeVisible,
   media,
+  sections,
+  ungroupedMedia,
   heroMedia: creatorPickedHero,
   heroTagline,
+  viewerName,
   viewerEmail,
 }: {
   clientName: string;
@@ -388,14 +387,18 @@ export default function ProjectContent({
   logoUrl: string | null;
   badgeVisible: boolean;
   media: MediaItem[];
+  sections: DeliverySection[];
+  ungroupedMedia: MediaItem[];
   heroMedia: MediaItem | null;
   heroTagline: string | null;
+  viewerName: string | null;
   viewerEmail: string;
 }) {
   const [openVideoIdx, setOpenVideoIdx] = useState<number | null>(null);
   const [openPhotoIdx, setOpenPhotoIdx] = useState<number | null>(null);
-  const [zippingVideos, setZippingVideos] = useState<string | null>(null);
-  const [zippingPhotos, setZippingPhotos] = useState<string | null>(null);
+  // Zip-download status, keyed by whichever section's "Download all"
+  // was clicked — each section downloads independently of the others.
+  const [zippingSectionId, setZippingSectionId] = useState<string | null>(null);
   const contentStartRef = useRef<HTMLDivElement>(null);
 
   // Local, mutable copy of the media list so an approve/revision click
@@ -408,18 +411,37 @@ export default function ProjectContent({
     status: "APPROVED" | "NEEDS_REVISION",
     note?: string
   ) => {
+    const optimisticEntry: ReviewEntry = {
+      reviewerName: viewerName,
+      reviewerEmail: viewerEmail,
+      status,
+      note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Append this review — never overwrite anyone else's — then
+    // recompute the aggregate the same way the server does: any open
+    // revision flag wins overall, even if someone else approved.
     setItems((prev) =>
-      prev.map((m) =>
-        m.id === mediaId
-          ? { ...m, approvalStatus: status, approvalNote: status === "NEEDS_REVISION" ? note ?? null : null }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== mediaId) return m;
+        const nextReviews = [...m.reviews, optimisticEntry];
+        const anyNeedsRevision = nextReviews.some((r) => r.status === "NEEDS_REVISION");
+        const mostRecentRevision = [...nextReviews].reverse().find((r) => r.status === "NEEDS_REVISION");
+        return {
+          ...m,
+          reviews: nextReviews,
+          approvalStatus: anyNeedsRevision ? "NEEDS_REVISION" : "APPROVED",
+          approvalNote: anyNeedsRevision ? mostRecentRevision?.note ?? null : null,
+        };
+      })
     );
+
     try {
       await fetch(`/api/media/${mediaId}/review`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, note, viewerEmail, clientName }),
+        body: JSON.stringify({ status, note, reviewerName: viewerName, viewerEmail, clientName }),
       });
     } catch {
       // Best-effort — the click already reflects locally; a network
@@ -427,6 +449,15 @@ export default function ProjectContent({
     }
   };
 
+  // Applies the same live-edited approval status from `items` onto
+  // whatever media object we're about to render, so a review click
+  // reflects instantly everywhere, section-grouped or not.
+  const withLiveStatus = (m: MediaItem): MediaItem =>
+    items.find((i) => i.id === m.id) ?? m;
+
+  // Flat, global lists — used only for the video/photo modal's prev/next
+  // navigation, so "next" cycles through everything of that type across
+  // every section, not just within the one section you opened it from.
   const videos = items.filter((m) => m.type === "VIDEO");
   const photos = items.filter((m) => m.type === "PHOTO");
 
@@ -440,45 +471,39 @@ export default function ProjectContent({
 
   const tagline = heroTagline?.trim() || "The work. Delivered properly.";
 
-  // The hero item also appears again below, alongside everything else —
-  // being the banner doesn't remove it from the collection.
-  const gridVideos = videos;
-  const gridPhotos = photos;
+  // Real, creator-named sections — this is what replaces the old fixed
+  // "Films" / "Photography" split. Any file never assigned to a section
+  // (from before sections existed) still shows, grouped separately by
+  // type so it doesn't get lost.
+  const ungroupedVideos = ungroupedMedia.filter((m) => m.type === "VIDEO");
+  const ungroupedPhotos = ungroupedMedia.filter((m) => m.type === "PHOTO");
+
+  const renderSections: { id: string; name: string; mediaType: "PHOTO" | "VIDEO"; media: MediaItem[] }[] = [
+    ...sections.map((s) => ({ id: s.id, name: s.name, mediaType: s.mediaType, media: s.media })),
+    ...(ungroupedVideos.length > 0
+      ? [{ id: "ungrouped-video", name: "Other films", mediaType: "VIDEO" as const, media: ungroupedVideos }]
+      : []),
+    ...(ungroupedPhotos.length > 0
+      ? [{ id: "ungrouped-photo", name: "Other photos", mediaType: "PHOTO" as const, media: ungroupedPhotos }]
+      : []),
+  ];
 
   const scrollToContent = () => {
     contentStartRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const handleDownloadAllVideos = async () => {
-    setZippingVideos("Preparing...");
+  const handleDownloadSection = async (sectionId: string, sectionMedia: MediaItem[], zipName: string) => {
+    setZippingSectionId(sectionId);
     try {
       await downloadAllAsZip(
-        gridVideos.map((v) => ({ url: v.url, filename: filenameFromUrl(v.url) })),
-        `${clientName}-films.zip`,
-        (done, total) => setZippingVideos(`Zipping ${done}/${total}...`)
+        sectionMedia.map((m) => ({ url: m.url, filename: filenameFromUrl(m.url) })),
+        zipName,
+        () => {} // could show progress per-section if wanted later
       );
     } catch {
-      setZippingVideos("Failed — try again");
-      setTimeout(() => setZippingVideos(null), 2500);
-      return;
+      // Silent — same reasoning as individual downloads above.
     }
-    setZippingVideos(null);
-  };
-
-  const handleDownloadAllPhotos = async () => {
-    setZippingPhotos("Preparing...");
-    try {
-      await downloadAllAsZip(
-        gridPhotos.map((p) => ({ url: p.url, filename: filenameFromUrl(p.url) })),
-        `${clientName}-photos.zip`,
-        (done, total) => setZippingPhotos(`Zipping ${done}/${total}...`)
-      );
-    } catch {
-      setZippingPhotos("Failed — try again");
-      setTimeout(() => setZippingPhotos(null), 2500);
-      return;
-    }
-    setZippingPhotos(null);
+    setZippingSectionId(null);
   };
 
   return (
@@ -502,82 +527,94 @@ export default function ProjectContent({
 
       <div ref={contentStartRef} />
 
-      {/* FILMS — black surface */}
-      {gridVideos.length > 0 && (
-        <section className="bg-black px-6 py-16 md:px-14 md:py-24">
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-              <h2 className="text-2xl font-light text-white md:text-3xl">Films</h2>
-              <div className="mx-6 hidden h-px flex-1 sm:block" style={{ background: "rgba(255,255,255,0.08)" }} />
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-medium uppercase text-white/30" style={{ letterSpacing: "0.2em" }}>
-                  {gridVideos.length}
-                </span>
-                <button
-                  onClick={handleDownloadAllVideos}
-                  disabled={!!zippingVideos}
-                  className="rounded-full border px-4 py-1.5 text-xs font-medium text-white/70 transition-colors hover:text-white disabled:opacity-50"
-                  style={{ borderColor: "rgba(255,255,255,0.15)" }}
-                >
-                  {zippingVideos ?? "Download all"}
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {gridVideos.map((v, i) => (
-                <VideoTile
-                  key={v.id}
-                  video={v}
-                  index={i}
-                  onOpen={() => setOpenVideoIdx(i)}
-                  onReview={(status, note) => submitReview(v.id, status, note)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Real, creator-named sections — alternating background per
+          section, same visual rhythm as the old fixed Films/Photography
+          split, just with whatever name the creator actually gave it. */}
+      {renderSections.map((section, sectionIdx) => {
+        const isDark = sectionIdx % 2 === 0;
+        const bg = isDark ? "#000000" : "#FAFAF7";
+        const textColor = isDark ? "#FFFFFF" : "#111111";
+        const countColor = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.35)";
+        const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+        const isZipping = zippingSectionId === section.id;
 
-      {/* PHOTOGRAPHY — off-white surface */}
-      {gridPhotos.length > 0 && (
-        <section className="px-6 py-16 md:px-14 md:py-24" style={{ background: "#FAFAF7" }}>
-          <div className="mx-auto max-w-6xl">
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-              <h2 className="text-2xl font-light md:text-3xl" style={{ color: "#111111" }}>
-                Photography
-              </h2>
-              <div className="mx-6 hidden h-px flex-1 sm:block" style={{ background: "rgba(0,0,0,0.08)" }} />
-              <div className="flex items-center gap-4">
-                <span
-                  className="text-xs font-medium uppercase"
-                  style={{ color: "rgba(0,0,0,0.35)", letterSpacing: "0.2em" }}
-                >
-                  {gridPhotos.length}
-                </span>
-                <button
-                  onClick={handleDownloadAllPhotos}
-                  disabled={!!zippingPhotos}
-                  className="rounded-full border px-4 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
-                  style={{ borderColor: "rgba(0,0,0,0.15)", color: "rgba(0,0,0,0.7)" }}
-                >
-                  {zippingPhotos ?? "Download all"}
-                </button>
+        return (
+          <section
+            key={section.id}
+            className="px-6 py-16 md:px-14 md:py-24"
+            style={{ background: bg }}
+          >
+            <div className="mx-auto max-w-6xl">
+              <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+                <h2 className="text-2xl font-light md:text-3xl" style={{ color: textColor }}>
+                  {section.name}
+                </h2>
+                <div className="mx-6 hidden h-px flex-1 sm:block" style={{ background: dividerColor }} />
+                <div className="flex items-center gap-4">
+                  <span
+                    className="text-xs font-medium uppercase"
+                    style={{ color: countColor, letterSpacing: "0.2em" }}
+                  >
+                    {section.media.length}
+                  </span>
+                  <button
+                    onClick={() =>
+                      handleDownloadSection(
+                        section.id,
+                        section.media,
+                        `${clientName}-${section.name.toLowerCase().replace(/\s+/g, "-")}.zip`
+                      )
+                    }
+                    disabled={isZipping}
+                    className="rounded-full border px-4 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+                    style={
+                      isDark
+                        ? { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)" }
+                        : { borderColor: "rgba(0,0,0,0.15)", color: "rgba(0,0,0,0.7)" }
+                    }
+                  >
+                    {isZipping ? "Zipping..." : "Download all"}
+                  </button>
+                </div>
               </div>
+
+              {section.mediaType === "VIDEO" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {section.media.map((v, i) => {
+                    const live = withLiveStatus(v);
+                    const globalIdx = videos.findIndex((x) => x.id === v.id);
+                    return (
+                      <VideoTile
+                        key={v.id}
+                        video={live}
+                        index={i}
+                        onOpen={() => setOpenVideoIdx(globalIdx)}
+                        onReview={(status, note) => submitReview(v.id, status, note)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+                  {section.media.map((p, i) => {
+                    const live = withLiveStatus(p);
+                    const globalIdx = photos.findIndex((x) => x.id === p.id);
+                    return (
+                      <PhotoTile
+                        key={p.id}
+                        photo={live}
+                        index={i}
+                        onOpen={() => setOpenPhotoIdx(globalIdx)}
+                        onReview={(status, note) => submitReview(p.id, status, note)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-              {gridPhotos.map((p, i) => (
-                <PhotoTile
-                  key={p.id}
-                  photo={p}
-                  index={i}
-                  onOpen={() => setOpenPhotoIdx(i)}
-                  onReview={(status, note) => submitReview(p.id, status, note)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })}
 
       <footer className="flex flex-col items-center gap-3 border-t border-white/5 bg-black px-6 py-14 text-center">
         <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
@@ -595,28 +632,28 @@ export default function ProjectContent({
       </footer>
 
       <AnimatePresence>
-        {openVideoIdx !== null && (
+        {openVideoIdx !== null && videos[openVideoIdx] && (
           <VideoModal
-            video={gridVideos[openVideoIdx]}
+            video={videos[openVideoIdx]}
             index={openVideoIdx}
-            total={gridVideos.length}
+            total={videos.length}
             onClose={() => setOpenVideoIdx(null)}
-            onPrev={() => setOpenVideoIdx((i) => (i! - 1 + gridVideos.length) % gridVideos.length)}
-            onNext={() => setOpenVideoIdx((i) => (i! + 1) % gridVideos.length)}
-            onReview={(status, note) => submitReview(gridVideos[openVideoIdx].id, status, note)}
+            onPrev={() => setOpenVideoIdx((i) => (i! - 1 + videos.length) % videos.length)}
+            onNext={() => setOpenVideoIdx((i) => (i! + 1) % videos.length)}
+            onReview={(status, note) => submitReview(videos[openVideoIdx].id, status, note)}
           />
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {openPhotoIdx !== null && (
+        {openPhotoIdx !== null && photos[openPhotoIdx] && (
           <Lightbox
-            photo={gridPhotos[openPhotoIdx]}
+            photo={photos[openPhotoIdx]}
             index={openPhotoIdx}
-            total={gridPhotos.length}
+            total={photos.length}
             onClose={() => setOpenPhotoIdx(null)}
-            onPrev={() => setOpenPhotoIdx((i) => (i! - 1 + gridPhotos.length) % gridPhotos.length)}
-            onNext={() => setOpenPhotoIdx((i) => (i! + 1) % gridPhotos.length)}
-            onReview={(status, note) => submitReview(gridPhotos[openPhotoIdx].id, status, note)}
+            onPrev={() => setOpenPhotoIdx((i) => (i! - 1 + photos.length) % photos.length)}
+            onNext={() => setOpenPhotoIdx((i) => (i! + 1) % photos.length)}
+            onReview={(status, note) => submitReview(photos[openPhotoIdx].id, status, note)}
           />
         )}
       </AnimatePresence>

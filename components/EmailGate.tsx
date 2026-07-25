@@ -14,8 +14,9 @@ export default function EmailGate({
   clientName: string;
   primaryColor: string;
   logoUrl: string | null;
-  onSubmitted: (email: string) => void;
+  onSubmitted: (name: string, email: string) => void;
 }) {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +29,11 @@ export default function EmailGate({
     const res = await fetch(`/api/projects/${projectId}/viewer-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ name, email }),
     });
 
     if (res.ok) {
-      onSubmitted(email);
+      onSubmitted(name, email);
     } else {
       const data = await res.json();
       setError(data.error ?? "Something went wrong");
@@ -58,10 +59,19 @@ export default function EmailGate({
         {clientName}
       </p>
       <h1 className="mb-6 text-2xl font-light text-white">
-        Enter your email to view this content
+        Enter your name and email to view this content
       </h1>
 
       <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-3">
+        <input
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          style={{ fontSize: "16px" }}
+          className="rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-center text-white outline-none"
+        />
         <input
           type="email"
           required

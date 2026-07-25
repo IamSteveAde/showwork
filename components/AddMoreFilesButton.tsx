@@ -3,6 +3,9 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+type MediaType = "PHOTO" | "VIDEO";
+type Step = "closed" | "type" | "details";
+
 function uploadWithProgress(
   url: string,
   file: File,
@@ -24,6 +27,12 @@ function uploadWithProgress(
   });
 }
 
+/**
+ * Adds a new named section to a project — the "what are you uploading"
+ * flow: pick Images or Videos, name the section in your own words
+ * ("Room Renders," "Logo Concepts," "Ceremony Highlights" — whatever
+ * fits the actual work), then upload the files for it.
+ */
 export default function AddMoreFilesButton({
   projectId,
   remaining,
@@ -33,17 +42,50 @@ export default function AddMoreFilesButton({
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState<Step>("closed");
+  const [mediaType, setMediaType] = useState<MediaType | null>(null);
+  const [sectionName, setSectionName] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
+  const reset = () => {
+    setStep("closed");
+    setMediaType(null);
+    setSectionName("");
+    setFiles([]);
+    setStatus(null);
     setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const chooseType = (type: MediaType) => {
+    setMediaType(type);
+    setError(null);
+    setStep("details");
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFiles(Array.from(e.target.files ?? []));
+  };
+
+  const handleUpload = async () => {
+    if (!mediaType) return;
+    if (!sectionName.trim()) {
+      setError("Give this section a name");
+      return;
+    }
+    if (files.length === 0) {
+      setError("Choose at least one file");
+      return;
+    }
+    setError(null);
+    setUploading(true);
 
     try {
-      // Uses one of the 3 total "add more" sessions for this project,
-      // checked and reserved before any file starts uploading.
+      // Reserves one of the 3 total add-more sessions for this project
+      // before anything starts uploading.
       const batchRes = await fetch(`/api/projects/${projectId}/add-files-batch`, {
         method: "POST",
       });
@@ -52,9 +94,21 @@ export default function AddMoreFilesButton({
         throw new Error(data.error ?? "Couldn't start this upload session");
       }
 
+      // Create the named section first, then attach every file in this
+      // batch to it.
+      const sectionRes = await fetch(`/api/projects/${projectId}/sections`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: sectionName, mediaType }),
+      });
+      if (!sectionRes.ok) {
+        const data = await sectionRes.json();
+        throw new Error(data.error ?? "Couldn't create the section");
+      }
+      const { section } = await sectionRes.json();
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const type = file.type.startsWith("video") ? "VIDEO" : "PHOTO";
         setStatus(`Uploading ${i + 1} of ${files.length}...`);
 
         const presignRes = await fetch("/api/upload/presign", {
@@ -78,19 +132,19 @@ export default function AddMoreFilesButton({
         const completeRes = await fetch("/api/upload/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, fileKey, type }),
+          body: JSON.stringify({ projectId, fileKey, type: mediaType, sectionId: section.id }),
         });
         if (!completeRes.ok) throw new Error("Failed to save file");
       }
 
       setStatus("Done");
       router.refresh();
-      setTimeout(() => setStatus(null), 1200);
+      setTimeout(reset, 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setStatus(null);
     } finally {
-      if (inputRef.current) inputRef.current.value = "";
+      setUploading(false);
     }
   };
 
@@ -102,28 +156,101 @@ export default function AddMoreFilesButton({
     );
   }
 
+  if (step === "closed") {
+    return (
+      <div>
+        <button
+          onClick={() => setStep("type")}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+          style={{ background: "rgba(245,200,66,0.12)", color: "#F5C842" }}
+        >
+          + Add section
+        </button>
+        <p className="mt-1.5 text-xs text-white/30">
+          {Number.isFinite(remaining) ? `${remaining} of 3 sessions remaining` : "Unlimited — subscription active"}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
-        onChange={handleFiles}
-        className="hidden"
-        id={`add-files-${projectId}`}
-      />
-      <label
-        htmlFor={`add-files-${projectId}`}
-        className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-        style={{ background: "rgba(245,200,66,0.12)", color: "#F5C842" }}
-      >
-        {status ?? "+ Add more files"}
-      </label>
-      <p className="mt-1.5 text-xs text-white/30">
-        {Number.isFinite(remaining) ? `${remaining} of 3 sessions remaining` : "Unlimited — subscription active"}
-      </p>
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+    <div className="flex flex-col gap-3 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+      {step === "type" && (
+        <>
+          <p className="text-sm font-semibold text-white/70">What are you uploading?</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <button
+              onClick={() => chooseType("PHOTO")}
+              className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+            >
+              <span className="text-3xl">🖼️</span>
+              <span className="text-sm font-semibold text-white">Images</span>
+              <span className="text-xs text-white/40">Photos, renders, mockups</span>
+            </button>
+            <button
+              onClick={() => chooseType("VIDEO")}
+              className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+            >
+              <span className="text-3xl">🎬</span>
+              <span className="text-sm font-semibold text-white">Videos</span>
+              <span className="text-xs text-white/40">Films, walkthroughs, reels</span>
+            </button>
+          </div>
+          <button onClick={reset} className="text-left text-xs text-white/40 underline">
+            Cancel
+          </button>
+        </>
+      )}
+
+      {step === "details" && (
+        <>
+          <p className="text-xs font-semibold text-white/70">
+            {mediaType === "VIDEO" ? "🎬 Videos" : "🖼️ Images"} — name this section
+          </p>
+          <input
+            type="text"
+            value={sectionName}
+            onChange={(e) => setSectionName(e.target.value)}
+            placeholder={mediaType === "VIDEO" ? "e.g. Ceremony Highlights" : "e.g. Room Renders"}
+            style={{ fontSize: "16px" }}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
+          />
+
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            accept={mediaType === "VIDEO" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"}
+            onChange={handleFileSelect}
+            className="hidden"
+            id={`section-files-${projectId}`}
+          />
+          <label
+            htmlFor={`section-files-${projectId}`}
+            className="cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-3 text-center text-xs text-white/50 hover:border-white/25"
+          >
+            {files.length > 0 ? `${files.length} file${files.length === 1 ? "" : "s"} selected — click to change` : "Choose files"}
+          </label>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleUpload}
+              disabled={uploading}
+              className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              style={{ background: "#F5C842", color: "#0A0A0A" }}
+            >
+              {uploading ? (status ?? "Uploading...") : "Upload"}
+            </button>
+            <button onClick={reset} className="text-xs text-white/40 underline">
+              Cancel
+            </button>
+          </div>
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+        </>
+      )}
     </div>
   );
 }

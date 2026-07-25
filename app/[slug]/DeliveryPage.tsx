@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import EmailGate from "@/components/EmailGate";
 import PasswordGate from "@/components/PasswordGate";
 import ProjectContent from "@/components/ProjectContent";
+import type { ReviewEntry } from "@/components/ReviewControls";
 
 export interface MediaItem {
   id: string;
@@ -13,6 +14,14 @@ export interface MediaItem {
   caption: string;
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
+  reviews: ReviewEntry[];
+}
+
+export interface DeliverySection {
+  id: string;
+  name: string;
+  mediaType: "PHOTO" | "VIDEO";
+  media: MediaItem[];
 }
 
 interface DeliveryPageProps {
@@ -23,6 +32,8 @@ interface DeliveryPageProps {
   bgColor: string;
   logoUrl: string | null;
   media: MediaItem[];
+  sections: DeliverySection[];
+  ungroupedMedia: MediaItem[];
   heroMedia: MediaItem | null;
   heroTagline: string | null;
   initiallyUnlocked: boolean;
@@ -37,6 +48,8 @@ export default function DeliveryPage({
   bgColor,
   logoUrl,
   media,
+  sections,
+  ungroupedMedia,
   heroMedia,
   heroTagline,
   initiallyUnlocked,
@@ -44,7 +57,10 @@ export default function DeliveryPage({
 }: DeliveryPageProps) {
   // If this browser already unlocked this project before (checked
   // server-side via a signed cookie), start straight past both gates
-  // instead of asking again on every refresh.
+  // instead of asking again on every refresh. Name isn't persisted this
+  // way yet (see the note in app/[slug]/page.tsx) — it's collected fresh
+  // each time the email gate is actually shown.
+  const [viewerName, setViewerName] = useState<string | null>(null);
   const [viewerEmail, setViewerEmail] = useState<string | null>(initialViewerEmail);
   const [unlocked, setUnlocked] = useState(initiallyUnlocked);
 
@@ -58,7 +74,10 @@ export default function DeliveryPage({
             clientName={clientName}
             primaryColor={primaryColor}
             logoUrl={logoUrl}
-            onSubmitted={(email) => setViewerEmail(email)}
+            onSubmitted={(name, email) => {
+              setViewerName(name);
+              setViewerEmail(email);
+            }}
           />
         ) : !unlocked ? (
           <PasswordGate
@@ -78,8 +97,11 @@ export default function DeliveryPage({
             logoUrl={logoUrl}
             badgeVisible={badgeVisible}
             media={media}
+            sections={sections}
+            ungroupedMedia={ungroupedMedia}
             heroMedia={heroMedia}
             heroTagline={heroTagline}
+            viewerName={viewerName}
             viewerEmail={viewerEmail}
           />
         )}

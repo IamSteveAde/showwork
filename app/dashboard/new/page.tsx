@@ -22,17 +22,19 @@ const COLOR = {
 
 interface QueuedFile {
   file: File;
-  type: "PHOTO" | "VIDEO";
   localId: string;
 }
 
-type FileStatus = "pending" | "uploading" | "done" | "error";
+interface PendingSection {
+  sectionLocalId: string;
+  name: string;
+  mediaType: "PHOTO" | "VIDEO";
+  files: QueuedFile[];
+}
 
-/**
- * Uploads a file with real byte-level progress. Plain `fetch` doesn't
- * reliably expose upload progress across browsers — XMLHttpRequest does,
- * via the `upload.onprogress` event, so we use it just for this PUT.
- */
+type FileStatus = "pending" | "uploading" | "done" | "error";
+type BuilderStep = "closed" | "type" | "details";
+
 function uploadWithProgress(
   url: string,
   file: File,
@@ -54,9 +56,6 @@ function uploadWithProgress(
   });
 }
 
-// A short list of simple, easy-to-say words for suggesting an access
-// code — better than leaving a first-time creator staring at a blank
-// field wondering what's expected of them.
 const CODE_WORDS = [
   "sunrise", "harbor", "velvet", "cobalt", "willow", "ember",
   "quartz", "meadow", "cipher", "lantern", "orbit", "maple",
@@ -75,18 +74,23 @@ export default function NewProjectPage() {
   const [clientName, setClientName] = useState("");
   const [password, setPassword] = useState("");
   const [tagline, setTagline] = useState("");
-  const [files, setFiles] = useState<QueuedFile[]>([]);
   const [heroLocalId, setHeroLocalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dragActive, setDragActive] = useState(false);
+
+  // The list of sections the creator has built up so far — each with
+  // its own name, type, and files. Replaces the old single flat dropzone.
+  const [sections, setSections] = useState<PendingSection[]>([]);
+
+  // The in-progress "add a section" builder — its own small step flow.
+  const [builderStep, setBuilderStep] = useState<BuilderStep>("closed");
+  const [builderType, setBuilderType] = useState<"PHOTO" | "VIDEO" | null>(null);
+  const [builderName, setBuilderName] = useState("");
+  const [builderFiles, setBuilderFiles] = useState<QueuedFile[]>([]);
+  const builderFileInputRef = useRef<HTMLInputElement>(null);
 
   const [statusMap, setStatusMap] = useState<Record<string, FileStatus>>({});
   const [loadedMap, setLoadedMap] = useState<Record<string, number>>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Usage/plan info — fetched once on load so the upgrade prompt below
-  // only appears when actually approaching the cap, not on every visit
-  // regardless of plan.
   interface UsageInfo {
     planName: string;
     used: number;
@@ -105,41 +109,87 @@ export default function NewProjectPage() {
       .catch(() => {});
   }, []);
 
-  const addFiles = (selected: File[]) => {
-    const queued: QueuedFile[] = selected.map((file) => ({
+  // ── section builder logic ──
+  const startBuilder = () => {
+    setBuilderStep("type");
+    setBuilderType(null);
+    setBuilderName("");
+    setBuilderFiles([]);
+  };
+
+  const chooseBuilderType = (type: "PHOTO" | "VIDEO") => {
+    setBuilderType(type);
+    setBuilderStep("details");
+  };
+
+  const handleBuilderFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []).map((file) => ({
       file,
-      type: file.type.startsWith("video") ? "VIDEO" : "PHOTO",
       localId: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
     }));
-    setFiles((prev) => {
-      const next = [...prev, ...queued];
-      if (!heroLocalId && next.length > 0) {
-        const firstVideo = next.find((f) => f.type === "VIDEO");
-        setHeroLocalId((firstVideo ?? next[0]).localId);
+    setBuilderFiles(selected);
+  };
+
+  const confirmSection = () => {
+    if (!builderType) return;
+    if (!builderName.trim()) {
+      setError("Give this section a name");
+      return;
+    }
+    if (builderFiles.length === 0) {
+      setError("Choose at least one file");
+      return;
+    }
+    setError(null);
+
+    const newSection: PendingSection = {
+      sectionLocalId: `section-${Math.random().toString(36).slice(2)}`,
+      name: builderName.trim(),
+      mediaType: builderType,
+      files: builderFiles,
+    };
+
+    setSections((prev) => {
+      const next = [...prev, newSection];
+      if (!heroLocalId) {
+        setHeroLocalId(newSection.files[0].localId);
+      }
+      return next;
+    });
+
+    setBuilderStep("closed");
+    setBuilderType(null);
+    setBuilderName("");
+    setBuilderFiles([]);
+    if (builderFileInputRef.current) builderFileInputRef.current.value = "";
+  };
+
+  const cancelBuilder = () => {
+    setBuilderStep("closed");
+    setBuilderType(null);
+    setBuilderName("");
+    setBuilderFiles([]);
+    setError(null);
+  };
+
+  const removeSection = (sectionLocalId: string) => {
+    setSections((prev) => {
+      const removed = prev.find((s) => s.sectionLocalId === sectionLocalId);
+      const next = prev.filter((s) => s.sectionLocalId !== sectionLocalId);
+      if (removed && removed.files.some((f) => f.localId === heroLocalId)) {
+        const firstRemaining = next.flatMap((s) => s.files)[0];
+        setHeroLocalId(firstRemaining ? firstRemaining.localId : null);
       }
       return next;
     });
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    addFiles(Array.from(e.target.files ?? []));
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    addFiles(Array.from(e.dataTransfer.files ?? []));
-  };
-
-  const removeFile = (localId: string) => {
-    setFiles((prev) => prev.filter((f) => f.localId !== localId));
-    if (heroLocalId === localId) setHeroLocalId(null);
-  };
-
-  const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
-  const loadedBytes = files.reduce((sum, f) => sum + (loadedMap[f.localId] ?? 0), 0);
+  const anyVideoSection = sections.some((s) => s.mediaType === "VIDEO" && s.files.length > 0);
+  const allFiles = sections.flatMap((s) => s.files);
+  const totalBytes = allFiles.reduce((sum, f) => sum + f.file.size, 0);
+  const loadedBytes = allFiles.reduce((sum, f) => sum + (loadedMap[f.localId] ?? 0), 0);
   const overallPercent = totalBytes > 0 ? Math.round((loadedBytes / totalBytes) * 100) : 0;
-  const doneCount = files.filter((f) => statusMap[f.localId] === "done").length;
+  const doneCount = allFiles.filter((f) => statusMap[f.localId] === "done").length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +201,7 @@ export default function NewProjectPage() {
     }
 
     setPhase("uploading");
-    setStatusMap(Object.fromEntries(files.map((f) => [f.localId, "pending" as FileStatus])));
+    setStatusMap(Object.fromEntries(allFiles.map((f) => [f.localId, "pending" as FileStatus])));
     setLoadedMap({});
 
     try {
@@ -168,45 +218,63 @@ export default function NewProjectPage() {
 
       let heroMediaId: string | null = null;
 
-      for (const { file, type, localId } of files) {
-        setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
+      for (const section of sections) {
+        const sectionRes = await fetch(`/api/projects/${project.id}/sections`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: section.name, mediaType: section.mediaType }),
+        });
+        if (!sectionRes.ok) {
+          const data = await sectionRes.json();
+          throw new Error(data.error ?? "Couldn't create section");
+        }
+        const { section: createdSection } = await sectionRes.json();
 
-        try {
-          const presignRes = await fetch("/api/upload/presign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              projectId: project.id,
-              filename: file.name,
-              contentType: file.type,
-              fileSizeMb: file.size / (1024 * 1024),
-            }),
-          });
-          if (!presignRes.ok) {
-            const data = await presignRes.json();
-            throw new Error(data.error ?? "presign failed");
+        for (const { file, localId } of section.files) {
+          setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
+
+          try {
+            const presignRes = await fetch("/api/upload/presign", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                filename: file.name,
+                contentType: file.type,
+                fileSizeMb: file.size / (1024 * 1024),
+              }),
+            });
+            if (!presignRes.ok) {
+              const data = await presignRes.json();
+              throw new Error(data.error ?? "presign failed");
+            }
+            const { uploadUrl, fileKey } = await presignRes.json();
+
+            await uploadWithProgress(uploadUrl, file, (loaded) => {
+              setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
+            });
+
+            const completeRes = await fetch("/api/upload/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                fileKey,
+                type: section.mediaType,
+                sectionId: createdSection.id,
+              }),
+            });
+            if (!completeRes.ok) throw new Error("failed to save media record");
+            const { media } = await completeRes.json();
+
+            if (localId === heroLocalId) heroMediaId = media.id;
+
+            setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
+            setLoadedMap((prev) => ({ ...prev, [localId]: file.size }));
+          } catch (err) {
+            setStatusMap((prev) => ({ ...prev, [localId]: "error" }));
+            throw err;
           }
-          const { uploadUrl, fileKey } = await presignRes.json();
-
-          await uploadWithProgress(uploadUrl, file, (loaded) => {
-            setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
-          });
-
-          const completeRes = await fetch("/api/upload/complete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ projectId: project.id, fileKey, type }),
-          });
-          if (!completeRes.ok) throw new Error("failed to save media record");
-          const { media } = await completeRes.json();
-
-          if (localId === heroLocalId) heroMediaId = media.id;
-
-          setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
-          setLoadedMap((prev) => ({ ...prev, [localId]: file.size }));
-        } catch (err) {
-          setStatusMap((prev) => ({ ...prev, [localId]: "error" }));
-          throw err;
         }
       }
 
@@ -244,7 +312,7 @@ export default function NewProjectPage() {
               {phase === "done" ? "All set" : "Uploading your project"}
             </p>
             <h1 className="text-2xl font-bold text-white md:text-3xl">
-              {phase === "done" ? "Everything's in place." : `${doneCount} of ${files.length} files sent`}
+              {phase === "done" ? "Everything's in place." : `${doneCount} of ${allFiles.length} files sent`}
             </h1>
           </div>
 
@@ -264,49 +332,49 @@ export default function NewProjectPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            {files.map((f) => {
-              const status = statusMap[f.localId] ?? "pending";
-              const loaded = loadedMap[f.localId] ?? 0;
-              const percent = f.file.size > 0 ? Math.round((loaded / f.file.size) * 100) : 0;
-              const isDone = status === "done" || phase === "done";
-              const isError = status === "error";
+          <div className="flex flex-col gap-4">
+            {sections.map((section) => (
+              <div key={section.sectionLocalId}>
+                <p className="mb-1.5 text-xs font-semibold uppercase text-white/40">
+                  {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                </p>
+                <div className="flex flex-col gap-2">
+                  {section.files.map((f) => {
+                    const status = statusMap[f.localId] ?? "pending";
+                    const loaded = loadedMap[f.localId] ?? 0;
+                    const percent = f.file.size > 0 ? Math.round((loaded / f.file.size) * 100) : 0;
+                    const isDone = status === "done" || phase === "done";
+                    const isError = status === "error";
 
-              return (
-                <div key={f.localId} className="rounded-lg p-3.5" style={{ background: COLOR.charcoal }}>
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-2 text-white/70">
-                      {f.type === "VIDEO" ? "🎬" : "🖼️"}
-                      <span className="max-w-[220px] truncate">{f.file.name}</span>
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      {isDone ? (
-                        <>
-                          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                            <circle cx="6.5" cy="6.5" r="6.5" fill={COLOR.green} />
-                            <path d="M3.5 6.5l2 2 4-4.5" stroke={COLOR.black} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span style={{ color: COLOR.green }}>Done</span>
-                        </>
-                      ) : isError ? (
-                        <span className="text-red-400">Failed</span>
-                      ) : (
-                        <span className="text-white/50">{percent}%</span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full transition-all duration-200 ease-out"
-                      style={{
-                        width: `${isDone ? 100 : isError ? 100 : percent}%`,
-                        background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.gold,
-                      }}
-                    />
-                  </div>
+                    return (
+                      <div key={f.localId} className="rounded-lg p-3.5" style={{ background: COLOR.charcoal }}>
+                        <div className="mb-2 flex items-center justify-between text-xs">
+                          <span className="max-w-[220px] truncate text-white/70">{f.file.name}</span>
+                          <span className="flex items-center gap-1.5 font-medium">
+                            {isDone ? (
+                              <span style={{ color: COLOR.green }}>✓ Done</span>
+                            ) : isError ? (
+                              <span className="text-red-400">Failed</span>
+                            ) : (
+                              <span className="text-white/50">{percent}%</span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full transition-all duration-200 ease-out"
+                            style={{
+                              width: `${isDone ? 100 : isError ? 100 : percent}%`,
+                              background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.gold,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
           {error && <p className="mt-6 text-center text-xs text-red-400">{error}</p>}
@@ -347,8 +415,6 @@ export default function NewProjectPage() {
           </Link>
         </div>
 
-        {/* Upgrade prompt — only appears when actually approaching or at
-            the cap for the current cycle, never shown unconditionally. */}
         {usage && usage.nextTier && (usage.nearCap || usage.atCap) && (
           <div
             className="mb-8 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
@@ -386,10 +452,8 @@ export default function NewProjectPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {/* client name card */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
             <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
-
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Client name
             </label>
@@ -403,7 +467,6 @@ export default function NewProjectPage() {
             />
           </div>
 
-          {/* ── ACCESS CODE — its own dedicated, clearly explained section ── */}
           <div
             className="rounded-xl p-6"
             style={{ background: "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.25)" }}
@@ -415,14 +478,10 @@ export default function NewProjectPage() {
               </svg>
               <h2 className="text-sm font-semibold text-white">Client access code</h2>
             </div>
-
             <p className="mb-4 text-xs leading-relaxed text-white/50">
               This is the code your client will type in to unlock this delivery.
               Without it, no one can view the files — even if they have the link.
-              After you publish, you&apos;ll send this exact code to your client
-              yourself, however you normally reach them (WhatsApp, email, text).
             </p>
-
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Access code
             </label>
@@ -445,13 +504,8 @@ export default function NewProjectPage() {
                 🎲 Suggest
               </button>
             </div>
-            <p className="mt-2 text-xs text-white/30">
-              Keep it simple enough to say out loud — you&apos;ll be sharing it
-              directly with your client, not asking them to guess it.
-            </p>
           </div>
 
-          {/* banner headline card */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
             <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
@@ -467,88 +521,196 @@ export default function NewProjectPage() {
             />
           </div>
 
-          {/* upload card */}
+          {/* SECTIONS — replaces the old single flat dropzone */}
           <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
-            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
-            <label className="mb-3 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-              Photos & videos
-            </label>
-
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-              onDragLeave={() => setDragActive(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors"
-              style={{
-                borderColor: dragActive ? COLOR.gold : "rgba(255,255,255,0.15)",
-                background: dragActive ? "rgba(245,200,66,0.05)" : "transparent",
-              }}
-            >
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <path
-                  d="M14 4v14M14 18l-5-5M14 18l5-5M5 22h18"
-                  stroke={dragActive ? COLOR.gold : "rgba(255,255,255,0.3)"}
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <p className="text-sm font-medium text-white/70">
-                Drag files here, or <span style={{ color: COLOR.gold }}>browse</span>
-              </p>
-              <p className="text-xs text-white/30">JPEG, PNG, WEBP, MP4, MOV — up to 5GB each</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+            <div className="mb-5 flex items-center gap-2">
+              <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+              <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                Sections{sections.length > 0 ? ` (${sections.length})` : ""}
+              </label>
             </div>
 
-            {files.length > 0 && (
+            {/* existing sections */}
+            {sections.length > 0 && (
+              <div className="mb-4 flex flex-col gap-2">
+                {sections.map((section) => (
+                  <div
+                    key={section.sectionLocalId}
+                    className="flex items-center justify-between rounded-lg px-3.5 py-2.5"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <span className="text-sm text-white/80">
+                      {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                      <span className="ml-2 text-xs text-white/30">
+                        {section.files.length} file{section.files.length === 1 ? "" : "s"}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeSection(section.sectionLocalId)}
+                      className="text-xs text-white/40 hover:text-white"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Big, always-visible call to action — impossible to miss,
+                and wording changes once at least one section exists so
+                it's obvious you're adding another, not repeating one. */}
+            {/* First section: a big, unmissable primary action — this is
+                the thing you actually need to do to get started. */}
+            {builderStep === "closed" && sections.length === 0 && (
+              <button
+                type="button"
+                onClick={startBuilder}
+                className="flex w-full flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-6 text-center transition-colors hover:border-white/30"
+                style={{ borderColor: "rgba(245,200,66,0.3)", background: "rgba(245,200,66,0.04)" }}
+              >
+                <span className="text-sm font-semibold" style={{ color: COLOR.gold }}>
+                  + Add your first section
+                </span>
+                <span className="max-w-sm text-xs text-white/40">
+                  A section is whatever you're delivering — "Room Renders," "Logo Concepts," "Ceremony Highlights." Add as many as this project needs.
+                </span>
+              </button>
+            )}
+
+            {/* Once at least one section exists, this is deliberately a
+                small, secondary prompt — not a repeat of the primary
+                action above. You already finished that one; this is an
+                optional invitation to add a *different* kind of content,
+                not "do the same thing again." */}
+            {builderStep === "closed" && sections.length > 0 && (
+              <button
+                type="button"
+                onClick={startBuilder}
+                className="flex w-full items-center justify-center gap-2 rounded-lg px-6 py-4 text-sm font-semibold transition-transform hover:scale-[1.01]"
+                style={{ background: "rgba(34,197,94,0.12)", color: "#22C55E", border: "1px solid rgba(34,197,94,0.3)" }}
+              >
+                + Have something else to include? Add a different section
+              </button>
+            )}
+
+            {/* builder */}
+            {builderStep === "type" && (
+              <div className="flex flex-col gap-4">
+                <p className="text-sm font-semibold text-white/70">What are you uploading?</p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => chooseBuilderType("PHOTO")}
+                    className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+                  >
+                    <span className="text-3xl">🖼️</span>
+                    <span className="text-sm font-semibold text-white">Images</span>
+                    <span className="text-xs text-white/40">Photos, renders, mockups</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => chooseBuilderType("VIDEO")}
+                    className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+                  >
+                    <span className="text-3xl">🎬</span>
+                    <span className="text-sm font-semibold text-white">Videos</span>
+                    <span className="text-xs text-white/40">Films, walkthroughs, reels</span>
+                  </button>
+                </div>
+                <button type="button" onClick={cancelBuilder} className="text-left text-xs text-white/40 underline">
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {builderStep === "details" && (
+              <div className="flex flex-col gap-3 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
+                <p className="text-xs font-semibold text-white/70">
+                  {builderType === "VIDEO" ? "🎬 Videos" : "🖼️ Images"} — name this section
+                </p>
+                <input
+                  type="text"
+                  value={builderName}
+                  onChange={(e) => setBuilderName(e.target.value)}
+                  placeholder={builderType === "VIDEO" ? "e.g. Ceremony Highlights" : "e.g. Room Renders"}
+                  style={{ fontSize: "16px" }}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
+                />
+
+                <input
+                  ref={builderFileInputRef}
+                  type="file"
+                  multiple
+                  accept={builderType === "VIDEO" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"}
+                  onChange={handleBuilderFileSelect}
+                  className="hidden"
+                  id="builder-files"
+                />
+                <label
+                  htmlFor="builder-files"
+                  className="cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-3 text-center text-xs text-white/50 hover:border-white/25"
+                >
+                  {builderFiles.length > 0
+                    ? `${builderFiles.length} file${builderFiles.length === 1 ? "" : "s"} selected — click to change`
+                    : "Choose files"}
+                </label>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={confirmSection}
+                    className="rounded-lg px-4 py-2.5 text-sm font-semibold"
+                    style={{ background: COLOR.gold, color: COLOR.black }}
+                  >
+                    ✓ Save section
+                  </button>
+                  <button type="button" onClick={cancelBuilder} className="text-xs text-white/40 underline">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* hero banner selection, across all sections */}
+            {allFiles.length > 0 && (
               <>
-                <p className="mt-4 text-xs text-white/30">
-                  {files.some((f) => f.type === "VIDEO")
+                <p className="mt-5 text-xs text-white/30">
+                  {anyVideoSection
                     ? "A video is always the banner. Click one below to choose which."
                     : "Click a photo to make it the banner."}
                 </p>
                 <ul className="mt-2 flex flex-col gap-1.5">
-                  {files.map((f) => {
-                    const anyVideo = files.some((x) => x.type === "VIDEO");
-                    const selectable = !anyVideo || f.type === "VIDEO";
-                    return (
-                      <li
-                        key={f.localId}
-                        onClick={() => selectable && setHeroLocalId(f.localId)}
-                        className={`flex items-center justify-between rounded-md px-3 py-2 text-xs transition-colors ${
-                          selectable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
-                        }`}
-                        style={{
-                          background: f.localId === heroLocalId ? "rgba(245,200,66,0.12)" : "rgba(255,255,255,0.05)",
-                          border: f.localId === heroLocalId ? "1px solid rgba(245,200,66,0.4)" : "1px solid transparent",
-                        }}
-                      >
-                        <span className="text-white/70">
-                          {f.type === "VIDEO" ? "🎬" : "🖼️"} {f.file.name}
-                          {f.localId === heroLocalId && (
-                            <span className="ml-2 font-medium" style={{ color: COLOR.gold }}>
-                              · Banner
-                            </span>
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); removeFile(f.localId); }}
-                          className="text-white/40 hover:text-white"
+                  {sections.map((section) =>
+                    section.files.map((f) => {
+                      const selectable = !anyVideoSection || section.mediaType === "VIDEO";
+                      return (
+                        <li
+                          key={f.localId}
+                          onClick={() => selectable && setHeroLocalId(f.localId)}
+                          className={`flex items-center justify-between rounded-md px-3 py-2 text-xs transition-colors ${
+                            selectable ? "cursor-pointer" : "cursor-not-allowed opacity-40"
+                          }`}
+                          style={{
+                            background: f.localId === heroLocalId ? "rgba(245,200,66,0.12)" : "rgba(255,255,255,0.05)",
+                            border: f.localId === heroLocalId ? "1px solid rgba(245,200,66,0.4)" : "1px solid transparent",
+                          }}
                         >
-                          Remove
-                        </button>
-                      </li>
-                    );
-                  })}
+                          <span className="text-white/70">
+                            {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {f.file.name}
+                            <span className="ml-2 text-white/30">({section.name})</span>
+                            {f.localId === heroLocalId && (
+                              <span className="ml-2 font-medium" style={{ color: COLOR.gold }}>
+                                · Banner
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })
+                  )}
                 </ul>
               </>
             )}

@@ -66,7 +66,7 @@ model Creator {
   // means "use the standard limit."
   freeTierLimitOverride Int?
 
-  projects       Project[]
+  projects            Project[]
   paymentRecords      PaymentRecord[]
   passwordResetTokens PasswordResetToken[]
 }
@@ -75,8 +75,8 @@ model Creator {
 // PROJECT — one client delivery (e.g. "Soundhous 2026")
 // ─────────────────────────────────────────────
 model Project {
-  id        String  @id @default(uuid())
-  slug      String  @unique // used in the URL: yourproduct.com/{slug}
+  id         String @id @default(uuid())
+  slug       String @unique // used in the URL: yourproduct.com/{slug}
   clientName String
 
   // access control
@@ -89,9 +89,9 @@ model Project {
   accessCode   String?
 
   // Option A payment: one-time ₦5,000 per project
-  paid           Boolean   @default(false)
-  paidAt         DateTime?
-  paystackRef    String?   @unique // Paystack transaction reference
+  paid        Boolean   @default(false)
+  paidAt      DateTime?
+  paystackRef String?   @unique // Paystack transaction reference
 
   // whether the free-tier Spotlite badge shows on this project
   // automatically false once `paid` is true
@@ -139,6 +139,29 @@ model Project {
 
   media        Media[]
   viewerEmails ViewerEmail[]
+  sections     MediaSection[]
+}
+
+// ─────────────────────────────────────────────
+// MEDIA SECTION — a creator-named grouping of files within a project.
+// This is what replaces the old hardcoded "Films" / "Photography"
+// split: a wedding videographer might call theirs "Highlights" and
+// "Ceremony Photos," while an interior designer might use "Room
+// Renders" and "Floor Plans," or a branding studio "Logo Concepts" and
+// "Brand Guidelines." A project can have as many sections as needed.
+// ─────────────────────────────────────────────
+model MediaSection {
+  id           String    @id @default(uuid())
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId    String
+  name         String
+  mediaType    MediaType
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  media Media[]
+
+  @@index([projectId])
 }
 
 // ─────────────────────────────────────────────
@@ -160,20 +183,51 @@ model Media {
   project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId    String
   type         MediaType
-  fileKey      String    // R2 object key, e.g. "projects/{projectId}/video/invisible.mp4"
+  fileKey      String // R2 object key, e.g. "projects/{projectId}/video/invisible.mp4"
   caption      String?
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
 
-  // Client review — set by whoever's viewing the delivery page, not the
-  // creator. NEEDS_REVISION carries an optional note explaining why.
+  // Which creator-named section this file belongs to. Nullable so
+  // existing media uploaded before sections existed doesn't break —
+  // it just displays ungrouped rather than being lost. onDelete: SetNull
+  // means deleting a section un-groups its files instead of deleting them.
+  section   MediaSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId String?
+
+  // Aggregate/cached view of this file's overall status, recomputed
+  // from every individual review in MediaReview below whenever one is
+  // added — not the only record of a review anymore. Kept here so the
+  // dashboard/grid can show a status without joining every review each
+  // time. approvalNote/reviewerEmail reflect the most recent
+  // NEEDS_REVISION note specifically (see the review route for the
+  // aggregation rule).
   approvalStatus ApprovalStatus @default(PENDING)
   approvalNote   String?
   reviewedAt     DateTime?
-  // The email of whoever left the most recent review on this file —
-  // captured from the mandatory viewer email gate. Used to notify them
-  // specifically once a flagged file gets replaced.
   reviewerEmail  String?
+
+  reviews MediaReview[]
+}
+
+// ─────────────────────────────────────────────
+// MEDIA REVIEW — one reviewer's actual review, permanently kept. Media
+// can be reviewed by more than one person (a bride and her mother-in-law,
+// for instance) — this table is what makes that possible, since a
+// second reviewer's input should add to the record, not silently
+// overwrite the first person's.
+// ─────────────────────────────────────────────
+model MediaReview {
+  id            String         @id @default(uuid())
+  media         Media          @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId       String
+  reviewerName  String?
+  reviewerEmail String
+  status        ApprovalStatus // only ever APPROVED or NEEDS_REVISION in practice
+  note          String?
+  createdAt     DateTime       @default(now())
+
+  @@index([mediaId])
 }
 
 // ─────────────────────────────────────────────
@@ -184,6 +238,7 @@ model ViewerEmail {
   id        String   @id @default(uuid())
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String
+  name      String?
   email     String
   viewedAt  DateTime @default(now())
 
@@ -197,14 +252,14 @@ model ViewerEmail {
 // sits here so nothing is stored twice.
 // ─────────────────────────────────────────────
 model PendingSignup {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  name          String?
-  phone         String?
-  passwordHash  String
-  otpCode       String
-  otpExpiresAt  DateTime
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  phone        String?
+  passwordHash String
+  otpCode      String
+  otpExpiresAt DateTime
+  createdAt    DateTime @default(now())
 }
 
 // ─────────────────────────────────────────────
@@ -221,14 +276,14 @@ enum PaymentType {
 }
 
 model PaymentRecord {
-  id                String      @id @default(uuid())
-  creator           Creator     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  id                String            @id @default(uuid())
+  creator           Creator           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId         String
   amountNgn         Int
   type              PaymentType
   tier              SubscriptionTier?
   paystackReference String?
-  createdAt         DateTime    @default(now())
+  createdAt         DateTime          @default(now())
 
   @@index([creatorId])
   @@index([createdAt])
