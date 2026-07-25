@@ -133,8 +133,7 @@ export default function Lightbox({
         </div>
         <div style={{ background: "#141414" }}>
           <ReviewControls
-            status={photo.approvalStatus}
-            note={photo.approvalNote}
+            reviews={photo.reviews}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />

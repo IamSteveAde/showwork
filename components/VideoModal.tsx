@@ -138,8 +138,7 @@ export default function VideoModal({
         />
         <div style={{ background: "#141414" }}>
           <ReviewControls
-            status={video.approvalStatus}
-            note={video.approvalNote}
+            reviews={video.reviews}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />
