@@ -22,6 +22,7 @@ export default function CreatorRowActions({
     freeTierLimitOverride !== null ? String(freeTierLimitOverride) : ""
   );
   const [loading, setLoading] = useState<string | null>(null);
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const patch = async (body: object, label: string) => {
     setLoading(label);
@@ -32,6 +33,11 @@ export default function CreatorRowActions({
     });
     router.refresh();
     setLoading(null);
+  };
+
+  const handleReset = async () => {
+    await patch({ resetBilling: true }, "reset");
+    setConfirmingReset(false);
   };
 
   return (
@@ -92,6 +98,32 @@ export default function CreatorRowActions({
           {loading === "freeLimit" ? "..." : "Free limit"}
         </button>
       </div>
+
+      {/* Full billing reset — for accounts stuck in an inconsistent
+          state (e.g. leftover subscription fields from before being
+          comped, with nothing real behind them on Paystack anymore). */}
+      {confirmingReset ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-white/50">Wipe all billing state back to Free?</span>
+          <button
+            onClick={handleReset}
+            disabled={loading === "reset"}
+            className="rounded-md bg-red-500 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {loading === "reset" ? "..." : "Confirm reset"}
+          </button>
+          <button onClick={() => setConfirmingReset(false)} className="text-xs text-white/40 underline">
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirmingReset(true)}
+          className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10"
+        >
+          Reset billing state
+        </button>
+      )}
     </div>
   );
 }

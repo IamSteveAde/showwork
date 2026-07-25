@@ -9,7 +9,8 @@ async function requireAdmin() {
   return creator;
 }
 
-// PATCH — comp status and/or discount percent for one creator
+// PATCH — comp status, discount, free-tier override, and/or a full
+// billing state reset for one creator.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +19,32 @@ export async function PATCH(
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { isComped, discountPercent, freeTierLimitOverride } = await req.json();
+  const { isComped, discountPercent, freeTierLimitOverride, resetBilling } = await req.json();
+
+  // A full reset back to a clean Free-tier slate — for accounts that
+  // ended up in an inconsistent state (e.g. leftover subscriptionActive/
+  // subscriptionTier from before being comped, with no real Paystack
+  // subscription actually behind it anymore). This wipes every billing-
+  // related field, not just isComped, so the account can genuinely
+  // start fresh rather than being stuck showing a "current plan" that
+  // can't actually be cancelled or switched.
+  if (resetBilling === true) {
+    const updated = await db.creator.update({
+      where: { id },
+      data: {
+        isComped: false,
+        subscriptionActive: false,
+        subscriptionTier: "FREE",
+        discountPercent: 0,
+        paystackCustomerCode: null,
+        paystackSubscriptionCode: null,
+        paystackEmailToken: null,
+        subscriptionRenewsAt: null,
+        currentCycleStart: new Date(),
+      },
+    });
+    return NextResponse.json({ creator: updated });
+  }
 
   const data: { isComped?: boolean; discountPercent?: number; freeTierLimitOverride?: number | null } = {};
   if (typeof isComped === "boolean") data.isComped = isComped;
