@@ -209,7 +209,7 @@ export default async function ProjectDetailPage({
             {project.sections.map((section) => (
               <div key={section.id} className="mb-10">
                 <SectionHeader sectionId={section.id} name={section.name} fileCount={section.media.length} />
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {section.media.map((m) => (
                     <FileGridItem
                       key={m.id}
@@ -238,7 +238,7 @@ export default async function ProjectDetailPage({
                 <h2 className="mb-4 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
                   Other files ({ungroupedMedia.length})
                 </h2>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {ungroupedMedia.map((m) => (
                     <FileGridItem
                       key={m.id}

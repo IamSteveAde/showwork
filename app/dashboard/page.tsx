@@ -112,9 +112,9 @@ export default async function DashboardPage({
             {usage.limit === Infinity ? "Unlimited" : `${usage.used}/${usage.limit} this cycle`}
           </Link>
 
-          {/* Clear, unmistakably clickable — a real pill button, not
-              plain text, and labeled as an action ("View profile")
-              rather than a passive noun ("Profile"). */}
+          {/* Text pill stays desktop-only — the avatar below now covers
+              mobile on its own, so there's no need to crowd a small
+              screen with both. */}
           <Link
             href="/dashboard/profile"
             className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:flex"
@@ -124,21 +124,34 @@ export default async function DashboardPage({
             <span aria-hidden>→</span>
           </Link>
 
-          {/* Avatar itself is also a link — hover feedback (scale +
-              brighter background) makes it obvious it's clickable, not
-              just decorative. */}
+          {/* Avatar is always visible, mobile included — it's the one
+              guaranteed way to reach the profile page on a small screen.
+              A persistent gold ring signals it's clickable without
+              needing a hover state, which doesn't exist on touch anyway.
+              Shows the real uploaded photo once one exists, falling back
+              to initials otherwise. Name text stays hidden on mobile to
+              keep the header compact — the avatar alone is the target there. */}
           <Link
             href="/dashboard/profile"
-            className="group hidden items-center gap-3 sm:flex"
+            className="group flex items-center gap-3"
             aria-label="View profile"
           >
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-transform group-hover:scale-110"
-              style={{ background: "rgba(245,200,66,0.18)", color: COLOR.gold }}
+              className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-xs font-semibold transition-transform group-hover:scale-110 sm:h-8 sm:w-8"
+              style={{
+                background: creator.avatarUrl ? undefined : "rgba(245,200,66,0.18)",
+                color: COLOR.gold,
+                boxShadow: `0 0 0 2px rgba(245,200,66,0.5)`,
+              }}
             >
-              {initials(creator.name, creator.email)}
+              {creator.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={creator.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initials(creator.name, creator.email)
+              )}
             </div>
-            <span className="text-sm font-medium text-white/80 transition-colors group-hover:text-white">
+            <span className="hidden text-sm font-medium text-white/80 transition-colors group-hover:text-white sm:inline">
               {creator.name || creator.email}
             </span>
           </Link>

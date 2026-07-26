@@ -8,7 +8,7 @@
  */
 export async function downloadFile(url: string, filename: string) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
+  if (!res.ok) throw new Error(`Failed to fetch file (${res.status})`);
   const blob = await res.blob();
   const blobUrl = URL.createObjectURL(blob);
 
@@ -42,7 +42,7 @@ export async function downloadAllAsZip(
   for (let i = 0; i < items.length; i++) {
     const { url, filename } = items[i];
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch ${filename}: ${res.status}`);
+    if (!res.ok) throw new Error(`Failed to fetch ${filename} (${res.status})`);
     const blob = await res.blob();
     zip.file(filename, blob);
     onProgress?.(i + 1, items.length);

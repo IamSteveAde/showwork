@@ -22,29 +22,35 @@ function DownloadIconButton({
   light?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (busy) return;
     setBusy(true);
+    setError(null);
     try {
       await onDownload();
-    } catch {
-      // Silent — a failed download here isn't critical enough to
-      // interrupt the viewing experience with an error message.
+    } catch (err) {
+      // Now visible, not silent — a person clicking download and
+      // seeing nothing happen has no way to know something's actually
+      // wrong (e.g. a CORS block on the file storage) without this.
+      setError(err instanceof Error ? err.message : "Download failed");
+      setTimeout(() => setError(null), 4000);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <button
-      onClick={handleClick}
-      aria-label="Download"
-      disabled={busy}
-      className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity duration-300 disabled:opacity-60"
-      style={{ background: light ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.9)" }}
-    >
+    <div className="relative">
+      <button
+        onClick={handleClick}
+        aria-label="Download"
+        disabled={busy}
+        className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity duration-300 disabled:opacity-60"
+        style={{ background: light ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.9)" }}
+      >
       {busy ? (
         <svg className="animate-spin" width="12" height="12" viewBox="0 0 12 12" fill="none">
           <circle cx="6" cy="6" r="4.5" stroke="rgba(8,8,8,0.25)" strokeWidth="1.5" />
@@ -61,7 +67,17 @@ function DownloadIconButton({
           />
         </svg>
       )}
-    </button>
+      </button>
+      {error && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-0 top-full z-10 mt-1.5 w-max max-w-[200px] rounded-md px-2.5 py-1.5 text-[11px] font-medium text-white"
+          style={{ background: "rgba(220,38,38,0.95)" }}
+        >
+          {error}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -405,6 +421,7 @@ export default function ProjectContent({
   // Zip-download status, keyed by whichever section's "Download all"
   // was clicked — each section downloads independently of the others.
   const [zippingSectionId, setZippingSectionId] = useState<string | null>(null);
+  const [zipError, setZipError] = useState<{ sectionId: string; message: string } | null>(null);
   const contentStartRef = useRef<HTMLDivElement>(null);
 
   // Local, mutable copy of the media list so an approve/revision click
@@ -516,14 +533,19 @@ export default function ProjectContent({
 
   const handleDownloadSection = async (sectionId: string, sectionMedia: MediaItem[], zipName: string) => {
     setZippingSectionId(sectionId);
+    setZipError(null);
     try {
       await downloadAllAsZip(
         sectionMedia.map((m) => ({ url: m.url, filename: filenameFromUrl(m.url) })),
         zipName,
         () => {} // could show progress per-section if wanted later
       );
-    } catch {
-      // Silent — same reasoning as individual downloads above.
+    } catch (err) {
+      setZipError({
+        sectionId,
+        message: err instanceof Error ? err.message : "Download failed",
+      });
+      setTimeout(() => setZipError(null), 5000);
     }
     setZippingSectionId(null);
   };
@@ -572,7 +594,7 @@ export default function ProjectContent({
                   {section.name}
                 </h2>
                 <div className="mx-6 hidden h-px flex-1 sm:block" style={{ background: dividerColor }} />
-                <div className="flex items-center gap-4">
+                <div className="relative flex items-center gap-4">
                   <span
                     className="text-xs font-medium uppercase"
                     style={{ color: countColor, letterSpacing: "0.2em" }}
@@ -597,6 +619,14 @@ export default function ProjectContent({
                   >
                     {isZipping ? "Zipping..." : "Download all"}
                   </button>
+                  {zipError?.sectionId === section.id && (
+                    <div
+                      className="absolute right-0 top-full z-10 mt-1.5 w-max max-w-[220px] rounded-md px-2.5 py-1.5 text-[11px] font-medium text-white"
+                      style={{ background: "rgba(220,38,38,0.95)" }}
+                    >
+                      {zipError.message}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -618,7 +648,7 @@ export default function ProjectContent({
                   })}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-4">
                   {section.media.map((p, i) => {
                     const live = withLiveStatus(p);
                     const globalIdx = photos.findIndex((x) => x.id === p.id);
