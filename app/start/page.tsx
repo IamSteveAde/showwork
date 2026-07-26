@@ -28,7 +28,7 @@ interface QueuedFile {
 interface PendingSection {
   sectionLocalId: string;
   name: string;
-  mediaType: "PHOTO" | "VIDEO";
+  mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   files: QueuedFile[];
 }
 
@@ -79,7 +79,7 @@ export default function StartPage() {
 
   const [sections, setSections] = useState<PendingSection[]>([]);
   const [builderStep, setBuilderStep] = useState<BuilderStep>("closed");
-  const [builderType, setBuilderType] = useState<"PHOTO" | "VIDEO" | null>(null);
+  const [builderType, setBuilderType] = useState<"PHOTO" | "VIDEO" | "DOCUMENT" | "PDF" | null>(null);
   const [builderName, setBuilderName] = useState("");
   const [builderFiles, setBuilderFiles] = useState<QueuedFile[]>([]);
   const builderFileInputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +106,7 @@ export default function StartPage() {
     setBuilderFiles([]);
   };
 
-  const chooseBuilderType = (type: "PHOTO" | "VIDEO") => {
+  const chooseBuilderType = (type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF") => {
     setBuilderType(type);
     setBuilderStep("details");
   };
@@ -231,6 +231,7 @@ export default function StartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewFileKey]);
   const allFiles = sections.flatMap((s) => s.files);
+  const bannerEligibleSections = sections.filter((s) => s.mediaType === "PHOTO" || s.mediaType === "VIDEO");
   const totalBytes = allFiles.reduce((sum, f) => sum + f.file.size, 0);
   const loadedBytes = allFiles.reduce((sum, f) => sum + (loadedMap[f.localId] ?? 0), 0);
   const overallPercent = totalBytes > 0 ? Math.round((loadedBytes / totalBytes) * 100) : 0;
@@ -913,26 +914,46 @@ export default function StartPage() {
             {builderStep === "type" && (
               <div className="flex flex-col gap-4">
                 <p className="text-sm font-semibold text-white/70">What are you uploading?</p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("PHOTO")}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-3xl">🖼️</span>
+                    <span className="text-2xl">🖼️</span>
                     <span className="text-sm font-semibold text-white">Images</span>
                     <span className="text-xs text-white/40">Photos, renders, mockups</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("VIDEO")}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-3xl">🎬</span>
+                    <span className="text-2xl">🎬</span>
                     <span className="text-sm font-semibold text-white">Videos</span>
                     <span className="text-xs text-white/40">Films, walkthroughs, reels</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => chooseBuilderType("DOCUMENT")}
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+                  >
+                    <span className="text-2xl">📄</span>
+                    <span className="text-sm font-semibold text-white">Documents</span>
+                    <span className="text-xs text-white/40">Word docs (.docx)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => chooseBuilderType("PDF")}
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+                  >
+                    <span className="text-2xl">📕</span>
+                    <span className="text-sm font-semibold text-white">PDFs</span>
+                    <span className="text-xs text-white/40">Proposals, contracts, decks</span>
                   </button>
                 </div>
                 <button type="button" onClick={cancelBuilder} className="text-left text-xs text-white/40 underline">
@@ -944,13 +965,27 @@ export default function StartPage() {
             {builderStep === "details" && (
               <div className="flex flex-col gap-3 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
                 <p className="text-xs font-semibold text-white/70">
-                  {builderType === "VIDEO" ? "🎬 Videos" : "🖼️ Images"} — name this section
+                  {builderType === "VIDEO"
+                    ? "🎬 Videos"
+                    : builderType === "PHOTO"
+                      ? "🖼️ Images"
+                      : builderType === "PDF"
+                        ? "📕 PDFs"
+                        : "📄 Documents"} — name this section
                 </p>
                 <input
                   type="text"
                   value={builderName}
                   onChange={(e) => setBuilderName(e.target.value)}
-                  placeholder={builderType === "VIDEO" ? "e.g. Ceremony Highlights" : "e.g. Room Renders"}
+                  placeholder={
+                    builderType === "VIDEO"
+                      ? "e.g. Ceremony Highlights"
+                      : builderType === "PHOTO"
+                        ? "e.g. Room Renders"
+                        : builderType === "PDF"
+                          ? "e.g. Signed Contract"
+                          : "e.g. Brand Guidelines"
+                  }
                   style={{ fontSize: "16px" }}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
                 />
@@ -959,7 +994,15 @@ export default function StartPage() {
                   ref={builderFileInputRef}
                   type="file"
                   multiple
-                  accept={builderType === "VIDEO" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"}
+                  accept={
+                    builderType === "VIDEO"
+                      ? "video/mp4,video/quicktime,video/webm"
+                      : builderType === "PHOTO"
+                        ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+                        : builderType === "PDF"
+                          ? "application/pdf"
+                          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  }
                   onChange={handleBuilderFileSelect}
                   className="hidden"
                   id="start-builder-files"
@@ -991,7 +1034,7 @@ export default function StartPage() {
           </div>
 
           {/* CHOOSE YOUR BANNER — its own dedicated, unmissable card */}
-          {allFiles.length > 0 && (
+          {bannerEligibleSections.flatMap((s) => s.files).length > 0 && (
             <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
@@ -1006,7 +1049,7 @@ export default function StartPage() {
               </p>
 
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {sections.map((section) =>
+                {bannerEligibleSections.map((section) =>
                   section.files.map((f) => {
                     const selectable = !anyVideoSection || section.mediaType === "VIDEO";
                     const isSelected = f.localId === heroLocalId;

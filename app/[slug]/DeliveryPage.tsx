@@ -9,7 +9,7 @@ import type { ReviewEntry } from "@/components/ReviewControls";
 
 export interface MediaItem {
   id: string;
-  type: "PHOTO" | "VIDEO";
+  type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   url: string;
   caption: string;
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -20,7 +20,7 @@ export interface MediaItem {
 export interface DeliverySection {
   id: string;
   name: string;
-  mediaType: "PHOTO" | "VIDEO";
+  mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   media: MediaItem[];
 }
 

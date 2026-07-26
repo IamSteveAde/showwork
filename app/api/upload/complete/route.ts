@@ -14,8 +14,11 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  if (type !== "PHOTO" && type !== "VIDEO") {
-    return NextResponse.json({ error: "type must be PHOTO or VIDEO" }, { status: 400 });
+  if (!["PHOTO", "VIDEO", "DOCUMENT", "PDF"].includes(type)) {
+    return NextResponse.json(
+      { error: "type must be PHOTO, VIDEO, DOCUMENT, or PDF" },
+      { status: 400 }
+    );
   }
 
   const project = await db.project.findUnique({ where: { id: projectId } });

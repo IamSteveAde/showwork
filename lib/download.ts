@@ -1,29 +1,29 @@
 /**
- * Downloads a single file by fetching it as a blob first, rather than
- * just pointing an <a download> tag at the URL directly. This matters
- * because our files live on a different origin (R2) — browsers often
- * ignore the `download` attribute on cross-origin links and just open
- * the file in a new tab instead. Fetching it ourselves and creating a
- * local blob: URL sidesteps that entirely, regardless of file type.
+ * Downloads a single file by navigating to our own server-side proxy
+ * route, which sets a real Content-Disposition header. This is a plain
+ * page navigation, not a JavaScript fetch of cross-origin bytes — so
+ * CORS is never a factor here at all, regardless of R2/CDN
+ * configuration on the file-storage side.
  */
 export async function downloadFile(url: string, filename: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch file (${res.status})`);
-  const blob = await res.blob();
-  const blobUrl = URL.createObjectURL(blob);
+  const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
 
   const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = filename;
+  a.href = proxyUrl;
+  // No `download` attribute needed — the server's Content-Disposition
+  // header is what actually triggers the save, and does so reliably
+  // even for file types a browser would otherwise just open inline.
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(blobUrl);
 }
 
 /**
- * Downloads several files bundled into a single .zip. Fetches each file
- * as a blob, adds it to a zip in memory, then downloads the finished zip.
+ * Downloads several files bundled into a single .zip. Each file is
+ * fetched through our own same-origin proxy route (not directly from
+ * R2), so this fetch is same-origin from the browser's point of view —
+ * CORS never applies to a same-origin request, which is what makes
+ * this reliable regardless of the file storage's own CORS setup.
  *
  * Note: this happens entirely in the browser's memory. It's fine for
  * typical photo sets and a handful of short videos, but a very large
@@ -41,7 +41,8 @@ export async function downloadAllAsZip(
 
   for (let i = 0; i < items.length; i++) {
     const { url, filename } = items[i];
-    const res = await fetch(url);
+    const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+    const res = await fetch(proxyUrl);
     if (!res.ok) throw new Error(`Failed to fetch ${filename} (${res.status})`);
     const blob = await res.blob();
     zip.file(filename, blob);

@@ -28,7 +28,7 @@ export default function ReviewsModal({
 }: {
   url: string;
   filename: string;
-  type: "PHOTO" | "VIDEO";
+  type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   caption: string | null;
   reviews: ReviewEntry[];
   onClose: () => void;
@@ -72,9 +72,17 @@ export default function ReviewsModal({
         <div className="relative flex-1 bg-black" style={{ minHeight: 280 }}>
           {type === "VIDEO" ? (
             <video src={url} controls className="h-full max-h-[85vh] w-full object-contain" />
-          ) : (
+          ) : type === "PHOTO" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={url} alt={caption || filename} className="h-full max-h-[85vh] w-full object-contain" />
+          ) : type === "PDF" ? (
+            <iframe src={url} title={filename} className="h-full max-h-[85vh] w-full border-0" />
+          ) : (
+            <iframe
+              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`}
+              title={filename}
+              className="h-full max-h-[85vh] w-full border-0 bg-white"
+            />
           )}
         </div>
 

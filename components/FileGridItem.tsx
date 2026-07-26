@@ -7,15 +7,24 @@ import ReplaceFileButton from "@/components/ReplaceFileButton";
 import ReviewsModal, { type ReviewEntry } from "@/components/ReviewsModal";
 import { AnimatePresence } from "framer-motion";
 
+type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
+
 interface FileGridItemProps {
   mediaId: string;
   url: string;
   filename: string;
   caption: string | null;
-  type: "PHOTO" | "VIDEO";
+  type: MediaKind;
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
   reviews: ReviewEntry[];
+}
+
+// DOCX has no native browser preview — Microsoft's own public viewer
+// embed is the standard way to show one without building a conversion
+// pipeline. Only works for publicly reachable URLs, which ours are.
+function officeViewerUrl(url: string) {
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 }
 
 export default function FileGridItem({
@@ -52,10 +61,14 @@ export default function FileGridItem({
     router.refresh();
   };
 
+  const isDocLike = type === "PDF" || type === "DOCUMENT";
+
   return (
     <div className="flex flex-col gap-2">
       <div
-        className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-white/5"
+        className={`group relative cursor-pointer overflow-hidden rounded-xl bg-white/5 ${
+          isDocLike ? "aspect-[3/4]" : "aspect-square"
+        }`}
         onClick={() => setShowReviews(true)}
         onMouseEnter={() => videoRef.current?.play().catch(() => {})}
         onMouseLeave={() => {
@@ -75,7 +88,7 @@ export default function FileGridItem({
             preload="metadata"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
-        ) : (
+        ) : type === "PHOTO" ? (
           <Image
             src={url}
             alt={caption || filename}
@@ -85,9 +98,23 @@ export default function FileGridItem({
             loading="lazy"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
+        ) : type === "PDF" ? (
+          // Native browser PDF viewer, showing page 1 — a real, live
+          // preview rather than a static icon. #toolbar=0 hides Chrome's
+          // PDF toolbar so it reads as a clean preview, not a full app.
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&page=1`}
+            title={filename}
+            className="pointer-events-none h-full w-full border-0"
+          />
+        ) : (
+          <iframe
+            src={officeViewerUrl(url)}
+            title={filename}
+            className="pointer-events-none h-full w-full border-0 bg-white"
+          />
         )}
 
-        {/* approval badge — click it (or anywhere on the tile) to see who said what */}
         {approvalStatus !== "PENDING" && (
           <div
             className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -110,7 +137,6 @@ export default function FileGridItem({
           </div>
         )}
 
-        {/* hover overlay: edit / delete */}
         <div className="absolute inset-0 flex items-start justify-end gap-1.5 bg-black/0 p-2 opacity-0 transition-all duration-300 group-hover:bg-black/30 group-hover:opacity-100">
           <button
             onClick={(e) => { e.stopPropagation(); setEditing(true); }}
@@ -132,7 +158,6 @@ export default function FileGridItem({
           </button>
         </div>
 
-        {/* caption edit overlay */}
         {editing && (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -158,7 +183,6 @@ export default function FileGridItem({
           </div>
         )}
 
-        {/* delete confirmation overlay */}
         {confirmDelete && (
           <div
             onClick={(e) => e.stopPropagation()}

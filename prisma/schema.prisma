@@ -186,6 +186,8 @@ model MediaSection {
 enum MediaType {
   PHOTO
   VIDEO
+  DOCUMENT // .docx
+  PDF
 }
 
 enum ApprovalStatus {

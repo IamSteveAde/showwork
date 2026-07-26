@@ -7,6 +7,7 @@ import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
+import DocModal from "@/components/Docmodal";
 import { downloadFile, downloadAllAsZip, filenameFromUrl } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
@@ -323,6 +324,91 @@ function VideoTile({
   );
 }
 
+function officeViewerUrl(url: string) {
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENT GRID TILE — PDF and DOCX. Shows the real first page, full
+// height, never cropped like a photo would be — a document reads
+// completely differently squeezed into a square. 2 per row on desktop,
+// 1 per row on mobile, matching how much room a document actually needs
+// to be legible at a glance.
+// ─────────────────────────────────────────────
+function DocTile({
+  doc,
+  index,
+  viewerEmail,
+  onOpen,
+  onReview,
+}: {
+  doc: MediaItem;
+  index: number;
+  viewerEmail: string;
+  onOpen: () => void;
+  onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.5, delay: index * 0.04 }}
+      className="overflow-hidden rounded-xl bg-white"
+    >
+      <div onClick={onOpen} className="group relative aspect-[3/4] cursor-pointer">
+        {doc.type === "PDF" ? (
+          <iframe
+            src={`${doc.url}#toolbar=0&navpanes=0&page=1`}
+            title={doc.caption || "Document"}
+            className="pointer-events-none h-full w-full border-0"
+          />
+        ) : (
+          <iframe
+            src={officeViewerUrl(doc.url)}
+            title={doc.caption || "Document"}
+            className="pointer-events-none h-full w-full border-0"
+          />
+        )}
+
+        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+
+        {doc.approvalStatus !== "PENDING" && (
+          <div
+            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold"
+            style={
+              doc.approvalStatus === "APPROVED"
+                ? { background: "#22C55E", color: "#080808" }
+                : { background: "#F97316", color: "#080808" }
+            }
+          >
+            {doc.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+          </div>
+        )}
+
+        <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <DownloadIconButton onDownload={() => downloadFile(doc.url, filenameFromUrl(doc.url))} light />
+        </div>
+
+        {doc.caption && (
+          <p className="absolute bottom-3 left-3 rounded bg-black/60 px-2 py-1 text-xs font-medium text-white">
+            {doc.caption}
+          </p>
+        )}
+      </div>
+
+      <div style={{ background: "#141414" }}>
+        <ReviewControls
+          reviews={doc.reviews}
+          viewerEmail={viewerEmail}
+          onApprove={() => onReview("APPROVED")}
+          onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
 // ─────────────────────────────────────────────
 // PHOTO GRID TILE
 // ─────────────────────────────────────────────
@@ -418,6 +504,7 @@ export default function ProjectContent({
 }) {
   const [openVideoIdx, setOpenVideoIdx] = useState<number | null>(null);
   const [openPhotoIdx, setOpenPhotoIdx] = useState<number | null>(null);
+  const [openDocIdx, setOpenDocIdx] = useState<number | null>(null);
   // Zip-download status, keyed by whichever section's "Download all"
   // was clicked — each section downloads independently of the others.
   const [zippingSectionId, setZippingSectionId] = useState<string | null>(null);
@@ -494,11 +581,12 @@ export default function ProjectContent({
   const withLiveStatus = (m: MediaItem): MediaItem =>
     items.find((i) => i.id === m.id) ?? m;
 
-  // Flat, global lists — used only for the video/photo modal's prev/next
+  // Flat, global lists — used only for each modal's prev/next
   // navigation, so "next" cycles through everything of that type across
   // every section, not just within the one section you opened it from.
   const videos = items.filter((m) => m.type === "VIDEO");
   const photos = items.filter((m) => m.type === "PHOTO");
+  const docs = items.filter((m) => m.type === "PDF" || m.type === "DOCUMENT");
 
   // Rule: if any video exists, a video is always the hero — the creator's
   // pick only decides *which* video. A photo hero only happens when the
@@ -516,14 +604,23 @@ export default function ProjectContent({
   // type so it doesn't get lost.
   const ungroupedVideos = ungroupedMedia.filter((m) => m.type === "VIDEO");
   const ungroupedPhotos = ungroupedMedia.filter((m) => m.type === "PHOTO");
+  const ungroupedDocs = ungroupedMedia.filter((m) => m.type === "PDF" || m.type === "DOCUMENT");
 
-  const renderSections: { id: string; name: string; mediaType: "PHOTO" | "VIDEO"; media: MediaItem[] }[] = [
+  const renderSections: {
+    id: string;
+    name: string;
+    mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
+    media: MediaItem[];
+  }[] = [
     ...sections.map((s) => ({ id: s.id, name: s.name, mediaType: s.mediaType, media: s.media })),
     ...(ungroupedVideos.length > 0
       ? [{ id: "ungrouped-video", name: "Other films", mediaType: "VIDEO" as const, media: ungroupedVideos }]
       : []),
     ...(ungroupedPhotos.length > 0
       ? [{ id: "ungrouped-photo", name: "Other photos", mediaType: "PHOTO" as const, media: ungroupedPhotos }]
+      : []),
+    ...(ungroupedDocs.length > 0
+      ? [{ id: "ungrouped-docs", name: "Other documents", mediaType: "PDF" as const, media: ungroupedDocs }]
       : []),
   ];
 
@@ -647,7 +744,7 @@ export default function ProjectContent({
                     );
                   })}
                 </div>
-              ) : (
+              ) : section.mediaType === "PHOTO" ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-4">
                   {section.media.map((p, i) => {
                     const live = withLiveStatus(p);
@@ -660,6 +757,23 @@ export default function ProjectContent({
                         viewerEmail={viewerEmail}
                         onOpen={() => setOpenPhotoIdx(globalIdx)}
                         onReview={(status, note) => submitReview(p.id, status, note)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  {section.media.map((d, i) => {
+                    const live = withLiveStatus(d);
+                    const globalIdx = docs.findIndex((x) => x.id === d.id);
+                    return (
+                      <DocTile
+                        key={d.id}
+                        doc={live}
+                        index={i}
+                        viewerEmail={viewerEmail}
+                        onOpen={() => setOpenDocIdx(globalIdx)}
+                        onReview={(status, note) => submitReview(d.id, status, note)}
                       />
                     );
                   })}
@@ -710,6 +824,20 @@ export default function ProjectContent({
             onPrev={() => setOpenPhotoIdx((i) => (i! - 1 + photos.length) % photos.length)}
             onNext={() => setOpenPhotoIdx((i) => (i! + 1) % photos.length)}
             onReview={(status, note) => submitReview(photos[openPhotoIdx].id, status, note)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {openDocIdx !== null && docs[openDocIdx] && (
+          <DocModal
+            doc={docs[openDocIdx]}
+            index={openDocIdx}
+            total={docs.length}
+            viewerEmail={viewerEmail}
+            onClose={() => setOpenDocIdx(null)}
+            onPrev={() => setOpenDocIdx((i) => (i! - 1 + docs.length) % docs.length)}
+            onNext={() => setOpenDocIdx((i) => (i! + 1) % docs.length)}
+            onReview={(status, note) => submitReview(docs[openDocIdx].id, status, note)}
           />
         )}
       </AnimatePresence>

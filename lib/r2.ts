@@ -21,13 +21,23 @@ const r2 = new S3Client({
 const BUCKET = process.env.R2_BUCKET_NAME!;
 
 // Allowed upload types — keeps randoms from uploading arbitrary files
-// to your bucket via a stolen/guessed presigned URL.
+// to your bucket via a stolen/guessed presigned URL. Covers all four
+// upload categories the product supports: images, videos, PDFs, and
+// Word documents.
 const ALLOWED_TYPES = [
+  // Images
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/svg+xml",
+  "image/avif",
+  // Videos
   "video/mp4",
-  "video/quicktime",
+  "video/quicktime", // .mov
+  "video/webm",
+  // Documents
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
 ];
 
 export function isAllowedContentType(contentType: string) {

@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
+type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
+
 function uploadWithProgress(
   url: string,
   file: File,
@@ -30,7 +32,7 @@ export default function ReplaceFileButton({
   label,
 }: {
   mediaId: string;
-  type: "PHOTO" | "VIDEO";
+  type: MediaKind;
   label: string;
 }) {
   const router = useRouter();
@@ -39,7 +41,13 @@ export default function ReplaceFileButton({
   const [error, setError] = useState<string | null>(null);
 
   const accept =
-    type === "VIDEO" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp";
+    type === "VIDEO"
+      ? "video/mp4,video/quicktime,video/webm"
+      : type === "PHOTO"
+        ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+        : type === "PDF"
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

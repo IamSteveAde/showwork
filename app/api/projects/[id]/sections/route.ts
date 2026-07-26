@@ -23,8 +23,11 @@ export async function POST(
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Give this section a name" }, { status: 400 });
   }
-  if (mediaType !== "PHOTO" && mediaType !== "VIDEO") {
-    return NextResponse.json({ error: "mediaType must be PHOTO or VIDEO" }, { status: 400 });
+  if (!["PHOTO", "VIDEO", "DOCUMENT", "PDF"].includes(mediaType)) {
+    return NextResponse.json(
+      { error: "mediaType must be PHOTO, VIDEO, DOCUMENT, or PDF" },
+      { status: 400 }
+    );
   }
 
   const existingCount = await db.mediaSection.count({ where: { projectId } });

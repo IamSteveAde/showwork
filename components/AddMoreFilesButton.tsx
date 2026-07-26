@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-type MediaType = "PHOTO" | "VIDEO";
+type MediaType = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 type Step = "closed" | "type" | "details";
 
 function uploadWithProgress(
@@ -178,24 +178,42 @@ export default function AddMoreFilesButton({
       {step === "type" && (
         <>
           <p className="text-sm font-semibold text-white/70">What are you uploading?</p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => chooseType("PHOTO")}
-              className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
               style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
             >
-              <span className="text-3xl">🖼️</span>
+              <span className="text-2xl">🖼️</span>
               <span className="text-sm font-semibold text-white">Images</span>
               <span className="text-xs text-white/40">Photos, renders, mockups</span>
             </button>
             <button
               onClick={() => chooseType("VIDEO")}
-              className="flex flex-col items-center gap-2 rounded-xl border-2 px-6 py-8 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
               style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
             >
-              <span className="text-3xl">🎬</span>
+              <span className="text-2xl">🎬</span>
               <span className="text-sm font-semibold text-white">Videos</span>
               <span className="text-xs text-white/40">Films, walkthroughs, reels</span>
+            </button>
+            <button
+              onClick={() => chooseType("DOCUMENT")}
+              className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+            >
+              <span className="text-2xl">📄</span>
+              <span className="text-sm font-semibold text-white">Documents</span>
+              <span className="text-xs text-white/40">Word docs (.docx)</span>
+            </button>
+            <button
+              onClick={() => chooseType("PDF")}
+              className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+              style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+            >
+              <span className="text-2xl">📕</span>
+              <span className="text-sm font-semibold text-white">PDFs</span>
+              <span className="text-xs text-white/40">Proposals, contracts, decks</span>
             </button>
           </div>
           <button onClick={reset} className="text-left text-xs text-white/40 underline">
@@ -207,13 +225,27 @@ export default function AddMoreFilesButton({
       {step === "details" && (
         <>
           <p className="text-xs font-semibold text-white/70">
-            {mediaType === "VIDEO" ? "🎬 Videos" : "🖼️ Images"} — name this section
+            {mediaType === "VIDEO"
+              ? "🎬 Videos"
+              : mediaType === "PHOTO"
+                ? "🖼️ Images"
+                : mediaType === "PDF"
+                  ? "📕 PDFs"
+                  : "📄 Documents"} — name this section
           </p>
           <input
             type="text"
             value={sectionName}
             onChange={(e) => setSectionName(e.target.value)}
-            placeholder={mediaType === "VIDEO" ? "e.g. Ceremony Highlights" : "e.g. Room Renders"}
+            placeholder={
+              mediaType === "VIDEO"
+                ? "e.g. Ceremony Highlights"
+                : mediaType === "PHOTO"
+                  ? "e.g. Room Renders"
+                  : mediaType === "PDF"
+                    ? "e.g. Signed Contract"
+                    : "e.g. Brand Guidelines"
+            }
             style={{ fontSize: "16px" }}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
           />
@@ -222,7 +254,15 @@ export default function AddMoreFilesButton({
             ref={inputRef}
             type="file"
             multiple
-            accept={mediaType === "VIDEO" ? "video/mp4,video/quicktime" : "image/jpeg,image/png,image/webp"}
+            accept={
+              mediaType === "VIDEO"
+                ? "video/mp4,video/quicktime,video/webm"
+                : mediaType === "PHOTO"
+                  ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+                  : mediaType === "PDF"
+                    ? "application/pdf"
+                    : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            }
             onChange={handleFileSelect}
             className="hidden"
             id={`section-files-${projectId}`}
