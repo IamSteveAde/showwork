@@ -5,16 +5,14 @@ import { sendReviewNotificationEmail } from "@/lib/resend";
 // PUBLIC route — called from the client-facing delivery page, not the
 // creator dashboard. Deliberately no creator auth check here: the
 // person calling this already passed the project's password (and the
-// now-mandatory name+email gate) to even see the media in the first
-// place. The media id itself is a UUID, not guessable, which is the
-// same security model the rest of the public delivery flow relies on.
+// mandatory name+email gate) to even see the media in the first place.
+// The media id itself is a UUID, not guessable, matching the same
+// security model the rest of the public delivery flow relies on.
 //
-// Every review is logged permanently — a second reviewer's input adds
-// to the record instead of silently overwriting the first person's.
-// The file's overall status is then recomputed from every review on
-// file: if *anyone* has flagged it for revision, it reads as
-// NEEDS_REVISION overall, even if someone else separately approved it —
-// a real open note shouldn't get quietly buried by a later approval.
+// One reviewer can only ever have a single current verdict on a file —
+// submitting the exact same verdict again is rejected as a duplicate;
+// submitting a *different* one (changing their mind) updates their
+// existing review in place. Never a second row for the same person.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ mediaId: string }> }
@@ -37,10 +35,35 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Log this specific person's review — permanently, not overwriting
-  // anyone else's.
-  await db.mediaReview.create({
-    data: {
+  const existingReview = await db.mediaReview.findUnique({
+    where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
+  });
+
+  // Genuine duplicate — same person, same verdict as what's already on
+  // file. Rejected clearly rather than silently creating a second row.
+  if (existingReview && existingReview.status === status) {
+    return NextResponse.json(
+      {
+        error:
+          status === "APPROVED"
+            ? "You've already approved this file."
+            : "You've already flagged this file for revision.",
+        alreadyReviewed: true,
+      },
+      { status: 409 }
+    );
+  }
+
+  // Either their first review, or they're changing their mind — update
+  // in place if a row exists, otherwise create it.
+  await db.mediaReview.upsert({
+    where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
+    update: {
+      status,
+      reviewerName: reviewerName?.trim() || null,
+      note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
+    },
+    create: {
       mediaId,
       reviewerName: reviewerName?.trim() || null,
       reviewerEmail: viewerEmail,
@@ -49,16 +72,14 @@ export async function PATCH(
     },
   });
 
-  // Recompute the aggregate from every review on file.
+  // Recompute the aggregate from every (deduplicated) review on file.
   const allReviews = await db.mediaReview.findMany({
     where: { mediaId },
-    orderBy: { createdAt: "desc" },
+    orderBy: { updatedAt: "asc" },
   });
   const anyNeedsRevision = allReviews.some((r) => r.status === "NEEDS_REVISION");
   const overallStatus = anyNeedsRevision ? "NEEDS_REVISION" : "APPROVED";
-  // The most recent revision note specifically (not just the most
-  // recent review of any kind) — that's the actionable one to surface.
-  const mostRecentRevision = allReviews.find((r) => r.status === "NEEDS_REVISION");
+  const mostRecentRevision = [...allReviews].reverse().find((r) => r.status === "NEEDS_REVISION");
 
   const updated = await db.media.update({
     where: { id: mediaId },

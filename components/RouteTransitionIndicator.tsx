@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 /**
@@ -10,16 +10,32 @@ import { usePathname, useSearchParams } from "next/navigation";
  * is exactly what reads as unresponsive. This shows the same gold
  * roller the instant any internal link is clicked, then hides it once
  * the URL actually changes (confirming the navigation went through).
+ *
+ * Safety net: if a click is detected but the URL never actually
+ * changes (e.g. a link-wrapped button that calls preventDefault to do
+ * something other than navigate, like a delete action), this would
+ * otherwise get stuck showing forever, since its only normal "hide"
+ * condition is a URL change. A timeout forces it off after a few
+ * seconds regardless, so it can never be permanently stuck.
  */
 export default function RouteTransitionIndicator() {
   const [active, setActive] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // The URL changing is our signal that navigation actually completed.
   useEffect(() => {
     setActive(false);
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    if (active) {
+      timeoutRef.current = setTimeout(() => setActive(false), 4000);
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [active]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

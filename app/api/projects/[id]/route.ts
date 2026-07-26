@@ -57,3 +57,24 @@ export async function PATCH(
   const updated = await db.project.update({ where: { id }, data });
   return NextResponse.json({ project: updated });
 }
+
+// DELETE: permanently removes the project — via cascade, every Media,
+// ViewerEmail, and MediaSection row tied to it goes too. Only the
+// owning creator can do this.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const project = await db.project.findUnique({ where: { id } });
+  if (!project || project.creatorId !== creator.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await db.project.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true });
+}

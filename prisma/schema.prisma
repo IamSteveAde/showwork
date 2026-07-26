@@ -34,6 +34,22 @@ model Creator {
   phone        String?
   createdAt    DateTime @default(now())
 
+  // Profile
+  avatarUrl      String?
+  // True for anyone who completed the OTP signup flow (the only way a
+  // real Creator row gets created in that path) or an admin-created
+  // account — false is reserved for a future path where that isn't
+  // guaranteed.
+  emailVerified  Boolean @default(true)
+  // Soft-pause, distinct from deletion — a deactivated account can't log
+  // in, but nothing about them is removed, and it's reversible.
+  isDeactivated  Boolean @default(false)
+  // Storage for the preference only — the actual "email me when a
+  // client views this" trigger isn't wired up yet (see notes where
+  // views are tracked); needs rate-limiting first so it can't spam
+  // someone on every single page load of a popular delivery.
+  notifyOnView   Boolean @default(false)
+
   // Which paid tier they're on, and whether that tier is currently in
   // good standing. If subscriptionActive is false (lapsed, cancelled,
   // failed renewal), the creator is treated as FREE for cap purposes
@@ -226,7 +242,13 @@ model MediaReview {
   status        ApprovalStatus // only ever APPROVED or NEEDS_REVISION in practice
   note          String?
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
+  // One person can only have a single, current verdict on a given
+  // file — submitting again either updates it (if they changed their
+  // mind) or is rejected as a duplicate (if it's identical to what they
+  // already said). Never a second row for the same person.
+  @@unique([mediaId, reviewerEmail])
   @@index([mediaId])
 }
 

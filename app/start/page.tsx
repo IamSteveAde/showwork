@@ -171,6 +171,49 @@ export default function StartPage() {
     });
   };
 
+  const [addingToSectionId, setAddingToSectionId] = useState<string | null>(null);
+  const addMoreFilesInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerAddMoreFiles = (sectionLocalId: string) => {
+    setAddingToSectionId(sectionLocalId);
+    setTimeout(() => addMoreFilesInputRef.current?.click(), 0);
+  };
+
+  const handleAddMoreFilesToSection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!addingToSectionId) return;
+    const newFiles: QueuedFile[] = Array.from(e.target.files ?? []).map((file) => ({
+      file,
+      localId: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
+    }));
+    setSections((prev) =>
+      prev.map((s) =>
+        s.sectionLocalId === addingToSectionId ? { ...s, files: [...s.files, ...newFiles] } : s
+      )
+    );
+    setAddingToSectionId(null);
+    if (addMoreFilesInputRef.current) addMoreFilesInputRef.current.value = "";
+  };
+
+  const removeFileFromSection = (sectionLocalId: string, fileLocalId: string) => {
+    setSections((prev) => {
+      const next = prev
+        .map((s) =>
+          s.sectionLocalId === sectionLocalId
+            ? { ...s, files: s.files.filter((f) => f.localId !== fileLocalId) }
+            : s
+        )
+        .filter((s) => s.files.length > 0);
+
+      if (heroLocalId === fileLocalId) {
+        const firstRemaining = next.flatMap((s) => s.files)[0];
+        setHeroLocalId(firstRemaining ? firstRemaining.localId : null);
+      }
+      return next;
+    });
+  };
+
+  const addingToSection = sections.find((s) => s.sectionLocalId === addingToSectionId);
+
   const anyVideoSection = sections.some((s) => s.mediaType === "VIDEO" && s.files.length > 0);
   const allFilesForPreview = sections.flatMap((s) => s.files);
   const previewFileKey = allFilesForPreview.map((f) => f.localId).join(",");
@@ -761,27 +804,80 @@ export default function StartPage() {
               </label>
             </div>
 
+            <input
+              ref={addMoreFilesInputRef}
+              type="file"
+              multiple
+              accept={
+                addingToSection?.mediaType === "VIDEO"
+                  ? "video/mp4,video/quicktime"
+                  : "image/jpeg,image/png,image/webp"
+              }
+              onChange={handleAddMoreFilesToSection}
+              className="hidden"
+            />
+
             {sections.length > 0 && (
-              <div className="mb-4 flex flex-col gap-2">
+              <div className="mb-4 flex flex-col gap-3">
                 {sections.map((section) => (
                   <div
                     key={section.sectionLocalId}
-                    className="flex items-center justify-between rounded-lg px-3.5 py-2.5"
+                    className="rounded-lg p-3.5"
                     style={{ background: "rgba(255,255,255,0.04)" }}
                   >
-                    <span className="text-sm text-white/80">
-                      {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
-                      <span className="ml-2 text-xs text-white/30">
-                        {section.files.length} file{section.files.length === 1 ? "" : "s"}
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-sm text-white/80">
+                        {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                        <span className="ml-2 text-xs text-white/30">
+                          {section.files.length} file{section.files.length === 1 ? "" : "s"}
+                        </span>
                       </span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeSection(section.sectionLocalId)}
-                      className="text-xs text-white/40 hover:text-white"
-                    >
-                      Remove
-                    </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => triggerAddMoreFiles(section.sectionLocalId)}
+                          className="text-xs font-semibold"
+                          style={{ color: COLOR.gold }}
+                        >
+                          + Add files
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeSection(section.sectionLocalId)}
+                          className="text-xs text-white/40 hover:text-white"
+                        >
+                          Remove section
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                      {section.files.map((f) => {
+                        const previewUrl = previewUrls[f.localId];
+                        return (
+                          <div
+                            key={f.localId}
+                            className="relative aspect-square overflow-hidden rounded-md bg-black/40"
+                          >
+                            {previewUrl &&
+                              (section.mediaType === "VIDEO" ? (
+                                <video src={previewUrl} muted playsInline className="h-full w-full object-cover" />
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                              ))}
+                            <button
+                              type="button"
+                              onClick={() => removeFileFromSection(section.sectionLocalId, f.localId)}
+                              aria-label="Remove file"
+                              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white/80 transition-colors hover:bg-red-500/90 hover:text-white"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -916,41 +1012,50 @@ export default function StartPage() {
                     const isSelected = f.localId === heroLocalId;
                     const previewUrl = previewUrls[f.localId];
                     return (
-                      <button
-                        key={f.localId}
-                        type="button"
-                        disabled={!selectable}
-                        onClick={() => setHeroLocalId(f.localId)}
-                        className="relative aspect-square overflow-hidden rounded-lg bg-black/40 transition-all disabled:cursor-not-allowed disabled:opacity-30"
-                        style={{
-                          border: isSelected ? `2px solid ${COLOR.gold}` : "2px solid rgba(255,255,255,0.08)",
-                          boxShadow: isSelected ? "0 0 0 3px rgba(245,200,66,0.2)" : undefined,
-                        }}
-                      >
-                        {previewUrl && (
-                          section.mediaType === "VIDEO" ? (
-                            <video src={previewUrl} muted playsInline className="h-full w-full object-cover" />
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={previewUrl} alt="" className="h-full w-full object-cover" />
-                          )
-                        )}
-                        {section.mediaType === "VIDEO" && (
-                          <div className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">
-                            🎬
-                          </div>
-                        )}
-                        {isSelected && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                            <span
-                              className="rounded-full px-2 py-1 text-[10px] font-bold"
-                              style={{ background: COLOR.gold, color: COLOR.black }}
-                            >
-                              ✓ Banner
-                            </span>
-                          </div>
-                        )}
-                      </button>
+                      <div key={f.localId} className="relative">
+                        <button
+                          type="button"
+                          disabled={!selectable}
+                          onClick={() => setHeroLocalId(f.localId)}
+                          className="relative aspect-square w-full overflow-hidden rounded-lg bg-black/40 transition-all disabled:cursor-not-allowed disabled:opacity-30"
+                          style={{
+                            border: isSelected ? `2px solid ${COLOR.gold}` : "2px solid rgba(255,255,255,0.08)",
+                            boxShadow: isSelected ? "0 0 0 3px rgba(245,200,66,0.2)" : undefined,
+                          }}
+                        >
+                          {previewUrl && (
+                            section.mediaType === "VIDEO" ? (
+                              <video src={previewUrl} muted playsInline className="h-full w-full object-cover" />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                            )
+                          )}
+                          {section.mediaType === "VIDEO" && (
+                            <div className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">
+                              🎬
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                              <span
+                                className="rounded-full px-2 py-1 text-[10px] font-bold"
+                                style={{ background: COLOR.gold, color: COLOR.black }}
+                              >
+                                ✓ Banner
+                              </span>
+                            </div>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeFileFromSection(section.sectionLocalId, f.localId)}
+                          aria-label="Remove file"
+                          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white/80 transition-colors hover:bg-red-500/90 hover:text-white"
+                        >
+                          ×
+                        </button>
+                      </div>
                     );
                   })
                 )}

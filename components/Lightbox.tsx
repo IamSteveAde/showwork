@@ -11,6 +11,7 @@ export default function Lightbox({
   photo,
   index,
   total,
+  viewerEmail,
   onClose,
   onPrev,
   onNext,
@@ -23,6 +24,7 @@ export default function Lightbox({
   onPrev: () => void;
   onNext: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  viewerEmail: string;
 }) {
   const [downloading, setDownloading] = useState(false);
 
@@ -134,6 +136,7 @@ export default function Lightbox({
         <div style={{ background: "#141414" }}>
           <ReviewControls
             reviews={photo.reviews}
+            viewerEmail={viewerEmail}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />

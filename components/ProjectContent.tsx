@@ -223,11 +223,13 @@ function Hero({
 function VideoTile({
   video,
   index,
+  viewerEmail,
   onOpen,
   onReview,
 }: {
   video: MediaItem;
   index: number;
+  viewerEmail: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
 }) {
@@ -296,6 +298,7 @@ function VideoTile({
       <div style={{ background: "#141414" }}>
         <ReviewControls
           reviews={video.reviews}
+          viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
         />
@@ -310,11 +313,13 @@ function VideoTile({
 function PhotoTile({
   photo,
   index,
+  viewerEmail,
   onOpen,
   onReview,
 }: {
   photo: MediaItem;
   index: number;
+  viewerEmail: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
 }) {
@@ -358,6 +363,7 @@ function PhotoTile({
       <div style={{ background: "#141414" }}>
         <ReviewControls
           reviews={photo.reviews}
+          viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
         />
@@ -419,13 +425,21 @@ export default function ProjectContent({
       createdAt: new Date().toISOString(),
     };
 
-    // Append this review — never overwrite anyone else's — then
-    // recompute the aggregate the same way the server does: any open
-    // revision flag wins overall, even if someone else approved.
+    // Keep a copy of the previous state so a rejected duplicate can be
+    // rolled back cleanly instead of leaving a stale optimistic update.
+    const previousItems = items;
+
+    // Replace this viewer's own entry if they already have one (they're
+    // changing their mind) — never append a second row for the same
+    // person. Then recompute the aggregate the same way the server
+    // does: any open revision flag wins overall.
     setItems((prev) =>
       prev.map((m) => {
         if (m.id !== mediaId) return m;
-        const nextReviews = [...m.reviews, optimisticEntry];
+        const withoutMine = m.reviews.filter(
+          (r) => r.reviewerEmail.toLowerCase() !== viewerEmail.toLowerCase()
+        );
+        const nextReviews = [...withoutMine, optimisticEntry];
         const anyNeedsRevision = nextReviews.some((r) => r.status === "NEEDS_REVISION");
         const mostRecentRevision = [...nextReviews].reverse().find((r) => r.status === "NEEDS_REVISION");
         return {
@@ -438,14 +452,22 @@ export default function ProjectContent({
     );
 
     try {
-      await fetch(`/api/media/${mediaId}/review`, {
+      const res = await fetch(`/api/media/${mediaId}/review`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, note, reviewerName: viewerName, viewerEmail, clientName }),
       });
+
+      // A genuine duplicate (409) — the server rejected it, so roll
+      // back the optimistic change rather than leaving a state the
+      // database doesn't actually agree with. In practice this should
+      // rarely fire, since the buttons themselves already prevent
+      // clicking the same verdict twice — this is just the safety net.
+      if (!res.ok) {
+        setItems(previousItems);
+      }
     } catch {
-      // Best-effort — the click already reflects locally; a network
-      // hiccup here isn't worth interrupting the viewer over.
+      setItems(previousItems);
     }
   };
 
@@ -588,6 +610,7 @@ export default function ProjectContent({
                         key={v.id}
                         video={live}
                         index={i}
+                        viewerEmail={viewerEmail}
                         onOpen={() => setOpenVideoIdx(globalIdx)}
                         onReview={(status, note) => submitReview(v.id, status, note)}
                       />
@@ -604,6 +627,7 @@ export default function ProjectContent({
                         key={p.id}
                         photo={live}
                         index={i}
+                        viewerEmail={viewerEmail}
                         onOpen={() => setOpenPhotoIdx(globalIdx)}
                         onReview={(status, note) => submitReview(p.id, status, note)}
                       />
@@ -637,6 +661,7 @@ export default function ProjectContent({
             video={videos[openVideoIdx]}
             index={openVideoIdx}
             total={videos.length}
+            viewerEmail={viewerEmail}
             onClose={() => setOpenVideoIdx(null)}
             onPrev={() => setOpenVideoIdx((i) => (i! - 1 + videos.length) % videos.length)}
             onNext={() => setOpenVideoIdx((i) => (i! + 1) % videos.length)}
@@ -650,6 +675,7 @@ export default function ProjectContent({
             photo={photos[openPhotoIdx]}
             index={openPhotoIdx}
             total={photos.length}
+            viewerEmail={viewerEmail}
             onClose={() => setOpenPhotoIdx(null)}
             onPrev={() => setOpenPhotoIdx((i) => (i! - 1 + photos.length) % photos.length)}
             onNext={() => setOpenPhotoIdx((i) => (i! + 1) % photos.length)}

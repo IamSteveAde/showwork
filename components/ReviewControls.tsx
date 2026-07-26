@@ -14,22 +14,29 @@ export interface ReviewEntry {
 
 /**
  * Approve / request-revision controls for a single piece of media.
- * Shows every reviewer's input, not just the most recent one — a
- * second person's review adds to the list rather than replacing the
- * first person's, so a creator can see if multiple people weighed in
- * and disagreed.
+ * Shows every reviewer's input, and — critically — knows which one (if
+ * any) belongs to the *current* viewer, so they can't submit the same
+ * verdict twice. They can still change their mind (approve → revision
+ * or back), which updates their one entry rather than adding a new one.
  */
 export default function ReviewControls({
   reviews,
+  viewerEmail,
   onApprove,
   onRequestRevision,
 }: {
   reviews: ReviewEntry[];
+  viewerEmail: string;
   onApprove: () => void;
   onRequestRevision: (note: string) => void;
 }) {
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteText, setNoteText] = useState("");
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+
+  const myReview = reviews.find(
+    (r) => r.reviewerEmail.toLowerCase() === viewerEmail.toLowerCase()
+  );
 
   const submit = () => {
     onRequestRevision(noteText.trim());
@@ -37,27 +44,65 @@ export default function ReviewControls({
     setShowNoteInput(false);
   };
 
+  const handleApproveClick = () => {
+    if (myReview?.status === "APPROVED") {
+      setDuplicateError("You've already approved this file.");
+      setTimeout(() => setDuplicateError(null), 3000);
+      return;
+    }
+    setDuplicateError(null);
+    onApprove();
+  };
+
+  const handleRevisionClick = () => {
+    if (myReview?.status === "NEEDS_REVISION") {
+      setDuplicateError("You've already flagged this file for revision.");
+      setTimeout(() => setDuplicateError(null), 3000);
+      return;
+    }
+    setDuplicateError(null);
+    setShowNoteInput(true);
+  };
+
   return (
     <div onClick={(e) => e.stopPropagation()} className="flex w-full flex-col gap-2 p-2">
       {reviews.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          {reviews.map((r, i) => (
-            <div key={i} className="rounded-md bg-white/5 px-2.5 py-1.5 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-white/70">
-                  {r.reviewerName || r.reviewerEmail}
-                </span>
-                <span
-                  className="font-semibold"
-                  style={{ color: r.status === "APPROVED" ? "#22C55E" : "#F97316" }}
-                >
-                  {r.status === "APPROVED" ? "✓ Approved" : "✎ Revision"}
-                </span>
+          {reviews.map((r, i) => {
+            const isMe = r.reviewerEmail.toLowerCase() === viewerEmail.toLowerCase();
+            return (
+              <div key={i} className="overflow-hidden rounded-md bg-white/5 px-2.5 py-1.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 flex-1 truncate font-medium text-white/70">
+                    {r.reviewerName || r.reviewerEmail}
+                    {isMe && <span className="ml-1.5 text-[10px] text-white/40">(you)</span>}
+                  </span>
+                  <span
+                    className="flex-shrink-0 font-semibold"
+                    style={{ color: r.status === "APPROVED" ? "#22C55E" : "#F97316" }}
+                  >
+                    {r.status === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+                  </span>
+                </div>
+                {r.note && <p className="mt-1 text-white/50">&ldquo;{r.note}&rdquo;</p>}
               </div>
-              {r.note && <p className="mt-1 text-white/50">&ldquo;{r.note}&rdquo;</p>}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      )}
+
+      {/* Clear "this is your own current verdict" indicator, distinct
+          from the reviews list above — makes it unmistakable that
+          clicking the same action again won't do anything new. */}
+      {myReview && !showNoteInput && (
+        <p className="text-center text-[11px] text-white/40">
+          You {myReview.status === "APPROVED" ? "approved" : "flagged this for revision"} —
+          {" "}you can change your mind below.
+        </p>
+      )}
+
+      {duplicateError && (
+        <p className="text-center text-[11px] font-medium text-orange-400">{duplicateError}</p>
       )}
 
       {showNoteInput ? (
@@ -86,16 +131,26 @@ export default function ReviewControls({
       ) : (
         <div className="flex items-center gap-1.5">
           <button
-            onClick={onApprove}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white/10 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/20"
+            onClick={handleApproveClick}
+            className="flex flex-1 items-center justify-center gap-1 rounded-md py-1.5 text-xs font-medium transition-colors"
+            style={
+              myReview?.status === "APPROVED"
+                ? { background: "rgba(34,197,94,0.15)", color: "#4ade80" }
+                : { background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }
+            }
           >
-            ✓ Approve
+            {myReview?.status === "APPROVED" ? "✓ You approved this" : "✓ Approve"}
           </button>
           <button
-            onClick={() => setShowNoteInput(true)}
-            className="flex flex-1 items-center justify-center gap-1 rounded-md bg-white/10 py-1.5 text-xs font-medium text-white/70 transition-colors hover:bg-white/20"
+            onClick={handleRevisionClick}
+            className="flex flex-1 items-center justify-center gap-1 rounded-md py-1.5 text-xs font-medium transition-colors"
+            style={
+              myReview?.status === "NEEDS_REVISION"
+                ? { background: "rgba(249,115,22,0.15)", color: "#fdba74" }
+                : { background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }
+            }
           >
-            ✎ Needs revision
+            {myReview?.status === "NEEDS_REVISION" ? "✎ You flagged this" : "✎ Needs revision"}
           </button>
         </div>
       )}

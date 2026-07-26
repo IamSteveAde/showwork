@@ -88,11 +88,11 @@ export default function ReviewsModal({
           ) : (
             <div className="flex flex-col gap-2.5">
               {reviews.map((r, i) => (
-                <div key={i} className="rounded-lg p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div key={i} className="overflow-hidden rounded-lg p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-medium text-white">{r.reviewerName || "Unnamed viewer"}</p>
-                      <p className="text-xs text-white/30">{r.reviewerEmail}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">{r.reviewerName || "Unnamed viewer"}</p>
+                      <p className="truncate text-xs text-white/30">{r.reviewerEmail}</p>
                     </div>
                     <span
                       className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"

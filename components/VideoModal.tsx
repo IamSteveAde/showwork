@@ -10,6 +10,7 @@ export default function VideoModal({
   video,
   index,
   total,
+  viewerEmail,
   onClose,
   onPrev,
   onNext,
@@ -22,6 +23,7 @@ export default function VideoModal({
   onPrev: () => void;
   onNext: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  viewerEmail: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -139,6 +141,7 @@ export default function VideoModal({
         <div style={{ background: "#141414" }}>
           <ReviewControls
             reviews={video.reviews}
+            viewerEmail={viewerEmail}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />

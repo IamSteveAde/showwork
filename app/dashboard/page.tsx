@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
+import DeleteProjectButton from "@/components/DeleteProjectButton";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
 import { TIERS, PaidTier, Tier, PLAN_DISPLAY_NAME, NEXT_TIER } from "@/lib/subscriptionTiers";
 import { isAdminEmail } from "@/lib/admin";
@@ -16,8 +17,6 @@ const COLOR = {
   midGray: "#888786",
 };
 
-// 12 divides cleanly into both the 2-column and 3-column grid layouts
-// used below (6 rows / 4 rows respectively) — no half-empty last row.
 const PAGE_SIZE = 12;
 
 function initials(name: string | null, email: string) {
@@ -49,8 +48,6 @@ export default async function DashboardPage({
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(Math.max(1, parseInt(page ?? "1", 10) || 1), totalPages);
 
-  // Only fetch the one page's worth of rows — not every project the
-  // creator has ever made, which is what made this slower as the list grew.
   const projects = await db.project.findMany({
     where: { creatorId: creator.id },
     orderBy: { createdAt: "desc" },
@@ -59,14 +56,11 @@ export default async function DashboardPage({
     include: { _count: { select: { media: true, viewerEmails: true } } },
   });
 
-  // Site-wide stats still reflect everything, not just the current page.
   const allProjectsForStats = await db.project.findMany({
     where: { creatorId: creator.id },
     select: { viewCount: true, _count: { select: { viewerEmails: true } } },
   });
   const usage = await getCreatorUsage(creator);
-  // Every project is live the moment it's created (see the project
-  // detail page for the full reasoning) — so this is just the total.
   const liveCount = totalCount;
   const totalViews = allProjectsForStats.reduce((sum, p) => sum + p.viewCount, 0);
   const totalEmails = allProjectsForStats.reduce((sum, p) => sum + p._count.viewerEmails, 0);
@@ -117,15 +111,38 @@ export default async function DashboardPage({
             <span className="text-white/40">·</span>
             {usage.limit === Infinity ? "Unlimited" : `${usage.used}/${usage.limit} this cycle`}
           </Link>
-          <div className="hidden items-center gap-3 sm:flex">
+
+          {/* Clear, unmistakably clickable — a real pill button, not
+              plain text, and labeled as an action ("View profile")
+              rather than a passive noun ("Profile"). */}
+          <Link
+            href="/dashboard/profile"
+            className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:flex"
+            style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+          >
+            View profile
+            <span aria-hidden>→</span>
+          </Link>
+
+          {/* Avatar itself is also a link — hover feedback (scale +
+              brighter background) makes it obvious it's clickable, not
+              just decorative. */}
+          <Link
+            href="/dashboard/profile"
+            className="group hidden items-center gap-3 sm:flex"
+            aria-label="View profile"
+          >
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-transform group-hover:scale-110"
               style={{ background: "rgba(245,200,66,0.18)", color: COLOR.gold }}
             >
               {initials(creator.name, creator.email)}
             </div>
-            <span className="text-sm font-medium text-white/80">{creator.name || creator.email}</span>
-          </div>
+            <span className="text-sm font-medium text-white/80 transition-colors group-hover:text-white">
+              {creator.name || creator.email}
+            </span>
+          </Link>
+
           <LogoutButton />
         </div>
       </div>
@@ -271,9 +288,11 @@ export default async function DashboardPage({
                   <Link
                     key={project.id}
                     href={`/dashboard/${project.id}`}
-                    className="group flex flex-col gap-4 rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5"
+                    className="group relative flex flex-col gap-4 rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5"
                     style={{ background: COLOR.charcoal, boxShadow: "0 0 0 1px rgba(248,247,244,0.04)" }}
                   >
+                    <DeleteProjectButton projectId={project.id} clientName={project.clientName} />
+
                     <div className="flex items-start justify-between">
                       <span
                         className="rounded-full px-3 py-1 text-xs font-semibold"
@@ -284,9 +303,6 @@ export default async function DashboardPage({
                         }
                       >
                         {isLive ? "Live" : "Draft"}
-                      </span>
-                      <span className="text-white/20 transition-transform group-hover:translate-x-0.5 group-hover:text-white/50" aria-hidden>
-                        →
                       </span>
                     </div>
 
