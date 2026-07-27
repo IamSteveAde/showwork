@@ -760,7 +760,7 @@ export default function ProjectContent({
                   })}
                 </div>
               ) : section.mediaType === "PHOTO" ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-4">
+                <div className="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-3 md:gap-4">
                   {section.media.map((p, i) => {
                     const live = withLiveStatus(p);
                     const globalIdx = photos.findIndex((x) => x.id === p.id);
