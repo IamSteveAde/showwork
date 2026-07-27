@@ -7,7 +7,7 @@ import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
-import DocModal from "@/components/DocModal";
+import DocModal from "@/components/Docmodal";
 import { downloadFile, downloadAllAsZip, filenameFromUrl } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
