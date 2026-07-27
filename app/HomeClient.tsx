@@ -111,7 +111,7 @@ const PRICING_TIERS = [
       "Client approve / revision flow, with notes",
       "Individual file downloads for your client",
       "Dashboard views & delivery analytics",
-      "Shows the Spotlite Africa badge",
+      "Shows the Showwork badge",
     ],
     cta: "Start free",
     href: "/start",
@@ -133,7 +133,7 @@ const PRICING_TIERS = [
       "Client approve / revision flow, with notes",
       "Individual + \"download all\" (zip) for clients",
       "Dashboard views & delivery analytics",
-      "No Spotlite Africa badge",
+      "No Showwork badge",
     ],
     cta: "Choose Starter",
     href: "/dashboard/billing?tier=STARTER",
@@ -155,7 +155,7 @@ const PRICING_TIERS = [
       "Client approve / revision flow, with notes",
       "Individual + \"download all\" (zip) for clients",
       "Dashboard views & delivery analytics",
-      "No Spotlite Africa badge",
+      "No Showwork badge",
       "Priority support",
     ],
     cta: "Choose Growth",
@@ -178,7 +178,7 @@ const PRICING_TIERS = [
       "Client approve / revision flow, with notes",
       "Individual + \"download all\" (zip) for clients",
       "Dashboard views & delivery analytics",
-      "No Spotlite Africa badge",
+      "No Showwork badge",
       "Highest priority support",
     ],
     cta: "Go Unlimited",
@@ -193,12 +193,6 @@ function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
     <div className="flex items-baseline gap-2">
       <span className={`${sizes[size]} font-bold text-white`}>
         Show<span style={{ color: COLOR.gold }}>work</span>
-      </span>
-      <span
-        className="hidden text-xs font-medium uppercase text-white/40 sm:inline"
-        style={{ letterSpacing: "0.1em" }}
-      >
-        by Spotlite Africa
       </span>
     </div>
   );
@@ -404,7 +398,7 @@ export default function HomeClient() {
               <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
               <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
               <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-              <span className="ml-3 text-[11px] text-white/25">showwork.spotliteafrica.com/fashion-fest</span>
+              <span className="ml-3 text-[11px] text-white/25">useshowwork.com/fashion-fest</span>
             </div>
 
             <div
@@ -457,7 +451,7 @@ export default function HomeClient() {
 
             <div className="mt-8 flex flex-col items-center gap-3">
               <a
-                href="https://showwork.spotliteafrica.com/demo-2"
+                href="https://useshowwork.com/demo-2"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
@@ -697,50 +691,13 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* ── RELATIONSHIP TO SPOTLITE AFRICA ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.warmWhite }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto max-w-[1280px]"
-        >
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(10,10,10,0.4)", letterSpacing: "0.1em" }}>
-            Built by Spotlite Africa
-          </p>
-          <h2 className="mb-6 max-w-2xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.black }}>
-            A 360° brand agency, making one job easier for creators.
-          </h2>
-          <p className="max-w-2xl text-base font-normal leading-relaxed md:text-lg" style={{ color: "rgba(10,10,10,0.65)" }}>
-            Spotlite Africa is a strategy-first brand and marketing agency
-            based in Lagos, building African businesses to global standard.
-            We work with creators and production teams on our own client
-            campaigns every week, and we kept seeing the same gap: excellent
-            work, arriving badly. Showwork is how we close that gap — not
-            just for our own clients, but for every creator doing the work.
-          </p>
-          <a
-            href="https://spotliteafrica.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-            style={{ background: COLOR.black, color: "white" }}
-          >
-            Visit spotliteafrica.com
-            <span aria-hidden>→</span>
-          </a>
-        </motion.div>
-      </section>
-
       {/* ── FOOTER ── */}
       <footer className="px-6 py-14 md:px-20" style={{ background: COLOR.black, borderTop: "1px solid rgba(248,247,244,0.08)" }}>
         <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-8 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div>
             <Wordmark size="sm" />
             <p className="mt-3 max-w-xs text-sm font-normal leading-relaxed" style={{ color: COLOR.midGray }}>
-              Strategy-first. Execution-obsessed.
+              The delivery experience your work deserves.
             </p>
           </div>
 
@@ -748,16 +705,8 @@ export default function HomeClient() {
             <p className="text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
               Contact
             </p>
-            <a href="mailto:info@spotliteafrica.com" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
-              info@spotliteafrica.com
-            </a>
-            <a
-              href="https://spotliteafrica.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-normal text-white/60 transition-colors hover:text-white"
-            >
-              spotliteafrica.com
+            <a href="mailto:hello@useshowwork.com" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
+              hello@useshowwork.com
             </a>
           </div>
 
@@ -775,7 +724,7 @@ export default function HomeClient() {
         </div>
 
         <p className="mt-12 text-center text-xs font-normal" style={{ color: "rgba(248,247,244,0.2)" }}>
-          © {new Date().getFullYear()} Spotlite Africa Agency. Showwork is a Spotlite Africa product.
+          © {new Date().getFullYear()} Showwork. All rights reserved.
         </p>
       </footer>
 
