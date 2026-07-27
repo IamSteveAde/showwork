@@ -7,7 +7,7 @@ import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
-import DocModal from "@/components/Docmodal";
+import DocModal from "@/components/DocModal";
 import { downloadFile, downloadAllAsZip, filenameFromUrl } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
@@ -425,23 +425,38 @@ function PhotoTile({
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
 }) {
+  // Orientation isn't known until the image actually loads — landscape
+  // shots get their own full-width row (never cropped, never squeezed
+  // into a square), while portrait and square shots share the normal
+  // 3-per-row (desktop) / 1-per-row (mobile) grid. Starts as null and
+  // briefly renders at default width until the real aspect ratio is read.
+  const [isLandscape, setIsLandscape] = useState(false);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.5, delay: index * 0.04 }}
-      className="overflow-hidden rounded-xl bg-black/5"
+      className={`overflow-hidden rounded-xl bg-black/5 ${isLandscape ? "col-span-full" : ""}`}
     >
-      <div onClick={onOpen} className="group relative aspect-[4/5] cursor-pointer">
-        <Image
+      <div onClick={onOpen} className="group relative cursor-pointer">
+        {/* Plain <img>, not next/image's `fill` mode — `fill` requires
+            object-fit (cover/contain into a fixed box), which is exactly
+            the cropping/letterboxing this needs to avoid. A normal
+            width-100%-height-auto image always shows the complete photo
+            at its real aspect ratio, whatever that is. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={photo.url}
           alt={photo.caption}
-          fill
-          sizes="(max-width: 768px) 50vw, 33vw"
-          quality={82}
           loading="lazy"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          decoding="async"
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            setIsLandscape(img.naturalWidth > img.naturalHeight);
+          }}
+          className="block w-full transition-transform duration-500 group-hover:scale-[1.01]"
         />
 
         {photo.approvalStatus !== "PENDING" && (
