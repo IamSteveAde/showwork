@@ -20,10 +20,11 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (creator.subscriptionActive) {
-    // Unlimited for active subscribers — the cap only exists to stop
-    // the old one-time-payment model being stretched into free
-    // ongoing use, which doesn't apply once someone's subscribed.
+  if (creator.subscriptionActive || creator.isComped) {
+    // Unlimited for active subscribers *and* comped (admin-granted
+    // free) accounts — the cap only exists to stop the old
+    // one-time-payment model being stretched into free ongoing use,
+    // which doesn't apply to either of those cases.
     return NextResponse.json({ remaining: Infinity });
   }
 

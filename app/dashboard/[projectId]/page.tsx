@@ -75,10 +75,11 @@ export default async function ProjectDetailPage({
   // — shown as its own fallback group rather than being hidden.
   const ungroupedMedia = project.media.filter((m) => !m.sectionId);
 
-  // Unlimited add-more for active subscribers — the cap only exists to
-  // stop the old one-time-payment model being stretched into free
-  // ongoing use, which doesn't apply once someone's actually subscribed.
-  const uploadSessionsRemaining = creator.subscriptionActive
+  // Unlimited add-more for active subscribers *and* comped (admin-
+  // granted free) accounts — the cap only exists to stop the old
+  // one-time-payment model being stretched into free ongoing use,
+  // which doesn't apply to either of those cases.
+  const uploadSessionsRemaining = creator.subscriptionActive || creator.isComped
     ? Infinity
     : MAX_ADDITIONAL_UPLOAD_BATCHES - project.additionalUploadCount;
 
@@ -225,7 +226,14 @@ export default async function ProjectDetailPage({
           <>
             {project.sections.map((section) => (
               <div key={section.id} className="mb-10">
-                <SectionHeader sectionId={section.id} name={section.name} fileCount={section.media.length} />
+                <SectionHeader
+                  projectId={project.id}
+                  sectionId={section.id}
+                  name={section.name}
+                  mediaType={section.mediaType}
+                  fileCount={section.media.length}
+                  uploadSessionsRemaining={uploadSessionsRemaining}
+                />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   {section.media.map((m) => (
                     <FileGridItem
