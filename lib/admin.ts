@@ -4,7 +4,7 @@
  * changing who's an admin is just an environment variable edit.
  *
  * Set in .env:
- *   ADMIN_EMAILS="you@spotliteafrica.com,cofounder@spotliteafrica.com"
+ *   ADMIN_EMAILS="you@useshowwork.com,cofounder@useshowwork.com"
  */
 export function isAdminEmail(email: string): boolean {
   const list = (process.env.ADMIN_EMAILS ?? "")

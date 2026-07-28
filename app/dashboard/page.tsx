@@ -101,7 +101,7 @@ export default async function DashboardPage({
             </Link>
           )}
           <a
-            href="mailto:info@spotliteafrica.com?subject=Showwork%20support"
+            href="mailto:hello@useshowwork.com?subject=Showwork%20support"
             className="hidden text-xs font-medium text-white/40 transition-colors hover:text-white sm:inline"
           >
             Support
@@ -412,7 +412,7 @@ export default async function DashboardPage({
             <p className="mt-1 text-xs text-white/40">We reply within 5 hours.</p>
           </div>
           <a
-            href="mailto:info@spotliteafrica.com?subject=Showwork%20support"
+            href="mailto:hello@useshowwork.com?subject=Showwork%20support"
             className="flex w-fit items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
             style={{ background: "rgba(245,200,66,0.12)", color: COLOR.gold }}
           >

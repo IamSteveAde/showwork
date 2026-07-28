@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Set this once you've verified a sending domain in Resend's dashboard —
-// e.g. "Showwork <no-reply@spotliteafrica.com>". Until a domain is
+// e.g. "Showwork <no-reply@useshowwork.com>". Until a domain is
 // verified, check Resend's dashboard for what sender address is
 // currently allowed for testing.
 const FROM = process.env.RESEND_FROM_EMAIL ?? "Showwork <onboarding@resend.dev>";

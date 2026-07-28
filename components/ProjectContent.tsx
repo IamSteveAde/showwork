@@ -815,7 +815,7 @@ export default function ProjectContent({
         <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
         {badgeVisible && (
           <a
-            href="https://spotliteafrica.com"
+            href="https://useshowwork.com"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-medium transition-opacity hover:opacity-70"

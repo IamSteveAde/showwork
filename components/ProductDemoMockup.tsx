@@ -42,7 +42,7 @@ export default function ProductDemoMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-          <span className="ml-3 text-[10px] text-white/25">showwork.spotliteafrica.com/fashion-fest</span>
+          <span className="ml-3 text-[10px] text-white/25">useshowwork.com/fashion-fest</span>
         </div>
 
         <div className="relative h-72">

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     title: "Showwork by Spotlite Africa",
     description:
       "A premium, password-protected showcase for the photos and films Nigerian creators deliver to clients. ₦5,000 per project.",
-    url: "https://showwork.spotliteafrica.com",
+    url: "https://useshowwork.com",
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
