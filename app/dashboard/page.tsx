@@ -44,12 +44,16 @@ export default async function DashboardPage({
   if (!creator) redirect("/login");
 
   const { page } = await searchParams;
-  const totalCount = await db.project.count({ where: { creatorId: creator.id } });
+  // deletedAt: null — a soft-deleted project should never appear in the
+  // creator's own list or stats, even though it still counts against
+  // their billing usage for the cycle it was created in (see
+  // getCreatorUsage, which intentionally does NOT filter this out).
+  const totalCount = await db.project.count({ where: { creatorId: creator.id, deletedAt: null } });
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(Math.max(1, parseInt(page ?? "1", 10) || 1), totalPages);
 
   const projects = await db.project.findMany({
-    where: { creatorId: creator.id },
+    where: { creatorId: creator.id, deletedAt: null },
     orderBy: { createdAt: "desc" },
     skip: (currentPage - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
@@ -57,7 +61,7 @@ export default async function DashboardPage({
   });
 
   const allProjectsForStats = await db.project.findMany({
-    where: { creatorId: creator.id },
+    where: { creatorId: creator.id, deletedAt: null },
     select: { viewCount: true, _count: { select: { viewerEmails: true } } },
   });
   const usage = await getCreatorUsage(creator);

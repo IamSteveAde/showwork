@@ -15,6 +15,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
+  // Records this as their most recent session — the basis for the
+  // admin activity page tracking how often each creator actually uses
+  // the platform. Best-effort: if this write somehow fails, it should
+  // never block the person from actually logging in.
+  try {
+    await db.creator.update({
+      where: { id: creator.id },
+      data: { lastLoginAt: new Date() },
+    });
+  } catch (err) {
+    console.error("Failed to record lastLoginAt:", err);
+  }
+
   const token = createSessionToken(creator.id);
   await setSessionCookie(token);
 

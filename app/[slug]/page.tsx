@@ -32,7 +32,7 @@ export default async function SlugPage({
     },
   });
 
-  if (!project) notFound();
+  if (!project || project.deletedAt) notFound();
 
   // Real view: someone actually opened this delivery link. Independent
   // of email capture — counts regardless of whether that's turned on.
@@ -113,6 +113,7 @@ export default async function SlugPage({
       ungroupedMedia={ungroupedMedia}
       heroMedia={heroMedia}
       heroTagline={project.heroTagline}
+      deliveryStatus={project.deliveryStatus}
       initiallyUnlocked={!!viewerSession}
       initialViewerEmail={viewerSession?.email ?? null}
     />

@@ -36,6 +36,7 @@ interface DeliveryPageProps {
   ungroupedMedia: MediaItem[];
   heroMedia: MediaItem | null;
   heroTagline: string | null;
+  deliveryStatus: "DELIVERED" | "APPROVED" | "PAID";
   initiallyUnlocked: boolean;
   initialViewerEmail: string | null;
 }
@@ -52,6 +53,7 @@ export default function DeliveryPage({
   ungroupedMedia,
   heroMedia,
   heroTagline,
+  deliveryStatus,
   initiallyUnlocked,
   initialViewerEmail,
 }: DeliveryPageProps) {
@@ -103,6 +105,7 @@ export default function DeliveryPage({
             heroTagline={heroTagline}
             viewerName={viewerName}
             viewerEmail={viewerEmail}
+            deliveryStatus={deliveryStatus}
           />
         )}
       </AnimatePresence>

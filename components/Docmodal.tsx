@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { MediaItem } from "@/app/[slug]/DeliveryPage";
-import { downloadFile, filenameFromUrl } from "@/lib/download";
+import { downloadFile } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
 function officeViewerUrl(url: string) {
@@ -30,14 +30,17 @@ export default function DocModal({
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleDownload = async () => {
     if (downloading) return;
     setDownloading(true);
+    setDownloadError(null);
     try {
-      await downloadFile(doc.url, filenameFromUrl(doc.url));
-    } catch {
-      // non-critical, fail silently
+      await downloadFile(doc.id);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : "Download failed");
+      setTimeout(() => setDownloadError(null), 4000);
     } finally {
       setDownloading(false);
     }
@@ -74,23 +77,33 @@ export default function DocModal({
         ✕
       </button>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); handleDownload(); }}
-        aria-label="Download"
-        disabled={downloading}
-        className="absolute right-[4.5rem] top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 disabled:opacity-50"
-      >
-        {downloading ? (
-          <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-            <path d="M12.5 7a5.5 5.5 0 0 0-5.5-5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        ) : (
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <path d="M6.5 1v7.5M6.5 8.5L3 5M6.5 8.5L10 5M1.5 11.5H11.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+      <div className="absolute right-[4.5rem] top-5 z-10">
+        <button
+          onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+          aria-label="Download"
+          disabled={downloading}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+        >
+          {downloading ? (
+            <svg className="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+              <path d="M12.5 7a5.5 5.5 0 0 0-5.5-5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M6.5 1v7.5M6.5 8.5L3 5M6.5 8.5L10 5M1.5 11.5H11.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+        {downloadError && (
+          <div
+            className="absolute right-0 top-full mt-2 w-56 rounded-lg px-3 py-2 text-xs font-medium text-white shadow-lg"
+            style={{ background: "rgba(220,38,38,0.95)" }}
+          >
+            {downloadError}
+          </div>
         )}
-      </button>
+      </div>
 
       {total > 1 && (
         <>

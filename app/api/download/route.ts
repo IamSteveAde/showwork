@@ -1,34 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { publicUrlFor } from "@/lib/r2";
 
 /**
- * Proxies a file download through our own server instead of having the
- * browser fetch it directly from R2. CORS is purely a browser concept —
- * it never applies to server-to-server requests — so routing through
- * here sidesteps CORS, custom-domain, and edge-cache header issues
- * entirely, regardless of their root cause. The browser only ever talks
- * to our own domain; this endpoint does the cross-origin fetch itself.
+ * Proxies a file download through our own server. Two jobs, both
+ * important:
  *
- * Also sets a real Content-Disposition header, so simply navigating to
- * this URL (a plain <a href>, no JS fetch/blob needed) triggers a native
- * browser download with the correct filename — that part alone is not
- * subject to CORS at all, since it's a normal page navigation, not a
- * script reading cross-origin bytes.
+ * 1. CORS/reliability — the browser only ever talks to our domain; our
+ *    server does the cross-origin fetch to R2, sidestepping any
+ *    browser-side CORS/caching issues entirely.
+ *
+ * 2. Real payment enforcement — this looks the file up by its mediaId
+ *    (never a client-supplied URL) and checks the *actual, current*
+ *    deliveryStatus in the database before serving a single byte. A
+ *    person can't bypass this by editing the download URL, calling the
+ *    API directly, or disabling JavaScript — the check happens here,
+ *    server-side, every time, regardless of what the UI shows.
+ *
+ * Honest limit, stated plainly: this stops the download/save action
+ * itself. It cannot stop someone from screen-recording a video that's
+ * already playing on their screen, or screenshotting a photo — no
+ * website can prevent that, this one included.
  */
 export async function GET(req: NextRequest) {
-  const fileUrl = req.nextUrl.searchParams.get("url");
-  const filename = req.nextUrl.searchParams.get("filename") || "file";
-
-  if (!fileUrl) {
-    return NextResponse.json({ error: "Missing url" }, { status: 400 });
+  const mediaId = req.nextUrl.searchParams.get("mediaId");
+  if (!mediaId) {
+    return NextResponse.json({ error: "Missing mediaId" }, { status: 400 });
   }
 
-  // Only ever proxy our own R2 bucket — never an arbitrary URL. Without
-  // this check, this endpoint would be an open proxy anyone could point
-  // at any address (a real security risk, not just a nicety).
-  const allowedPrefix = process.env.R2_PUBLIC_URL;
-  if (!allowedPrefix || !fileUrl.startsWith(allowedPrefix)) {
-    return NextResponse.json({ error: "Invalid file URL" }, { status: 400 });
+  const media = await db.media.findUnique({
+    where: { id: mediaId },
+    include: { project: true },
+  });
+  if (!media) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
+
+  if (media.project.deliveryStatus !== "PAID") {
+    return NextResponse.json(
+      {
+        error: "Payment confirmation required before this file can be downloaded.",
+        paymentRequired: true,
+      },
+      { status: 402 } // 402 Payment Required — the exact HTTP status built for this
+    );
+  }
+
+  const fileUrl = publicUrlFor(media.fileKey);
+  const filename = media.fileKey.split("/").pop() ?? "file";
 
   let upstream: Response;
   try {

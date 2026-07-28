@@ -17,7 +17,7 @@ export async function GET(
     include: { media: { orderBy: { displayOrder: "asc" } } },
   });
 
-  if (!project || project.creatorId !== creator.id) {
+  if (!project || project.creatorId !== creator.id || project.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -35,7 +35,7 @@ export async function PATCH(
 
   const { id } = await params;
   const project = await db.project.findUnique({ where: { id } });
-  if (!project || project.creatorId !== creator.id) {
+  if (!project || project.creatorId !== creator.id || project.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -54,6 +54,20 @@ export async function PATCH(
     if (field in body) data[field] = body[field];
   }
 
+  // deliveryStatus is an enum, not free-form — validated explicitly
+  // rather than passed through blindly like the fields above, since an
+  // invalid value here would break both the creator and client status
+  // displays, which are meant to always stay in sync.
+  if ("deliveryStatus" in body) {
+    if (!["DELIVERED", "APPROVED", "PAID"].includes(body.deliveryStatus)) {
+      return NextResponse.json(
+        { error: "deliveryStatus must be DELIVERED, APPROVED, or PAID" },
+        { status: 400 }
+      );
+    }
+    data.deliveryStatus = body.deliveryStatus;
+  }
+
   const updated = await db.project.update({ where: { id }, data });
   return NextResponse.json({ project: updated });
 }
@@ -70,11 +84,14 @@ export async function DELETE(
 
   const { id } = await params;
   const project = await db.project.findUnique({ where: { id } });
-  if (!project || project.creatorId !== creator.id) {
+  if (!project || project.creatorId !== creator.id || project.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await db.project.delete({ where: { id } });
+  // Soft delete — hides it from every view, but keeps the row so it
+  // still counts against the cycle it was created in. Prevents a
+  // create-then-delete loop from bypassing the tier limit for free.
+  await db.project.update({ where: { id }, data: { deletedAt: new Date() } });
 
   return NextResponse.json({ ok: true });
 }

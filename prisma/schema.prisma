@@ -33,6 +33,11 @@ model Creator {
   // created before this field existed won't have one.
   phone        String?
   createdAt    DateTime @default(now())
+  // Updated every time this creator successfully logs in — the basis
+  // for tracking how actively each account uses the platform. Null
+  // means they've never logged in since this field was added (or ever,
+  // for an admin-created account nobody's used yet).
+  lastLoginAt  DateTime?
 
   // Profile
   avatarUrl      String?
@@ -90,10 +95,24 @@ model Creator {
 // ─────────────────────────────────────────────
 // PROJECT — one client delivery (e.g. "Soundhous 2026")
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// DELIVERY STATUS — the real, creator-controlled workflow state of a
+// project. Separate from per-file approve/revision (which is about
+// individual files); this is about the project as a whole. Downloads
+// are only ever unlocked once this reaches PAID — enforced server-side,
+// not just hidden in the UI.
+// ─────────────────────────────────────────────
+enum DeliveryStatus {
+  DELIVERED
+  APPROVED
+  PAID
+}
+
 model Project {
   id         String @id @default(uuid())
   slug       String @unique // used in the URL: yourproduct.com/{slug}
   clientName String
+  deliveryStatus DeliveryStatus @default(DELIVERED)
 
   // access control
   passwordHash String
@@ -146,6 +165,15 @@ model Project {
   // one payment could keep growing forever into an unrelated ongoing
   // delivery, same reasoning as the replace-file cap.
   additionalUploadCount Int @default(0)
+
+  // Soft delete — a "deleted" project is hidden from every normal view
+  // (dashboard list, direct links, the public delivery page all treat
+  // it as gone) but the row itself stays. This matters specifically for
+  // billing: usage counts are based on how many projects were *created*
+  // in a cycle, not how many currently still exist — otherwise creating
+  // and deleting on a loop would let someone bypass their tier limit
+  // for free, since a hard-deleted row simply vanishes from any count.
+  deletedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

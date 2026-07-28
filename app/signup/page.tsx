@@ -11,6 +11,39 @@ const COLOR = {
   midGray: "#888786",
 };
 
+function EyeToggleButton({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={visible ? "Hide password" : "Show password"}
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 transition-colors hover:text-white/80"
+    >
+      {visible ? (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M2 2l14 14M6.6 6.7A3 3 0 0 0 9 12a3 3 0 0 0 2.7-1.7M4.3 4.5C2.6 5.7 1.3 7.3 1 9c.7 3 3.9 6 8 6 1.4 0 2.7-.35 3.8-.95M13.7 13.5c1.3-1 2.3-2.4 3-4.5-1-3-4.2-6-8-6-.65 0-1.28.08-1.9.24"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path
+            d="M1 9s2.8-6 8-6 8 6 8 6-2.8 6-8 6-8-6-8-6Z"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+          <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,6 +54,7 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [code, setCode] = useState("");
 
   const [error, setError] = useState<string | null>(null);
@@ -100,12 +134,6 @@ function SignupForm() {
           <span className="text-lg font-bold text-white">
             Show<span style={{ color: COLOR.gold }}>work</span>
           </span>
-          <span
-            className="hidden text-xs font-medium uppercase text-white/40 sm:inline"
-            style={{ letterSpacing: "0.1em" }}
-          >
-            by Spotlite Africa
-          </span>
         </Link>
       </div>
 
@@ -182,16 +210,19 @@ function SignupForm() {
                 <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
                   Password
                 </label>
-                <input
-                  type="password"
-                  placeholder="Minimum 8 characters"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{ fontSize: "16px" }}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
-                />
+                <div className="relative">
+                  <input
+                    type={passwordVisible ? "text" : "password"}
+                    placeholder="Minimum 8 characters"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ fontSize: "16px" }}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 pr-12 text-sm text-white outline-none transition-colors focus:border-white/25"
+                  />
+                  <EyeToggleButton visible={passwordVisible} onToggle={() => setPasswordVisible((v) => !v)} />
+                </div>
               </div>
 
               {error && <p className="text-xs text-red-400">{error}</p>}

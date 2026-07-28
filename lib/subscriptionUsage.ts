@@ -49,6 +49,14 @@ export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageIn
       ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       : creator.currentCycleStart;
 
+  // Deliberately does NOT filter on deletedAt — this is the one place
+  // in the app where that's intentional, not an oversight. Usage is
+  // based on how many projects were *created* in this cycle, not how
+  // many still currently exist. If this counted only non-deleted rows,
+  // creating and deleting projects on a loop would let someone bypass
+  // their tier limit for free — soft-deleting a project (see the
+  // Project.deletedAt field) removes it from every normal view but
+  // deliberately keeps it counting here.
   const used = await db.project.count({
     where: { creatorId: creator.id, createdAt: { gte: cycleStart } },
   });

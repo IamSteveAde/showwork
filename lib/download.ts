@@ -1,29 +1,44 @@
 /**
  * Downloads a single file by navigating to our own server-side proxy
- * route, which sets a real Content-Disposition header. This is a plain
- * page navigation, not a JavaScript fetch of cross-origin bytes — so
- * CORS is never a factor here at all, regardless of R2/CDN
- * configuration on the file-storage side.
+ * route, keyed by the file's mediaId — never a raw URL, since the
+ * proxy is what actually enforces payment status server-side. A plain
+ * page navigation, not a JS fetch of cross-origin bytes, so CORS is
+ * never a factor here regardless of file-storage configuration.
  */
-export async function downloadFile(url: string, filename: string) {
-  const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+export async function downloadFile(mediaId: string) {
+  const proxyUrl = `/api/download?mediaId=${encodeURIComponent(mediaId)}`;
 
+  // A HEAD-style check first via a real GET so we can surface the
+  // payment-required message clearly, rather than the browser just
+  // downloading a JSON error file named after the request.
+  const res = await fetch(proxyUrl);
+  if (!res.ok) {
+    if (res.status === 402) {
+      throw new Error("Payment confirmation required before this file can be downloaded.");
+    }
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error ?? `Download failed (${res.status})`);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = disposition.match(/filename="(.+)"/);
+  const filename = match?.[1] ?? "file";
+
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = proxyUrl;
-  // No `download` attribute needed — the server's Content-Disposition
-  // header is what actually triggers the save, and does so reliably
-  // even for file types a browser would otherwise just open inline.
+  a.href = blobUrl;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
+  URL.revokeObjectURL(blobUrl);
 }
 
 /**
- * Downloads several files bundled into a single .zip. Each file is
- * fetched through our own same-origin proxy route (not directly from
- * R2), so this fetch is same-origin from the browser's point of view —
- * CORS never applies to a same-origin request, which is what makes
- * this reliable regardless of the file storage's own CORS setup.
+ * Downloads several files bundled into a single .zip, each fetched
+ * through the same mediaId-based proxy — so the payment check applies
+ * uniformly whether someone downloads one file or all of them.
  *
  * Note: this happens entirely in the browser's memory. It's fine for
  * typical photo sets and a handful of short videos, but a very large
@@ -32,7 +47,7 @@ export async function downloadFile(url: string, filename: string) {
  * streaming zip instead — worth revisiting if creators start hitting it.
  */
 export async function downloadAllAsZip(
-  items: { url: string; filename: string }[],
+  items: { mediaId: string }[],
   zipFilename: string,
   onProgress?: (done: number, total: number) => void
 ) {
@@ -40,10 +55,17 @@ export async function downloadAllAsZip(
   const zip = new JSZip();
 
   for (let i = 0; i < items.length; i++) {
-    const { url, filename } = items[i];
-    const proxyUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error(`Failed to fetch ${filename} (${res.status})`);
+    const { mediaId } = items[i];
+    const res = await fetch(`/api/download?mediaId=${encodeURIComponent(mediaId)}`);
+    if (!res.ok) {
+      if (res.status === 402) {
+        throw new Error("Payment confirmation required before these files can be downloaded.");
+      }
+      throw new Error(`Failed to fetch a file (${res.status})`);
+    }
+    const disposition = res.headers.get("content-disposition") ?? "";
+    const match = disposition.match(/filename="(.+)"/);
+    const filename = match?.[1] ?? `file-${i + 1}`;
     const blob = await res.blob();
     zip.file(filename, blob);
     onProgress?.(i + 1, items.length);
@@ -59,14 +81,4 @@ export async function downloadAllAsZip(
   a.click();
   a.remove();
   URL.revokeObjectURL(blobUrl);
-}
-
-/**
- * Pulls a reasonably clean filename out of an R2 object URL, stripping
- * the timestamp prefix we add at upload time so downloaded files don't
- * look like "1783607834925-Screenshot_2026-07-09.png" to the client.
- */
-export function filenameFromUrl(url: string): string {
-  const last = decodeURIComponent(url.split("/").pop() ?? "file");
-  return last.replace(/^\d+-/, "");
 }

@@ -8,7 +8,8 @@ import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
 import DocModal from "@/components/Docmodal";
-import { downloadFile, downloadAllAsZip, filenameFromUrl } from "@/lib/download";
+import DeliveryStatusBanner from "@/components/DeliveryStatusBanner";
+import { downloadFile, downloadAllAsZip } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
 // ─────────────────────────────────────────────
@@ -276,7 +277,11 @@ function VideoTile({
       transition={{ duration: 0.5, delay: index * 0.05 }}
       className="overflow-hidden rounded-xl bg-white/5"
     >
-      <div onClick={onOpen} className="group relative aspect-video cursor-pointer">
+      <div
+        onClick={onOpen}
+        onContextMenu={(e) => e.preventDefault()}
+        className="group relative aspect-video cursor-pointer"
+      >
         {shouldLoad && (
           <video
             ref={videoRef}
@@ -285,6 +290,9 @@ function VideoTile({
             loop
             playsInline
             preload="auto"
+            controlsList="nodownload noremoteplayback"
+            disablePictureInPicture
+            draggable={false}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
           />
         )}
@@ -304,7 +312,7 @@ function VideoTile({
         )}
 
         <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <DownloadIconButton onDownload={() => downloadFile(video.url, filenameFromUrl(video.url))} />
+          <DownloadIconButton onDownload={() => downloadFile(video.id)} />
         </div>
 
         {video.caption && (
@@ -387,7 +395,7 @@ function DocTile({
         )}
 
         <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <DownloadIconButton onDownload={() => downloadFile(doc.url, filenameFromUrl(doc.url))} light />
+          <DownloadIconButton onDownload={() => downloadFile(doc.id)} light />
         </div>
 
         {doc.caption && (
@@ -440,7 +448,7 @@ function PhotoTile({
       transition={{ duration: 0.5, delay: index * 0.04 }}
       className={`overflow-hidden rounded-xl bg-black/5 ${isLandscape ? "col-span-full" : ""}`}
     >
-      <div onClick={onOpen} className="group relative cursor-pointer">
+      <div onClick={onOpen} onContextMenu={(e) => e.preventDefault()} className="group relative cursor-pointer">
         {/* Plain <img>, not next/image's `fill` mode — `fill` requires
             object-fit (cover/contain into a fixed box), which is exactly
             the cropping/letterboxing this needs to avoid. A normal
@@ -452,11 +460,12 @@ function PhotoTile({
           alt={photo.caption}
           loading="lazy"
           decoding="async"
+          draggable={false}
           onLoad={(e) => {
             const img = e.currentTarget;
             setIsLandscape(img.naturalWidth > img.naturalHeight);
           }}
-          className="block w-full transition-transform duration-500 group-hover:scale-[1.01]"
+          className="block w-full select-none transition-transform duration-500 group-hover:scale-[1.01]"
         />
 
         {photo.approvalStatus !== "PENDING" && (
@@ -473,7 +482,7 @@ function PhotoTile({
         )}
 
         <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <DownloadIconButton onDownload={() => downloadFile(photo.url, filenameFromUrl(photo.url))} />
+          <DownloadIconButton onDownload={() => downloadFile(photo.id)} />
         </div>
       </div>
 
@@ -504,6 +513,7 @@ export default function ProjectContent({
   heroTagline,
   viewerName,
   viewerEmail,
+  deliveryStatus,
 }: {
   clientName: string;
   primaryColor: string;
@@ -516,6 +526,7 @@ export default function ProjectContent({
   heroTagline: string | null;
   viewerName: string | null;
   viewerEmail: string;
+  deliveryStatus: "DELIVERED" | "APPROVED" | "PAID";
 }) {
   const [openVideoIdx, setOpenVideoIdx] = useState<number | null>(null);
   const [openPhotoIdx, setOpenPhotoIdx] = useState<number | null>(null);
@@ -648,7 +659,7 @@ export default function ProjectContent({
     setZipError(null);
     try {
       await downloadAllAsZip(
-        sectionMedia.map((m) => ({ url: m.url, filename: filenameFromUrl(m.url) })),
+        sectionMedia.map((m) => ({ mediaId: m.id })),
         zipName,
         () => {} // could show progress per-section if wanted later
       );
@@ -682,6 +693,7 @@ export default function ProjectContent({
       )}
 
       <div ref={contentStartRef} />
+      <DeliveryStatusBanner status={deliveryStatus} />
 
       {/* Real, creator-named sections — alternating background per
           section, same visual rhythm as the old fixed Films/Photography

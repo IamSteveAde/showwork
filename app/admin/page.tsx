@@ -92,9 +92,21 @@ export default async function AdminPage({
             </p>
             <h1 className="text-3xl font-bold text-white">Platform overview</h1>
           </div>
-          <Link href="/dashboard" className="text-sm text-white/40 underline hover:text-white">
-            Back to dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/activity" className="text-sm text-white/40 underline hover:text-white">
+              Activity
+            </Link>
+            <a
+              href="/api/admin/creators/export"
+              className="rounded-lg px-3.5 py-1.5 text-xs font-semibold"
+              style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+            >
+              Export CSV
+            </a>
+            <Link href="/dashboard" className="text-sm text-white/40 underline hover:text-white">
+              Back to dashboard
+            </Link>
+          </div>
         </div>
 
         {/* ── STAT CARDS ── */}

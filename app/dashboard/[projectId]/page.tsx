@@ -8,6 +8,7 @@ import FileGridItem from "@/components/FileGridItem";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import AddMoreFilesButton from "@/components/AddMoreFilesButton";
 import SectionHeader from "@/components/SectionHeader";
+import DeliveryStatusControl from "@/components/DeliveryStatusControl";
 
 const MAX_ADDITIONAL_UPLOAD_BATCHES = 3;
 
@@ -48,7 +49,7 @@ export default async function ProjectDetailPage({
     },
   });
 
-  if (!project || project.creatorId !== creator.id) notFound();
+  if (!project || project.creatorId !== creator.id || project.deletedAt) notFound();
 
   const viewerEmails = await db.viewerEmail.findMany({
     where: { projectId: project.id },
@@ -110,6 +111,22 @@ export default async function ProjectDetailPage({
           >
             Live
           </span>
+          <a
+            href={`/api/projects/${project.id}/report`}
+            download
+            className="ml-auto flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
+            style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1v6.5M6 7.5L3 4.5M6 7.5L9 4.5M1.5 9.5H10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Download report
+          </a>
+        </div>
+
+        {/* DELIVERY STATUS — the client sees this exact same status */}
+        <div className="mb-6">
+          <DeliveryStatusControl projectId={project.id} currentStatus={project.deliveryStatus} />
         </div>
 
         {/* live URL card */}
