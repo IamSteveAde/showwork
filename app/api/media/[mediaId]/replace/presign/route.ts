@@ -49,7 +49,15 @@ export async function POST(
     );
   }
 
-  if (media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT && !creator.subscriptionActive) {
+  // Unlimited for active subscribers *and* comped (admin-granted free)
+  // accounts — the cap only exists to stop the old one-time-payment
+  // model being stretched into free ongoing use, which doesn't apply
+  // to either of those cases.
+  if (
+    media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT &&
+    !creator.subscriptionActive &&
+    !creator.isComped
+  ) {
     return NextResponse.json(
       { error: "This project has reached its revision limit. Please create a new project for further work." },
       { status: 403 }
