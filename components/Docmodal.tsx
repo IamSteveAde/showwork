@@ -19,6 +19,7 @@ export default function DocModal({
   onPrev,
   onNext,
   onReview,
+  onDeleteReview,
 }: {
   doc: MediaItem;
   index: number;
@@ -28,6 +29,7 @@ export default function DocModal({
   onPrev: () => void;
   onNext: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  onDeleteReview: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -148,6 +150,7 @@ export default function DocModal({
           <ReviewControls
             reviews={doc.reviews}
             viewerEmail={viewerEmail}
+            onDeleteReview={onDeleteReview}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />

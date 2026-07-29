@@ -24,11 +24,13 @@ export default function ReviewControls({
   viewerEmail,
   onApprove,
   onRequestRevision,
+  onDeleteReview,
 }: {
   reviews: ReviewEntry[];
   viewerEmail: string;
   onApprove: () => void;
   onRequestRevision: (note: string) => void;
+  onDeleteReview: () => void;
 }) {
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -85,6 +87,14 @@ export default function ReviewControls({
                   </span>
                 </div>
                 {r.note && <p className="mt-1 text-white/50">&ldquo;{r.note}&rdquo;</p>}
+                {isMe && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDeleteReview(); }}
+                    className="mt-1 text-[10px] font-medium text-white/30 underline hover:text-red-400"
+                  >
+                    Remove my feedback
+                  </button>
+                )}
               </div>
             );
           })}

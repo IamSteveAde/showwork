@@ -244,12 +244,14 @@ function VideoTile({
   viewerEmail,
   onOpen,
   onReview,
+  onDeleteReview,
 }: {
   video: MediaItem;
   index: number;
   viewerEmail: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  onDeleteReview: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -326,6 +328,7 @@ function VideoTile({
           viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
+          onDeleteReview={onDeleteReview}
         />
       </div>
     </motion.div>
@@ -349,12 +352,14 @@ function DocTile({
   viewerEmail,
   onOpen,
   onReview,
+  onDeleteReview,
 }: {
   doc: MediaItem;
   index: number;
   viewerEmail: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  onDeleteReview: () => void;
 }) {
   return (
     <motion.div
@@ -411,6 +416,7 @@ function DocTile({
           viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
+          onDeleteReview={onDeleteReview}
         />
       </div>
     </motion.div>
@@ -426,12 +432,14 @@ function PhotoTile({
   viewerEmail,
   onOpen,
   onReview,
+  onDeleteReview,
 }: {
   photo: MediaItem;
   index: number;
   viewerEmail: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  onDeleteReview: () => void;
 }) {
   // Orientation isn't known until the image actually loads — landscape
   // shots get their own full-width row (never cropped, never squeezed
@@ -492,6 +500,7 @@ function PhotoTile({
           viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
+          onDeleteReview={onDeleteReview}
         />
       </div>
     </motion.div>
@@ -593,6 +602,43 @@ export default function ProjectContent({
       // database doesn't actually agree with. In practice this should
       // rarely fire, since the buttons themselves already prevent
       // clicking the same verdict twice — this is just the safety net.
+      if (!res.ok) {
+        setItems(previousItems);
+      }
+    } catch {
+      setItems(previousItems);
+    }
+  };
+
+  // Lets the current viewer remove their own review entirely — not
+  // just change it. Recomputes the aggregate locally the same way the
+  // server does, so the badge/status updates instantly.
+  const deleteReview = async (mediaId: string) => {
+    const previousItems = items;
+
+    setItems((prev) =>
+      prev.map((m) => {
+        if (m.id !== mediaId) return m;
+        const nextReviews = m.reviews.filter(
+          (r) => r.reviewerEmail.toLowerCase() !== viewerEmail.toLowerCase()
+        );
+        const anyNeedsRevision = nextReviews.some((r) => r.status === "NEEDS_REVISION");
+        const mostRecentRevision = [...nextReviews].reverse().find((r) => r.status === "NEEDS_REVISION");
+        return {
+          ...m,
+          reviews: nextReviews,
+          approvalStatus: nextReviews.length === 0 ? "PENDING" : anyNeedsRevision ? "NEEDS_REVISION" : "APPROVED",
+          approvalNote: anyNeedsRevision ? mostRecentRevision?.note ?? null : null,
+        };
+      })
+    );
+
+    try {
+      const res = await fetch(`/api/media/${mediaId}/review`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewerEmail }),
+      });
       if (!res.ok) {
         setItems(previousItems);
       }
@@ -767,6 +813,7 @@ export default function ProjectContent({
                         viewerEmail={viewerEmail}
                         onOpen={() => setOpenVideoIdx(globalIdx)}
                         onReview={(status, note) => submitReview(v.id, status, note)}
+                        onDeleteReview={() => deleteReview(v.id)}
                       />
                     );
                   })}
@@ -784,6 +831,7 @@ export default function ProjectContent({
                         viewerEmail={viewerEmail}
                         onOpen={() => setOpenPhotoIdx(globalIdx)}
                         onReview={(status, note) => submitReview(p.id, status, note)}
+                        onDeleteReview={() => deleteReview(p.id)}
                       />
                     );
                   })}
@@ -801,6 +849,7 @@ export default function ProjectContent({
                         viewerEmail={viewerEmail}
                         onOpen={() => setOpenDocIdx(globalIdx)}
                         onReview={(status, note) => submitReview(d.id, status, note)}
+                        onDeleteReview={() => deleteReview(d.id)}
                       />
                     );
                   })}
@@ -815,7 +864,7 @@ export default function ProjectContent({
         <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
         {badgeVisible && (
           <a
-            href="https://useshowwork.com"
+            href="https://spotliteafrica.com"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-medium transition-opacity hover:opacity-70"
@@ -837,6 +886,7 @@ export default function ProjectContent({
             onPrev={() => setOpenVideoIdx((i) => (i! - 1 + videos.length) % videos.length)}
             onNext={() => setOpenVideoIdx((i) => (i! + 1) % videos.length)}
             onReview={(status, note) => submitReview(videos[openVideoIdx].id, status, note)}
+            onDeleteReview={() => deleteReview(videos[openVideoIdx].id)}
           />
         )}
       </AnimatePresence>
@@ -851,6 +901,7 @@ export default function ProjectContent({
             onPrev={() => setOpenPhotoIdx((i) => (i! - 1 + photos.length) % photos.length)}
             onNext={() => setOpenPhotoIdx((i) => (i! + 1) % photos.length)}
             onReview={(status, note) => submitReview(photos[openPhotoIdx].id, status, note)}
+            onDeleteReview={() => deleteReview(photos[openPhotoIdx].id)}
           />
         )}
       </AnimatePresence>
@@ -865,6 +916,7 @@ export default function ProjectContent({
             onPrev={() => setOpenDocIdx((i) => (i! - 1 + docs.length) % docs.length)}
             onNext={() => setOpenDocIdx((i) => (i! + 1) % docs.length)}
             onReview={(status, note) => submitReview(docs[openDocIdx].id, status, note)}
+            onDeleteReview={() => deleteReview(docs[openDocIdx].id)}
           />
         )}
       </AnimatePresence>

@@ -15,6 +15,7 @@ export default function VideoModal({
   onPrev,
   onNext,
   onReview,
+  onDeleteReview,
 }: {
   video: MediaItem;
   index: number;
@@ -24,6 +25,7 @@ export default function VideoModal({
   onNext: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   viewerEmail: string;
+  onDeleteReview: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -158,6 +160,7 @@ export default function VideoModal({
           <ReviewControls
             reviews={video.reviews}
             viewerEmail={viewerEmail}
+            onDeleteReview={onDeleteReview}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />

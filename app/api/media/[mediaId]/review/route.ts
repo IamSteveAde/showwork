@@ -111,3 +111,53 @@ export async function PATCH(
 
   return NextResponse.json({ media: updated, reviews: allReviews });
 }
+
+// PUBLIC route — lets a viewer remove their own review entirely, not
+// just change it. Identified the same way every other review action
+// here is: by mediaId + their own email, matching the security model
+// already used throughout the public delivery flow.
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ mediaId: string }> }
+) {
+  const { mediaId } = await params;
+  const { viewerEmail } = await req.json();
+
+  if (!viewerEmail) {
+    return NextResponse.json({ error: "viewerEmail is required" }, { status: 400 });
+  }
+
+  const existing = await db.mediaReview.findUnique({
+    where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "No review found to remove" }, { status: 404 });
+  }
+
+  await db.mediaReview.delete({
+    where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
+  });
+
+  // Recompute the aggregate from whatever reviews are left. If nobody
+  // has reviewed this file at all anymore, it genuinely goes back to
+  // PENDING — there's no reason to keep showing a verdict nobody holds.
+  const remainingReviews = await db.mediaReview.findMany({
+    where: { mediaId },
+    orderBy: { updatedAt: "asc" },
+  });
+  const anyNeedsRevision = remainingReviews.some((r) => r.status === "NEEDS_REVISION");
+  const overallStatus = remainingReviews.length === 0 ? "PENDING" : anyNeedsRevision ? "NEEDS_REVISION" : "APPROVED";
+  const mostRecentRevision = [...remainingReviews].reverse().find((r) => r.status === "NEEDS_REVISION");
+
+  const updated = await db.media.update({
+    where: { id: mediaId },
+    data: {
+      approvalStatus: overallStatus,
+      approvalNote: overallStatus === "NEEDS_REVISION" ? mostRecentRevision?.note ?? null : null,
+      reviewedAt: remainingReviews.length > 0 ? new Date() : null,
+      reviewerEmail: remainingReviews.length > 0 ? remainingReviews[remainingReviews.length - 1].reviewerEmail : null,
+    },
+  });
+
+  return NextResponse.json({ media: updated, reviews: remainingReviews });
+}

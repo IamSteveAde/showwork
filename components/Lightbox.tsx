@@ -16,6 +16,7 @@ export default function Lightbox({
   onPrev,
   onNext,
   onReview,
+  onDeleteReview,
 }: {
   photo: MediaItem;
   index: number;
@@ -25,6 +26,7 @@ export default function Lightbox({
   onNext: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   viewerEmail: string;
+  onDeleteReview: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -152,6 +154,7 @@ export default function Lightbox({
           <ReviewControls
             reviews={photo.reviews}
             viewerEmail={viewerEmail}
+            onDeleteReview={onDeleteReview}
             onApprove={() => onReview("APPROVED")}
             onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
           />
