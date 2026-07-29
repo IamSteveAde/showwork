@@ -86,16 +86,10 @@ export default async function SlugPage({
     : null;
 
   // Check whether this browser already unlocked this project before —
-  // if so, skip straight past both gates instead of asking again.
-  //
-  // NOTE: verifyViewerToken currently only returns { email }. To make
-  // the viewer's *name* persist across visits the same way email
-  // already does, the signed token itself needs to also embed name —
-  // that's a change to lib/auth.ts and the route that creates this
-  // cookie (verify-password), not made here. Until then, a returning
-  // visitor within the same unlocked session will need to be identified
-  // by email only for this initial load; the name they typed still
-  // works correctly for any review they submit during the current visit.
+  // if so, skip straight past both gates instead of asking again,
+  // including the name they gave, now that it's embedded in this same
+  // signed token alongside the email (see lib/auth.ts and the
+  // verify-password route, which is what actually creates this cookie).
   const cookieStore = await cookies();
   const unlockToken = cookieStore.get(`viewer_${project.id}`)?.value;
   const viewerSession = unlockToken ? verifyViewerToken(unlockToken, project.id) : null;
@@ -116,6 +110,7 @@ export default async function SlugPage({
       deliveryStatus={project.deliveryStatus}
       initiallyUnlocked={!!viewerSession}
       initialViewerEmail={viewerSession?.email ?? null}
+      initialViewerName={viewerSession?.name ?? null}
     />
   );
 }

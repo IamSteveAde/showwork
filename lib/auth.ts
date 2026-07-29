@@ -61,23 +61,29 @@ export async function getCurrentCreator() {
 // refresh or return visit doesn't make them re-enter the email + code
 // every single time. Cookie name is scoped per-project (viewer_{id}),
 // so unlocking one project never grants access to another.
+//
+// Embeds name alongside email — without it, a viewer's name only ever
+// lived in that one page load's React state, and vanished on any
+// refresh, silently falling back to "Unnamed viewer" on their next
+// review even though they'd already told the gate their real name.
 
-export function createViewerToken(projectId: string, email: string) {
-  return jwt.sign({ projectId, email }, JWT_SECRET, { expiresIn: "30d" });
+export function createViewerToken(projectId: string, email: string, name: string | null) {
+  return jwt.sign({ projectId, email, name }, JWT_SECRET, { expiresIn: "30d" });
 }
 
 /** Verifies a viewer token actually belongs to this specific project. */
 export function verifyViewerToken(
   token: string,
   projectId: string
-): { email: string } | null {
+): { email: string; name: string | null } | null {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as {
       projectId: string;
       email: string;
+      name?: string | null;
     };
     if (payload.projectId !== projectId) return null;
-    return { email: payload.email };
+    return { email: payload.email, name: payload.name ?? null };
   } catch {
     return null;
   }

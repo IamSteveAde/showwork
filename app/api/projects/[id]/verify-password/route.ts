@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { password, viewerEmail } = await req.json();
+  const { password, viewerEmail, viewerName } = await req.json();
 
   const project = await db.project.findUnique({ where: { id } });
   if (!project) {
@@ -22,9 +22,9 @@ export async function POST(
 
   // On success, remember this browser as already-unlocked for this
   // project for 30 days — so a refresh doesn't force re-entering the
-  // email and password every time.
+  // name, email, and password every time.
   if (valid && viewerEmail) {
-    const token = createViewerToken(id, viewerEmail);
+    const token = createViewerToken(id, viewerEmail, viewerName ?? null);
     response.cookies.set(`viewer_${id}`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

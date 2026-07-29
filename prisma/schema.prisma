@@ -236,9 +236,9 @@ model Media {
 
   // Which creator-named section this file belongs to. Nullable so
   // existing media uploaded before sections existed doesn't break —
-  // it just displays ungrouped rather than being lost. onDelete: SetNull
-  // means deleting a section un-groups its files instead of deleting them.
-  section   MediaSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  // it just displays ungrouped. onDelete: Cascade — deleting a section
+  // permanently deletes every file inside it, not just the grouping.
+  section   MediaSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   sectionId String?
 
   // Aggregate/cached view of this file's overall status, recomputed

@@ -39,6 +39,7 @@ interface DeliveryPageProps {
   deliveryStatus: "DELIVERED" | "APPROVED" | "PAID";
   initiallyUnlocked: boolean;
   initialViewerEmail: string | null;
+  initialViewerName: string | null;
 }
 
 export default function DeliveryPage({
@@ -56,13 +57,13 @@ export default function DeliveryPage({
   deliveryStatus,
   initiallyUnlocked,
   initialViewerEmail,
+  initialViewerName,
 }: DeliveryPageProps) {
   // If this browser already unlocked this project before (checked
   // server-side via a signed cookie), start straight past both gates
-  // instead of asking again on every refresh. Name isn't persisted this
-  // way yet (see the note in app/[slug]/page.tsx) — it's collected fresh
-  // each time the email gate is actually shown.
-  const [viewerName, setViewerName] = useState<string | null>(null);
+  // instead of asking again on every refresh — name included, now that
+  // it's embedded in that same signed token alongside the email.
+  const [viewerName, setViewerName] = useState<string | null>(initialViewerName);
   const [viewerEmail, setViewerEmail] = useState<string | null>(initialViewerEmail);
   const [unlocked, setUnlocked] = useState(initiallyUnlocked);
 
@@ -89,6 +90,7 @@ export default function DeliveryPage({
             primaryColor={primaryColor}
             logoUrl={logoUrl}
             viewerEmail={viewerEmail}
+            viewerName={viewerName}
             onUnlock={() => setUnlocked(true)}
           />
         ) : (

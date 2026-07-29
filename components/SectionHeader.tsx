@@ -216,7 +216,9 @@ export default function SectionHeader({
 
         {confirmingDelete ? (
           <span className="flex items-center gap-2 text-xs">
-            <span className="text-white/50">Delete this section? Files move to &ldquo;Other files,&rdquo; not deleted.</span>
+            <span className="text-white/50">
+              Permanently delete this section and every file inside it? This can&apos;t be undone.
+            </span>
             <button
               onClick={handleDeleteSection}
               disabled={deleting}
