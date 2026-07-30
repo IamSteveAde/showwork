@@ -90,6 +90,7 @@ model Creator {
   projects            Project[]
   paymentRecords      PaymentRecord[]
   passwordResetTokens PasswordResetToken[]
+  portfolio           Portfolio?
 }
 
 // ─────────────────────────────────────────────
@@ -365,4 +366,61 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([creatorId])
+}
+
+// ─────────────────────────────────────────────
+// PORTFOLIO — a creator's own always-on showcase. Distinct from
+// Project (a one-off client delivery): no password, no viewer email
+// gate, no approve/revision workflow, no payment gating — it's meant
+// to be freely shareable (Instagram bio, business card) and
+// continuously updated, never "delivered" once and left alone. Free
+// for every creator regardless of subscription tier. One per creator.
+// ─────────────────────────────────────────────
+model Portfolio {
+  id           String   @id @default(uuid())
+  slug         String   @unique // useshowwork.com/p/{slug}
+  companyName  String
+  heroTagline  String?
+  heroMediaId  String?
+  logoUrl      String?
+  primaryColor String?
+  bgColor      String?
+  viewCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String  @unique
+
+  sections PortfolioSection[]
+  media    PortfolioMedia[]
+}
+
+model PortfolioSection {
+  id           String    @id @default(uuid())
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId  String
+  name         String
+  mediaType    MediaType
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  media PortfolioMedia[]
+
+  @@index([portfolioId])
+}
+
+model PortfolioMedia {
+  id           String   @id @default(uuid())
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId  String
+  section      PortfolioSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId    String?
+  type         MediaType
+  fileKey      String
+  caption      String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([portfolioId])
 }
