@@ -34,9 +34,6 @@ function DownloadIconButton({
     try {
       await onDownload();
     } catch (err) {
-      // Now visible, not silent — a person clicking download and
-      // seeing nothing happen has no way to know something's actually
-      // wrong (e.g. a CORS block on the file storage) without this.
       setError(err instanceof Error ? err.message : "Download failed");
       setTimeout(() => setError(null), 4000);
     } finally {
@@ -235,27 +232,55 @@ function Hero({
   );
 }
 
+// Shared across every video tile on the page — caps how many videos
+// can ever be decoding/playing at once, which is what actually causes
+// scroll jank on a media-heavy page, not the entrance animations.
+const MAX_CONCURRENT_VIDEOS = 3;
+const playingVideos: HTMLVideoElement[] = [];
+function requestPlay(vid: HTMLVideoElement) {
+  if (playingVideos.includes(vid)) return;
+  if (playingVideos.length >= MAX_CONCURRENT_VIDEOS) playingVideos.shift()?.pause();
+  playingVideos.push(vid);
+  vid.play().catch(() => {});
+}
+function releasePlay(vid: HTMLVideoElement) {
+  const idx = playingVideos.indexOf(vid);
+  if (idx !== -1) playingVideos.splice(idx, 1);
+  vid.pause();
+}
+
+function officeViewerUrl(url: string) {
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+}
+
 // ─────────────────────────────────────────────
-// VIDEO GRID TILE
+// WALL TILE — photo or video, true to size (never cropped), packed
+// edge-to-edge with a hairline white seam between every piece (the
+// gallery wall's own white background peeking through a 1px margin).
+// Sits dimmed and quiet by default; hovering wakes it fully awake —
+// full brightness, a glowing colored border — like a gallery piece
+// lighting up under a spotlight the moment you approach it.
 // ─────────────────────────────────────────────
-function VideoTile({
-  video,
+function WallTile({
+  item,
   index,
   viewerEmail,
+  primaryColor,
   onOpen,
   onReview,
   onDeleteReview,
 }: {
-  video: MediaItem;
+  item: MediaItem;
   index: number;
   viewerEmail: string;
+  primaryColor: string;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   onDeleteReview: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(containerRef, { once: false, margin: "-10%" });
+  const inView = useInView(containerRef, { once: false, margin: "-20%" });
   const nearView = useInView(containerRef, { once: true, margin: "800px" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
@@ -265,66 +290,108 @@ function VideoTile({
 
   useEffect(() => {
     const vid = videoRef.current;
-    if (!vid) return;
-    if (inView) vid.play().catch(() => {});
-    else vid.pause();
-  }, [inView, shouldLoad]);
+    if (!vid || item.type !== "VIDEO") return;
+    if (inView) requestPlay(vid);
+    else releasePlay(vid);
+    return () => releasePlay(vid);
+  }, [inView, shouldLoad, item.type]);
 
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.05 }}
-      className="overflow-hidden rounded-xl bg-white/5"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
+      // mb-[1px] pairs with the wall's own 1px column-gap — together
+      // they form the thin white seam on every side of every tile.
+      className="mb-[1px] block break-inside-avoid"
     >
       <div
         onClick={onOpen}
         onContextMenu={(e) => e.preventDefault()}
-        className="group relative aspect-video cursor-pointer"
+        className="group relative cursor-pointer"
+        style={{ ["--glow" as string]: primaryColor }}
       >
-        {shouldLoad && (
-          <video
-            ref={videoRef}
-            src={video.url}
-            muted
-            loop
-            playsInline
-            preload="auto"
-            controlsList="nodownload noremoteplayback"
-            disablePictureInPicture
+        {item.type === "VIDEO" ? (
+          shouldLoad && (
+            <video
+              ref={videoRef}
+              src={item.url}
+              muted
+              loop
+              playsInline
+              preload="auto"
+              controlsList="nodownload noremoteplayback"
+              disablePictureInPicture
+              draggable={false}
+              // True size — no object-cover, no fixed aspect box. The
+              // dimmed → awake transition lives entirely in filter and
+              // box-shadow, never touching the media's own dimensions.
+              className="block w-full transition-all duration-500 ease-out"
+              style={{ filter: "brightness(0.55) saturate(0.85)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
+            />
+          )
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.url}
+            alt={item.caption}
+            loading="lazy"
+            decoding="async"
             draggable={false}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            className="block w-full select-none transition-all duration-500 ease-out"
+            style={{ filter: "brightness(0.55) saturate(0.85)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
           />
         )}
-        <div className="absolute bottom-0 left-0 h-16 w-full bg-gradient-to-t from-black/50 to-transparent" />
 
-        {video.approvalStatus !== "PENDING" && (
+        {/* The "wakes up" glow — a soft colored ring plus an outward
+            bloom, both invisible at rest and fading in together on
+            hover, like the piece is lighting up from within. */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
+          style={{ boxShadow: `inset 0 0 0 1.5px ${primaryColor}, 0 0 28px 2px ${primaryColor}66` }}
+        />
+
+        {item.approvalStatus !== "PENDING" && (
           <div
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold"
+            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             style={
-              video.approvalStatus === "APPROVED"
+              item.approvalStatus === "APPROVED"
                 ? { background: "#22C55E", color: "#080808" }
                 : { background: "#F97316", color: "#080808" }
             }
           >
-            {video.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+            {item.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
           </div>
         )}
 
-        <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <DownloadIconButton onDownload={() => downloadFile(video.id)} />
-        </div>
+        {item.type === "VIDEO" && (
+          <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+            <span className="text-[9px] font-medium uppercase tracking-wider text-white/80">Playing</span>
+          </div>
+        )}
+        {item.type !== "VIDEO" && (
+          <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <DownloadIconButton onDownload={() => downloadFile(item.id)} />
+          </div>
+        )}
 
-        {video.caption && (
-          <p className="absolute bottom-3 left-3 text-xs font-medium text-white/80">{video.caption}</p>
+        {item.caption && (
+          <p className="pointer-events-none absolute bottom-3 left-4 right-4 translate-y-1 truncate text-sm font-medium text-white opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100">
+            {item.caption}
+          </p>
         )}
       </div>
 
       <div style={{ background: "#141414" }}>
         <ReviewControls
-          reviews={video.reviews}
+          reviews={item.reviews}
           viewerEmail={viewerEmail}
           onApprove={() => onReview("APPROVED")}
           onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
@@ -333,10 +400,6 @@ function VideoTile({
       </div>
     </motion.div>
   );
-}
-
-function officeViewerUrl(url: string) {
-  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 }
 
 // ─────────────────────────────────────────────
@@ -424,90 +487,6 @@ function DocTile({
 }
 
 // ─────────────────────────────────────────────
-// PHOTO GRID TILE
-// ─────────────────────────────────────────────
-function PhotoTile({
-  photo,
-  index,
-  viewerEmail,
-  onOpen,
-  onReview,
-  onDeleteReview,
-}: {
-  photo: MediaItem;
-  index: number;
-  viewerEmail: string;
-  onOpen: () => void;
-  onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
-  onDeleteReview: () => void;
-}) {
-  // Orientation isn't known until the image actually loads — landscape
-  // shots get their own full-width row (never cropped, never squeezed
-  // into a square), while portrait and square shots share the normal
-  // 3-per-row (desktop) / 1-per-row (mobile) grid. Starts as null and
-  // briefly renders at default width until the real aspect ratio is read.
-  const [isLandscape, setIsLandscape] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.04 }}
-      className={`overflow-hidden rounded-xl bg-black/5 ${isLandscape ? "col-span-full" : ""}`}
-    >
-      <div onClick={onOpen} onContextMenu={(e) => e.preventDefault()} className="group relative cursor-pointer">
-        {/* Plain <img>, not next/image's `fill` mode — `fill` requires
-            object-fit (cover/contain into a fixed box), which is exactly
-            the cropping/letterboxing this needs to avoid. A normal
-            width-100%-height-auto image always shows the complete photo
-            at its real aspect ratio, whatever that is. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={photo.url}
-          alt={photo.caption}
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            setIsLandscape(img.naturalWidth > img.naturalHeight);
-          }}
-          className="block w-full select-none transition-transform duration-500 group-hover:scale-[1.01]"
-        />
-
-        {photo.approvalStatus !== "PENDING" && (
-          <div
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold"
-            style={
-              photo.approvalStatus === "APPROVED"
-                ? { background: "#22C55E", color: "#080808" }
-                : { background: "#F97316", color: "#080808" }
-            }
-          >
-            {photo.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
-          </div>
-        )}
-
-        <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <DownloadIconButton onDownload={() => downloadFile(photo.id)} />
-        </div>
-      </div>
-
-      <div style={{ background: "#141414" }}>
-        <ReviewControls
-          reviews={photo.reviews}
-          viewerEmail={viewerEmail}
-          onApprove={() => onReview("APPROVED")}
-          onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
-          onDeleteReview={onDeleteReview}
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────
 // MAIN
 // ─────────────────────────────────────────────
 export default function ProjectContent({
@@ -540,15 +519,10 @@ export default function ProjectContent({
   const [openVideoIdx, setOpenVideoIdx] = useState<number | null>(null);
   const [openPhotoIdx, setOpenPhotoIdx] = useState<number | null>(null);
   const [openDocIdx, setOpenDocIdx] = useState<number | null>(null);
-  // Zip-download status, keyed by whichever section's "Download all"
-  // was clicked — each section downloads independently of the others.
   const [zippingSectionId, setZippingSectionId] = useState<string | null>(null);
   const [zipError, setZipError] = useState<{ sectionId: string; message: string } | null>(null);
   const contentStartRef = useRef<HTMLDivElement>(null);
 
-  // Local, mutable copy of the media list so an approve/revision click
-  // reflects instantly in the grid and inside the open modal, without
-  // waiting on a round trip. The API call happens in the background.
   const [items, setItems] = useState(media);
 
   const submitReview = async (
@@ -564,14 +538,8 @@ export default function ProjectContent({
       createdAt: new Date().toISOString(),
     };
 
-    // Keep a copy of the previous state so a rejected duplicate can be
-    // rolled back cleanly instead of leaving a stale optimistic update.
     const previousItems = items;
 
-    // Replace this viewer's own entry if they already have one (they're
-    // changing their mind) — never append a second row for the same
-    // person. Then recompute the aggregate the same way the server
-    // does: any open revision flag wins overall.
     setItems((prev) =>
       prev.map((m) => {
         if (m.id !== mediaId) return m;
@@ -597,11 +565,6 @@ export default function ProjectContent({
         body: JSON.stringify({ status, note, reviewerName: viewerName, viewerEmail, clientName }),
       });
 
-      // A genuine duplicate (409) — the server rejected it, so roll
-      // back the optimistic change rather than leaving a state the
-      // database doesn't actually agree with. In practice this should
-      // rarely fire, since the buttons themselves already prevent
-      // clicking the same verdict twice — this is just the safety net.
       if (!res.ok) {
         setItems(previousItems);
       }
@@ -610,9 +573,6 @@ export default function ProjectContent({
     }
   };
 
-  // Lets the current viewer remove their own review entirely — not
-  // just change it. Recomputes the aggregate locally the same way the
-  // server does, so the badge/status updates instantly.
   const deleteReview = async (mediaId: string) => {
     const previousItems = items;
 
@@ -647,22 +607,13 @@ export default function ProjectContent({
     }
   };
 
-  // Applies the same live-edited approval status from `items` onto
-  // whatever media object we're about to render, so a review click
-  // reflects instantly everywhere, section-grouped or not.
   const withLiveStatus = (m: MediaItem): MediaItem =>
     items.find((i) => i.id === m.id) ?? m;
 
-  // Flat, global lists — used only for each modal's prev/next
-  // navigation, so "next" cycles through everything of that type across
-  // every section, not just within the one section you opened it from.
   const videos = items.filter((m) => m.type === "VIDEO");
   const photos = items.filter((m) => m.type === "PHOTO");
   const docs = items.filter((m) => m.type === "PDF" || m.type === "DOCUMENT");
 
-  // Rule: if any video exists, a video is always the hero — the creator's
-  // pick only decides *which* video. A photo hero only happens when the
-  // project has no video at all.
   const heroMedia =
     videos.length > 0
       ? (creatorPickedHero?.type === "VIDEO" ? creatorPickedHero : videos[0])
@@ -670,10 +621,6 @@ export default function ProjectContent({
 
   const tagline = heroTagline?.trim() || "The work. Delivered properly.";
 
-  // Real, creator-named sections — this is what replaces the old fixed
-  // "Films" / "Photography" split. Any file never assigned to a section
-  // (from before sections existed) still shows, grouped separately by
-  // type so it doesn't get lost.
   const ungroupedVideos = ungroupedMedia.filter((m) => m.type === "VIDEO");
   const ungroupedPhotos = ungroupedMedia.filter((m) => m.type === "PHOTO");
   const ungroupedDocs = ungroupedMedia.filter((m) => m.type === "PDF" || m.type === "DOCUMENT");
@@ -707,7 +654,7 @@ export default function ProjectContent({
       await downloadAllAsZip(
         sectionMedia.map((m) => ({ mediaId: m.id })),
         zipName,
-        () => {} // could show progress per-section if wanted later
+        () => {}
       );
     } catch (err) {
       setZipError({
@@ -741,9 +688,6 @@ export default function ProjectContent({
       <div ref={contentStartRef} />
       <DeliveryStatusBanner status={deliveryStatus} />
 
-      {/* Real, creator-named sections — alternating background per
-          section, same visual rhythm as the old fixed Films/Photography
-          split, just with whatever name the creator actually gave it. */}
       {renderSections.map((section, sectionIdx) => {
         const isDark = sectionIdx % 2 === 0;
         const bg = isDark ? "#000000" : "#FAFAF7";
@@ -800,38 +744,29 @@ export default function ProjectContent({
                 </div>
               </div>
 
-              {section.mediaType === "VIDEO" ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {section.media.map((v, i) => {
-                    const live = withLiveStatus(v);
-                    const globalIdx = videos.findIndex((x) => x.id === v.id);
+              {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
+                // The wall — true-size media, edge-to-edge, a hairline
+                // white seam between every piece, dimmed at rest and
+                // waking up on hover. White background is deliberate
+                // here regardless of the section's own dark/light
+                // rhythm, since the seam needs to always read as white.
+                <div className="columns-2 gap-[1px] md:columns-3" style={{ background: "#FFFFFF" }}>
+                  {section.media.map((m, i) => {
+                    const live = withLiveStatus(m);
+                    const list = section.mediaType === "VIDEO" ? videos : photos;
+                    const globalIdx = list.findIndex((x) => x.id === m.id);
                     return (
-                      <VideoTile
-                        key={v.id}
-                        video={live}
+                      <WallTile
+                        key={m.id}
+                        item={live}
                         index={i}
                         viewerEmail={viewerEmail}
-                        onOpen={() => setOpenVideoIdx(globalIdx)}
-                        onReview={(status, note) => submitReview(v.id, status, note)}
-                        onDeleteReview={() => deleteReview(v.id)}
-                      />
-                    );
-                  })}
-                </div>
-              ) : section.mediaType === "PHOTO" ? (
-                <div className="grid grid-flow-row-dense grid-cols-1 gap-4 md:grid-cols-3 md:gap-4">
-                  {section.media.map((p, i) => {
-                    const live = withLiveStatus(p);
-                    const globalIdx = photos.findIndex((x) => x.id === p.id);
-                    return (
-                      <PhotoTile
-                        key={p.id}
-                        photo={live}
-                        index={i}
-                        viewerEmail={viewerEmail}
-                        onOpen={() => setOpenPhotoIdx(globalIdx)}
-                        onReview={(status, note) => submitReview(p.id, status, note)}
-                        onDeleteReview={() => deleteReview(p.id)}
+                        primaryColor={primaryColor}
+                        onOpen={() =>
+                          section.mediaType === "VIDEO" ? setOpenVideoIdx(globalIdx) : setOpenPhotoIdx(globalIdx)
+                        }
+                        onReview={(status, note) => submitReview(m.id, status, note)}
+                        onDeleteReview={() => deleteReview(m.id)}
                       />
                     );
                   })}
@@ -864,13 +799,13 @@ export default function ProjectContent({
         <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
         {badgeVisible && (
           <a
-            href="https://spotliteafrica.com"
+            href="https://useshowwork.com"
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs font-medium transition-opacity hover:opacity-70"
             style={{ color: primaryColor }}
           >
-            Presented with Spotlite Africa →
+            Presented with Showwork →
           </a>
         )}
       </footer>
