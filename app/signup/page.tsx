@@ -93,7 +93,7 @@ function SignupForm() {
     });
 
     if (res.ok) {
-      router.push(next || "/dashboard");
+      router.push(next || "/welcome");
     } else {
       const data = await res.json();
       setError(data.error ?? "Invalid code");

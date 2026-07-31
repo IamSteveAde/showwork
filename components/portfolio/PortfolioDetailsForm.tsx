@@ -16,16 +16,43 @@ export default function PortfolioDetailsForm({
   heroTagline,
   heroMediaId,
   bannerCandidates,
+  contactEmail,
+  whatsappNumber,
+  ctaText,
+  instagramUrl,
+  twitterUrl,
+  linkedinUrl,
+  tiktokUrl,
+  facebookUrl,
+  youtubeUrl,
 }: {
   companyName: string;
   heroTagline: string | null;
   heroMediaId: string | null;
   bannerCandidates: BannerCandidate[];
+  contactEmail: string | null;
+  whatsappNumber: string | null;
+  ctaText: string | null;
+  instagramUrl: string | null;
+  twitterUrl: string | null;
+  linkedinUrl: string | null;
+  tiktokUrl: string | null;
+  facebookUrl: string | null;
+  youtubeUrl: string | null;
 }) {
   const router = useRouter();
   const [name, setName] = useState(companyName);
   const [tagline, setTagline] = useState(heroTagline ?? "");
   const [selectedHero, setSelectedHero] = useState(heroMediaId);
+  const [email, setEmail] = useState(contactEmail ?? "");
+  const [whatsapp, setWhatsapp] = useState(whatsappNumber ?? "");
+  const [cta, setCta] = useState(ctaText ?? "");
+  const [instagram, setInstagram] = useState(instagramUrl ?? "");
+  const [twitter, setTwitter] = useState(twitterUrl ?? "");
+  const [linkedin, setLinkedin] = useState(linkedinUrl ?? "");
+  const [tiktok, setTiktok] = useState(tiktokUrl ?? "");
+  const [facebook, setFacebook] = useState(facebookUrl ?? "");
+  const [youtube, setYoutube] = useState(youtubeUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -36,7 +63,20 @@ export default function PortfolioDetailsForm({
     await fetch("/api/portfolio", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyName: name, heroTagline: tagline, heroMediaId: selectedHero }),
+      body: JSON.stringify({
+        companyName: name,
+        heroTagline: tagline,
+        heroMediaId: selectedHero,
+        contactEmail: email,
+        whatsappNumber: whatsapp,
+        ctaText: cta,
+        instagramUrl: instagram,
+        twitterUrl: twitter,
+        linkedinUrl: linkedin,
+        tiktokUrl: tiktok,
+        facebookUrl: facebook,
+        youtubeUrl: youtube,
+      }),
     });
     setSaving(false);
     setSaved(true);
@@ -44,33 +84,19 @@ export default function PortfolioDetailsForm({
     router.refresh();
   };
 
+  const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none";
+  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
+
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-          Company / brand name
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ fontSize: "16px" }}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-        />
+        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Company / brand name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={{ fontSize: "16px" }} className={inputClass} />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-          Banner headline
-        </label>
-        <input
-          type="text"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          maxLength={80}
-          style={{ fontSize: "16px" }}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none"
-        />
+        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Banner headline</label>
+        <input type="text" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={80} style={{ fontSize: "16px" }} className={inputClass} />
       </div>
 
       {bannerCandidates.length > 0 && (
@@ -110,6 +136,65 @@ export default function PortfolioDetailsForm({
           </div>
         </div>
       )}
+
+      <div className="my-1 h-px bg-white/5" />
+      <p className="text-xs font-semibold uppercase text-white/30" style={{ letterSpacing: "0.08em" }}>How clients reach you</p>
+
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Contact email</label>
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@yourstudio.com" style={{ fontSize: "16px" }} className={inputClass} />
+      </div>
+
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>WhatsApp number</label>
+        <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+2348012345678" style={{ fontSize: "16px" }} className={inputClass} />
+      </div>
+
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Call-to-action text</label>
+        <input
+          type="text"
+          value={cta}
+          onChange={(e) => setCta(e.target.value)}
+          placeholder="Let's create something worth remembering — reach out and let's deliver the best for your next project."
+          maxLength={140}
+          style={{ fontSize: "16px" }}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-white/30">Leave blank to use the default.</p>
+      </div>
+
+      <div className="my-1 h-px bg-white/5" />
+      <p className="text-xs font-semibold uppercase text-white/30" style={{ letterSpacing: "0.08em" }}>
+        Social media <span className="normal-case text-white/25">(only shown in the footer if filled in)</span>
+      </p>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Instagram</label>
+          <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>X / Twitter</label>
+          <input type="url" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://x.com/yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>LinkedIn</label>
+          <input type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>TikTok</label>
+          <input type="url" value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="https://tiktok.com/@yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Facebook</label>
+          <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/yourpage" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>YouTube</label>
+          <input type="url" value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="https://youtube.com/@yourchannel" style={{ fontSize: "16px" }} className={inputClass} />
+        </div>
+      </div>
 
       <button
         onClick={save}

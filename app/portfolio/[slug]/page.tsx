@@ -64,6 +64,15 @@ export default async function PortfolioPage({
       heroTagline={portfolio.heroTagline}
       sections={sections}
       ungroupedMedia={ungroupedMedia}
+      contactEmail={portfolio.contactEmail}
+      whatsappNumber={portfolio.whatsappNumber}
+      ctaText={portfolio.ctaText}
+      instagramUrl={portfolio.instagramUrl}
+      twitterUrl={portfolio.twitterUrl}
+      linkedinUrl={portfolio.linkedinUrl}
+      tiktokUrl={portfolio.tiktokUrl}
+      facebookUrl={portfolio.facebookUrl}
+      youtubeUrl={portfolio.youtubeUrl}
     />
   );
 }

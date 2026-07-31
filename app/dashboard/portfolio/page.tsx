@@ -39,7 +39,7 @@ export default async function PortfolioDashboardPage() {
     );
   }
 
-  const liveUrl = `${appUrl()}/portfolio/${portfolio.slug}`;
+  const liveUrl = `${appUrl()}/p/${portfolio.slug}`;
   const ungroupedMedia = portfolio.media.filter((m) => !m.sectionId);
 
   const bannerCandidates = portfolio.sections
@@ -81,6 +81,15 @@ export default async function PortfolioDashboardPage() {
             heroTagline={portfolio.heroTagline}
             heroMediaId={portfolio.heroMediaId}
             bannerCandidates={bannerCandidates}
+            contactEmail={portfolio.contactEmail}
+            whatsappNumber={portfolio.whatsappNumber}
+            ctaText={portfolio.ctaText}
+            instagramUrl={portfolio.instagramUrl}
+            twitterUrl={portfolio.twitterUrl}
+            linkedinUrl={portfolio.linkedinUrl}
+            tiktokUrl={portfolio.tiktokUrl}
+            facebookUrl={portfolio.facebookUrl}
+            youtubeUrl={portfolio.youtubeUrl}
           />
         </div>
 

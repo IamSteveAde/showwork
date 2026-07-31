@@ -4,12 +4,17 @@ import HomeClient from "./HomeClient";
 // Strong, Nigeria-targeted SEO. Title and description use language a
 // Nigerian creator would actually type into Google, not generic SaaS
 // copy — this is what actually drives ranking and click-through.
+// Positioning matches the actual product now: premium positioning and
+// pricing power for creators, not just "a delivery tool" — and the
+// current subscription model (free to start) rather than the old flat
+// one-time fee.
 export const metadata: Metadata = {
-  title: "Showwork by Spotlite Africa | Premium Client Delivery for Content Creators in Nigeria",
+  title: "Showwork | Premium Portfolios & Client Delivery for Nigerian Creators",
   description:
-    "Showwork helps Nigerian photographers, videographers, and content creators deliver client work in a premium, password-protected showcase — not a messy WeTransfer or Dropbox link. ₦5,000 per project, live in minutes.",
+    "Showwork helps Nigerian photographers, videographers, and content creators present — and price — their work like the premium brand it deserves to be. A professional portfolio, a password-protected client delivery, and Creativo, a community built around positioning and pricing with confidence. Free to start.",
   keywords: [
     "client delivery Nigeria",
+    "creator portfolio Nigeria",
     "content creator tools Nigeria",
     "photographer client delivery Nigeria",
     "videographer portfolio delivery",
@@ -17,13 +22,15 @@ export const metadata: Metadata = {
     "WeTransfer alternative Nigeria",
     "Dropbox alternative for creators",
     "premium client presentation Lagos",
-    "Spotlite Africa",
+    "how to charge more as a photographer",
+    "creator community Nigeria",
+    "Creativo",
     "Showwork",
   ],
   openGraph: {
-    title: "Showwork by Spotlite Africa",
+    title: "Showwork | Present and Price Your Work Like a Premium Brand",
     description:
-      "A premium, password-protected showcase for the photos and films Nigerian creators deliver to clients. ₦5,000 per project.",
+      "A professional portfolio, a premium client delivery, and a community built to help Nigerian creators price and position themselves properly. Free to start.",
     url: "https://useshowwork.com",
     siteName: "Showwork",
     locale: "en_NG",
@@ -31,9 +38,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork by Spotlite Africa",
+    title: "Showwork | Present and Price Your Work Like a Premium Brand",
     description:
-      "Stop sending Dropbox links. Deliver your client work in a premium showcase built for Nigerian creators.",
+      "Stop sending Dropbox links. Deliver your client work — and your own portfolio — the way a premium brand would.",
   },
   robots: {
     index: true,

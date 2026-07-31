@@ -17,6 +17,8 @@ const COLOR = {
   midGray: "#888786",
 };
 
+const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
+
 const PAGE_SIZE = 12;
 
 function initials(name: string | null, email: string) {
@@ -85,9 +87,6 @@ export default async function DashboardPage({
         <div className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-white">
             Show<span style={{ color: COLOR.gold }}>work</span>
-          </span>
-          <span className="hidden text-xs font-medium uppercase text-white/40 sm:inline" style={{ letterSpacing: "0.1em" }}>
-            by Spotlite Africa
           </span>
         </div>
 
@@ -248,14 +247,32 @@ export default async function DashboardPage({
               )}
             </div>
 
-            <Link
-              href="/dashboard/new"
-              className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-              style={{ background: COLOR.gold, color: COLOR.black }}
-            >
-              <span className="text-base leading-none">+</span>
-              New project
-            </Link>
+            <div className="flex flex-col gap-2.5 sm:items-end">
+              <Link
+                href="/dashboard/new"
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                <span className="text-base leading-none">+</span>
+                New project
+              </Link>
+              <Link
+                href="/dashboard/portfolio"
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                🖼️ Create your portfolio
+              </Link>
+              <a
+                href={COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                💬 Join Creativo
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -419,6 +436,64 @@ export default async function DashboardPage({
             Contact support
             <span aria-hidden>→</span>
           </a>
+        </div>
+
+        {/* ── COMMUNITY ── */}
+        <div className="mt-6 overflow-hidden rounded-xl" style={{ background: COLOR.charcoal }}>
+          <div className="grid sm:grid-cols-2">
+            <div className="relative min-h-[220px] sm:min-h-full" style={{ background: "#111111" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/com.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" style={{ opacity: 0.9 }} />
+              <div
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(to right, transparent 0%, rgba(26,26,26,0.35) 100%)" }}
+              />
+            </div>
+
+            <div className="flex flex-col justify-center gap-5 p-8 md:p-10">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+                  Creativo · Powered by Showwork
+                </p>
+                <h2 className="text-2xl font-bold text-white">You don&apos;t have to figure this out alone.</h2>
+                <p className="mt-2 text-sm text-white/50">
+                  Creativo is a free community for creators — not just Showwork users. It&apos;s where you get real answers on the parts of the job nobody else teaches you.
+                </p>
+              </div>
+
+              <ul className="flex flex-col gap-3 text-sm text-white/70">
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5">🎯</span>
+                  <span><strong className="text-white">Better clients & positioning</strong> — how to find clients worth taking, position yourself with confidence, and stand out in a crowded market.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5">✂️</span>
+                  <span><strong className="text-white">Pricing & craft</strong> — what to actually charge, how to say your rate without flinching, plus editing techniques and the software other creators swear by.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5">🤝</span>
+                  <span><strong className="text-white">Referrals between creators</strong> — when someone in the community needs what you do, your name comes up first.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5">🏆</span>
+                  <span>
+                    <strong className="text-white">Creator Challenges</strong> — the top 3 each round win real monetary prizes and get spotlighted across all our platforms, putting your work in front of a much bigger audience.
+                  </span>
+                </li>
+              </ul>
+
+              <a
+                href={COMMUNITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gold, color: COLOR.black }}
+              >
+                Join Creativo
+                <span aria-hidden>→</span>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </main>

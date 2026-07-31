@@ -389,6 +389,22 @@ model Portfolio {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Contact — how a client reaches out after seeing the work. All
+  // optional: a creator can fill in as much or as little as they want,
+  // and the public page only shows what's actually been filled in.
+  contactEmail    String?
+  whatsappNumber  String?
+  ctaText         String?
+
+  // Social — shown as icons in the footer, only for whichever ones the
+  // creator actually filled in.
+  instagramUrl String?
+  twitterUrl   String?
+  linkedinUrl  String?
+  tiktokUrl    String?
+  facebookUrl  String?
+  youtubeUrl   String?
+
   creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId String  @unique
 

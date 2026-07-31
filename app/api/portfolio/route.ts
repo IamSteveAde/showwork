@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "You already have a portfolio — use PATCH to update it" }, { status: 409 });
   }
 
-  const { companyName, heroTagline } = await req.json();
+  const { companyName, heroTagline, contactEmail, whatsappNumber, ctaText } = await req.json();
   if (!companyName || !companyName.trim()) {
     return NextResponse.json({ error: "Company name is required" }, { status: 400 });
   }
@@ -64,6 +64,9 @@ export async function POST(req: NextRequest) {
       creatorId: creator.id,
       companyName: companyName.trim(),
       heroTagline: heroTagline?.trim() || null,
+      contactEmail: contactEmail?.trim() || null,
+      whatsappNumber: whatsappNumber?.trim() || null,
+      ctaText: ctaText?.trim() || null,
       slug,
     },
   });
@@ -81,7 +84,22 @@ export async function PATCH(req: NextRequest) {
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const body = await req.json();
-  const allowedFields = ["heroTagline", "heroMediaId", "logoUrl", "primaryColor", "bgColor"] as const;
+  const allowedFields = [
+    "heroTagline",
+    "heroMediaId",
+    "logoUrl",
+    "primaryColor",
+    "bgColor",
+    "contactEmail",
+    "whatsappNumber",
+    "ctaText",
+    "instagramUrl",
+    "twitterUrl",
+    "linkedinUrl",
+    "tiktokUrl",
+    "facebookUrl",
+    "youtubeUrl",
+  ] as const;
   const data: Record<string, unknown> = {};
   for (const field of allowedFields) {
     if (field in body) data[field] = body[field];

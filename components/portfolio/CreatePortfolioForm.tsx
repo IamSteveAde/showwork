@@ -9,6 +9,9 @@ export default function CreatePortfolioForm() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
   const [heroTagline, setHeroTagline] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [ctaText, setCtaText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +27,7 @@ export default function CreatePortfolioForm() {
     const res = await fetch("/api/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyName, heroTagline }),
+      body: JSON.stringify({ companyName, heroTagline, contactEmail, whatsappNumber, ctaText }),
     });
 
     if (res.ok) {
@@ -83,6 +86,56 @@ export default function CreatePortfolioForm() {
             style={{ fontSize: "16px" }}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
           />
+        </div>
+
+        <div className="my-1 h-px bg-white/5" />
+        <p className="text-xs font-semibold uppercase text-white/30" style={{ letterSpacing: "0.08em" }}>
+          How clients reach you
+        </p>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Contact email <span className="normal-case text-white/25">(optional)</span>
+          </label>
+          <input
+            type="email"
+            value={contactEmail}
+            onChange={(e) => setContactEmail(e.target.value)}
+            placeholder="hello@yourstudio.com"
+            style={{ fontSize: "16px" }}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            WhatsApp number <span className="normal-case text-white/25">(optional)</span>
+          </label>
+          <input
+            type="tel"
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+            placeholder="+2348012345678"
+            style={{ fontSize: "16px" }}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+          />
+          <p className="mt-1 text-xs text-white/30">Clients tap a button and it opens WhatsApp with a message already started.</p>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Call-to-action text <span className="normal-case text-white/25">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={ctaText}
+            onChange={(e) => setCtaText(e.target.value)}
+            placeholder="Let's create something worth remembering — reach out and let's deliver the best for your next project."
+            maxLength={140}
+            style={{ fontSize: "16px" }}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+          />
+          <p className="mt-1 text-xs text-white/30">Leave blank to use the default shown above.</p>
         </div>
 
         {error && <p className="text-xs text-red-400">{error}</p>}

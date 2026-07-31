@@ -16,63 +16,230 @@ const COLOR = {
   black: "#0A0A0A",
   gold: "#F5C842",
   orange: "#E8881A",
-  warmWhite: "#F8F7F4",
+  offWhite: "#F5F1EA",
+  offWhiteCard: "#FFFFFF",
   charcoal: "#1A1A1A",
   midGray: "#888786",
-  lightGray: "#F2F1EE",
+  ink: "#161513",
 };
+
+const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
+
+// ─────────────────────────────────────────────
+// Custom line icons — thin stroke, single color, consistent geometry.
+// Replacing emoji everywhere: emoji renders inconsistently across
+// devices and instantly reads as "unfinished" on a premium brand page.
+// ─────────────────────────────────────────────
+function IconFrame({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="8.5" cy="9.5" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconPackage({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M4 7.5L12 12l8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconChat({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M4 12.5c0-4.7 3.8-8 8-8s8 3.3 8 8-3.8 8-8 8c-1.1 0-2.1-.2-3-.6L4 21l1.2-4.4A7.6 7.6 0 0 1 4 12.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconTag({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M11.5 3.5H5a1.5 1.5 0 0 0-1.5 1.5v6.5c0 .4.15.78.44 1.06l9 9c.58.58 1.53.58 2.12 0l6.5-6.5c.58-.58.58-1.53 0-2.12l-9-9a1.5 1.5 0 0 0-1.06-.44Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <circle cx="8" cy="8" r="1.3" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+function IconSparkle({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconWrench({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M14.7 6.3a4 4 0 0 0-5.4 5l-6 6a1.8 1.8 0 0 0 2.5 2.5l6-6a4 4 0 0 0 5-5.4l-2.6 2.6-2-2 2.5-2.7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconUpload({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M12 15.5V4M8 8l4-4 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 15.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconLock({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="15" r="1.4" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+function IconSend({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M20.5 3.5L10 13.5M20.5 3.5L14 20.5l-4-7-7-4 17.5-6Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// A subtle magnetic pull toward the cursor within a small radius — the
+// button visibly "wants" to follow your mouse, then springs back on
+// leave. A small, tactile detail that reads as considered rather than
+// a plain hover-scale.
+function MagneticButton({
+  children,
+  className,
+  style,
+  href,
+  external,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  href: string;
+  external?: boolean;
+}) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = e.clientX - (rect.left + rect.width / 2);
+    const relY = e.clientY - (rect.top + rect.height / 2);
+    setOffset({ x: relX * 0.25, y: relY * 0.35 });
+  };
+
+  const props = external ? { target: "_blank", rel: "noopener noreferrer" } : {};
+
+  return (
+    <motion.a
+      ref={ref}
+      href={href}
+      {...props}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setOffset({ x: 0, y: 0 })}
+      animate={{ x: offset.x, y: offset.y }}
+      transition={{ type: "spring", stiffness: 150, damping: 12 }}
+      className={className}
+      style={style}
+    >
+      {children}
+    </motion.a>
+  );
+}
 
 const SLIDES = [
   {
     image: "/images/hero1.png",
-    eyebrow: "For content creators",
-    headline: "Your work deserves a premiere, not a Dropbox link.",
-    body: "Deliver photos and films to clients in a showcase built for them — not a folder full of files.",
+    eyebrow: "For creators ready to charge what they're worth",
+    headline: "Position yourself like the premium brand you already are.",
+    body: "How your work is delivered is part of what a client is paying for. Get that right, and charging more stops feeling like a negotiation.",
+    cta: { label: "Deliver a project", href: "/start", external: false },
   },
   {
     image: "/images/hero2.png",
-    eyebrow: "Client experience",
-    headline: "First impressions aren't a folder. They're a moment.",
-    body: "Password-protected, on your branding, ready in minutes.",
+    eyebrow: "First impressions, done right",
+    headline: "Premium clients pay for a premium experience.",
+    body: "A scattered portfolio and a WeTransfer link undersell you before you've said a word. Showwork is built to say premium before you do.",
+    cta: { label: "Create your portfolio", href: "/signup?next=/dashboard/portfolio", external: false },
   },
   {
     image: "/images/hero3.png",
-    eyebrow: "Built to grow with you",
-    headline: "One project or fifty — there's a plan that fits.",
-    body: "Start free. Move up only when your studio actually needs to.",
+    eyebrow: "You're not figuring this out alone",
+    headline: "Built for creators who charge what they're worth.",
+    body: "Positioning, pricing, landing better clients — join a community of creators doing exactly that.",
+    cta: { label: "Join our community", href: COMMUNITY_URL, external: true },
+  },
+];
+
+const ROUTES = [
+  {
+    number: "01",
+    Icon: IconFrame,
+    title: "Create your portfolio",
+    body: "This is a client's first impression of you — before a single message is sent. A real portfolio, not a scattered feed, says premium before you have to argue for it.",
+    cta: "Create your portfolio — free",
+    href: "/signup?next=/dashboard/portfolio",
+    external: false,
+  },
+  {
+    number: "02",
+    Icon: IconPackage,
+    title: "Deliver a project the right way",
+    body: "How you hand off finished work is part of what you're charging for. A branded, password-protected delivery makes the number you're asking for feel obvious, not something you have to defend.",
+    cta: "Deliver a project",
+    href: "/start",
+    external: false,
+  },
+  {
+    number: "03",
+    Icon: IconChat,
+    title: "Join Creativo",
+    body: "Positioning, pricing, and landing premium clients — worked out alongside creators actually doing it, not figured out alone at 1am.",
+    cta: "Join the community",
+    href: COMMUNITY_URL,
+    external: true,
   },
 ];
 
 const PAIN_POINTS = [
   {
-    title: "Underpriced, underappreciated",
-    body: "A shoot you spent weeks on lands in a WeTransfer link. Clients price you by how the work arrives, not just what's inside it.",
+    Icon: IconTag,
+    title: "You're pricing like the delivery, not the work",
+    body: "A WeTransfer link tells a client this is casual. They'll negotiate accordingly — not because the work isn't premium, but because nothing around it says so.",
   },
   {
-    title: "No second look",
-    body: "Most links get opened once. If the delivery isn't memorable, neither are you — until the next creator's is.",
+    Icon: IconSparkle,
+    title: "Premium clients expect a premium moment",
+    body: "The clients who pay well are used to being treated well. An ordinary handover makes an extraordinary price feel like a stretch, even when the work justifies it.",
   },
   {
-    title: "Doing the agency's job for free",
-    body: "You shot it, you edited it, and now you're also tech support for a client who can't find the download button.",
+    Icon: IconWrench,
+    title: "You became the tech support too",
+    body: "You shot it, you edited it — and now you're troubleshooting a broken download link, for the same fee you'd have charged either way.",
   },
 ];
 
 const STEPS = [
   {
     number: "01",
+    Icon: IconUpload,
     title: "Upload the work",
     body: "Add the photos and films for this delivery. Stored full quality, delivered the same way.",
   },
   {
     number: "02",
+    Icon: IconLock,
     title: "Set the access code",
     body: "One password per project. Only the client you share it with gets in.",
   },
   {
     number: "03",
+    Icon: IconSend,
     title: "Send the link",
-    body: "They open it, enter the code, and see the work the way you made it.",
+    body: "They open it, enter the code, and see the work — and the price — the way you meant them to.",
   },
 ];
 
@@ -104,8 +271,11 @@ const PRICING_TIERS = [
     highlight: null,
     features: [
       "1 project a month",
+      "Free access to Creativo, our creator community",
+      "Your own free portfolio — always on, one link",
       "Password-protected client delivery",
-      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Up to 5GB per file — full photo & video quality",
+      "No cap on total project size — upload as much as the delivery needs",
       "Custom hero banner with your own tagline",
       "Client email capture before viewing",
       "Client approve / revision flow, with notes",
@@ -126,8 +296,11 @@ const PRICING_TIERS = [
     highlight: null,
     features: [
       "Up to 5 projects a month",
+      "Free access to Creativo, our creator community",
+      "Your own free portfolio — always on, one link",
       "Password-protected client delivery",
-      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Up to 5GB per file — full photo & video quality",
+      "No cap on total project size — upload as much as the delivery needs",
       "Custom hero banner with your own tagline",
       "Client email capture before viewing",
       "Client approve / revision flow, with notes",
@@ -148,8 +321,11 @@ const PRICING_TIERS = [
     highlight: "MOST POPULAR",
     features: [
       "Up to 20 projects a month",
+      "Free access to Creativo, our creator community",
+      "Your own free portfolio — always on, one link",
       "Password-protected client delivery",
-      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Up to 5GB per file — full photo & video quality",
+      "No cap on total project size — upload as much as the delivery needs",
       "Custom hero banner with your own tagline",
       "Client email capture before viewing",
       "Client approve / revision flow, with notes",
@@ -171,8 +347,11 @@ const PRICING_TIERS = [
     highlight: null,
     features: [
       "Unlimited projects",
+      "Free access to Creativo, our creator community",
+      "Your own free portfolio — always on, one link",
       "Password-protected client delivery",
-      "Full-quality photo & video uploads (up to 5GB per file)",
+      "Up to 5GB per file — full photo & video quality",
+      "No cap on total project size — upload as much as the delivery needs",
       "Custom hero banner with your own tagline",
       "Client email capture before viewing",
       "Client approve / revision flow, with notes",
@@ -187,11 +366,11 @@ const PRICING_TIERS = [
   },
 ];
 
-function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+function Wordmark({ size = "md", dark = false }: { size?: "sm" | "md" | "lg"; dark?: boolean }) {
   const sizes = { sm: "text-base", md: "text-xl", lg: "text-2xl" };
   return (
     <div className="flex items-baseline gap-2">
-      <span className={`${sizes[size]} font-bold text-white`}>
+      <span className={`${sizes[size]} font-bold`} style={{ color: dark ? COLOR.ink : "white" }}>
         Show<span style={{ color: COLOR.gold }}>work</span>
       </span>
     </div>
@@ -215,7 +394,7 @@ function HeroSlider() {
 
   return (
     <section
-      className="relative h-[92vh] min-h-[640px] w-full overflow-hidden"
+      className="relative h-[94vh] min-h-[680px] w-full overflow-hidden"
       style={{ background: COLOR.black }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -238,18 +417,32 @@ function HeroSlider() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.25) 45%, rgba(10,10,10,0.95) 100%)",
+            "linear-gradient(to bottom, rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.25) 45%, rgba(10,10,10,0.97) 100%)",
         }}
       />
+
+      {/* Subtle film grain — the difference between "dark photo" and
+          "cinematic" is texture. Almost imperceptible consciously, but
+          it's what makes the hero feel shot on film rather than a
+          flat digital background. */}
+      <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.05] mix-blend-overlay" aria-hidden>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+      </svg>
 
       <div className="relative z-10 flex items-center justify-between px-6 py-8 md:px-20">
         <Wordmark />
         <Link href="/login" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
           Log in
         </Link>
+        <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
+          Sign up
+        </Link>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-20 md:px-20 md:pb-28">
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-16 md:px-20 md:pb-24">
         <div className="mx-auto max-w-[1280px]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -259,10 +452,10 @@ function HeroSlider() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.5 }}
             >
-              <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+              <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.15em" }}>
                 {slide.eyebrow}
               </p>
-              <h1 className="max-w-2xl text-[2.25rem] font-bold leading-[1.12] tracking-tight text-white md:text-6xl">
+              <h1 className="max-w-2xl text-[2.1rem] font-bold leading-[1.14] tracking-tight text-white md:text-[3.4rem]">
                 {slide.headline}
               </h1>
               <p className="mt-5 max-w-lg text-base font-normal leading-relaxed text-white/60 md:text-lg">
@@ -272,22 +465,25 @@ function HeroSlider() {
           </AnimatePresence>
 
           <div className="mt-9 flex flex-wrap items-center gap-6">
-            <div className="flex gap-3">
-              <Link
-                href="/start"
-                className="rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-                style={{ background: COLOR.gold, color: COLOR.black }}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
-                Start a delivery
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-lg border px-7 py-3.5 text-sm font-semibold text-white/70 transition-colors hover:text-white"
-                style={{ borderColor: "rgba(248,247,244,0.15)" }}
-              >
-                Log in
-              </Link>
-            </div>
+                <MagneticButton
+                  href={slide.cta.href}
+                  external={slide.cta.external}
+                  className="inline-flex items-center gap-2.5 rounded-full px-8 py-4 text-sm font-semibold shadow-[0_10px_40px_rgba(245,200,66,0.25)]"
+                  style={{ background: COLOR.gold, color: COLOR.black }}
+                >
+                  {slide.cta.label}
+                  <span aria-hidden>→</span>
+                </MagneticButton>
+              </motion.div>
+            </AnimatePresence>
 
             <div className="flex items-center gap-2">
               {SLIDES.map((_, i) => (
@@ -329,15 +525,72 @@ export default function HomeClient() {
       <FloatingStartButton />
       <HeroSlider />
 
-      {/* ── PAIN POINT ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+      {/* ── ROUTING — three paths, right after the banner ── */}
+      <section className="px-6 py-20 md:px-20 md:py-28" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.15em" }}>
+            Where to start
+          </p>
+          <h2 className="mb-14 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+            Three ways to start looking like the premium brand you are.
+          </h2>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {ROUTES.map((route, i) => {
+              const card = (
+                <motion.div
+                  initial={{ opacity: 0, y: 26 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ y: -6 }}
+                  className="group flex h-full cursor-pointer flex-col gap-4 rounded-2xl p-8 shadow-sm transition-shadow duration-300 hover:shadow-xl"
+                  style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
+                      style={{ background: "rgba(232,136,26,0.1)" }}
+                    >
+                      <route.Icon className="h-6 w-6" style={{ color: COLOR.orange }} />
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "rgba(22,21,19,0.25)" }}>{route.number}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold" style={{ color: COLOR.ink }}>{route.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{route.body}</p>
+                  <span
+                    className="mt-auto flex items-center gap-1.5 pt-2 text-sm font-semibold transition-transform duration-300 group-hover:translate-x-1"
+                    style={{ color: COLOR.orange }}
+                  >
+                    {route.cta}
+                    <span aria-hidden>→</span>
+                  </span>
+                </motion.div>
+              );
+              return route.external ? (
+                <a key={route.number} href={route.href} target="_blank" rel="noopener noreferrer" className="block h-full">
+                  {card}
+                </a>
+              ) : (
+                <Link key={route.number} href={route.href} className="block h-full">
+                  {card}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PAIN POINT ── */}
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
+        <div className="mx-auto max-w-[1280px]">
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
             The part nobody talks about
           </p>
-          <h2 className="mb-16 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
-            Great work still loses to a bad handover.
+          <h2 className="mb-16 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+            Great work still gets charged like average work.
           </h2>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -348,11 +601,17 @@ export default function HomeClient() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-xl p-6"
-                style={{ background: "rgba(248,247,244,0.03)", border: "1px solid rgba(248,247,244,0.08)" }}
+                className="rounded-xl p-6 shadow-sm"
+                style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
               >
-                <h3 className="mb-3 text-lg font-semibold text-white">{p.title}</h3>
-                <p className="text-sm font-normal leading-relaxed text-white/50">{p.body}</p>
+                <div
+                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-full"
+                  style={{ background: "rgba(232,136,26,0.1)" }}
+                >
+                  <p.Icon className="h-5 w-5" style={{ color: COLOR.orange }} />
+                </div>
+                <h3 className="mb-3 text-lg font-semibold" style={{ color: COLOR.ink }}>{p.title}</h3>
+                <p className="text-sm font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{p.body}</p>
               </motion.div>
             ))}
           </div>
@@ -363,22 +622,22 @@ export default function HomeClient() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-14 text-lg font-semibold md:text-xl"
-            style={{ color: COLOR.gold }}
+            style={{ color: COLOR.orange }}
           >
-            Showwork fixes the part after the work is done — and grows with every project after that.
+            Showwork is how premium work finally gets priced like premium work — and stays positioned that way with every project after.
           </motion.p>
         </div>
       </section>
 
       {/* ── VIDEO — the moment they actually open it ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.charcoal }}>
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
           <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
             The moment they open it
           </p>
           <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
-            This is what your client sees first.
+            This is what a premium price looks like, before they've even asked.
           </h2>
           <p className="mb-12 max-w-lg text-base leading-relaxed text-white/50 md:text-lg">
             No loading spinner, no folder icon. The film you delivered, playing,
@@ -447,7 +706,7 @@ export default function HomeClient() {
               with the footage itself */}
           <div className="mx-auto mt-6 max-w-4xl text-center">
             <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
-            <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>One night to remember.</p>
+            <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>Priced like it.</p>
 
             <div className="mt-8 flex flex-col items-center gap-3">
               <a
@@ -469,16 +728,16 @@ export default function HomeClient() {
       </section>
 
       {/* ── IMAGE — real photography, the actual gallery treatment ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
             Every photo, presented properly
           </p>
-          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
+          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
             A gallery, not a grid of thumbnails.
           </h2>
-          <p className="mb-12 max-w-lg text-base leading-relaxed text-white/50 md:text-lg">
+          <p className="mb-12 max-w-lg text-base leading-relaxed md:text-lg" style={{ color: "rgba(22,21,19,0.55)" }}>
             Full quality, properly laid out — and your client can approve or
             flag each one right there, with a note, so nothing gets lost in a
             comment thread.
@@ -505,7 +764,7 @@ export default function HomeClient() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: i * 0.06 }}
-                className="relative aspect-[4/5] overflow-hidden rounded-xl"
+                className="relative aspect-[4/5] overflow-hidden rounded-xl shadow-sm"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -532,18 +791,18 @@ export default function HomeClient() {
               </motion.div>
             ))}
           </motion.div>
-          <p className="mt-6 text-center text-xs text-white/25">
+          <p className="mt-6 text-center text-xs" style={{ color: "rgba(22,21,19,0.3)" }}>
             Placeholder photography — shown here purely to demonstrate the gallery and approval treatment.
           </p>
         </div>
       </section>
 
       {/* ── THREE STEPS ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight text-white md:text-4xl">
-            How a delivery works
+          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+            How you start looking like a premium brand.
           </h2>
 
           <div className="grid gap-12 md:grid-cols-3">
@@ -556,11 +815,19 @@ export default function HomeClient() {
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="flex flex-col items-start gap-3 text-left"
               >
-                <span className="text-5xl font-light md:text-6xl" style={{ color: COLOR.gold }}>
-                  {step.number}
-                </span>
-                <h3 className="text-xl font-semibold text-white">{step.title}</h3>
-                <p className="text-base font-normal leading-relaxed text-white/50">{step.body}</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-5xl font-light md:text-6xl" style={{ color: COLOR.orange }}>
+                    {step.number}
+                  </span>
+                  <div
+                    className="flex h-11 w-11 items-center justify-center rounded-full"
+                    style={{ background: "rgba(232,136,26,0.1)" }}
+                  >
+                    <step.Icon className="h-5 w-5" style={{ color: COLOR.orange }} />
+                  </div>
+                </div>
+                <h3 className="text-xl font-semibold" style={{ color: COLOR.ink }}>{step.title}</h3>
+                <p className="text-base font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.55)" }}>{step.body}</p>
               </motion.div>
             ))}
           </div>
@@ -568,11 +835,11 @@ export default function HomeClient() {
       </section>
 
       {/* ── TESTIMONIALS ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.warmWhite }}>
+      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
           <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.black }}>
-            Creators are already using it this way.
+          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+            Creators are already charging like this.
           </h2>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -583,13 +850,13 @@ export default function HomeClient() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-xl p-7"
-                style={{ background: COLOR.lightGray }}
+                className="rounded-xl p-7 shadow-sm"
+                style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
               >
-                <p className="mb-6 text-base font-normal leading-relaxed" style={{ color: "rgba(10,10,10,0.75)" }}>
+                <p className="mb-6 text-base font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.75)" }}>
                   &ldquo;{t.quote}&rdquo;
                 </p>
-                <p className="text-sm font-semibold" style={{ color: COLOR.black }}>{t.name}</p>
+                <p className="text-sm font-semibold" style={{ color: COLOR.ink }}>{t.name}</p>
                 <p className="text-xs font-normal" style={{ color: COLOR.midGray }}>{t.role}</p>
               </motion.div>
             ))}
@@ -697,7 +964,7 @@ export default function HomeClient() {
           <div>
             <Wordmark size="sm" />
             <p className="mt-3 max-w-xs text-sm font-normal leading-relaxed" style={{ color: COLOR.midGray }}>
-              The delivery experience your work deserves.
+              Positioned like the premium brand you are.
             </p>
           </div>
 
@@ -715,8 +982,14 @@ export default function HomeClient() {
               Product
             </p>
             <Link href="/start" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
-              Start a delivery
+              Deliver a project
             </Link>
+            <Link href="/signup?next=/dashboard/portfolio" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
+              Create your portfolio
+            </Link>
+            <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
+              Join Creativo
+            </a>
             <Link href="/login" className="text-sm font-normal text-white/60 transition-colors hover:text-white">
               Log in
             </Link>
