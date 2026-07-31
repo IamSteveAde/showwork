@@ -42,6 +42,23 @@ function IconEmail() {
   );
 }
 
+function IconDocument({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M15 3v5h5M8 12h8M8 16h8M8 20h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconArrowLeft({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconInstagram() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -89,6 +106,130 @@ function IconYouTube() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
       <path d="M22 12s0-3.1-.4-4.6a3 3 0 0 0-2.1-2.1C17.9 5 12 5 12 5s-5.9 0-7.5.3a3 3 0 0 0-2.1 2.1C2 8.9 2 12 2 12s0 3.1.4 4.6a3 3 0 0 0 2.1 2.1C6.1 19 12 19 12 19s5.9 0 7.5-.3a3 3 0 0 0 2.1-2.1c.4-1.5.4-4.6.4-4.6Zm-11.9 3V9l5.2 3-5.2 3Z" />
     </svg>
+  );
+}
+
+function IconQuote({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} style={style}>
+      <path d="M7.5 6C4.5 6 2 8.7 2 12.3c0 3 2 5.2 4.6 5.2.4 0 .8-.05 1.1-.15-.5 1.9-1.9 3.3-3.7 3.9l.6 1.3c3.4-1 5.9-3.9 5.9-8.3C10.5 9.8 9.3 6 7.5 6Zm10 0c-3 0-5.5 2.7-5.5 6.3 0 3 2 5.2 4.6 5.2.4 0 .8-.05 1.1-.15-.5 1.9-1.9 3.3-3.7 3.9l.6 1.3c3.4-1 5.9-3.9 5.9-8.3C20.5 9.8 19.3 6 17.5 6Z" />
+    </svg>
+  );
+}
+
+function IconStar({ filled }: { filled: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? "#F5C842" : "none"} stroke={filled ? "#F5C842" : "rgba(22,21,19,0.25)"} strokeWidth="1.5">
+      <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.8-4.6 6.6-.9L12 2.5Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+interface PortfolioTestimonialData {
+  id: string;
+  clientName: string;
+  clientRole: string | null;
+  quote: string;
+  rating: number | null;
+}
+
+// The scrolling testimonial carousel — sits right after "Get in
+// touch." Manual left/right navigation plus dot indicators (same
+// pattern as the hero slider), a crossfade between quotes rather than
+// a hard cut, and a large quiet quote mark instead of quotation marks
+// in the text itself.
+function TestimonialsCarousel({
+  testimonials,
+  primaryColor,
+}: {
+  testimonials: PortfolioTestimonialData[];
+  primaryColor: string;
+}) {
+  const [index, setIndex] = useState(0);
+  if (testimonials.length === 0) return null;
+  const t = testimonials[index];
+
+  const goPrev = () => setIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
+  const goNext = () => setIndex((i) => (i + 1) % testimonials.length);
+
+  return (
+    <section className="relative overflow-hidden px-6 py-24 md:px-14 md:py-32" style={{ background: "#F3F0EA" }}>
+      <div className="mx-auto max-w-3xl text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.8 }}
+        >
+          <IconQuote className="mx-auto mb-8 h-9 w-9" style={{ color: primaryColor, opacity: 0.4 }} />
+        </motion.div>
+
+        <div className="min-h-[200px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, y: 16, filter: "blur(3px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -16, filter: "blur(3px)" }}
+              transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
+            >
+              {t.rating && (
+                <div className="mb-5 flex justify-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <IconStar key={n} filled={n <= (t.rating ?? 0)} />
+                  ))}
+                </div>
+              )}
+              <p className="text-xl font-light leading-relaxed md:text-2xl" style={{ color: "#161513" }}>
+                {t.quote}
+              </p>
+              <p className="mt-6 text-sm font-semibold" style={{ color: "#161513" }}>{t.clientName}</p>
+              {t.clientRole && (
+                <p className="text-xs" style={{ color: "rgba(22,21,19,0.5)" }}>{t.clientRole}</p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {testimonials.length > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-5">
+            <button
+              onClick={goPrev}
+              aria-label="Previous testimonial"
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-black/5"
+              style={{ border: "1px solid rgba(22,21,19,0.15)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M11 6l-6 6 6 6" stroke="#161513" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-2">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  aria-label={`Go to testimonial ${i + 1}`}
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: i === index ? 22 : 8, background: i === index ? primaryColor : "rgba(22,21,19,0.2)" }}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={goNext}
+              aria-label="Next testimonial"
+              className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-black/5"
+              style={{ border: "1px solid rgba(22,21,19,0.15)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="#161513" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -145,11 +286,6 @@ function BentoTile({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // Tighter margin than before (-20% instead of -10%) — a tile has to
-  // be meaningfully on screen, not just barely peeking into view,
-  // before it's considered "in view" and allowed to play. Fewer tiles
-  // qualify at once during a fast scroll, so fewer videos ever compete
-  // for the concurrency slots above.
   const inView = useInView(containerRef, { once: false, margin: "-20%" });
   const nearView = useInView(containerRef, { once: true, margin: "800px" });
   const [shouldLoad, setShouldLoad] = useState(false);
@@ -205,11 +341,7 @@ function BentoTile({
         />
       )}
 
-      {/* Thin gold edge on hover — the "tile lights up" feel, like a
-          museum panel being highlighted, rather than the whole card
-          lifting off the page. */}
       <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10 transition-all duration-300 group-hover:ring-2 group-hover:ring-[#F5C842]/70" />
-
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-400 group-hover:opacity-100" />
 
       {item.type === "VIDEO" && (
@@ -251,6 +383,92 @@ function DocTile({ item, index, onOpen }: { item: PortfolioMediaItem; index: num
   );
 }
 
+// One tile per section on the category-selector screen — a
+// representative cover (the section's first uploaded file), its name,
+// and how much work is inside it. Clicking one swaps that image in as
+// the new banner and reveals just that section's gallery underneath.
+function CategoryCard({
+  section,
+  index,
+  onSelect,
+}: {
+  section: PortfolioSectionData;
+  index: number;
+  onSelect: () => void;
+}) {
+  const cover = section.media[0];
+  const isDocType = section.mediaType === "DOCUMENT" || section.mediaType === "PDF";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 36, filter: "blur(6px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 1.1, delay: index * 0.12, ease: [0.19, 1, 0.22, 1] }}
+      whileHover={{ y: -10, transition: { duration: 0.5, ease: [0.19, 1, 0.22, 1] } }}
+      onClick={onSelect}
+      className="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/20"
+    >
+      {cover ? (
+        cover.type === "VIDEO" ? (
+          <video
+            src={cover.url}
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+          />
+        ) : isDocType ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
+            <IconDocument className="h-16 w-16 text-white/25" />
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover.url}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+          />
+        )
+      ) : (
+        <div className="absolute inset-0 bg-white/5" />
+      )}
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 transition-all duration-500 group-hover:ring-2 group-hover:ring-[#F5C842]/70" />
+
+      {/* Circular arrow button — a real, considered control rather
+          than a bare character, matching the same restrained,
+          weighted style as the "All work" back button and the modal's
+          navigation. Appears on hover, softly. */}
+      <div
+        className="absolute right-5 top-5 flex h-10 w-10 -translate-y-1 items-center justify-center rounded-full opacity-0 transition-all duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100"
+        style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M7 17L17 7M9 7h8v8" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-7">
+        <p className="text-xs font-medium uppercase text-white/45" style={{ letterSpacing: "0.2em" }}>
+          {section.media.length} {section.media.length === 1 ? "piece" : "pieces"}
+        </p>
+        <h3 className="mt-2 text-2xl font-light tracking-tight text-white md:text-[1.65rem]">
+          {section.name}
+        </h3>
+        {/* A thin line that draws itself in on hover — a quiet, premium
+            signal of interactivity that doesn't rely on a bouncing icon
+            or color change alone. */}
+        <div
+          className="mt-3 h-px w-0 transition-all duration-500 ease-out group-hover:w-12"
+          style={{ background: "#F5C842" }}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
 export default function PortfolioContent({
   companyName,
   logoUrl,
@@ -269,6 +487,7 @@ export default function PortfolioContent({
   tiktokUrl,
   facebookUrl,
   youtubeUrl,
+  testimonials,
 }: {
   companyName: string;
   logoUrl: string | null;
@@ -287,9 +506,11 @@ export default function PortfolioContent({
   tiktokUrl: string | null;
   facebookUrl: string | null;
   youtubeUrl: string | null;
+  testimonials: PortfolioTestimonialData[];
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -298,12 +519,23 @@ export default function PortfolioContent({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const allItems: PortfolioMediaItem[] = [...sections.flatMap((s) => s.media), ...ungroupedMedia];
-
-  const renderSections = [
+  const renderSections: PortfolioSectionData[] = [
     ...sections,
-    ...(ungroupedMedia.length > 0 ? [{ id: "ungrouped", name: "More work", mediaType: "PHOTO" as const, media: ungroupedMedia }] : []),
+    ...(ungroupedMedia.length > 0
+      ? [{ id: "ungrouped", name: "More work", mediaType: "PHOTO" as const, media: ungroupedMedia }]
+      : []),
   ];
+
+  const selectedSection = renderSections.find((s) => s.id === selectedSectionId) ?? null;
+  const galleryItems = selectedSection ? selectedSection.media : [];
+  const selectedCover = selectedSection?.media[0] ?? null;
+
+  const handleSelectCategory = (id: string) => {
+    setSelectedSectionId(id);
+    // Jump straight to the new banner — picking a category should feel
+    // like arriving somewhere new, not stay scrolled mid-page.
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <main className="min-h-screen" style={{ background: bgColor }}>
@@ -354,89 +586,150 @@ export default function PortfolioContent({
         </div>
       </header>
 
-      {heroMedia && (
-        <section className="fixed inset-0 z-0 h-screen w-full overflow-hidden bg-black">
-          {heroMedia.type === "VIDEO" ? (
-            <video src={heroMedia.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={heroMedia.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
-          )}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.92) 100%)" }} />
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2 }}
-            className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-20 md:px-14 md:pb-24"
-          >
-            <h1 className="max-w-2xl text-[clamp(1.75rem,5vw,3.5rem)] font-light leading-[1.15] tracking-tight text-white">
-              {heroTagline || `The work of ${companyName}`}
-            </h1>
-            <button
-              onClick={() => contentRef.current?.scrollIntoView({ behavior: "smooth" })}
-              className="mt-8 flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.03]"
-              style={{ background: primaryColor, color: "#080808" }}
+      {/* ── MAIN BANNER — only on the landing state. Once a category is
+           picked, its own image takes over as the banner instead. ── */}
+      {selectedSectionId === null && heroMedia && (
+        <>
+          <section className="fixed inset-0 z-0 h-screen w-full overflow-hidden bg-black">
+            {heroMedia.type === "VIDEO" ? (
+              <video src={heroMedia.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={heroMedia.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+            )}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.92) 100%)" }} />
+            <motion.div
+              initial={{ opacity: 0, y: 34, filter: "blur(4px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 1.3, delay: 0.3, ease: [0.19, 1, 0.22, 1] }}
+              className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-20 md:px-14 md:pb-24"
             >
-              View the work
-              <span aria-hidden>↓</span>
-            </button>
-          </motion.div>
-        </section>
+              <h1 className="max-w-2xl text-[clamp(1.75rem,5vw,3.5rem)] font-light leading-[1.15] tracking-tight text-white">
+                {heroTagline || `The work of ${companyName}`}
+              </h1>
+              <button
+                onClick={() => contentRef.current?.scrollIntoView({ behavior: "smooth" })}
+                className="group mt-8 flex items-center gap-3 rounded-full py-3.5 pl-7 pr-5 text-sm font-semibold transition-transform hover:scale-[1.03]"
+                style={{ background: primaryColor, color: "#080808" }}
+              >
+                View portfolio
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/10 transition-transform duration-300 group-hover:translate-y-0.5">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v13M6 12l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </button>
+            </motion.div>
+          </section>
+          <div className="h-screen w-full" aria-hidden />
+        </>
       )}
-
-      {heroMedia && <div className="h-screen w-full" aria-hidden />}
 
       <div className="relative z-10" style={{ background: bgColor }}>
         <div ref={contentRef} />
 
-        {renderSections.map((section, i) => {
-          const isDark = i % 2 === 0;
-          const textColor = isDark ? "#FFFFFF" : "#111111";
-          const numberColor = isDark ? "rgba(245,200,66,0.5)" : "rgba(0,0,0,0.25)";
+        {selectedSectionId === null ? (
+          // ── CATEGORY GRID — the "different segments" the creator has
+          // built (Weddings, Logo Designs, Events, Corporate, etc), each
+          // with a real cover image. Picking one is how you get to the
+          // actual gallery. ──
+          <section className="px-6 py-24 md:px-14 md:py-32" style={{ background: "#000000" }}>
+            <div className="mx-auto max-w-[1400px]">
+              <motion.div
+                initial={{ opacity: 0, y: 24, filter: "blur(4px)" }}
+                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
+                className="mb-16"
+              >
+                <p className="mb-3 text-xs font-semibold uppercase" style={{ color: "rgba(245,200,66,0.6)", letterSpacing: "0.25em" }}>
+                  Explore the work
+                </p>
+                <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">
+                  Pick a category to step inside.
+                </h2>
+              </motion.div>
 
-          return (
-            <section key={section.id} className="px-6 py-24 md:px-14 md:py-32" style={{ background: isDark ? "#000000" : "#FAFAF7" }}>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+                {renderSections.map((section, i) => (
+                  <CategoryCard
+                    key={section.id}
+                    section={section}
+                    index={i}
+                    onSelect={() => handleSelectCategory(section.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
+            {/* ── SECTION BANNER — the chosen category's own cover image,
+                 now standing in as the banner for this view. ── */}
+            <section className="relative h-[68vh] min-h-[460px] w-full overflow-hidden bg-black">
+              <motion.div
+                initial={{ opacity: 0, scale: 1.06 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.4, ease: [0.19, 1, 0.22, 1] }}
+                className="absolute inset-0"
+              >
+                {selectedCover?.type === "VIDEO" ? (
+                  <video src={selectedCover.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
+                ) : selectedCover ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={selectedCover.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
+                ) : null}
+              </motion.div>
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.95) 100%)" }} />
+
+              <motion.button
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, delay: 0.3 }}
+                onClick={() => setSelectedSectionId(null)}
+                className="absolute left-6 top-24 z-10 flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 md:left-14 md:top-28"
+                style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(10px)" }}
+                aria-label="Back to all work"
+              >
+                <IconArrowLeft className="h-4 w-4" />
+              </motion.button>
+
+              <motion.div
+                initial={{ opacity: 0, y: 26, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 1, delay: 0.35, ease: [0.19, 1, 0.22, 1] }}
+                className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-12 md:px-14 md:pb-16"
+              >
+                <p className="mb-2 text-xs font-medium uppercase text-white/50" style={{ letterSpacing: "0.25em" }}>
+                  {selectedSection?.media.length} {selectedSection?.media.length === 1 ? "piece" : "pieces"}
+                </p>
+                <h2 className="text-3xl font-light tracking-tight text-white md:text-6xl">{selectedSection?.name}</h2>
+              </motion.div>
+            </section>
+
+            {/* ── SECTION GALLERY — just this category's own work. ── */}
+            <section className="px-6 py-16 md:px-14 md:py-24" style={{ background: "#000000" }}>
               <div className="mx-auto max-w-[1400px]">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.7 }}
-                  className="mb-14 flex items-baseline gap-4"
-                >
-                  <span className="text-sm font-light" style={{ color: numberColor }}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <h2 className="text-3xl font-light tracking-tight md:text-5xl" style={{ color: textColor }}>
-                    {section.name}
-                  </h2>
-                </motion.div>
-
-                {section.mediaType === "DOCUMENT" || section.mediaType === "PDF" ? (
+                {selectedSection?.mediaType === "DOCUMENT" || selectedSection?.mediaType === "PDF" ? (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    {section.media.map((item, idx) => (
-                      <DocTile key={item.id} item={item} index={idx} onOpen={() => setOpenIdx(allItems.findIndex((x) => x.id === item.id))} />
+                    {galleryItems.map((item, idx) => (
+                      <DocTile key={item.id} item={item} index={idx} onOpen={() => setOpenIdx(idx)} />
                     ))}
                   </div>
                 ) : (
-                  // The bento tile grid — fixed row height, deliberate
-                  // varied spans per tile, gapless rhythm. This is the
-                  // structured, "designed panel wall" feel, distinct
-                  // from a loose masonry flow.
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" style={{ gridAutoRows: "180px" }}>
-                    {section.media.map((item, idx) => (
-                      <BentoTile key={item.id} item={item} index={idx} onOpen={() => setOpenIdx(allItems.findIndex((x) => x.id === item.id))} />
+                    {galleryItems.map((item, idx) => (
+                      <BentoTile key={item.id} item={item} index={idx} onOpen={() => setOpenIdx(idx)} />
                     ))}
                   </div>
                 )}
               </div>
             </section>
-          );
-        })}
+          </>
+        )}
 
-        {/* ── GET IN TOUCH — the section after all the work, before
-             the footer. This is where a client who's been scrolling
-             through the portfolio actually acts on it. ── */}
+        {/* ── GET IN TOUCH — after the work, before the footer, on
+             every view. ── */}
         {(whatsappNumber || contactEmail) && (
           <section className="relative overflow-hidden px-6 py-28 text-center md:px-14 md:py-40" style={{ background: "#F3F0EA" }}>
             <div
@@ -484,6 +777,8 @@ export default function PortfolioContent({
             </motion.div>
           </section>
         )}
+
+        <TestimonialsCarousel testimonials={testimonials} primaryColor={primaryColor} />
 
         <footer className="border-t border-white/5 bg-black px-6 py-14 md:px-14">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
@@ -570,14 +865,14 @@ export default function PortfolioContent({
       </div>
 
       <AnimatePresence>
-        {openIdx !== null && allItems[openIdx] && (
+        {openIdx !== null && galleryItems[openIdx] && (
           <PortfolioMediaModal
-            item={allItems[openIdx]}
+            item={galleryItems[openIdx]}
             index={openIdx}
-            total={allItems.length}
+            total={galleryItems.length}
             onClose={() => setOpenIdx(null)}
-            onPrev={() => setOpenIdx((i) => (i! - 1 + allItems.length) % allItems.length)}
-            onNext={() => setOpenIdx((i) => (i! + 1) % allItems.length)}
+            onPrev={() => setOpenIdx((i) => (i! - 1 + galleryItems.length) % galleryItems.length)}
+            onNext={() => setOpenIdx((i) => (i! + 1) % galleryItems.length)}
           />
         )}
       </AnimatePresence>

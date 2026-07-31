@@ -34,6 +34,7 @@ export async function GET() {
         include: { media: { orderBy: { displayOrder: "asc" } } },
       },
       media: true,
+      testimonials: { orderBy: { displayOrder: "asc" } },
     },
   });
 

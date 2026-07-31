@@ -410,6 +410,7 @@ model Portfolio {
 
   sections PortfolioSection[]
   media    PortfolioMedia[]
+  testimonials PortfolioTestimonial[]
 }
 
 model PortfolioSection {
@@ -437,6 +438,24 @@ model PortfolioMedia {
   caption      String?
   displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
+
+  @@index([portfolioId])
+}
+
+// A client testimonial the creator enters themselves — shown as a
+// scrolling carousel on the public portfolio, right after the "Get in
+// touch" section. Rating is optional since not every quote needs a
+// star count attached.
+model PortfolioTestimonial {
+  id           String    @id @default(uuid())
+  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  portfolioId  String
+  clientName   String
+  clientRole   String?
+  quote        String
+  rating       Int?
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
 
   @@index([portfolioId])
 }

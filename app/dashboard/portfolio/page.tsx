@@ -3,13 +3,14 @@ import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
-import { appUrl } from "@/lib/url";
+import { portfolioUrl } from "@/lib/portfolioUrl";
 import CreatePortfolioForm from "@/components/portfolio/CreatePortfolioForm";
 import PortfolioSectionHeader from "@/components/portfolio/PortfolioSectionHeader";
 import PortfolioAddSection from "@/components/portfolio/PortfolioAddSection";
 import PortfolioFileGridItem from "@/components/portfolio/PortfolioFileGridItem";
 import PortfolioDetailsForm from "@/components/portfolio/PortfolioDetailsForm";
 import CopyLinkButton from "@/components/CopyLinkButton";
+import PortfolioTestimonialsManager from "@/components/portfolio/PortfolioTestimonialsManager";
 
 const COLOR = { black: "#0A0A0A", gold: "#F5C842", charcoal: "#1A1A1A" };
 
@@ -25,6 +26,7 @@ export default async function PortfolioDashboardPage() {
         include: { media: { orderBy: { displayOrder: "asc" } } },
       },
       media: true,
+      testimonials: { orderBy: { displayOrder: "asc" } },
     },
   });
 
@@ -39,7 +41,7 @@ export default async function PortfolioDashboardPage() {
     );
   }
 
-  const liveUrl = `${appUrl()}/portfolio/${portfolio.slug}`;
+  const liveUrl = portfolioUrl(portfolio.slug);
   const ungroupedMedia = portfolio.media.filter((m) => !m.sectionId);
 
   const bannerCandidates = portfolio.sections
@@ -126,6 +128,17 @@ export default async function PortfolioDashboardPage() {
           )}
 
           <PortfolioAddSection hasSections={portfolio.sections.length > 0} />
+        </div>
+
+        {/* testimonials */}
+        <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+          <h2 className="mb-2 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Testimonials
+          </h2>
+          <p className="mb-5 text-xs text-white/40">
+            Shown as a scrolling carousel on your public portfolio, right after the &ldquo;Get in touch&rdquo; section.
+          </p>
+          <PortfolioTestimonialsManager testimonials={portfolio.testimonials} />
         </div>
       </div>
     </main>

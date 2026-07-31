@@ -19,6 +19,7 @@ export default async function PortfolioPage({
         include: { media: { orderBy: { displayOrder: "asc" } } },
       },
       media: true,
+      testimonials: { orderBy: { displayOrder: "asc" } },
     },
   });
 
@@ -73,6 +74,7 @@ export default async function PortfolioPage({
       tiktokUrl={portfolio.tiktokUrl}
       facebookUrl={portfolio.facebookUrl}
       youtubeUrl={portfolio.youtubeUrl}
+      testimonials={portfolio.testimonials}
     />
   );
 }
