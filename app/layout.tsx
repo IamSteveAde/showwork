@@ -5,7 +5,7 @@ import "./globals.css";
 import RouteTransitionIndicator from "@/components/RouteTransitionIndicator";
 
 export const metadata: Metadata = {
-  title: "Spotlite Presenter",
+  title: "Showwork",
   description: "Present your content deliveries like a premium brand.",
 };
 
