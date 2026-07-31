@@ -39,7 +39,7 @@ export default async function PortfolioDashboardPage() {
     );
   }
 
-  const liveUrl = `${appUrl()}/p/${portfolio.slug}`;
+  const liveUrl = `${appUrl()}/portfolio/${portfolio.slug}`;
   const ungroupedMedia = portfolio.media.filter((m) => !m.sectionId);
 
   const bannerCandidates = portfolio.sections
