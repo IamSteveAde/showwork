@@ -46,6 +46,7 @@ export default async function PortfolioPage({
       name: s.name,
       mediaType: s.mediaType,
       media: s.media.map(mapMedia),
+      coverMediaId: s.coverMediaId,
     }));
 
   const ungroupedMedia = portfolio.media.filter((m) => !m.sectionId).map(mapMedia);

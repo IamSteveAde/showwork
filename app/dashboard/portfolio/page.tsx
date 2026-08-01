@@ -119,6 +119,8 @@ export default async function PortfolioDashboardPage() {
                         url={publicUrlFor(m.fileKey)}
                         filename={m.fileKey.split("/").pop() ?? "file"}
                         type={m.type}
+                        sectionId={section.id}
+                        isCover={section.coverMediaId ? section.coverMediaId === m.id : m.id === section.media[0]?.id}
                       />
                     ))}
                   </div>

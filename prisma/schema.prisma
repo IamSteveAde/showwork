@@ -421,6 +421,9 @@ model PortfolioSection {
   mediaType    MediaType
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
+  // Which of this section's own files stands in as its cover/banner —
+  // creator-chosen. Falls back to the first uploaded file when null.
+  coverMediaId String?
 
   media PortfolioMedia[]
 

@@ -21,6 +21,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  if (media.sectionId) {
+    await db.portfolioSection.updateMany({
+      where: { id: media.sectionId, coverMediaId: mediaId },
+      data: { coverMediaId: null },
+    });
+  }
+
   await db.portfolioMedia.delete({ where: { id: mediaId } });
   deleteObject(media.fileKey).catch((err) => console.error("Failed to delete R2 object:", err));
 

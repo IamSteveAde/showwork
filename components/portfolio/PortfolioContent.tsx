@@ -10,6 +10,17 @@ interface PortfolioSectionData {
   name: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   media: PortfolioMediaItem[];
+  coverMediaId?: string | null;
+}
+
+// The creator's chosen cover for a section, falling back to the first
+// uploaded file if they haven't explicitly picked one.
+function sectionCover(section: PortfolioSectionData): PortfolioMediaItem | null {
+  if (section.coverMediaId) {
+    const chosen = section.media.find((m) => m.id === section.coverMediaId);
+    if (chosen) return chosen;
+  }
+  return section.media[0] ?? null;
 }
 
 function officeViewerUrl(url: string) {
@@ -430,7 +441,7 @@ function MiniSectionCard({
   isActive: boolean;
   onSelect: () => void;
 }) {
-  const cover = section.media[0];
+  const cover = sectionCover(section);
   const isDocType = section.mediaType === "DOCUMENT" || section.mediaType === "PDF";
 
   return (
@@ -477,7 +488,7 @@ function CategoryCard({
   index: number;
   onSelect: () => void;
 }) {
-  const cover = section.media[0];
+  const cover = sectionCover(section);
   const isDocType = section.mediaType === "DOCUMENT" || section.mediaType === "PDF";
 
   return (
@@ -614,7 +625,7 @@ export default function PortfolioContent({
 
   const selectedSection = renderSections.find((s) => s.id === selectedSectionId) ?? null;
   const galleryItems = selectedSection ? selectedSection.media : [];
-  const selectedCover = selectedSection?.media[0] ?? null;
+  const selectedCover = selectedSection ? sectionCover(selectedSection) : null;
 
   const handleSelectCategory = (id: string) => {
     setSelectedSectionId(id);
