@@ -322,6 +322,7 @@ function WallTile({
             <video
               ref={videoRef}
               src={item.url}
+              autoPlay
               muted
               loop
               playsInline
