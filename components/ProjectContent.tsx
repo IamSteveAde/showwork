@@ -750,7 +750,7 @@ export default function ProjectContent({
                 // waking up on hover. White background is deliberate
                 // here regardless of the section's own dark/light
                 // rhythm, since the seam needs to always read as white.
-                <div className="columns-2 gap-[1px] md:columns-3" style={{ background: "#FFFFFF" }}>
+                <div className="columns-1 gap-[1px] md:columns-3" style={{ background: "#FFFFFF" }}>
                   {section.media.map((m, i) => {
                     const live = withLiveStatus(m);
                     const list = section.mediaType === "VIDEO" ? videos : photos;
