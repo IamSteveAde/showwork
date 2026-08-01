@@ -602,10 +602,19 @@ export default function PortfolioContent({
 
   const handleSelectCategory = (id: string) => {
     setSelectedSectionId(id);
-    // Jump straight to the new banner — picking a category should feel
-    // like arriving somewhere new, not stay scrolled mid-page.
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Scrolls to the top whenever the selected section changes — in
+  // either direction (picking a category, or going back to "All
+  // work"). This has to run in an effect, *after* React has actually
+  // re-rendered the new layout, not synchronously inside the click
+  // handler — the fixed hero and its full-screen spacer disappear
+  // entirely once a section is selected, which changes the page's
+  // total height dramatically. Scrolling before that layout change
+  // settles left the final position wrong, especially on mobile.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [selectedSectionId]);
 
   return (
     <main className="min-h-screen" style={{ background: bgColor }}>
