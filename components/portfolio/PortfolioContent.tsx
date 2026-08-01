@@ -278,7 +278,7 @@ function TiledTile({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const inView = useInView(containerRef, { once: false, margin: "-20%" });
-  const nearView = useInView(containerRef, { once: true, margin: "800px" });
+  const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
@@ -753,10 +753,19 @@ export default function PortfolioContent({
                 className="absolute inset-0"
               >
                 {selectedCover?.type === "VIDEO" ? (
-                  <video src={selectedCover.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
+                  <video
+                    key={selectedCover.url}
+                    src={selectedCover.url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-full w-full object-cover"
+                    style={{ opacity: 0.8 }}
+                  />
                 ) : selectedCover ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selectedCover.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
+                  <img key={selectedCover.url} src={selectedCover.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
                 ) : null}
               </motion.div>
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.95) 100%)" }} />
