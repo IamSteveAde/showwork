@@ -456,7 +456,7 @@ function MiniSectionCard({
     >
       {cover ? (
         cover.type === "VIDEO" ? (
-          <video src={cover.url} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+          <video src={cover.url} autoPlay muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
         ) : isDocType ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
             <IconDocument className="h-8 w-8 text-white/25" />
@@ -505,6 +505,7 @@ function CategoryCard({
         cover.type === "VIDEO" ? (
           <video
             src={cover.url}
+            autoPlay
             muted
             playsInline
             preload="metadata"

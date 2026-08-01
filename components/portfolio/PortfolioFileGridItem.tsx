@@ -51,7 +51,7 @@ export default function PortfolioFileGridItem({
   return (
     <div className={`group relative overflow-hidden rounded-xl bg-white/5 ${isDocLike ? "aspect-[3/4]" : "aspect-square"}`}>
       {type === "VIDEO" ? (
-        <video src={url} muted loop playsInline preload="metadata" className="h-full w-full object-cover" />
+        <video src={url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" />
       ) : type === "PHOTO" ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt={filename} className="h-full w-full object-cover" />
