@@ -295,6 +295,22 @@ function TiledTile({
     const vid = videoRef.current;
     if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
     requestPlay(vid);
+
+    // Mobile browsers (iOS Safari especially) can block a video's
+    // very first autoplay attempt if it wasn't tied to a direct user
+    // gesture, even with muted/playsInline/autoPlay all correctly
+    // set — a scroll alone isn't always treated as sufficient on iOS
+    // the way it is on desktop. Retrying on the very first tap
+    // anywhere on the page catches this: once genuinely triggered by
+    // a real gesture, mobile browsers reliably allow it from then on,
+    // including for videos that mount afterward.
+    const retryOnFirstTouch = () => requestPlay(vid);
+    window.addEventListener("touchstart", retryOnFirstTouch, { once: true });
+    window.addEventListener("click", retryOnFirstTouch, { once: true });
+    return () => {
+      window.removeEventListener("touchstart", retryOnFirstTouch);
+      window.removeEventListener("click", retryOnFirstTouch);
+    };
   }, [shouldLoad, item.type]);
 
   return (
