@@ -323,13 +323,12 @@ function TiledTile({
             controlsList="nodownload noremoteplayback"
             disablePictureInPicture
             draggable={false}
-            // True size — no object-cover, no fixed aspect box. Dimmed
-            // at rest, wakes fully awake on hover, matching the same
-            // treatment used on the project delivery gallery.
-            className="block w-full transition-all duration-500 ease-out"
-            style={{ filter: "brightness(0.55) saturate(0.85)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
-            onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
+            // The dimmed → awake effect only applies on devices that
+            // genuinely support hover ([@media(hover:hover)]) — on
+            // touch devices there's no hover gesture to undo the dim,
+            // so it never applies there at all; content shows at full
+            // brightness immediately on mobile.
+            className="block w-full transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
           />
         )
       ) : (
@@ -340,10 +339,7 @@ function TiledTile({
           loading="lazy"
           decoding="async"
           draggable={false}
-          className="block w-full select-none transition-all duration-500 ease-out"
-          style={{ filter: "brightness(0.55) saturate(0.85)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
-          onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
+          className="block w-full select-none transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
         />
       )}
 

@@ -281,7 +281,7 @@ function WallTile({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const inView = useInView(containerRef, { once: false, margin: "-20%" });
-  const nearView = useInView(containerRef, { once: true, margin: "800px" });
+  const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
@@ -330,13 +330,12 @@ function WallTile({
               controlsList="nodownload noremoteplayback"
               disablePictureInPicture
               draggable={false}
-              // True size — no object-cover, no fixed aspect box. The
-              // dimmed → awake transition lives entirely in filter and
-              // box-shadow, never touching the media's own dimensions.
-              className="block w-full transition-all duration-500 ease-out"
-              style={{ filter: "brightness(0.55) saturate(0.85)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
-              onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
+              // The dimmed → awake effect only applies on devices that
+              // genuinely support hover ([@media(hover:hover)]) — on
+              // touch devices there's no hover gesture to undo the dim,
+              // so it never applies there at all; content shows at
+              // full brightness immediately on mobile.
+              className="block w-full transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
             />
           )
         ) : (
@@ -347,10 +346,7 @@ function WallTile({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="block w-full select-none transition-all duration-500 ease-out"
-            style={{ filter: "brightness(0.55) saturate(0.85)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
-            onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
+            className="block w-full select-none transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
           />
         )}
 
