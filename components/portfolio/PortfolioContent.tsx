@@ -238,17 +238,6 @@ function TestimonialsCarousel({
 // items a section has. This is what makes it read as *designed*
 // rather than random: the same considered pattern Apple's editorial
 // pages and premium agency reels use, not an arbitrary shuffle.
-function bentoSpan(index: number): string {
-  const pattern = [
-    "col-span-2 row-span-2", // feature
-    "col-span-1 row-span-1",
-    "col-span-1 row-span-2", // tall
-    "col-span-2 row-span-1", // wide
-    "col-span-1 row-span-1",
-    "col-span-1 row-span-1",
-  ];
-  return pattern[index % pattern.length];
-}
 
 // Shared across every tile on the page — caps how many videos can
 // ever be decoding/playing at the same time. This, not the fade-in
@@ -275,13 +264,15 @@ function releasePlay(vid: HTMLVideoElement) {
   vid.pause();
 }
 
-function BentoTile({
+function TiledTile({
   item,
   index,
+  primaryColor,
   onOpen,
 }: {
   item: PortfolioMediaItem;
   index: number;
+  primaryColor: string;
   onOpen: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -305,12 +296,17 @@ function BentoTile({
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, scale: 0.94 }}
-      whileInView={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay: (index % 12) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative cursor-pointer overflow-hidden rounded-xl bg-black ${bentoSpan(index)}`}
-      style={{ contentVisibility: "auto", containIntrinsicSize: "300px 300px" }}
+      transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
+      // Each tile draws its own thin border rather than relying on the
+      // container's background to peek through a gap — that approach
+      // left a big blank block of exposed background whenever a row
+      // had fewer tiles than columns. A per-tile border generalizes
+      // correctly regardless of how full any given row is.
+      className="group relative w-full cursor-pointer sm:w-1/2 lg:w-1/4"
+      style={{ border: "1.5px solid #F5F1EA" }}
       onClick={onOpen}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -326,7 +322,13 @@ function BentoTile({
             controlsList="nodownload noremoteplayback"
             disablePictureInPicture
             draggable={false}
-            className="absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.05] group-hover:brightness-110"
+            // True size — no object-cover, no fixed aspect box. Dimmed
+            // at rest, wakes fully awake on hover, matching the same
+            // treatment used on the project delivery gallery.
+            className="block w-full transition-all duration-500 ease-out"
+            style={{ filter: "brightness(0.55) saturate(0.85)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
           />
         )
       ) : (
@@ -337,12 +339,23 @@ function BentoTile({
           loading="lazy"
           decoding="async"
           draggable={false}
-          className="absolute inset-0 h-full w-full select-none object-cover transition-all duration-700 ease-out group-hover:scale-[1.05] group-hover:brightness-110"
+          className="block w-full select-none transition-all duration-500 ease-out"
+          style={{ filter: "brightness(0.55) saturate(0.85)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1) saturate(1.05)")}
+          onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(0.55) saturate(0.85)")}
         />
       )}
 
-      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10 transition-all duration-300 group-hover:ring-2 group-hover:ring-[#F5C842]/70" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-400 group-hover:opacity-100" />
+      {/* The "wakes up" glow — invisible at rest, fading in on hover as
+          a soft colored ring plus an outward bloom, like the piece is
+          lighting up from within. Same treatment as the project
+          delivery gallery, using this portfolio's own brand color. */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
+        style={{ boxShadow: `inset 0 0 0 1.5px ${primaryColor}, 0 0 28px 2px ${primaryColor}66` }}
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-0 transition-opacity duration-400 group-hover:opacity-100" />
 
       {item.type === "VIDEO" && (
         <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
@@ -387,6 +400,57 @@ function DocTile({ item, index, onOpen }: { item: PortfolioMediaItem; index: num
 // representative cover (the section's first uploaded file), its name,
 // and how much work is inside it. Clicking one swaps that image in as
 // the new banner and reveals just that section's gallery underneath.
+// A small, compact version of the category card — used in the
+// horizontal "jump to another section" strip beneath a section's own
+// gallery, so switching sections never requires backing all the way
+// out to the main category grid first.
+function MiniSectionCard({
+  section,
+  isActive,
+  onSelect,
+}: {
+  section: PortfolioSectionData;
+  isActive: boolean;
+  onSelect: () => void;
+}) {
+  const cover = section.media[0];
+  const isDocType = section.mediaType === "DOCUMENT" || section.mediaType === "PDF";
+
+  return (
+    <button
+      onClick={onSelect}
+      className="group relative aspect-[3/4] w-56 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl bg-black transition-transform duration-300 hover:-translate-y-1 sm:w-64 lg:w-72"
+      style={{
+        scrollSnapAlign: "start",
+        outline: isActive ? "2px solid #F5C842" : "2px solid transparent",
+        outlineOffset: "2px",
+      }}
+    >
+      {cover ? (
+        cover.type === "VIDEO" ? (
+          <video src={cover.url} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+        ) : isDocType ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
+            <IconDocument className="h-8 w-8 text-white/25" />
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )
+      ) : (
+        <div className="absolute inset-0 bg-white/5" />
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+      <div className="absolute inset-0 flex flex-col justify-end p-4 text-left">
+        <p className="text-xs font-medium uppercase text-white/40" style={{ letterSpacing: "0.1em" }}>
+          {section.media.length}
+        </p>
+        <p className="mt-1 truncate text-base font-medium text-white">{section.name}</p>
+      </div>
+    </button>
+  );
+}
+
 function CategoryCard({
   section,
   index,
@@ -407,7 +471,7 @@ function CategoryCard({
       transition={{ duration: 1.1, delay: index * 0.12, ease: [0.19, 1, 0.22, 1] }}
       whileHover={{ y: -10, transition: { duration: 0.5, ease: [0.19, 1, 0.22, 1] } }}
       onClick={onSelect}
-      className="group relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/20"
+      className="group relative aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/20 md:w-[calc((100%-3rem)/3)]"
     >
       {cover ? (
         cover.type === "VIDEO" ? (
@@ -512,6 +576,11 @@ export default function PortfolioContent({
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  const scrollStrip = (direction: "left" | "right") => {
+    stripRef.current?.scrollBy({ left: direction === "left" ? -320 : 320, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8);
@@ -650,7 +719,7 @@ export default function PortfolioContent({
                 </h2>
               </motion.div>
 
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6">
                 {renderSections.map((section, i) => (
                   <CategoryCard
                     key={section.id}
@@ -717,14 +786,75 @@ export default function PortfolioContent({
                     ))}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4" style={{ gridAutoRows: "180px" }}>
+                  // True-size tiled mosaic — every image and video keeps
+                  // its own real dimensions, packed edge-to-edge with a
+                  // thin off-white seam between every tile (the
+                  // container's own background peeking through a 3px
+                  // margin/gap on each piece) — like real tile work,
+                  // not a cropped grid.
+                  <div className="flex flex-wrap">
                     {galleryItems.map((item, idx) => (
-                      <BentoTile key={item.id} item={item} index={idx} onOpen={() => setOpenIdx(idx)} />
+                      <TiledTile key={item.id} item={item} index={idx} primaryColor={primaryColor} onOpen={() => setOpenIdx(idx)} />
                     ))}
                   </div>
                 )}
               </div>
             </section>
+
+            {/* ── JUMP TO ANOTHER SECTION — a horizontal strip of every
+                 category, so switching what you're looking at never
+                 requires backing all the way out to the main grid
+                 first. Only shown once you've actually stepped inside
+                 a section. ── */}
+            {renderSections.length > 1 && (
+              <section className="relative border-t border-white/5 bg-black px-6 py-10 md:px-14">
+                <div className="mx-auto max-w-[1400px]">
+                  <p className="mb-5 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.2em" }}>
+                    More from this portfolio
+                  </p>
+                  <div className="relative">
+                    <div
+                      ref={stripRef}
+                      className="scrollbar-hide flex justify-center gap-3 overflow-x-auto pb-2"
+                      style={{ scrollSnapType: "x proximity", scrollbarWidth: "none" }}
+                    >
+                      {renderSections.map((section) => (
+                        <MiniSectionCard
+                          key={section.id}
+                          section={section}
+                          isActive={section.id === selectedSectionId}
+                          onSelect={() => handleSelectCategory(section.id)}
+                        />
+                      ))}
+                    </div>
+                    <style jsx>{`
+                      .scrollbar-hide::-webkit-scrollbar {
+                        display: none;
+                      }
+                    `}</style>
+
+                    <button
+                      onClick={() => scrollStrip("left")}
+                      aria-label="Scroll left"
+                      className="absolute -left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 sm:flex"
+                      style={{ background: "rgba(10,10,10,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}
+                    >
+                      <IconArrowLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => scrollStrip("right")}
+                      aria-label="Scroll right"
+                      className="absolute -right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 sm:flex"
+                      style={{ background: "rgba(10,10,10,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12H19M13 6L19 12L13 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
           </>
         )}
 

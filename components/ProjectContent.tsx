@@ -303,9 +303,13 @@ function WallTile({
       whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
-      // mb-[1px] pairs with the wall's own 1px column-gap — together
-      // they form the thin white seam on every side of every tile.
-      className="mb-[1px] block break-inside-avoid"
+      // Each tile draws its own thin white border rather than relying
+      // on the container's background to peek through a gap — that
+      // approach left a big blank white block whenever a row had fewer
+      // tiles than columns (e.g. 2 photos in a 3-column layout). A
+      // per-tile border generalizes correctly regardless of row fill.
+      className="w-full sm:w-1/2 lg:w-1/3"
+      style={{ border: "1px solid #FFFFFF" }}
     >
       <div
         onClick={onOpen}
@@ -750,7 +754,7 @@ export default function ProjectContent({
                 // waking up on hover. White background is deliberate
                 // here regardless of the section's own dark/light
                 // rhythm, since the seam needs to always read as white.
-                <div className="columns-1 gap-[1px] md:columns-3" style={{ background: "#FFFFFF" }}>
+                <div className="flex flex-wrap">
                   {section.media.map((m, i) => {
                     const live = withLiveStatus(m);
                     const list = section.mediaType === "VIDEO" ? videos : photos;
