@@ -277,7 +277,6 @@ function TiledTile({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(containerRef, { once: false, margin: "-20%" });
   const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
@@ -286,12 +285,17 @@ function TiledTile({
   }, [nearView]);
 
   useEffect(() => {
+    // Only trigger play once, right after the video actually mounts —
+    // no opposing pause call tied to a separate "inView" check here.
+    // The previous version paused the video the instant it wasn't
+    // strictly in view, which could fire in the very same tick as the
+    // native autoplay attempt, killing it before a single frame had
+    // even decoded — exactly what showed as a permanent black screen
+    // rather than a paused frame.
     const vid = videoRef.current;
-    if (!vid || item.type !== "VIDEO") return;
-    if (inView) requestPlay(vid);
-    else releasePlay(vid);
-    return () => releasePlay(vid);
-  }, [inView, shouldLoad, item.type]);
+    if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
+    requestPlay(vid);
+  }, [shouldLoad, item.type]);
 
   return (
     <motion.div
