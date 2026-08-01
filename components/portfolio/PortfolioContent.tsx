@@ -709,7 +709,7 @@ export default function PortfolioContent({
               initial={{ opacity: 0, y: 34, filter: "blur(4px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 1.3, delay: 0.3, ease: [0.19, 1, 0.22, 1] }}
-              className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-20 md:px-14 md:pb-24"
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center md:px-14"
             >
               <h1 className="max-w-2xl text-[clamp(1.75rem,5vw,3.5rem)] font-light leading-[1.15] tracking-tight text-white">
                 {heroTagline || `The work of ${companyName}`}
