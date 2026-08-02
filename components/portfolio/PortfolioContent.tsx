@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import PortfolioMediaModal, { type PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
 import WhatsAppChatWidget from "@/components/portfolio/WhatsAppChatWidget";
@@ -279,11 +279,15 @@ function TiledTile({
   item,
   index,
   primaryColor,
+  width,
+  height,
   onOpen,
 }: {
   item: PortfolioMediaItem;
   index: number;
   primaryColor: string;
+  width: number;
+  height: number;
   onOpen: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -331,13 +335,14 @@ function TiledTile({
       whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
-      // Each tile draws its own thin border rather than relying on the
-      // container's background to peek through a gap — that approach
-      // left a big blank block of exposed background whenever a row
-      // had fewer tiles than columns. A per-tile border generalizes
-      // correctly regardless of how full any given row is.
-      className="group relative w-full cursor-pointer sm:w-1/2 lg:w-1/4"
-      style={{ border: "1.5px solid #F5F1EA" }}
+      // Sized to the exact pixel dimensions computed by the justified
+      // layout — every row is scaled so its items share one height and
+      // fill the container's full width exactly, with zero gaps.
+      // object-cover here is safe (not actually cropping) because the
+      // box itself was already computed to match the media's real
+      // aspect ratio.
+      className="group relative cursor-pointer"
+      style={{ width, height }}
       onClick={onOpen}
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -359,7 +364,7 @@ function TiledTile({
             // touch devices there's no hover gesture to undo the dim,
             // so it never applies there at all; content shows at full
             // brightness immediately on mobile.
-            className="block w-full transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
+            className="absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
           />
         )
       ) : (
@@ -370,7 +375,7 @@ function TiledTile({
           loading="lazy"
           decoding="async"
           draggable={false}
-          className="block w-full select-none transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
+          className="absolute inset-0 h-full w-full select-none object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
         />
       )}
 
@@ -559,6 +564,159 @@ function CategoryCard({
         />
       </div>
     </motion.div>
+  );
+}
+
+// Detects a file's real aspect ratio (width/height) without rendering
+// it visibly — a plain in-memory Image for photos, and a detached
+// <video> listening for loadedmetadata for videos, since there's no
+// built-in equivalent of `new Image()` for video.
+function detectAspectRatio(item: PortfolioMediaItem): Promise<number> {
+  return new Promise((resolve) => {
+    if (item.type === "VIDEO") {
+      const vid = document.createElement("video");
+      vid.preload = "metadata";
+      vid.src = item.url;
+      vid.onloadedmetadata = () => {
+        resolve(vid.videoWidth && vid.videoHeight ? vid.videoWidth / vid.videoHeight : 1);
+      };
+      vid.onerror = () => resolve(1);
+    } else {
+      const img = new window.Image();
+      img.onload = () => {
+        resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1);
+      };
+      img.onerror = () => resolve(1);
+      img.src = item.url;
+    }
+  });
+}
+
+interface JustifiedRow {
+  items: PortfolioMediaItem[];
+  widths: number[];
+  height: number;
+}
+
+// The actual justified-gallery algorithm — the same technique behind
+// Google Photos / Flickr grids. Items are added to a row until that
+// row, scaled to the target height, would overflow the container's
+// width; then the whole row is rescaled so it fills the container's
+// width *exactly*, sharing one height across every item in it. This
+// is what guarantees zero gaps regardless of how differently-shaped
+// the source media is — a wide video and a tall portrait photo end up
+// sitting in the same row at whatever height makes both of them
+// exactly fill their share of the row's width.
+function computeJustifiedRows(
+  items: PortfolioMediaItem[],
+  aspectRatios: Record<string, number>,
+  containerWidth: number,
+  targetRowHeight: number,
+  gap: number
+): JustifiedRow[] {
+  const rows: JustifiedRow[] = [];
+  let currentItems: PortfolioMediaItem[] = [];
+  let aspectSum = 0;
+
+  const flushRow = (stretch: boolean) => {
+    if (currentItems.length === 0) return;
+    const totalGap = gap * (currentItems.length - 1);
+    const height = stretch
+      ? (containerWidth - totalGap) / aspectSum
+      : targetRowHeight;
+    const widths = currentItems.map((it) => aspectRatios[it.id] * height);
+    rows.push({ items: currentItems, widths, height });
+    currentItems = [];
+    aspectSum = 0;
+  };
+
+  for (const item of items) {
+    const ratio = aspectRatios[item.id] ?? 1;
+    currentItems.push(item);
+    aspectSum += ratio;
+    const totalGap = gap * (currentItems.length - 1);
+    const widthAtTargetHeight = aspectSum * targetRowHeight + totalGap;
+    if (widthAtTargetHeight >= containerWidth) {
+      flushRow(true);
+    }
+  }
+  // Last, possibly-incomplete row — left at the target height rather
+  // than stretched, so a couple of leftover pieces don't get blown up
+  // to fill the full width on their own.
+  flushRow(false);
+
+  return rows;
+}
+
+function JustifiedGallery({
+  items,
+  primaryColor,
+  onOpen,
+}: {
+  items: PortfolioMediaItem[];
+  primaryColor: string;
+  onOpen: (index: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    items.forEach((item) => {
+      if (aspectRatios[item.id] !== undefined) return;
+      detectAspectRatio(item).then((ratio) => {
+        if (!cancelled) setAspectRatios((prev) => ({ ...prev, [item.id]: ratio }));
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
+  const gap = 3;
+  const targetRowHeight = 340;
+
+  const rows = useMemo(() => {
+    if (!allKnown || containerWidth === 0) return [];
+    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap);
+  }, [allKnown, containerWidth, items, aspectRatios]);
+
+  let runningIndex = 0;
+
+  return (
+    <div ref={containerRef}>
+      {rows.map((row, rowIdx) => (
+        <div key={rowIdx} className="flex justify-center" style={{ gap, marginBottom: rowIdx === rows.length - 1 ? 0 : gap }}>
+          {row.items.map((item, i) => {
+            const idx = runningIndex++;
+            return (
+              <TiledTile
+                key={item.id}
+                item={item}
+                index={idx}
+                primaryColor={primaryColor}
+                width={row.widths[i]}
+                height={row.height}
+                onOpen={() => onOpen(idx)}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -833,17 +991,14 @@ export default function PortfolioContent({
                     ))}
                   </div>
                 ) : (
-                  // True-size tiled mosaic — every image and video keeps
-                  // its own real dimensions, packed edge-to-edge with a
-                  // thin off-white seam between every tile (the
-                  // container's own background peeking through a 3px
-                  // margin/gap on each piece) — like real tile work,
-                  // not a cropped grid.
-                  <div className="flex flex-wrap">
-                    {galleryItems.map((item, idx) => (
-                      <TiledTile key={item.id} item={item} index={idx} primaryColor={primaryColor} onOpen={() => setOpenIdx(idx)} />
-                    ))}
-                  </div>
+                  // A real justified gallery — every image and video
+                  // keeps its own true, uncropped aspect ratio, but
+                  // rows are computed so they always fill the full
+                  // width exactly, at one shared height per row. This
+                  // is what actually eliminates gaps between
+                  // differently-shaped pieces, which simple CSS
+                  // wrapping can't do.
+                  <JustifiedGallery items={galleryItems} primaryColor={primaryColor} onOpen={(idx) => setOpenIdx(idx)} />
                 )}
               </div>
             </section>

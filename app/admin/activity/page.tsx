@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminEmail } from "@/lib/admin";
+import { portfolioUrl } from "@/lib/portfolioUrl";
 
 const COLOR = {
   black: "#0A0A0A",
@@ -49,6 +50,7 @@ export default async function AdminActivityPage() {
       lastLoginAt: true,
       createdAt: true,
       _count: { select: { projects: true } },
+      portfolio: { select: { slug: true } },
     },
   });
 
@@ -74,6 +76,7 @@ export default async function AdminActivityPage() {
                 <th className="px-4 py-3 font-semibold">Creator</th>
                 <th className="px-4 py-3 font-semibold">Last session</th>
                 <th className="px-4 py-3 font-semibold">Projects</th>
+                <th className="px-4 py-3 font-semibold">Portfolio</th>
                 <th className="px-4 py-3 font-semibold">Joined</th>
               </tr>
             </thead>
@@ -96,6 +99,24 @@ export default async function AdminActivityPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-white/70">{c._count.projects}</td>
+                  <td className="px-4 py-3">
+                    {c.portfolio ? (
+                      <a
+                        href={portfolioUrl(c.portfolio.slug)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5"
+                        style={{ color: COLOR.gold }}
+                      >
+                        Yes
+                        <span className="text-white/30 underline decoration-white/20 hover:text-white/60">
+                          {c.portfolio.slug}
+                        </span>
+                      </a>
+                    ) : (
+                      <span className="text-white/30">No</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-white/40">
                     {c.createdAt.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                   </td>
@@ -103,7 +124,7 @@ export default async function AdminActivityPage() {
               ))}
               {creators.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-white/30">
+                  <td colSpan={5} className="px-4 py-8 text-center text-white/30">
                     No creators yet.
                   </td>
                 </tr>
