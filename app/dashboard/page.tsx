@@ -22,6 +22,89 @@ const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_
 
 const PAGE_SIZE = 12;
 
+// ─────────────────────────────────────────────
+// Custom line icons — thin stroke, single color, consistent geometry.
+// No emoji anywhere on this page — emoji renders inconsistently
+// across devices and reads as unfinished on a premium product.
+// ─────────────────────────────────────────────
+function IconPortfolio({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="8.5" cy="9.5" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconTarget({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+function IconSliders({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M4 6h9M17 6h3M4 18h3M11 18h9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="13" cy="6" r="2.2" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="7" cy="18" r="2.2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+function IconLink({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M9.5 14.5l5-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path
+        d="M8 16.5l-1.8 1.8a3.5 3.5 0 0 1-5-5L3 11.5M16 7.5l1.8-1.8a3.5 3.5 0 0 1 5 5L21 12.5"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function IconTrophy({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M7 5H4v1.5A3.5 3.5 0 0 0 7.5 10M17 5h3v1.5A3.5 3.5 0 0 1 16.5 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 14v3M9 20h6M9.5 17h5l.5 3H9l.5-3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// The actual Creativo logo, colored via CSS mask so it renders
+// correctly regardless of the source file's own internal colors —
+// same technique as the Showwork wordmark. White here since it sits
+// on the blue gradient buttons.
+function CreativoLogo({ size = 16 }: { size?: number }) {
+  return (
+    <span
+      role="img"
+      aria-label="Creativo"
+      style={{
+        display: "inline-block",
+        height: size,
+        width: size,
+        backgroundColor: "#FFFFFF",
+        WebkitMaskImage: "url(/images/logo/creativo.svg)",
+        maskImage: "url(/images/logo/creativo.svg)",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+    />
+  );
+}
+
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email;
   const parts = source.split(/[\s@.]+/).filter(Boolean);
@@ -85,11 +168,24 @@ export default async function DashboardPage({
     <main className="min-h-screen" style={{ background: COLOR.black }}>
       {/* ── TOP NAV ── */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 py-6 md:px-20">
-        <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold text-white">
-            Show<span style={{ color: COLOR.blue }}>work</span>
-          </span>
-        </div>
+        <div
+          role="img"
+          aria-label="Showwork"
+          style={{
+            height: 22,
+            width: 22 * 4, // placeholder aspect ratio — adjust to
+            // match the real logo's actual proportions once visible.
+            backgroundColor: COLOR.blue,
+            WebkitMaskImage: "url(/images/logo/sw.svg)",
+            maskImage: "url(/images/logo/sw.svg)",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+            WebkitMaskPosition: "left center",
+            maskPosition: "left center",
+            WebkitMaskSize: "contain",
+            maskSize: "contain",
+          }}
+        />
 
         <div className="flex items-center gap-4">
           {isAdminEmail(creator.email) && (
@@ -267,7 +363,8 @@ export default async function DashboardPage({
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                 style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               >
-                🖼️ Create your portfolio
+                <IconPortfolio className="h-4 w-4" />
+                Create your portfolio
               </Link>
               <a
                 href={COMMUNITY_URL}
@@ -276,7 +373,8 @@ export default async function DashboardPage({
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                 style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               >
-                💬 Join Creativo
+                <CreativoLogo size={16} />
+                Join Creativo
               </a>
             </div>
           </div>
@@ -469,19 +567,19 @@ export default async function DashboardPage({
 
               <ul className="flex flex-col gap-3 text-sm text-white/70">
                 <li className="flex items-start gap-2.5">
-                  <span className="mt-0.5">🎯</span>
+                  <IconTarget className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: COLOR.blue }} />
                   <span><strong className="text-white">Better clients & positioning</strong> — how to find clients worth taking, position yourself with confidence, and stand out in a crowded market.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <span className="mt-0.5">✂️</span>
+                  <IconSliders className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: COLOR.blue }} />
                   <span><strong className="text-white">Pricing & craft</strong> — what to actually charge, how to say your rate without flinching, plus editing techniques and the software other creators swear by.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <span className="mt-0.5">🤝</span>
+                  <IconLink className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: COLOR.blue }} />
                   <span><strong className="text-white">Referrals between creators</strong> — when someone in the community needs what you do, your name comes up first.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <span className="mt-0.5">🏆</span>
+                  <IconTrophy className="mt-0.5 h-4 w-4 flex-shrink-0" style={{ color: COLOR.blue }} />
                   <span>
                     <strong className="text-white">Creator Challenges</strong> — the top 3 each round win real monetary prizes and get spotlighted across all our platforms, putting your work in front of a much bigger audience.
                   </span>
@@ -495,6 +593,7 @@ export default async function DashboardPage({
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
                 style={{ background: COLOR.gradient }}
               >
+                <CreativoLogo size={16} />
                 Join Creativo
                 <span aria-hidden>→</span>
               </a>

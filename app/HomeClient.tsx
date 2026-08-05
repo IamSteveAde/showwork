@@ -29,79 +29,111 @@ const COLOR = {
 const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
 
 // ─────────────────────────────────────────────
-// Custom line icons — thin stroke, single color, consistent geometry.
-// Replacing emoji everywhere: emoji renders inconsistently across
-// devices and instantly reads as "unfinished" on a premium brand page.
+// Custom line icons — thin stroke, generous size, always paired with
+// a soft blurred glow behind them rather than a flat circular badge.
+// The glow is what actually makes these feel crafted instead of
+// borrowed from an icon library — it gives each mark real depth.
 // ─────────────────────────────────────────────
-function IconFrame({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconFrame({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="8.5" cy="9.5" r="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M3 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3" y="4" width="18" height="16" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="8.5" cy="9.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M3 16l5-5 4 4 3-3 6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconPackage({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconPackage({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M4 7.5L12 12l8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M12 3l8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M4 7.5L12 12l8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconChat({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconChat({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M4 12.5c0-4.7 3.8-8 8-8s8 3.3 8 8-3.8 8-8 8c-1.1 0-2.1-.2-3-.6L4 21l1.2-4.4A7.6 7.6 0 0 1 4 12.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M4 12.5c0-4.7 3.8-8 8-8s8 3.3 8 8-3.8 8-8 8c-1.1 0-2.1-.2-3-.6L4 21l1.2-4.4A7.6 7.6 0 0 1 4 12.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconTag({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconTag({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M11.5 3.5H5a1.5 1.5 0 0 0-1.5 1.5v6.5c0 .4.15.78.44 1.06l9 9c.58.58 1.53.58 2.12 0l6.5-6.5c.58-.58.58-1.53 0-2.12l-9-9a1.5 1.5 0 0 0-1.06-.44Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <circle cx="8" cy="8" r="1.3" stroke="currentColor" strokeWidth="1.4" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M11.5 3.5H5a1.5 1.5 0 0 0-1.5 1.5v6.5c0 .4.15.78.44 1.06l9 9c.58.58 1.53.58 2.12 0l6.5-6.5c.58-.58.58-1.53 0-2.12l-9-9a1.5 1.5 0 0 0-1.06-.44Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <circle cx="8" cy="8" r="1.3" stroke="currentColor" strokeWidth="1.3" />
     </svg>
   );
 }
-function IconSparkle({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconSparkle({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M19 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconWrench({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconWrench({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M14.7 6.3a4 4 0 0 0-5.4 5l-6 6a1.8 1.8 0 0 0 2.5 2.5l6-6a4 4 0 0 0 5-5.4l-2.6 2.6-2-2 2.5-2.7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M14.7 6.3a4 4 0 0 0-5.4 5l-6 6a1.8 1.8 0 0 0 2.5 2.5l6-6a4 4 0 0 0 5-5.4l-2.6 2.6-2-2 2.5-2.7Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
     </svg>
   );
 }
-function IconUpload({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconUpload({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M12 15.5V4M8 8l4-4 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4 15.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M12 15.5V4M8 8l4-4 4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 15.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   );
 }
-function IconLock({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconLock({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <rect x="5" y="10.5" width="14" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="12" cy="15" r="1.4" stroke="currentColor" strokeWidth="1.4" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="12" cy="15" r="1.4" stroke="currentColor" strokeWidth="1.3" />
     </svg>
   );
 }
-function IconSend({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function IconSend({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
-      <path d="M20.5 3.5L10 13.5M20.5 3.5L14 20.5l-4-7-7-4 17.5-6Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M20.5 3.5L10 13.5M20.5 3.5L14 20.5l-4-7-7-4 17.5-6Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+// The icon treatment used everywhere on the page — a soft blurred
+// glow sitting behind a crisp, generously-sized line icon. This one
+// detail is what separates "icon library" from "designed" — a flat
+// circle badge has no depth; a diffused glow does.
+function IconGlow({
+  children,
+  glowColor = COLOR.blue,
+  float = true,
+}: {
+  children: React.ReactNode;
+  glowColor?: string;
+  float?: boolean;
+}) {
+  return (
+    <motion.div
+      className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center md:h-16 md:w-16"
+      animate={float ? { y: [0, -6, 0] } : undefined}
+      transition={float ? { duration: 4.5, repeat: Infinity, ease: "easeInOut" } : undefined}
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{ background: glowColor, opacity: 0.22, filter: "blur(16px)" }}
+        aria-hidden
+      />
+      <div className="relative h-8 w-8 md:h-9 md:w-9" style={{ color: glowColor }}>
+        {children}
+      </div>
+    </motion.div>
   );
 }
 
@@ -369,14 +401,54 @@ const PRICING_TIERS = [
   },
 ];
 
-function Wordmark({ size = "md", dark = false }: { size?: "sm" | "md" | "lg"; dark?: boolean }) {
-  const sizes = { sm: "text-base", md: "text-xl", lg: "text-2xl" };
+// Wordmark, sized up meaningfully across the board — this is the
+// brand's actual identity mark, and it was reading too small and
+// quiet before to carry the page.
+function Wordmark({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const heights = { sm: 26, md: 40, lg: 52 };
   return (
-    <div className="flex items-baseline gap-2">
-      <span className={`${sizes[size]} font-bold`} style={{ color: dark ? COLOR.ink : "white" }}>
-        Show<span style={{ color: COLOR.blue }}>work</span>
-      </span>
-    </div>
+    <div
+      role="img"
+      aria-label="Showwork"
+      style={{
+        height: heights[size],
+        width: heights[size] * 2, // placeholder aspect ratio — adjust
+        // to match the real logo's actual proportions once visible.
+        backgroundColor: COLOR.blue,
+        WebkitMaskImage: "url(/images/logo/sw.svg)",
+        maskImage: "url(/images/logo/sw.svg)",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "left center",
+        maskPosition: "left center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+    />
+  );
+}
+
+// A plain masked logo mark — used in the Creativo lockup where both
+// marks need to sit side by side at a comparable visual weight,
+// rather than the wordmark's specific left-aligned proportions.
+function LogoMark({ src, size = 28, color = "#FFFFFF" }: { src: string; size?: number; color?: string }) {
+  return (
+    <div
+      role="img"
+      style={{
+        height: size,
+        width: size,
+        backgroundColor: color,
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+    />
   );
 }
 
@@ -435,11 +507,9 @@ function HeroSlider() {
         <rect width="100%" height="100%" filter="url(#grain)" />
       </svg>
 
-      
-
       <div className="relative z-10 flex items-center justify-between px-6 py-8 md:px-20">
-        <Wordmark />
-         <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
+        <Wordmark size="lg" />
+        <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
           Sign up
         </Link>
         <Link href="/login" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
@@ -530,42 +600,39 @@ export default function HomeClient() {
       <FloatingStartButton />
       <HeroSlider />
 
-      {/* ── ROUTING — three paths, right after the banner ── */}
-      <section className="px-6 py-20 md:px-20 md:py-28" style={{ background: COLOR.offWhite }}>
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.15em" }}>
+      {/* ── ROUTING — editorial rows, but each one anchored by a real
+           icon with a soft glow, not a bare numeral. The number
+           becomes a quiet supporting label instead of the main mark. ── */}
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.offWhite }}>
+        <div className="mx-auto max-w-[1080px]">
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.3em" }}>
             Where to start
           </p>
-          <h2 className="mb-14 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+          <h2 className="mb-20 max-w-xl text-3xl font-light leading-tight md:text-5xl" style={{ color: COLOR.ink }}>
             Three ways to start looking like the premium brand you are.
           </h2>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div>
             {ROUTES.map((route, i) => {
-              const card = (
+              const row = (
                 <motion.div
-                  initial={{ opacity: 0, y: 26 }}
+                  initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -6 }}
-                  className="group flex h-full cursor-pointer flex-col gap-4 rounded-2xl p-8 shadow-sm transition-shadow duration-300 hover:shadow-xl"
-                  style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  className="group grid cursor-pointer grid-cols-1 items-center gap-5 py-10 md:grid-cols-[64px_60px_1fr_auto] md:gap-8"
+                  style={{ borderTop: i === 0 ? "1px solid rgba(22,21,19,0.1)" : undefined, borderBottom: "1px solid rgba(22,21,19,0.1)" }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: "rgba(36,120,255,0.1)" }}
-                    >
-                      <route.Icon className="h-6 w-6" style={{ color: COLOR.blue }} />
-                    </div>
-                    <span className="text-xs font-semibold" style={{ color: "rgba(22,21,19,0.25)" }}>{route.number}</span>
+                  <IconGlow glowColor={COLOR.blue}>
+                    <route.Icon className="h-full w-full" />
+                  </IconGlow>
+                  <span className="hidden text-sm font-light md:block" style={{ color: "rgba(22,21,19,0.25)" }}>{route.number}</span>
+                  <div>
+                    <h3 className="text-xl font-semibold transition-colors duration-300 md:text-2xl" style={{ color: COLOR.ink }}>{route.title}</h3>
+                    <p className="mt-2 max-w-xl text-base leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{route.body}</p>
                   </div>
-                  <h3 className="text-lg font-semibold" style={{ color: COLOR.ink }}>{route.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{route.body}</p>
                   <span
-                    className="mt-auto flex items-center gap-1.5 pt-2 text-sm font-semibold transition-transform duration-300 group-hover:translate-x-1"
+                    className="flex items-center gap-2 text-sm font-semibold transition-transform duration-300 group-hover:translate-x-1 md:justify-self-end"
                     style={{ color: COLOR.blue }}
                   >
                     {route.cta}
@@ -574,12 +641,12 @@ export default function HomeClient() {
                 </motion.div>
               );
               return route.external ? (
-                <a key={route.number} href={route.href} target="_blank" rel="noopener noreferrer" className="block h-full">
-                  {card}
+                <a key={route.number} href={route.href} target="_blank" rel="noopener noreferrer" className="block">
+                  {row}
                 </a>
               ) : (
-                <Link key={route.number} href={route.href} className="block h-full">
-                  {card}
+                <Link key={route.number} href={route.href} className="block">
+                  {row}
                 </Link>
               );
             })}
@@ -587,36 +654,33 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* ── PAIN POINT ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
+      {/* ── PAIN POINT — same icon-glow language, stacked editorial,
+           no card boxes ── */}
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1080px]">
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.3em" }}>
             The part nobody talks about
           </p>
-          <h2 className="mb-16 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+          <h2 className="mb-20 max-w-xl text-3xl font-light leading-tight text-white md:text-5xl">
             Great work still gets charged like average work.
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div>
             {PAIN_POINTS.map((p, i) => (
               <motion.div
                 key={p.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-xl p-6 shadow-sm"
-                style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="grid grid-cols-1 items-center gap-5 py-10 md:grid-cols-[64px_1fr_1.3fr] md:gap-10"
+                style={{ borderTop: i === 0 ? "1px solid rgba(255,255,255,0.1)" : undefined, borderBottom: "1px solid rgba(255,255,255,0.1)" }}
               >
-                <div
-                  className="mb-4 flex h-11 w-11 items-center justify-center rounded-full"
-                  style={{ background: "rgba(36,120,255,0.1)" }}
-                >
-                  <p.Icon className="h-5 w-5" style={{ color: COLOR.blue }} />
-                </div>
-                <h3 className="mb-3 text-lg font-semibold" style={{ color: COLOR.ink }}>{p.title}</h3>
-                <p className="text-sm font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{p.body}</p>
+                <IconGlow glowColor={COLOR.accent}>
+                  <p.Icon className="h-full w-full" />
+                </IconGlow>
+                <h3 className="text-xl font-semibold text-white md:text-2xl">{p.title}</h3>
+                <p className="text-base leading-relaxed text-white/55">{p.body}</p>
               </motion.div>
             ))}
           </div>
@@ -626,7 +690,7 @@ export default function HomeClient() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-14 text-lg font-semibold md:text-xl"
+            className="mt-16 max-w-2xl text-2xl font-light leading-snug md:text-3xl"
             style={{ color: COLOR.accent }}
           >
             Showwork is how premium work finally gets priced like premium work — and stays positioned that way with every project after.
@@ -635,14 +699,13 @@ export default function HomeClient() {
       </section>
 
       {/* ── VIDEO — the moment they actually open it ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.3em" }}>
             The moment they open it
           </p>
-          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
-            This is what a premium price looks like, before they've even asked.
+          <h2 className="mb-6 max-w-xl text-3xl font-light leading-tight text-white md:text-5xl">
+            This is what a premium price looks like, before they&apos;ve even asked.
           </h2>
           <p className="mb-12 max-w-lg text-base leading-relaxed text-white/50 md:text-lg">
             No loading spinner, no folder icon. The film you delivered, playing,
@@ -733,13 +796,12 @@ export default function HomeClient() {
       </section>
 
       {/* ── IMAGE — real photography, the actual gallery treatment ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.3em" }}>
             Every photo, presented properly
           </p>
-          <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+          <h2 className="mb-6 max-w-xl text-3xl font-light leading-tight md:text-5xl" style={{ color: COLOR.ink }}>
             A gallery, not a grid of thumbnails.
           </h2>
           <p className="mb-12 max-w-lg text-base leading-relaxed md:text-lg" style={{ color: "rgba(22,21,19,0.55)" }}>
@@ -802,81 +864,79 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* ── THREE STEPS ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+      {/* ── THREE STEPS — same icon-glow editorial pattern ── */}
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.offWhite }}>
+        <div className="mx-auto max-w-[1080px]">
+          <h2 className="mb-20 max-w-lg text-3xl font-light leading-tight md:text-5xl" style={{ color: COLOR.ink }}>
             How you start looking like a premium brand.
           </h2>
 
-          <div className="grid gap-12 md:grid-cols-3">
+          <div>
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.number}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex flex-col items-start gap-3 text-left"
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="grid grid-cols-1 items-center gap-5 py-10 md:grid-cols-[64px_60px_1fr] md:gap-8"
+                style={{ borderTop: i === 0 ? "1px solid rgba(22,21,19,0.1)" : undefined, borderBottom: "1px solid rgba(22,21,19,0.1)" }}
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-5xl font-light md:text-6xl" style={{ color: COLOR.blue }}>
-                    {step.number}
-                  </span>
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-full"
-                    style={{ background: "rgba(36,120,255,0.1)" }}
-                  >
-                    <step.Icon className="h-5 w-5" style={{ color: COLOR.blue }} />
-                  </div>
+                <IconGlow glowColor={COLOR.blue}>
+                  <step.Icon className="h-full w-full" />
+                </IconGlow>
+                <span className="hidden text-sm font-light md:block" style={{ color: "rgba(22,21,19,0.25)" }}>{step.number}</span>
+                <div>
+                  <h3 className="text-xl font-semibold md:text-2xl" style={{ color: COLOR.ink }}>{step.title}</h3>
+                  <p className="mt-2 max-w-xl text-base leading-relaxed" style={{ color: "rgba(22,21,19,0.55)" }}>{step.body}</p>
                 </div>
-                <h3 className="text-xl font-semibold" style={{ color: COLOR.ink }}>{step.title}</h3>
-                <p className="text-base font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.55)" }}>{step.body}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
+      {/* ── TESTIMONIALS — large open pull-quotes, no card boxes ── */}
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1000px]">
+          <h2 className="mb-20 max-w-lg text-3xl font-light leading-tight text-white md:text-5xl">
             Creators are already charging like this.
           </h2>
 
-          <div className="grid gap-8 md:grid-cols-3">
+          <div>
             {TESTIMONIALS.map((t, i) => (
               <motion.div
                 key={t.name}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-xl p-7 shadow-sm"
-                style={{ background: COLOR.offWhiteCard, border: "1px solid rgba(22,21,19,0.06)" }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="py-10 md:grid md:grid-cols-[1fr_220px] md:items-start md:gap-12"
+                style={{ borderTop: i === 0 ? "1px solid rgba(255,255,255,0.1)" : undefined, borderBottom: "1px solid rgba(255,255,255,0.1)" }}
               >
-                <p className="mb-6 text-base font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.75)" }}>
+                <p className="max-w-xl text-xl font-light leading-relaxed text-white/85 md:text-2xl">
                   &ldquo;{t.quote}&rdquo;
                 </p>
-                <p className="text-sm font-semibold" style={{ color: COLOR.ink }}>{t.name}</p>
-                <p className="text-xs font-normal" style={{ color: COLOR.midGray }}>{t.role}</p>
+                <div className="mt-4 md:mt-0 md:text-right">
+                  <p className="text-sm font-semibold text-white">{t.name}</p>
+                  <p className="text-xs font-normal" style={{ color: COLOR.midGray }}>{t.role}</p>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── PRICING ── */}
-      <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
+      {/* ── PRICING — the one place a real card grid still earns its
+           keep, since comparing tiers genuinely benefits from a
+           side-by-side structure. Kept visually quieter than before:
+           thinner borders, more air, no unnecessary chrome. ── */}
+      <section className="px-6 py-24 md:px-20 md:py-32" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.3em" }}>
             Pricing
           </p>
-          <h2 className="max-w-2xl text-3xl font-semibold leading-tight text-white md:text-5xl">
+          <h2 className="max-w-2xl text-3xl font-light leading-tight text-white md:text-5xl">
             Your first delivery is free.
             <br />
             Everything after scales with your studio.
@@ -965,12 +1025,80 @@ export default function HomeClient() {
         </div>
       </section>
 
+      {/* ── CREATIVO — a quiet, editorial introduction with real
+           atmosphere: two soft floating color orbs behind the lockup
+           instead of a single flat glow, both logos large and
+           confident, one honest thought, one door in. ── */}
+      <section className="relative overflow-hidden px-6 py-32 text-center md:px-20 md:py-48" style={{ background: COLOR.black }}>
+        <motion.div
+          className="pointer-events-none absolute left-[15%] top-[20%] h-72 w-72 rounded-full"
+          style={{ background: COLOR.blue, opacity: 0.16, filter: "blur(90px)" }}
+          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden
+        />
+        <motion.div
+          className="pointer-events-none absolute right-[15%] bottom-[15%] h-64 w-64 rounded-full"
+          style={{ background: COLOR.accent, opacity: 0.1, filter: "blur(90px)" }}
+          animate={{ x: [0, -25, 0], y: [0, 25, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden
+        />
+        {/* the same quiet film-grain texture as the hero — keeps this
+            moment feeling shot, not designed */}
+        <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-overlay" aria-hidden>
+          <filter id="grain-creativo">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#grain-creativo)" />
+        </svg>
+
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mx-auto max-w-xl"
+        >
+          <div className="mb-14 flex items-center justify-center gap-8">
+            <LogoMark src="/images/logo/sw.svg" size={100} />
+            <div className="h-14 w-px" style={{ background: "rgba(255,255,255,0.15)" }} aria-hidden />
+            <LogoMark src="/images/logo/creativo.svg" size={100} />
+          </div>
+
+          <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.3em" }}>
+            Introducing Creativo
+          </p>
+          <h2 className="mb-6 text-3xl font-light leading-snug tracking-tight text-white md:text-5xl">
+            You don&apos;t have to figure this out alone.
+          </h2>
+          <p className="mx-auto max-w-md text-base leading-relaxed text-white/55 md:text-lg">
+            Creativo is a free community for creators — not just Showwork users.
+            Positioning, pricing, landing better clients, and the parts of this
+            job nobody else teaches you, worked out alongside people actually
+            doing it.
+          </p>
+
+          <div className="mt-10">
+            <MagneticButton
+              href={COMMUNITY_URL}
+              external
+              className="inline-flex items-center gap-2.5 rounded-full px-8 py-4 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(36,120,255,0.3)]"
+              style={{ background: COLOR.gradient }}
+            >
+              Join Creativo, it&apos;s free
+              <span aria-hidden>→</span>
+            </MagneticButton>
+          </div>
+        </motion.div>
+      </section>
+
       {/* ── FOOTER ── */}
-      <footer className="px-6 py-14 md:px-20" style={{ background: COLOR.black, borderTop: "1px solid rgba(248,247,244,0.08)" }}>
-        <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-8 text-center md:flex-row md:items-start md:justify-between md:text-left">
+      <footer className="px-6 py-16 md:px-20" style={{ background: COLOR.black, borderTop: "1px solid rgba(248,247,244,0.08)" }}>
+        <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-10 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div>
-            <Wordmark size="sm" />
-            <p className="mt-3 max-w-xs text-sm font-normal leading-relaxed" style={{ color: COLOR.midGray }}>
+            <Wordmark size="md" />
+            <p className="mt-4 max-w-xs text-sm font-normal leading-relaxed" style={{ color: COLOR.midGray }}>
               Positioned like the premium brand you are.
             </p>
           </div>
@@ -1003,7 +1131,7 @@ export default function HomeClient() {
           </div>
         </div>
 
-        <p className="mt-12 text-center text-xs font-normal" style={{ color: "rgba(248,247,244,0.2)" }}>
+        <p className="mt-14 text-center text-xs font-normal" style={{ color: "rgba(248,247,244,0.2)" }}>
           © {new Date().getFullYear()} Showwork. All rights reserved.
         </p>
       </footer>
