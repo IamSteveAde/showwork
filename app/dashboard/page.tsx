@@ -10,8 +10,9 @@ import { isAdminEmail } from "@/lib/admin";
 
 const COLOR = {
   black: "#0A0A0A",
-  gold: "#F5C842",
-  orange: "#E8881A",
+  blue: "#2478FF",
+  gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+  accent: "#FFCC00",
   warmWhite: "#F8F7F4",
   charcoal: "#1A1A1A",
   midGray: "#888786",
@@ -86,7 +87,7 @@ export default async function DashboardPage({
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 py-6 md:px-20">
         <div className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-white">
-            Show<span style={{ color: COLOR.gold }}>work</span>
+            Show<span style={{ color: COLOR.blue }}>work</span>
           </span>
         </div>
 
@@ -108,7 +109,7 @@ export default async function DashboardPage({
           <Link
             href="/dashboard/billing"
             className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold sm:flex"
-            style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+            style={{ background: "rgba(36,120,255,0.15)", color: COLOR.blue }}
           >
             <span className="font-bold">{planName}</span>
             <span className="text-white/40">·</span>
@@ -129,7 +130,7 @@ export default async function DashboardPage({
 
           {/* Avatar is always visible, mobile included — it's the one
               guaranteed way to reach the profile page on a small screen.
-              A persistent gold ring signals it's clickable without
+              A persistent blue ring signals it's clickable without
               needing a hover state, which doesn't exist on touch anyway.
               Shows the real uploaded photo once one exists, falling back
               to initials otherwise. Name text stays hidden on mobile to
@@ -142,9 +143,9 @@ export default async function DashboardPage({
             <div
               className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-xs font-semibold transition-transform group-hover:scale-110 sm:h-8 sm:w-8"
               style={{
-                background: creator.avatarUrl ? undefined : "rgba(245,200,66,0.18)",
-                color: COLOR.gold,
-                boxShadow: `0 0 0 2px rgba(245,200,66,0.5)`,
+                background: creator.avatarUrl ? undefined : "rgba(36,120,255,0.18)",
+                color: COLOR.blue,
+                boxShadow: `0 0 0 2px rgba(36,120,255,0.5)`,
               }}
             >
               {creator.avatarUrl ? (
@@ -175,7 +176,7 @@ export default async function DashboardPage({
         <div className="relative z-10 w-full px-6 pb-16 md:px-20 md:pb-14">
           <div className="mx-auto flex max-w-[1200px] flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+              <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
                 Dashboard
               </p>
               <h1 className="text-3xl font-bold leading-tight text-white md:text-5xl">
@@ -202,7 +203,12 @@ export default async function DashboardPage({
                       className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(100, (usage.used / usage.limit) * 100)}%`,
-                        background: atCap ? "#F97316" : COLOR.gold,
+                        // #F97316 here is a functional "at capacity"
+                        // warning color, not a brand accent — kept
+                        // distinct on purpose so a real blocking state
+                        // reads as urgent rather than blending into the
+                        // normal blue UI.
+                        background: atCap ? "#F97316" : COLOR.blue,
                       }}
                     />
                   </div>
@@ -213,15 +219,15 @@ export default async function DashboardPage({
                 <div
                   className="mt-5 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
                   style={{
-                    background: atCap ? "rgba(249,115,22,0.1)" : "rgba(245,200,66,0.08)",
-                    border: atCap ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(245,200,66,0.25)",
+                    background: atCap ? "rgba(249,115,22,0.1)" : "rgba(36,120,255,0.08)",
+                    border: atCap ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(36,120,255,0.25)",
                     backdropFilter: "blur(10px)",
                   }}
                 >
                   <div>
                     <p
                       className="text-xs font-semibold uppercase"
-                      style={{ color: atCap ? "#fdba74" : COLOR.gold, letterSpacing: "0.08em" }}
+                      style={{ color: atCap ? "#fdba74" : COLOR.blue, letterSpacing: "0.08em" }}
                     >
                       {atCap ? "You've reached your limit" : "Almost there"}
                     </p>
@@ -237,8 +243,8 @@ export default async function DashboardPage({
                   </div>
                   <Link
                     href="/dashboard/billing"
-                    className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
-                    style={{ background: COLOR.gold, color: COLOR.black, boxShadow: "0 10px 30px rgba(245,200,66,0.25)" }}
+                    className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-all hover:scale-[1.03]"
+                    style={{ background: COLOR.gradient, boxShadow: "0 10px 30px rgba(36,120,255,0.25)" }}
                   >
                     Upgrade to {nextTierInfo.name}
                     <span aria-hidden>→</span>
@@ -250,8 +256,8 @@ export default async function DashboardPage({
             <div className="flex flex-col gap-2.5 sm:items-end">
               <Link
                 href="/dashboard/new"
-                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-                style={{ background: COLOR.gold, color: COLOR.black }}
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gradient }}
               >
                 <span className="text-base leading-none">+</span>
                 New project
@@ -283,10 +289,10 @@ export default async function DashboardPage({
           <div className="flex flex-col items-center gap-4 rounded-xl px-8 py-20 text-center" style={{ background: COLOR.charcoal }}>
             <div
               className="flex h-14 w-14 items-center justify-center rounded-full"
-              style={{ background: "rgba(245,200,66,0.12)", border: "1px solid rgba(245,200,66,0.3)" }}
+              style={{ background: "rgba(36,120,255,0.12)", border: "1px solid rgba(36,120,255,0.3)" }}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 4v12M4 10h12" stroke={COLOR.gold} strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M10 4v12M4 10h12" stroke={COLOR.blue} strokeWidth="1.6" strokeLinecap="round" />
               </svg>
             </div>
             <div>
@@ -297,8 +303,8 @@ export default async function DashboardPage({
             </div>
             <Link
               href="/dashboard/new"
-              className="mt-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02]"
-              style={{ background: COLOR.gold, color: COLOR.black }}
+              className="mt-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
+              style={{ background: COLOR.gradient }}
             >
               Create your first project
             </Link>
@@ -307,7 +313,7 @@ export default async function DashboardPage({
           <>
             <div className="mb-8 flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <div className="h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+                <div className="h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
                 <h2 className="text-xl font-semibold text-white">Your projects</h2>
               </div>
               <p className="text-sm text-white/40">
@@ -332,7 +338,7 @@ export default async function DashboardPage({
                         className="rounded-full px-3 py-1 text-xs font-semibold"
                         style={
                           isLive
-                            ? { background: "rgba(245,200,66,0.15)", color: COLOR.gold }
+                            ? { background: "rgba(36,120,255,0.15)", color: COLOR.blue }
                             : { background: "rgba(248,247,244,0.06)", color: "rgba(248,247,244,0.4)" }
                         }
                       >
@@ -372,7 +378,7 @@ export default async function DashboardPage({
 
                     <div
                       className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold"
-                      style={{ background: "rgba(245,200,66,0.1)", color: COLOR.gold }}
+                      style={{ background: "rgba(36,120,255,0.1)", color: COLOR.blue }}
                     >
                       View project
                       <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
@@ -431,7 +437,7 @@ export default async function DashboardPage({
           <a
             href="mailto:hello@useshowwork.com?subject=Showwork%20support"
             className="flex w-fit items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-            style={{ background: "rgba(245,200,66,0.12)", color: COLOR.gold }}
+            style={{ background: "rgba(36,120,255,0.12)", color: COLOR.blue }}
           >
             Contact support
             <span aria-hidden>→</span>
@@ -452,7 +458,7 @@ export default async function DashboardPage({
 
             <div className="flex flex-col justify-center gap-5 p-8 md:p-10">
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+                <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
                   Creativo · Powered by Showwork
                 </p>
                 <h2 className="text-2xl font-bold text-white">You don&apos;t have to figure this out alone.</h2>
@@ -486,8 +492,8 @@ export default async function DashboardPage({
                 href={COMMUNITY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-transform hover:scale-[1.02]"
-                style={{ background: COLOR.gold, color: COLOR.black }}
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gradient }}
               >
                 Join Creativo
                 <span aria-hidden>→</span>

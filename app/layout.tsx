@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import RouteTransitionIndicator from "@/components/RouteTransitionIndicator";
+
+// The platform's one and only font source — swap the typeface by
+// changing this import and the name below; every component using
+// font-sans (or nothing at all, since this becomes Tailwind's
+// default) picks up the change automatically.
+const brandFont = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Showwork",
@@ -15,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={brandFont.variable}>
       <body>
         {/* Meta Pixel Code — loads on every page, tracks pageviews site-wide */}
         <Script id="meta-pixel" strategy="afterInteractive">

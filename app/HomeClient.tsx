@@ -14,8 +14,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 const COLOR = {
   black: "#0A0A0A",
-  gold: "#F5C842",
-  orange: "#E8881A",
+  blueLight: "#4D9EFF",
+  blue: "#2478FF",
+  blueDark: "#0052FF",
+  gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+  accent: "#FFCC00",
   offWhite: "#F5F1EA",
   offWhiteCard: "#FFFFFF",
   charcoal: "#1A1A1A",
@@ -371,7 +374,7 @@ function Wordmark({ size = "md", dark = false }: { size?: "sm" | "md" | "lg"; da
   return (
     <div className="flex items-baseline gap-2">
       <span className={`${sizes[size]} font-bold`} style={{ color: dark ? COLOR.ink : "white" }}>
-        Show<span style={{ color: COLOR.gold }}>work</span>
+        Show<span style={{ color: COLOR.blue }}>work</span>
       </span>
     </div>
   );
@@ -432,13 +435,15 @@ function HeroSlider() {
         <rect width="100%" height="100%" filter="url(#grain)" />
       </svg>
 
+      
+
       <div className="relative z-10 flex items-center justify-between px-6 py-8 md:px-20">
         <Wordmark />
+         <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
+          Sign up
+        </Link>
         <Link href="/login" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
           Log in
-        </Link>
-        <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
-          Sign up
         </Link>
       </div>
 
@@ -452,7 +457,7 @@ function HeroSlider() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.5 }}
             >
-              <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.15em" }}>
+              <p className="mb-5 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.15em" }}>
                 {slide.eyebrow}
               </p>
               <h1 className="max-w-2xl text-[2.1rem] font-bold leading-[1.14] tracking-tight text-white md:text-[3.4rem]">
@@ -476,8 +481,8 @@ function HeroSlider() {
                 <MagneticButton
                   href={slide.cta.href}
                   external={slide.cta.external}
-                  className="inline-flex items-center gap-2.5 rounded-full px-8 py-4 text-sm font-semibold shadow-[0_10px_40px_rgba(245,200,66,0.25)]"
-                  style={{ background: COLOR.gold, color: COLOR.black }}
+                  className="inline-flex items-center gap-2.5 rounded-full px-8 py-4 text-sm font-semibold text-white shadow-[0_10px_40px_rgba(36,120,255,0.35)]"
+                  style={{ background: COLOR.gradient }}
                 >
                   {slide.cta.label}
                   <span aria-hidden>→</span>
@@ -492,7 +497,7 @@ function HeroSlider() {
                   onClick={() => setActive(i)}
                   aria-label={`Go to slide ${i + 1}`}
                   className="h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: i === active ? 24 : 8, background: i === active ? COLOR.gold : "rgba(255,255,255,0.25)" }}
+                  style={{ width: i === active ? 24 : 8, background: i === active ? COLOR.blue : "rgba(255,255,255,0.25)" }}
                 />
               ))}
             </div>
@@ -528,7 +533,7 @@ export default function HomeClient() {
       {/* ── ROUTING — three paths, right after the banner ── */}
       <section className="px-6 py-20 md:px-20 md:py-28" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.15em" }}>
             Where to start
           </p>
@@ -551,9 +556,9 @@ export default function HomeClient() {
                   <div className="flex items-center justify-between">
                     <div
                       className="flex h-12 w-12 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
-                      style={{ background: "rgba(232,136,26,0.1)" }}
+                      style={{ background: "rgba(36,120,255,0.1)" }}
                     >
-                      <route.Icon className="h-6 w-6" style={{ color: COLOR.orange }} />
+                      <route.Icon className="h-6 w-6" style={{ color: COLOR.blue }} />
                     </div>
                     <span className="text-xs font-semibold" style={{ color: "rgba(22,21,19,0.25)" }}>{route.number}</span>
                   </div>
@@ -561,7 +566,7 @@ export default function HomeClient() {
                   <p className="text-sm leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{route.body}</p>
                   <span
                     className="mt-auto flex items-center gap-1.5 pt-2 text-sm font-semibold transition-transform duration-300 group-hover:translate-x-1"
-                    style={{ color: COLOR.orange }}
+                    style={{ color: COLOR.blue }}
                   >
                     {route.cta}
                     <span aria-hidden>→</span>
@@ -585,7 +590,7 @@ export default function HomeClient() {
       {/* ── PAIN POINT ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
             The part nobody talks about
           </p>
@@ -606,9 +611,9 @@ export default function HomeClient() {
               >
                 <div
                   className="mb-4 flex h-11 w-11 items-center justify-center rounded-full"
-                  style={{ background: "rgba(232,136,26,0.1)" }}
+                  style={{ background: "rgba(36,120,255,0.1)" }}
                 >
-                  <p.Icon className="h-5 w-5" style={{ color: COLOR.orange }} />
+                  <p.Icon className="h-5 w-5" style={{ color: COLOR.blue }} />
                 </div>
                 <h3 className="mb-3 text-lg font-semibold" style={{ color: COLOR.ink }}>{p.title}</h3>
                 <p className="text-sm font-normal leading-relaxed" style={{ color: "rgba(22,21,19,0.6)" }}>{p.body}</p>
@@ -622,7 +627,7 @@ export default function HomeClient() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-14 text-lg font-semibold md:text-xl"
-            style={{ color: COLOR.orange }}
+            style={{ color: COLOR.accent }}
           >
             Showwork is how premium work finally gets priced like premium work — and stays positioned that way with every project after.
           </motion.p>
@@ -632,8 +637,8 @@ export default function HomeClient() {
       {/* ── VIDEO — the moment they actually open it ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
-          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
+          <p className="mb-4 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
             The moment they open it
           </p>
           <h2 className="mb-6 max-w-xl text-3xl font-semibold leading-tight text-white md:text-4xl">
@@ -650,7 +655,7 @@ export default function HomeClient() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7 }}
             className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl shadow-2xl"
-            style={{ border: "1px solid rgba(245,200,66,0.15)" }}
+            style={{ border: "1px solid rgba(36,120,255,0.15)" }}
           >
             {/* browser chrome */}
             <div className="flex items-center gap-1.5 bg-black px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -681,7 +686,7 @@ export default function HomeClient() {
               />
 
               <div className="absolute left-5 top-5 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: COLOR.gold }} />
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: COLOR.blue }} />
                 <span className="text-[10px] font-semibold uppercase text-white/60" style={{ letterSpacing: "0.15em" }}>
                   Private preview
                 </span>
@@ -695,7 +700,7 @@ export default function HomeClient() {
               >
                 <div
                   className="ml-0.5 h-0 w-0 border-y-[4px] border-l-[6px] border-y-transparent"
-                  style={{ borderLeftColor: COLOR.gold }}
+                  style={{ borderLeftColor: COLOR.blue }}
                 />
                 <span className="text-[10px] font-medium text-white/80">Click to watch</span>
               </div>
@@ -706,15 +711,15 @@ export default function HomeClient() {
               with the footage itself */}
           <div className="mx-auto mt-6 max-w-4xl text-center">
             <p className="text-xl font-bold text-white md:text-2xl">Three months of work.</p>
-            <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.gold }}>Priced like it.</p>
+            <p className="text-xl font-bold md:text-2xl" style={{ color: COLOR.accent }}>Priced like it.</p>
 
             <div className="mt-8 flex flex-col items-center gap-3">
               <a
                 href="https://useshowwork.com/demo-2"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.02]"
-                style={{ background: COLOR.gold, color: COLOR.black }}
+                className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
+                style={{ background: COLOR.gradient }}
               >
                 View the live demo
                 <span aria-hidden>→</span>
@@ -730,7 +735,7 @@ export default function HomeClient() {
       {/* ── IMAGE — real photography, the actual gallery treatment ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(22,21,19,0.4)", letterSpacing: "0.1em" }}>
             Every photo, presented properly
           </p>
@@ -800,7 +805,7 @@ export default function HomeClient() {
       {/* ── THREE STEPS ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
             How you start looking like a premium brand.
           </h2>
@@ -816,14 +821,14 @@ export default function HomeClient() {
                 className="flex flex-col items-start gap-3 text-left"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-5xl font-light md:text-6xl" style={{ color: COLOR.orange }}>
+                  <span className="text-5xl font-light md:text-6xl" style={{ color: COLOR.blue }}>
                     {step.number}
                   </span>
                   <div
                     className="flex h-11 w-11 items-center justify-center rounded-full"
-                    style={{ background: "rgba(232,136,26,0.1)" }}
+                    style={{ background: "rgba(36,120,255,0.1)" }}
                   >
-                    <step.Icon className="h-5 w-5" style={{ color: COLOR.orange }} />
+                    <step.Icon className="h-5 w-5" style={{ color: COLOR.blue }} />
                   </div>
                 </div>
                 <h3 className="text-xl font-semibold" style={{ color: COLOR.ink }}>{step.title}</h3>
@@ -837,7 +842,7 @@ export default function HomeClient() {
       {/* ── TESTIMONIALS ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <h2 className="mb-16 max-w-lg text-3xl font-semibold leading-tight md:text-4xl" style={{ color: COLOR.ink }}>
             Creators are already charging like this.
           </h2>
@@ -867,7 +872,7 @@ export default function HomeClient() {
       {/* ── PRICING ── */}
       <section className="px-6 py-20 md:px-20 md:py-[120px]" style={{ background: COLOR.black }}>
         <div className="mx-auto max-w-[1280px]">
-          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-3 h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
           <p className="mb-4 text-xs font-semibold uppercase" style={{ color: "rgba(248,247,244,0.35)", letterSpacing: "0.1em" }}>
             Pricing
           </p>
@@ -887,15 +892,15 @@ export default function HomeClient() {
                 key={tier.key}
                 className="relative flex flex-col rounded-2xl border p-8"
                 style={{
-                  borderColor: tier.highlight ? COLOR.gold : "rgba(255,255,255,.08)",
+                  borderColor: tier.highlight ? COLOR.accent : "rgba(255,255,255,.08)",
                   background: COLOR.charcoal,
-                  boxShadow: tier.highlight ? "0 20px 60px rgba(245,200,66,.18)" : undefined,
+                  boxShadow: tier.highlight ? "0 20px 60px rgba(255,204,0,.18)" : undefined,
                 }}
               >
                 {tier.highlight && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-bold"
-                    style={{ background: COLOR.gold, color: COLOR.black }}
+                    style={{ background: COLOR.accent, color: COLOR.black }}
                   >
                     {tier.highlight}
                   </div>
@@ -903,7 +908,7 @@ export default function HomeClient() {
 
                 <p
                   className="text-sm font-semibold"
-                  style={{ color: tier.key === "FREE" ? "rgba(255,255,255,0.5)" : COLOR.gold }}
+                  style={{ color: tier.key === "FREE" ? "rgba(255,255,255,0.5)" : tier.highlight ? COLOR.accent : COLOR.blue }}
                 >
                   {tier.name}
                 </p>
@@ -916,7 +921,7 @@ export default function HomeClient() {
                 <ul className="mt-6 flex-1 space-y-2.5 text-sm text-white/70">
                   {(expandedTiers[tier.key] ? tier.features : tier.features.slice(0, 4)).map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <span className="mt-0.5 flex-shrink-0" style={{ color: COLOR.gold }}>✓</span>
+                      <span className="mt-0.5 flex-shrink-0" style={{ color: COLOR.blue }}>✓</span>
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -927,7 +932,7 @@ export default function HomeClient() {
                     type="button"
                     onClick={() => toggleTierExpanded(tier.key)}
                     className="mt-3 text-left text-xs font-semibold underline"
-                    style={{ color: COLOR.gold }}
+                    style={{ color: COLOR.blue }}
                   >
                     {expandedTiers[tier.key] ? "Show less" : `View all ${tier.features.length} features`}
                   </button>
@@ -943,7 +948,9 @@ export default function HomeClient() {
                   style={
                     tier.style === "outline"
                       ? { borderColor: "rgba(255,255,255,.15)" }
-                      : { background: COLOR.gold, color: COLOR.black }
+                      : tier.highlight
+                      ? { background: COLOR.accent, color: COLOR.black }
+                      : { background: COLOR.gradient, color: "#FFFFFF" }
                   }
                 >
                   {tier.cta}

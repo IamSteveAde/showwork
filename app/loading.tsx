@@ -35,18 +35,18 @@ export default function Loading() {
             position: "absolute",
             inset: 0,
             borderRadius: "9999px",
-            border: "3px solid rgba(245,200,66,0.15)",
+            border: "3px solid rgba(36,120,255,0.15)",
           }}
         />
-        {/* the actual spinning gold arc */}
+        {/* the actual spinning blue arc */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             borderRadius: "9999px",
             border: "3px solid transparent",
-            borderTopColor: "#F5C842",
-            borderRightColor: "#F5C842",
+            borderTopColor: "#2478FF",
+            borderRightColor: "#2478FF",
             animation: "showwork-spin 0.9s linear infinite",
           }}
         />
@@ -63,7 +63,7 @@ export default function Loading() {
           animation: "showwork-pulse 1.6s ease-in-out infinite",
         }}
       >
-        Show<span style={{ color: "#F5C842" }}>work</span>
+        Show<span style={{ color: "#2478FF" }}>work</span>
       </p>
     </div>
   );

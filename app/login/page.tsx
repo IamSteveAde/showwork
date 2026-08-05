@@ -6,8 +6,9 @@ import Link from "next/link";
 
 const COLOR = {
   black: "#0A0A0A",
-  gold: "#F5C842",
-  orange: "#E8881A",
+  blue: "#2478FF",
+  gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+  accent: "#FFCC00",
   midGray: "#888786",
 };
 
@@ -99,7 +100,7 @@ function LoginForm() {
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 py-8 md:px-14">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-white">
-            Show<span style={{ color: COLOR.gold }}>work</span>
+            Show<span style={{ color: COLOR.blue }}>work</span>
           </span>
         </Link>
       </div>
@@ -109,7 +110,7 @@ function LoginForm() {
         <div className="mb-8 text-center">
           <p
             className="mb-3 text-xs font-semibold uppercase"
-            style={{ color: COLOR.gold, letterSpacing: "0.1em" }}
+            style={{ color: COLOR.blue, letterSpacing: "0.1em" }}
           >
             Welcome back
           </p>
@@ -128,7 +129,7 @@ function LoginForm() {
             border: "1px solid rgba(248,247,244,0.08)",
           }}
         >
-          <div className="mb-1 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="mb-1 h-[3px] w-8" style={{ background: COLOR.accent }} aria-hidden />
 
           <div>
             <label
@@ -179,8 +180,8 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-lg py-3.5 text-sm font-semibold transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
-            style={{ background: COLOR.gold, color: COLOR.black }}
+            className="mt-2 rounded-lg py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:hover:scale-100"
+            style={{ background: COLOR.gradient }}
           >
             {loading ? "Logging in..." : "Log in"}
           </button>

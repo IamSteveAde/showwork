@@ -2,7 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Brand tokens — the single source of truth for every color used
+ * across the platform. Change a value here and it updates everywhere
+ * the matching Tailwind class (bg-brand-blue, text-brand-accent, etc.)
+ * is used, instead of hunting through every component file.
+ *
+ * Hierarchy — kept deliberately tight to avoid "color riot":
+ * - Blue (light/mid/deep, one family) is the dominant color across
+ *   the whole platform — buttons, key UI, gradients.
+ * - Exactly ONE accent color (a warm yellow/gold) exists outside
+ *   that family, used sparingly — a highlight badge, a divider
+ *   accent, one standout button. Never a second accent hue.
+ * - The neutrals (black, ink, off-whites) remain the actual page
+ *   backgrounds; blue lives on top of them.
+ */
+:root {
+  /* Primary — blue (official brand blues) */
+  --brand-blue-light: #4D9EFF;
+  --brand-blue: #2478FF;
+  --brand-blue-dark: #0052FF;
+  --brand-gradient: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-dark) 100%);
+
+  /* The one accent — used sparingly, never as a second dominant color */
+  --brand-accent: #FFCC00;
+
+  /* Neutrals — the actual page backgrounds */
+  --brand-black: #080808;
+  --brand-ink: #161513;
+  --brand-charcoal: #141414;
+  --brand-offwhite: #F5F1EA;
+  --brand-offwhite-card: #FAFAF7;
+}
+
 body {
-  background: #080808;
+  background: var(--brand-black);
   color: #ffffff;
+  font-family: var(--font-sans), sans-serif;
 }
