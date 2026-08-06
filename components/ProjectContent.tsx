@@ -257,9 +257,9 @@ function officeViewerUrl(url: string) {
 // WALL TILE — photo or video, true to size (never cropped), packed
 // edge-to-edge with a hairline white seam between every piece (the
 // gallery wall's own white background peeking through a 1px margin).
-// Sits dimmed and quiet by default; hovering wakes it fully awake —
-// full brightness, a glowing colored border — like a gallery piece
-// lighting up under a spotlight the moment you approach it.
+// Shows at full clarity immediately, no hover required — hovering
+// still adds a subtle glowing colored border and a slight zoom, but
+// never gates whether the content itself is visible.
 // ─────────────────────────────────────────────
 function WallTile({
   item,
@@ -280,7 +280,6 @@ function WallTile({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(containerRef, { once: false, margin: "-20%" });
   const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
@@ -289,12 +288,33 @@ function WallTile({
   }, [nearView]);
 
   useEffect(() => {
+    // Only trigger play once, right after the video actually mounts —
+    // no opposing pause call tied to a separate "inView" check here.
+    // The previous version paused the video the instant it wasn't
+    // strictly in view, which could fire in the very same tick as the
+    // native autoplay attempt, killing it before a single frame had
+    // even decoded — exactly what showed as a permanent black screen
+    // rather than a paused frame.
     const vid = videoRef.current;
-    if (!vid || item.type !== "VIDEO") return;
-    if (inView) requestPlay(vid);
-    else releasePlay(vid);
-    return () => releasePlay(vid);
-  }, [inView, shouldLoad, item.type]);
+    if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
+    requestPlay(vid);
+
+    // Mobile browsers (iOS Safari especially) can block a video's
+    // very first autoplay attempt if it wasn't tied to a direct user
+    // gesture, even with muted/playsInline/autoPlay all correctly
+    // set — a scroll alone isn't always treated as sufficient on iOS
+    // the way it is on desktop. Retrying on the very first tap
+    // anywhere on the page catches this: once genuinely triggered by
+    // a real gesture, mobile browsers reliably allow it from then on,
+    // including for videos that mount afterward.
+    const retryOnFirstTouch = () => requestPlay(vid);
+    window.addEventListener("touchstart", retryOnFirstTouch, { once: true });
+    window.addEventListener("click", retryOnFirstTouch, { once: true });
+    return () => {
+      window.removeEventListener("touchstart", retryOnFirstTouch);
+      window.removeEventListener("click", retryOnFirstTouch);
+    };
+  }, [shouldLoad, item.type]);
 
   return (
     <motion.div
@@ -330,12 +350,9 @@ function WallTile({
               controlsList="nodownload noremoteplayback"
               disablePictureInPicture
               draggable={false}
-              // The dimmed → awake effect only applies on devices that
-              // genuinely support hover ([@media(hover:hover)]) — on
-              // touch devices there's no hover gesture to undo the dim,
-              // so it never applies there at all; content shows at
-              // full brightness immediately on mobile.
-              className="block w-full transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
+              // True size, full clarity immediately — no dimming, no
+              // hover required to see the actual content.
+              className="block w-full transition-transform duration-500 ease-out group-hover:scale-[1.02]"
             />
           )
         ) : (
@@ -346,7 +363,7 @@ function WallTile({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="block w-full select-none transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
+            className="block w-full select-none transition-transform duration-500 ease-out group-hover:scale-[1.02]"
           />
         )}
 
