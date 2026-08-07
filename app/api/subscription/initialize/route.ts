@@ -4,22 +4,31 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { initializeSubscription, createPlan } from "@/lib/paystack";
 import { appUrl } from "@/lib/url";
-import { TIERS, planCodeForTier, PAID_TIER_ORDER, PaidTier } from "@/lib/subscriptionTiers";
+import { TIERS, planCodeForTier, PAID_TIER_ORDER, PaidTier, BillingCycle } from "@/lib/subscriptionTiers";
 
 export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { tier } = await req.json();
+  const { tier, cycle } = await req.json();
 
   if (!PAID_TIER_ORDER.includes(tier)) {
     return NextResponse.json({ error: "Invalid plan selected" }, { status: 400 });
   }
+  // Strict on purpose — this endpoint starts a real financial
+  // transaction, so a missing or malformed cycle should fail loudly
+  // right here rather than silently falling back to a guess that
+  // might not match what the person actually chose.
+  if (cycle !== "MONTHLY" && cycle !== "ANNUAL") {
+    return NextResponse.json({ error: "Invalid billing cycle selected" }, { status: 400 });
+  }
 
   try {
     const selectedTier = tier as PaidTier;
+    const selectedCycle = cycle as BillingCycle;
     const reference = `showwork_sub_${creator.id}_${randomUUID()}`;
-    const standardPriceNgn = TIERS[selectedTier].priceNgn;
+    const standardPriceNgn =
+      selectedCycle === "ANNUAL" ? TIERS[selectedTier].priceNgnAnnual : TIERS[selectedTier].priceNgnMonthly;
 
     // A per-creator discount (admin-granted) takes priority over the
     // platform-wide one if both somehow apply — the more specific
@@ -38,15 +47,21 @@ export async function POST(req: NextRequest) {
       // so a cosmetic discount that doesn't change the actual plan
       // wouldn't do anything. Created fresh each time rather than
       // cached, since discount percentages can change per creator.
+      //
+      // interval must match the selected cycle here — without this,
+      // an annual subscription at a discount would silently be
+      // created as a monthly plan instead, charging the discounted
+      // amount every month rather than once a year.
       const discountedNgn = Math.round(standardPriceNgn * (1 - discountPercent / 100));
       const plan = await createPlan({
-        name: `Showwork ${TIERS[selectedTier].name} (${discountPercent}% off) — ${creator.id}`,
+        name: `Showwork ${TIERS[selectedTier].name} ${selectedCycle === "ANNUAL" ? "(Annual)" : "(Monthly)"} (${discountPercent}% off) — ${creator.id}`,
         amountNgn: discountedNgn,
+        interval: selectedCycle === "ANNUAL" ? "annually" : "monthly",
       });
       planCode = plan.data.plan_code;
       amount = discountedNgn * 100;
     } else {
-      planCode = planCodeForTier(selectedTier);
+      planCode = planCodeForTier(selectedTier, selectedCycle);
       amount = standardPriceNgn * 100;
     }
 

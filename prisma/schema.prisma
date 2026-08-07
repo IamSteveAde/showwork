@@ -23,6 +23,11 @@ enum SubscriptionTier {
   UNLIMITED
 }
 
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
 model Creator {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -62,6 +67,10 @@ model Creator {
   // as a historical/display record, not the source of truth for access.
   subscriptionTier         SubscriptionTier @default(FREE)
   subscriptionActive       Boolean          @default(false)
+  // Monthly vs. annual billing — null for anyone on FREE, or predating
+  // this field (treated as monthly, since that was the only option
+  // before annual billing existed).
+  subscriptionCycle        BillingCycle?
   paystackCustomerCode     String?
   paystackSubscriptionCode String?
   paystackEmailToken       String?
@@ -335,6 +344,7 @@ model PaymentRecord {
   amountNgn         Int
   type              PaymentType
   tier              SubscriptionTier?
+  cycle             BillingCycle?
   paystackReference String?
   createdAt         DateTime          @default(now())
 

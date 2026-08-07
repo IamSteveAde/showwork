@@ -1,26 +1,53 @@
 export type Tier = "FREE" | "STARTER" | "GROWTH" | "UNLIMITED";
 export type PaidTier = Exclude<Tier, "FREE">;
+export type BillingCycle = "MONTHLY" | "ANNUAL";
 
 export const FREE_TIER_LIMIT = 1;
 
-export const TIERS: Record<PaidTier, { name: string; priceNgn: number; limit: number; planCodeEnv: string }> = {
+// Annual pricing is 5% off what a full year of monthly billing would
+// cost (12 × monthly price). Each cycle needs its own Paystack plan —
+// Paystack bills a fixed amount at a fixed interval per plan, so
+// "the same plan, just yearly" isn't a single toggle on their side,
+// it's a genuinely separate plan with its own plan_code.
+export const TIERS: Record<
+  PaidTier,
+  {
+    name: string;
+    priceNgnMonthly: number;
+    priceNgnAnnual: number;
+    limit: number;
+    planCodeEnv: { MONTHLY: string; ANNUAL: string };
+  }
+> = {
   STARTER: {
     name: "Starter",
-    priceNgn: 5900,
+    priceNgnMonthly: 5900,
+    priceNgnAnnual: 67260,
     limit: 5,
-    planCodeEnv: "PAYSTACK_PLAN_CODE_STARTER",
+    planCodeEnv: {
+      MONTHLY: "PAYSTACK_PLAN_CODE_STARTER_MONTHLY",
+      ANNUAL: "PAYSTACK_PLAN_CODE_STARTER_ANNUAL",
+    },
   },
   GROWTH: {
     name: "Growth",
-    priceNgn: 10500,
+    priceNgnMonthly: 10500,
+    priceNgnAnnual: 119700,
     limit: 20,
-    planCodeEnv: "PAYSTACK_PLAN_CODE_GROWTH",
+    planCodeEnv: {
+      MONTHLY: "PAYSTACK_PLAN_CODE_GROWTH_MONTHLY",
+      ANNUAL: "PAYSTACK_PLAN_CODE_GROWTH_ANNUAL",
+    },
   },
   UNLIMITED: {
     name: "Unlimited",
-    priceNgn: 15000,
+    priceNgnMonthly: 15000,
+    priceNgnAnnual: 171000,
     limit: Infinity,
-    planCodeEnv: "PAYSTACK_PLAN_CODE_UNLIMITED",
+    planCodeEnv: {
+      MONTHLY: "PAYSTACK_PLAN_CODE_UNLIMITED_MONTHLY",
+      ANNUAL: "PAYSTACK_PLAN_CODE_UNLIMITED_ANNUAL",
+    },
   },
 };
 
@@ -31,17 +58,27 @@ export function tierLimit(tier: Tier): number {
   return TIERS[tier].limit;
 }
 
-export function planCodeForTier(tier: PaidTier): string {
-  const envVar = TIERS[tier].planCodeEnv;
+export function priceForTier(tier: PaidTier, cycle: BillingCycle): number {
+  return cycle === "ANNUAL" ? TIERS[tier].priceNgnAnnual : TIERS[tier].priceNgnMonthly;
+}
+
+export function planCodeForTier(tier: PaidTier, cycle: BillingCycle): string {
+  const envVar = TIERS[tier].planCodeEnv[cycle];
   const code = process.env[envVar];
   if (!code) throw new Error(`Missing environment variable ${envVar}`);
   return code;
 }
 
-/** Matches a Paystack plan_code back to which of our tiers it belongs to. */
-export function tierFromPlanCode(planCode: string): PaidTier | null {
+/**
+ * Matches a Paystack plan_code back to which tier AND which billing
+ * cycle it belongs to — a renewal or subscription.create event could
+ * now be on either a monthly or an annual plan, so the old
+ * tier-only lookup isn't enough anymore.
+ */
+export function tierFromPlanCode(planCode: string): { tier: PaidTier; cycle: BillingCycle } | null {
   for (const tier of PAID_TIER_ORDER) {
-    if (process.env[TIERS[tier].planCodeEnv] === planCode) return tier;
+    if (process.env[TIERS[tier].planCodeEnv.MONTHLY] === planCode) return { tier, cycle: "MONTHLY" };
+    if (process.env[TIERS[tier].planCodeEnv.ANNUAL] === planCode) return { tier, cycle: "ANNUAL" };
   }
   return null;
 }

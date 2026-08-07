@@ -76,7 +76,10 @@ export async function initializeTransaction({
 // ─────────────────────────────────────────────
 // Each tier's plan is created once, manually, in the Paystack dashboard —
 // not something the app creates repeatedly. Their codes are stored as
-// env vars and looked up via lib/subscriptionTiers.ts.
+// env vars and looked up via lib/subscriptionTiers.ts. Each tier now has
+// TWO plans (monthly and annual), since Paystack bills a fixed amount
+// at a fixed interval per plan — "the same plan, billed yearly instead"
+// isn't a toggle on their side, it's a genuinely separate plan.
 
 /**
  * Starts a subscription checkout for a specific tier's plan. Passing
@@ -130,13 +133,20 @@ export async function initializeSubscription({
  * for a platform-wide discount) a genuinely discounted recurring price
  * means creating a real plan at that discounted amount rather than just
  * showing a different number on screen.
+ *
+ * `interval` defaults to "monthly" to match existing callers, but now
+ * accepts "annually" too — needed to create the new annual-billing
+ * plans for each tier (or an annual discount plan) the same way the
+ * monthly ones were originally created.
  */
 export async function createPlan({
   name,
   amountNgn,
+  interval = "monthly",
 }: {
   name: string;
   amountNgn: number;
+  interval?: "monthly" | "annually";
 }): Promise<{ status: boolean; data: { plan_code: string } }> {
   const res = await fetch(`${PAYSTACK_BASE_URL}/plan`, {
     method: "POST",
@@ -147,7 +157,7 @@ export async function createPlan({
     body: JSON.stringify({
       name,
       amount: amountNgn * 100,
-      interval: "monthly",
+      interval,
       currency: "NGN",
     }),
   });

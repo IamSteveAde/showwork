@@ -24,7 +24,7 @@ export async function GET() {
     nearCap,
     atCap,
     nextTier: nextTier
-      ? { name: TIERS[nextTier].name, priceNgn: TIERS[nextTier].priceNgn, limit: TIERS[nextTier].limit === Infinity ? null : TIERS[nextTier].limit }
+      ? { name: TIERS[nextTier].name, priceNgnMonthly: TIERS[nextTier].priceNgnMonthly, limit: TIERS[nextTier].limit === Infinity ? null : TIERS[nextTier].limit }
       : null,
   });
 }

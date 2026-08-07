@@ -300,8 +300,8 @@ const PRICING_TIERS = [
   {
     key: "FREE",
     name: "Free",
-    price: "₦0",
-    priceSuffix: "",
+    priceMonthly: 0,
+    priceAnnual: 0,
     tagline: "The whole experience, on us.",
     highlight: null,
     features: [
@@ -325,8 +325,8 @@ const PRICING_TIERS = [
   {
     key: "STARTER",
     name: "Starter",
-    price: "₦5,900",
-    priceSuffix: "/mo",
+    priceMonthly: 5900,
+    priceAnnual: 67260,
     tagline: "For the creator picking up steady, regular clients.",
     highlight: null,
     features: [
@@ -350,8 +350,8 @@ const PRICING_TIERS = [
   {
     key: "GROWTH",
     name: "Growth",
-    price: "₦10,500",
-    priceSuffix: "/mo",
+    priceMonthly: 10500,
+    priceAnnual: 119700,
     tagline: "For studios booking multiple shoots a week.",
     highlight: "MOST POPULAR",
     features: [
@@ -376,8 +376,8 @@ const PRICING_TIERS = [
   {
     key: "UNLIMITED",
     name: "Unlimited",
-    price: "₦15,000",
-    priceSuffix: "/mo",
+    priceMonthly: 15000,
+    priceAnnual: 171000,
     tagline: "For teams who stopped counting projects a while ago.",
     highlight: null,
     features: [
@@ -582,6 +582,11 @@ export default function HomeClient() {
   const [showFullVideo, setShowFullVideo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [expandedTiers, setExpandedTiers] = useState<Record<string, boolean>>({});
+  // Defaults to Annual, not Monthly — the real industry pattern isn't
+  // just labeling annual as "recommended," it's making it the thing
+  // someone has to actively opt out of, since most people never touch
+  // a toggle that's already showing them the better deal.
+  const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "ANNUAL">("ANNUAL");
   const toggleTierExpanded = (key: string) =>
     setExpandedTiers((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -946,7 +951,56 @@ export default function HomeClient() {
             once a month or every week, there's a plan built for exactly that.
           </p>
 
-          <div className="mt-16 grid gap-8 lg:grid-cols-4">
+          {/* Monthly / Annual toggle — defaults to Annual (see the
+              state declaration above for why), with the savings made
+              concrete right on the pill itself rather than buried in
+              fine print underneath. */}
+          <div className="mt-10 flex items-center gap-3">
+            <div
+              className="relative inline-flex items-center rounded-full p-1"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+            >
+              {/* Both buttons share the same fixed width — Annual has
+                  extra content (the "Save 5%" badge), so without a
+                  matched width the sliding 50/50 background below
+                  doesn't actually line up with either button's real
+                  edges. justify-center keeps each label centered
+                  within that shared width regardless of content. */}
+              <button
+                type="button"
+                onClick={() => setBillingCycle("MONTHLY")}
+                className="relative z-10 flex w-[124px] items-center justify-center rounded-full py-2.5 text-sm font-semibold transition-colors duration-300"
+                style={{ color: billingCycle === "MONTHLY" ? COLOR.black : "rgba(255,255,255,0.6)" }}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCycle("ANNUAL")}
+                className="relative z-10 flex w-[124px] items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-colors duration-300"
+                style={{ color: billingCycle === "ANNUAL" ? COLOR.black : "rgba(255,255,255,0.6)" }}
+              >
+                Annual
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                  style={{
+                    background: billingCycle === "ANNUAL" ? "rgba(10,10,10,0.15)" : "rgba(255,204,0,0.15)",
+                    color: billingCycle === "ANNUAL" ? COLOR.black : COLOR.accent,
+                  }}
+                >
+                  Save 5%
+                </span>
+              </button>
+              <motion.div
+                className="absolute inset-y-1 w-[124px] rounded-full"
+                style={{ background: COLOR.gradient }}
+                animate={{ left: billingCycle === "MONTHLY" ? 4 : 128 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-10 grid gap-8 lg:grid-cols-4">
             {PRICING_TIERS.map((tier) => (
               <div
                 key={tier.key}
@@ -973,9 +1027,16 @@ export default function HomeClient() {
                   {tier.name}
                 </p>
                 <h3 className="mt-3 text-4xl font-bold text-white">
-                  {tier.price}
-                  {tier.priceSuffix && <span className="text-sm font-normal text-white/40">{tier.priceSuffix}</span>}
+                  {tier.key === "FREE"
+                    ? "₦0"
+                    : `₦${(billingCycle === "ANNUAL" ? Math.round(tier.priceAnnual / 12) : tier.priceMonthly).toLocaleString()}`}
+                  {tier.key !== "FREE" && <span className="text-sm font-normal text-white/40">/mo</span>}
                 </h3>
+                {tier.key !== "FREE" && billingCycle === "ANNUAL" && (
+                  <p className="mt-1 text-xs" style={{ color: COLOR.accent }}>
+                    Billed ₦{tier.priceAnnual.toLocaleString()} yearly
+                  </p>
+                )}
                 <p className="mt-2 text-sm text-white/50">{tier.tagline}</p>
 
                 <ul className="mt-6 flex-1 space-y-2.5 text-sm text-white/70">
@@ -999,7 +1060,7 @@ export default function HomeClient() {
                 )}
 
                 <Link
-                  href={tier.href}
+                  href={tier.key === "FREE" ? tier.href : `${tier.href}&cycle=${billingCycle}`}
                   className={
                     tier.style === "outline"
                       ? "mt-10 flex justify-center rounded-lg border py-3 font-semibold text-white transition hover:bg-white hover:text-black"

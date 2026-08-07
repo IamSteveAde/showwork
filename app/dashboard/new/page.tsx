@@ -98,7 +98,7 @@ export default function NewProjectPage() {
     remaining: number | null;
     nearCap: boolean;
     atCap: boolean;
-    nextTier: { name: string; priceNgn: number; limit: number | null } | null;
+    nextTier: { name: string; priceNgnMonthly: number; limit: number | null } | null;
   }
   const [usage, setUsage] = useState<UsageInfo | null>(null);
 
@@ -511,7 +511,7 @@ export default function NewProjectPage() {
               </h3>
               <p className="mt-1 text-sm text-white/60">
                 Move up to {usage.nextTier.name}
-                {usage.nextTier.limit === null ? " for unlimited projects" : ` for up to ${usage.nextTier.limit} a month`} — ₦{usage.nextTier.priceNgn.toLocaleString()}/mo.
+                {usage.nextTier.limit === null ? " for unlimited projects" : ` for up to ${usage.nextTier.limit} a month`} — ₦{usage.nextTier.priceNgnMonthly.toLocaleString()}/mo.
               </p>
             </div>
             <Link

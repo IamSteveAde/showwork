@@ -85,15 +85,16 @@ async function main() {
 
   for (const sub of subscriptions) {
     const email = normalizeEmail(sub.customer.email);
-    const tier = tierFromPlanCode(sub.plan.plan_code);
+    const match = tierFromPlanCode(sub.plan.plan_code);
 
     console.log(`── ${email} — plan "${sub.plan.name}" (${sub.plan.plan_code})`);
 
-    if (!tier) {
+    if (!match) {
       console.log(`   ✗ Skipped — plan code doesn't match any known tier. Check subscriptionTiers.ts.\n`);
       skippedUnknownPlan++;
       continue;
     }
+    const { tier, cycle } = match;
 
     const creator = await db.creator.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
@@ -108,6 +109,7 @@ async function main() {
     if (
       creator.subscriptionActive &&
       creator.subscriptionTier === tier &&
+      creator.subscriptionCycle === cycle &&
       creator.paystackSubscriptionCode === sub.subscription_code
     ) {
       console.log(`   • Already correct — no change needed.\n`);
@@ -120,6 +122,7 @@ async function main() {
       data: {
         subscriptionActive: true,
         subscriptionTier: tier,
+        subscriptionCycle: cycle,
         paystackCustomerCode: sub.customer.customer_code,
         paystackSubscriptionCode: sub.subscription_code,
         paystackEmailToken: sub.email_token,
@@ -145,6 +148,7 @@ async function main() {
           amountNgn: Math.round(sub.amount / 100),
           type: "SUBSCRIPTION_INITIAL",
           tier,
+          cycle,
           paystackReference: syntheticReference,
         },
       });

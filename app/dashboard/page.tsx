@@ -334,7 +334,7 @@ export default async function DashboardPage({
                     </h3>
                     <p className="mt-1 text-sm text-white/60">
                       Move up to {nextTierInfo.name}
-                      {nextTierInfo.limit === Infinity ? " for unlimited projects" : ` for up to ${nextTierInfo.limit} a month`} — ₦{nextTierInfo.priceNgn.toLocaleString()}/mo.
+                      {nextTierInfo.limit === Infinity ? " for unlimited projects" : ` for up to ${nextTierInfo.limit} a month`} — ₦{nextTierInfo.priceNgnMonthly.toLocaleString()}/mo.
                     </p>
                   </div>
                   <Link

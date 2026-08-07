@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import type { PaidTier } from "@/lib/subscriptionTiers";
+import type { PaidTier, BillingCycle } from "@/lib/subscriptionTiers";
 
 export default function SubscribeButton({
   tier,
+  cycle,
   label = "Subscribe",
 }: {
   tier: PaidTier;
+  cycle: BillingCycle;
   label?: string;
 }) {
   const [loading, setLoading] = useState(false);
@@ -20,7 +22,7 @@ export default function SubscribeButton({
       const res = await fetch("/api/subscription/initialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, cycle }),
       });
       if (!res.ok) {
         const data = await res.json();
