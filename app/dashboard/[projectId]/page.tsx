@@ -9,6 +9,7 @@ import CopyLinkButton from "@/components/CopyLinkButton";
 import AddMoreFilesButton from "@/components/AddMoreFilesButton";
 import SectionHeader from "@/components/SectionHeader";
 import DeliveryStatusControl from "@/components/DeliveryStatusControl";
+import EditableField from "@/components/EditableField";
 
 const MAX_ADDITIONAL_UPLOAD_BATCHES = 3;
 
@@ -105,7 +106,17 @@ export default async function ProjectDetailPage({
           Project
         </p>
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold text-white">{project.clientName}</h1>
+          {/* Editable project name — click to rename. The project's
+              slug (its public URL) intentionally never changes when
+              this does, so a link already shared with a client keeps
+              working regardless of what the project gets renamed to. */}
+          <EditableField
+            projectId={project.id}
+            field="clientName"
+            value={project.clientName}
+            displayClassName="text-3xl font-bold text-white"
+            inputClassName="rounded-md px-3 py-1 text-3xl font-bold text-white"
+          />
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"
             style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
@@ -153,19 +164,31 @@ export default async function ProjectDetailPage({
             Client access code
           </p>
           {project.accessCode ? (
-            <p className="flex items-center gap-3">
-              <span
-                className="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
-                style={{ background: "rgba(255,255,255,0.08)" }}
-              >
-                {project.accessCode}
-              </span>
+            <div className="flex items-center gap-3">
+              <EditableField
+                projectId={project.id}
+                field="accessCode"
+                value={project.accessCode}
+                displayClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                displayStyle={{ background: "rgba(255,255,255,0.08)" }}
+                inputClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                monospace
+              />
               <CopyLinkButton url={project.accessCode} />
               <span className="text-xs text-white/30">Share this with your client to unlock the delivery.</span>
-            </p>
+            </div>
           ) : (
             <p className="text-xs text-white/30">
-              This project was created before we started saving the plain code — you'll need to remember what you set, or share a new one by editing the project.
+              This project was created before we started saving the plain code — set one now by clicking below.
+              <EditableField
+                projectId={project.id}
+                field="accessCode"
+                value=""
+                displayClassName="ml-2 rounded px-3 py-1.5 text-xs font-semibold"
+                displayStyle={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+                inputClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                monospace
+              />
             </p>
           )}
         </div>

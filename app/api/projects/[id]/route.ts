@@ -24,8 +24,10 @@ export async function GET(
   return NextResponse.json({ project });
 }
 
-// PATCH: update branding / settings (not password or payment status —
-// those have their own dedicated flows)
+// PATCH: update branding / settings, plus the client-facing name and
+// access code. Deliberately does NOT touch the project's slug (its
+// public URL) — renaming a project or changing its access code should
+// never silently break a link already shared with a client.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,6 +43,8 @@ export async function PATCH(
 
   const body = await req.json();
   const allowedFields = [
+    "clientName",
+    "accessCode",
     "captureViewerEmail",
     "logoUrl",
     "primaryColor",
@@ -53,6 +57,18 @@ export async function PATCH(
   for (const field of allowedFields) {
     if (field in body) data[field] = body[field];
   }
+
+  // clientName and accessCode both need real content — an empty
+  // string would leave the delivery displaying a blank title, or
+  // worse, a blank access code a client could unlock with nothing.
+  if ("clientName" in data && (typeof data.clientName !== "string" || data.clientName.trim().length === 0)) {
+    return NextResponse.json({ error: "Project name can't be empty" }, { status: 400 });
+  }
+  if ("accessCode" in data && (typeof data.accessCode !== "string" || data.accessCode.trim().length === 0)) {
+    return NextResponse.json({ error: "Access code can't be empty" }, { status: 400 });
+  }
+  if (typeof data.clientName === "string") data.clientName = data.clientName.trim();
+  if (typeof data.accessCode === "string") data.accessCode = data.accessCode.trim();
 
   // deliveryStatus is an enum, not free-form — validated explicitly
   // rather than passed through blindly like the fields above, since an
