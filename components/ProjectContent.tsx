@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Image from "next/image";
 import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
@@ -261,11 +261,171 @@ function officeViewerUrl(url: string) {
 // still adds a subtle glowing colored border and a slight zoom, but
 // never gates whether the content itself is visible.
 // ─────────────────────────────────────────────
+// Detects a file's real aspect ratio (width/height) without rendering
+// it visibly — a plain in-memory Image for photos, and a detached
+// <video> listening for loadedmetadata for videos, since there's no
+// built-in equivalent of `new Image()` for video.
+function detectAspectRatio(item: MediaItem): Promise<number> {
+  return new Promise((resolve) => {
+    if (item.type === "VIDEO") {
+      const vid = document.createElement("video");
+      vid.preload = "metadata";
+      vid.src = item.url;
+      vid.onloadedmetadata = () => {
+        resolve(vid.videoWidth && vid.videoHeight ? vid.videoWidth / vid.videoHeight : 1);
+      };
+      vid.onerror = () => resolve(1);
+    } else {
+      const img = new window.Image();
+      img.onload = () => {
+        resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1);
+      };
+      img.onerror = () => resolve(1);
+      img.src = item.url;
+    }
+  });
+}
+
+interface JustifiedRow {
+  items: MediaItem[];
+  widths: number[];
+  height: number;
+}
+
+// The actual justified-gallery algorithm — the same technique behind
+// Google Photos / Flickr grids. Items are added to a row until that
+// row, scaled to the target height, would overflow the container's
+// width; then the whole row is rescaled so it fills the container's
+// width *exactly*, sharing one height across every item in it. This
+// is what guarantees zero gaps (and no black background showing
+// through) regardless of how differently-shaped the source media is.
+function computeJustifiedRows(
+  items: MediaItem[],
+  aspectRatios: Record<string, number>,
+  containerWidth: number,
+  targetRowHeight: number,
+  gap: number
+): JustifiedRow[] {
+  const rows: JustifiedRow[] = [];
+  let currentItems: MediaItem[] = [];
+  let aspectSum = 0;
+
+  const flushRow = (stretch: boolean) => {
+    if (currentItems.length === 0) return;
+    const totalGap = gap * (currentItems.length - 1);
+    const height = stretch ? (containerWidth - totalGap) / aspectSum : targetRowHeight;
+    const widths = currentItems.map((it) => aspectRatios[it.id] * height);
+    rows.push({ items: currentItems, widths, height });
+    currentItems = [];
+    aspectSum = 0;
+  };
+
+  for (const item of items) {
+    const ratio = aspectRatios[item.id] ?? 1;
+    currentItems.push(item);
+    aspectSum += ratio;
+    const totalGap = gap * (currentItems.length - 1);
+    const widthAtTargetHeight = aspectSum * targetRowHeight + totalGap;
+    if (widthAtTargetHeight >= containerWidth) {
+      flushRow(true);
+    }
+  }
+  // Last, possibly-incomplete row — left at the target height rather
+  // than stretched, so a couple of leftover pieces don't get blown up
+  // to fill the full width on their own.
+  flushRow(false);
+
+  return rows;
+}
+
+function JustifiedWallGallery({
+  items,
+  viewerEmail,
+  primaryColor,
+  onOpen,
+  onReview,
+  onDeleteReview,
+}: {
+  items: MediaItem[];
+  viewerEmail: string;
+  primaryColor: string;
+  onOpen: (item: MediaItem) => void;
+  onReview: (mediaId: string, status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
+  onDeleteReview: (mediaId: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      setContainerWidth(entries[0].contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    items.forEach((item) => {
+      if (aspectRatios[item.id] !== undefined) return;
+      detectAspectRatio(item).then((ratio) => {
+        if (!cancelled) setAspectRatios((prev) => ({ ...prev, [item.id]: ratio }));
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
+  const gap = 1; // matches the tile's own 1px white border seam
+  const targetRowHeight = 340;
+
+  const rows = useMemo(() => {
+    if (!allKnown || containerWidth === 0) return [];
+    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap);
+  }, [allKnown, containerWidth, items, aspectRatios]);
+
+  let runningIndex = 0;
+
+  return (
+    <div ref={containerRef}>
+      {rows.map((row, rowIdx) => (
+        <div key={rowIdx} className="flex justify-center" style={{ gap }}>
+          {row.items.map((item, i) => {
+            const idx = runningIndex++;
+            return (
+              <WallTile
+                key={item.id}
+                item={item}
+                index={idx}
+                viewerEmail={viewerEmail}
+                primaryColor={primaryColor}
+                width={row.widths[i]}
+                height={row.height}
+                onOpen={() => onOpen(item)}
+                onReview={(status, note) => onReview(item.id, status, note)}
+                onDeleteReview={() => onDeleteReview(item.id)}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function WallTile({
   item,
   index,
   viewerEmail,
   primaryColor,
+  width,
+  height,
   onOpen,
   onReview,
   onDeleteReview,
@@ -274,6 +434,8 @@ function WallTile({
   index: number;
   viewerEmail: string;
   primaryColor: string;
+  width: number;
+  height: number;
   onOpen: () => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   onDeleteReview: () => void;
@@ -323,19 +485,17 @@ function WallTile({
       whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
-      // Each tile draws its own thin white border rather than relying
-      // on the container's background to peek through a gap — that
-      // approach left a big blank white block whenever a row had fewer
-      // tiles than columns (e.g. 2 photos in a 3-column layout). A
-      // per-tile border generalizes correctly regardless of row fill.
-      className="w-full sm:w-1/2 lg:w-1/3"
-      style={{ border: "1px solid #FFFFFF" }}
+      // Sized to the exact pixel dimensions computed by the justified
+      // layout — every row is scaled so its items share one height
+      // and fill the container's full width exactly, with zero gaps
+      // and no black background showing through anywhere.
+      style={{ border: "1px solid #FFFFFF", width }}
     >
       <div
         onClick={onOpen}
         onContextMenu={(e) => e.preventDefault()}
         className="group relative cursor-pointer"
-        style={{ ["--glow" as string]: primaryColor }}
+        style={{ ["--glow" as string]: primaryColor, width, height }}
       >
         {item.type === "VIDEO" ? (
           shouldLoad && (
@@ -352,7 +512,7 @@ function WallTile({
               draggable={false}
               // True size, full clarity immediately — no dimming, no
               // hover required to see the actual content.
-              className="block w-full transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
             />
           )
         ) : (
@@ -363,7 +523,7 @@ function WallTile({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="block w-full select-none transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full select-none object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
           />
         )}
 
@@ -763,32 +923,25 @@ export default function ProjectContent({
               </div>
 
               {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
-                // The wall — true-size media, edge-to-edge, a hairline
-                // white seam between every piece, dimmed at rest and
-                // waking up on hover. White background is deliberate
-                // here regardless of the section's own dark/light
-                // rhythm, since the seam needs to always read as white.
-                <div className="flex flex-wrap">
-                  {section.media.map((m, i) => {
-                    const live = withLiveStatus(m);
+                // A real justified gallery — every image and video
+                // keeps its own true, uncropped aspect ratio, but rows
+                // are computed so they always fill the full width
+                // exactly, at one shared height per row. This is what
+                // actually eliminates gaps (and the black background
+                // showing through them) between differently-shaped
+                // pieces, the same fix already used on the portfolio.
+                <JustifiedWallGallery
+                  items={section.media.map(withLiveStatus)}
+                  viewerEmail={viewerEmail}
+                  primaryColor={primaryColor}
+                  onOpen={(item) => {
                     const list = section.mediaType === "VIDEO" ? videos : photos;
-                    const globalIdx = list.findIndex((x) => x.id === m.id);
-                    return (
-                      <WallTile
-                        key={m.id}
-                        item={live}
-                        index={i}
-                        viewerEmail={viewerEmail}
-                        primaryColor={primaryColor}
-                        onOpen={() =>
-                          section.mediaType === "VIDEO" ? setOpenVideoIdx(globalIdx) : setOpenPhotoIdx(globalIdx)
-                        }
-                        onReview={(status, note) => submitReview(m.id, status, note)}
-                        onDeleteReview={() => deleteReview(m.id)}
-                      />
-                    );
-                  })}
-                </div>
+                    const globalIdx = list.findIndex((x) => x.id === item.id);
+                    section.mediaType === "VIDEO" ? setOpenVideoIdx(globalIdx) : setOpenPhotoIdx(globalIdx);
+                  }}
+                  onReview={(mediaId, status, note) => submitReview(mediaId, status, note)}
+                  onDeleteReview={(mediaId) => deleteReview(mediaId)}
+                />
               ) : (
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                   {section.media.map((d, i) => {
