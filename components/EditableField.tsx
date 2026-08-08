@@ -17,6 +17,7 @@ export default function EditableField({
   displayStyle,
   inputClassName,
   monospace = false,
+  confirmMessage,
 }: {
   projectId: string;
   field: "clientName" | "accessCode";
@@ -25,6 +26,10 @@ export default function EditableField({
   displayStyle?: React.CSSProperties;
   inputClassName?: string;
   monospace?: boolean;
+  // If set, shown as a native confirm() before saving — used for the
+  // name field, since renaming now also changes the project's public
+  // URL, breaking any link already shared with a client.
+  confirmMessage?: string;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -52,6 +57,9 @@ export default function EditableField({
     }
     if (trimmed === value) {
       setEditing(false);
+      return;
+    }
+    if (confirmMessage && !window.confirm(confirmMessage)) {
       return;
     }
     setSaving(true);
@@ -89,7 +97,7 @@ export default function EditableField({
           height="14"
           viewBox="0 0 14 14"
           fill="none"
-          className="opacity-0 transition-opacity group-hover:opacity-50"
+          className="opacity-40 transition-opacity group-hover:opacity-70"
         >
           <path d="M9.5 1.5l3 3L4 13H1v-3l8.5-8.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>

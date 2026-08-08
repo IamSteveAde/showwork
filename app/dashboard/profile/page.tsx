@@ -60,6 +60,7 @@ export default async function ProfilePage() {
           <ProfileForm
             name={creator.name}
             phone={creator.phone}
+            companyName={creator.companyName}
             email={creator.email}
             emailVerified={creator.emailVerified}
             avatarUrl={creator.avatarUrl}

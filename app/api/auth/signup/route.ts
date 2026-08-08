@@ -8,7 +8,7 @@ import { isValidNigerianPhone } from "@/lib/phone";
 // hold everything in PendingSignup. No Creator row exists yet — that
 // only happens once the code is confirmed in /api/auth/verify-otp.
 export async function POST(req: NextRequest) {
-  const { email, password, name, phone } = await req.json();
+  const { email, password, name, phone, companyName } = await req.json();
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
@@ -35,14 +35,17 @@ export async function POST(req: NextRequest) {
   const passwordHash = await hashPassword(password);
   const otpCode = generateOtpCode();
   const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  // Genuinely optional — trimmed to a real value or left undefined,
+  // never stored as an empty string.
+  const trimmedCompanyName = typeof companyName === "string" && companyName.trim() ? companyName.trim() : null;
 
   // upsert: if they already started signing up (e.g. didn't finish
   // verifying last time), this just refreshes their code instead of
   // erroring on the unique email constraint.
   await db.pendingSignup.upsert({
     where: { email },
-    update: { name, phone, passwordHash, otpCode, otpExpiresAt },
-    create: { email, name, phone, passwordHash, otpCode, otpExpiresAt },
+    update: { name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt },
+    create: { email, name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt },
   });
 
   try {

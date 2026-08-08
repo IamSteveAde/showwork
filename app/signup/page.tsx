@@ -52,6 +52,7 @@ function SignupForm() {
   const [step, setStep] = useState<"details" | "verify">("details");
 
   const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -70,7 +71,7 @@ function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name, phone }),
+      body: JSON.stringify({ email, password, name, phone, companyName }),
     });
 
     if (res.ok) {
@@ -107,7 +108,7 @@ function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name, phone }),
+      body: JSON.stringify({ email, password, name, phone, companyName }),
     });
     setResendStatus(res.ok ? "New code sent" : "Couldn't resend — try again");
     setTimeout(() => setResendStatus(null), 3000);
@@ -170,6 +171,19 @@ function SignupForm() {
                   placeholder="e.g. Ada Obi"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                  Company name <span className="normal-case text-white/25">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ada Obi Studios"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
                 />
               </div>

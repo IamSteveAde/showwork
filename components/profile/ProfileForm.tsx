@@ -8,6 +8,7 @@ const COLOR = { gold: "#F5C842", black: "#0A0A0A" };
 export default function ProfileForm({
   name,
   phone,
+  companyName,
   email,
   emailVerified,
   avatarUrl,
@@ -15,6 +16,7 @@ export default function ProfileForm({
 }: {
   name: string | null;
   phone: string | null;
+  companyName: string | null;
   email: string;
   emailVerified: boolean;
   avatarUrl: string | null;
@@ -24,6 +26,7 @@ export default function ProfileForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [nameInput, setNameInput] = useState(name ?? "");
   const [phoneInput, setPhoneInput] = useState(phone ?? "");
+  const [companyNameInput, setCompanyNameInput] = useState(companyName ?? "");
   const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -73,7 +76,7 @@ export default function ProfileForm({
     const res = await fetch("/api/account", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: nameInput, phone: phoneInput }),
+      body: JSON.stringify({ name: nameInput, phone: phoneInput, companyName: companyNameInput }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -125,6 +128,20 @@ export default function ProfileForm({
           type="text"
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value)}
+          style={{ fontSize: "16px" }}
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          Company name <span className="normal-case text-white/25">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={companyNameInput}
+          onChange={(e) => setCompanyNameInput(e.target.value)}
+          placeholder="e.g. Ada Obi Studios"
           style={{ fontSize: "16px" }}
           className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none"
         />

@@ -11,9 +11,9 @@ export async function PATCH(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { name, phone, notifyOnView } = await req.json();
+  const { name, phone, notifyOnView, companyName } = await req.json();
 
-  const data: { name?: string; phone?: string; notifyOnView?: boolean } = {};
+  const data: { name?: string; phone?: string; notifyOnView?: boolean; companyName?: string | null } = {};
 
   if (typeof name === "string") {
     if (!name.trim()) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 });
@@ -27,6 +27,11 @@ export async function PATCH(req: NextRequest) {
   }
   if (typeof notifyOnView === "boolean") {
     data.notifyOnView = notifyOnView;
+  }
+  // Genuinely optional — an empty string just clears it back to null
+  // rather than being rejected, unlike name/phone above.
+  if (typeof companyName === "string") {
+    data.companyName = companyName.trim() || null;
   }
 
   const updated = await db.creator.update({ where: { id: creator.id }, data });

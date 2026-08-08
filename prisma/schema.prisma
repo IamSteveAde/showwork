@@ -37,6 +37,9 @@ model Creator {
   // (must match +234 followed by 10 digits). Nullable since accounts
   // created before this field existed won't have one.
   phone        String?
+  // Optional — set at signup or later from the profile page. Shown on
+  // the creator's own profile and in the admin creators table.
+  companyName  String?
   createdAt    DateTime @default(now())
   // Updated every time this creator successfully logs in — the basis
   // for tracking how actively each account uses the platform. Null
@@ -318,6 +321,7 @@ model PendingSignup {
   email        String   @unique
   name         String?
   phone        String?
+  companyName  String?
   passwordHash String
   otpCode      String
   otpExpiresAt DateTime

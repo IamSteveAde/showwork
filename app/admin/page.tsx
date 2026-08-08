@@ -212,6 +212,7 @@ export default async function AdminPage({
                       {c.name || c.email}
                     </Link>
                     <p className="text-xs text-white/30">{c.email}</p>
+                    {c.companyName && <p className="text-xs text-white/25">{c.companyName}</p>}
                     {c.phone && <p className="text-xs text-white/25">{c.phone}</p>}
                   </td>
                   <td className="px-4 py-3">

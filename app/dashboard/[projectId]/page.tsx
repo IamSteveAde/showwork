@@ -106,16 +106,18 @@ export default async function ProjectDetailPage({
           Project
         </p>
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          {/* Editable project name — click to rename. The project's
-              slug (its public URL) intentionally never changes when
-              this does, so a link already shared with a client keeps
-              working regardless of what the project gets renamed to. */}
+          {/* Editable project name — click to rename. Renaming now
+              also regenerates the project's slug (its public URL) to
+              match, so any link already shared with a client breaks
+              the moment this is saved — the confirmMessage below
+              warns about that before it happens. */}
           <EditableField
             projectId={project.id}
             field="clientName"
             value={project.clientName}
             displayClassName="text-3xl font-bold text-white"
             inputClassName="rounded-md px-3 py-1 text-3xl font-bold text-white"
+            confirmMessage="Renaming this project will also change its link. Any link you've already sent your client will stop working. Continue?"
           />
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"

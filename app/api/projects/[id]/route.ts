@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
 
+// Standard URL-safe slugify: lowercase, spaces and non-alphanumerics
+// become single hyphens, no leading/trailing hyphens.
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Finds a slug that doesn't collide with any other project. Tries the
+// plain slugified name first, then appends -2, -3, etc. until one is
+// free. excludeProjectId lets a project keep its own current slug
+// without falsely detecting a collision against itself.
+async function findAvailableSlug(baseName: string, excludeProjectId: string): Promise<string> {
+  const base = slugify(baseName) || "project";
+  let candidate = base;
+  let suffix = 2;
+  while (true) {
+    const existing = await db.project.findFirst({
+      where: { slug: candidate, id: { not: excludeProjectId } },
+    });
+    if (!existing) return candidate;
+    candidate = `${base}-${suffix}`;
+    suffix++;
+  }
+}
+
 // GET: fetch one project (only the owning creator can see it, including
 // unpublished/unpaid state)
 export async function GET(
@@ -25,9 +53,10 @@ export async function GET(
 }
 
 // PATCH: update branding / settings, plus the client-facing name and
-// access code. Deliberately does NOT touch the project's slug (its
-// public URL) — renaming a project or changing its access code should
-// never silently break a link already shared with a client.
+// access code. Renaming a project also regenerates its slug (public
+// URL) to match — this intentionally means any link already shared
+// with a client stops working the moment the name changes, which the
+// client-side confirmation prompt warns about before this ever fires.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -69,6 +98,14 @@ export async function PATCH(
   }
   if (typeof data.clientName === "string") data.clientName = data.clientName.trim();
   if (typeof data.accessCode === "string") data.accessCode = data.accessCode.trim();
+
+  // Regenerate the slug whenever the name actually changes — skipped
+  // if the trimmed name is identical to what's already stored, so
+  // hitting save without really changing anything doesn't needlessly
+  // rotate the link.
+  if (typeof data.clientName === "string" && data.clientName !== project.clientName) {
+    data.slug = await findAvailableSlug(data.clientName, project.id);
+  }
 
   // deliveryStatus is an enum, not free-form — validated explicitly
   // rather than passed through blindly like the fields above, since an
