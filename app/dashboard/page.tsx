@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
-import DeleteProjectButton from "@/components/DeleteProjectButton";
+import DashboardProjectList from "@/components/DashboardProjectList";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
 import { TIERS, PaidTier, Tier, PLAN_DISPLAY_NAME, NEXT_TIER } from "@/lib/subscriptionTiers";
 import { isAdminEmail } from "@/lib/admin";
@@ -21,6 +21,7 @@ const COLOR = {
 const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
 
 const PAGE_SIZE = 12;
+const SHARED_DISPLAY_LIMIT = 12;
 
 // ─────────────────────────────────────────────
 // Custom line icons — thin stroke, single color, consistent geometry.
@@ -111,40 +112,72 @@ function initials(name: string | null, email: string) {
   return (parts[0]?.[0] ?? "").toUpperCase() + (parts[1]?.[0] ?? "").toUpperCase();
 }
 
-function relativeTime(date: Date) {
-  const diffMs = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? "" : "s"} ago`;
-  return date.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
-}
-
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
+export default async function DashboardPage() {
   const creator = await getCurrentCreator();
   if (!creator) redirect("/login");
 
-  const { page } = await searchParams;
-  // deletedAt: null — a soft-deleted project should never appear in the
-  // creator's own list or stats, even though it still counts against
-  // their billing usage for the cycle it was created in (see
-  // getCreatorUsage, which intentionally does NOT filter this out).
-  const totalCount = await db.project.count({ where: { creatorId: creator.id, deletedAt: null } });
+  // Initial data for the very first paint only — computed exactly the
+  // same way /api/dashboard/projects computes it, so there's no
+  // loading flash on page load. Every search keystroke and page click
+  // after this happens client-side against that API instead.
+  const ownedWhere = { creatorId: creator.id, deletedAt: null };
+  const totalCount = await db.project.count({ where: ownedWhere });
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const currentPage = Math.min(Math.max(1, parseInt(page ?? "1", 10) || 1), totalPages);
 
-  const projects = await db.project.findMany({
-    where: { creatorId: creator.id, deletedAt: null },
+  const ownedProjects = await db.project.findMany({
+    where: ownedWhere,
     orderBy: { createdAt: "desc" },
-    skip: (currentPage - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
     include: { _count: { select: { media: true, viewerEmails: true } } },
   });
+
+  const collaboratorMemberships = await db.projectCollaborator.findMany({
+    where: { creatorId: creator.id, project: { deletedAt: null } },
+    orderBy: { addedAt: "desc" },
+    take: SHARED_DISPLAY_LIMIT + 1,
+    include: {
+      project: {
+        include: {
+          creator: { select: { name: true, email: true } },
+          _count: { select: { media: true } },
+        },
+      },
+    },
+  });
+  const sharedProjects = collaboratorMemberships.slice(0, SHARED_DISPLAY_LIMIT).map((c) => c.project);
+  const hasMoreShared = collaboratorMemberships.length > SHARED_DISPLAY_LIMIT;
+
+  // Managed projects this creator can see — owned or collaborating,
+  // combined into one list. Each carries its linked delivery's id
+  // (for the smart link once published) and a raw task-status list
+  // (to compute a quick completion count without a separate query).
+  const [ownedManagedProjects, collaboratingManagedProjects] = await Promise.all([
+    db.managedProject.findMany({
+      where: { creatorId: creator.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        deliveryProject: { select: { id: true } },
+        tasks: { select: { status: true } },
+      },
+    }),
+    db.managedProject.findMany({
+      where: { collaborators: { some: { creatorId: creator.id } } },
+      orderBy: { createdAt: "desc" },
+      include: {
+        deliveryProject: { select: { id: true } },
+        tasks: { select: { status: true } },
+        creator: { select: { name: true, email: true } },
+      },
+    }),
+  ]);
+  const managedProjects = [
+    ...ownedManagedProjects.map((mp) => ({ ...mp, role: "owner" as const, ownerLabel: null as string | null })),
+    ...collaboratingManagedProjects.map((mp) => ({
+      ...mp,
+      role: "collaborator" as const,
+      ownerLabel: mp.creator.name || mp.creator.email,
+    })),
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const allProjectsForStats = await db.project.findMany({
     where: { creatorId: creator.id, deletedAt: null },
@@ -173,8 +206,7 @@ export default async function DashboardPage({
           aria-label="Showwork"
           style={{
             height: 22,
-            width: 22 * 4, // placeholder aspect ratio — adjust to
-            // match the real logo's actual proportions once visible.
+            width: 22 * 4,
             backgroundColor: COLOR.blue,
             WebkitMaskImage: "url(/images/logo/sw.svg)",
             maskImage: "url(/images/logo/sw.svg)",
@@ -212,9 +244,6 @@ export default async function DashboardPage({
             {usage.limit === Infinity ? "Unlimited" : `${usage.used}/${usage.limit} this cycle`}
           </Link>
 
-          {/* Text pill stays desktop-only — the avatar below now covers
-              mobile on its own, so there's no need to crowd a small
-              screen with both. */}
           <Link
             href="/dashboard/profile"
             className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:flex"
@@ -224,13 +253,6 @@ export default async function DashboardPage({
             <span aria-hidden>→</span>
           </Link>
 
-          {/* Avatar is always visible, mobile included — it's the one
-              guaranteed way to reach the profile page on a small screen.
-              A persistent blue ring signals it's clickable without
-              needing a hover state, which doesn't exist on touch anyway.
-              Shows the real uploaded photo once one exists, falling back
-              to initials otherwise. Name text stays hidden on mobile to
-              keep the header compact — the avatar alone is the target there. */}
           <Link
             href="/dashboard/profile"
             className="group flex items-center gap-3"
@@ -299,11 +321,6 @@ export default async function DashboardPage({
                       className="h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(100, (usage.used / usage.limit) * 100)}%`,
-                        // #F97316 here is a functional "at capacity"
-                        // warning color, not a brand accent — kept
-                        // distinct on purpose so a real blocking state
-                        // reads as urgent rather than blending into the
-                        // normal blue UI.
                         background: atCap ? "#F97316" : COLOR.blue,
                       }}
                     />
@@ -351,7 +368,7 @@ export default async function DashboardPage({
 
             <div className="flex flex-col gap-2.5 sm:items-end">
               <Link
-                href="/dashboard/new"
+                href="/dashboard/start"
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
                 style={{ background: COLOR.gradient }}
               >
@@ -381,146 +398,125 @@ export default async function DashboardPage({
         </div>
       </section>
 
-      {/* ── PROJECT LIST ── */}
+      {/* ── PROJECT LIST — search, grids, and pagination are all
+          handled client-side from here, updating live as you type
+          rather than needing a page reload. ── */}
       <div className="mx-auto max-w-[1200px] px-6 py-16 md:px-20">
-        {totalCount === 0 ? (
-          <div className="flex flex-col items-center gap-4 rounded-xl px-8 py-20 text-center" style={{ background: COLOR.charcoal }}>
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-full"
-              style={{ background: "rgba(36,120,255,0.12)", border: "1px solid rgba(36,120,255,0.3)" }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 4v12M4 10h12" stroke={COLOR.blue} strokeWidth="1.6" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-white">No projects yet</p>
-              <p className="mt-1 max-w-xs text-sm font-normal text-white/45">
-                Every client delivery you create will show up here, ready to send.
-              </p>
-            </div>
-            <Link
-              href="/dashboard/new"
-              className="mt-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.02]"
-              style={{ background: COLOR.gradient }}
-            >
-              Create your first project
-            </Link>
-          </div>
-        ) : (
-          <>
+        <DashboardProjectList
+          initialData={{
+            ownedProjects: ownedProjects.map((p) => ({
+              id: p.id,
+              clientName: p.clientName,
+              slug: p.slug,
+              createdAt: p.createdAt.toISOString(),
+              viewCount: p.viewCount,
+              _count: p._count,
+            })),
+            totalCount,
+            totalPages,
+            currentPage: 1,
+            sharedProjects: sharedProjects.map((p) => ({
+              id: p.id,
+              clientName: p.clientName,
+              createdAt: p.createdAt.toISOString(),
+              creator: p.creator,
+              _count: p._count,
+            })),
+            hasMoreShared,
+          }}
+        />
+
+        {/* ── MANAGED PROJECTS — briefs, tasks, and internal review,
+             separate from the delivery list above. The link is smart:
+             an unpublished project takes you back to keep managing it
+             (brief/tasks/review); once published, there's nothing
+             left to manage internally, so it goes straight to the
+             real delivery page instead, where client feedback is
+             what actually matters now. ── */}
+        {managedProjects.length > 0 && (
+          <div className="mt-14">
             <div className="mb-8 flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <div className="h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-                <h2 className="text-xl font-semibold text-white">Your projects</h2>
+                <div className="h-[3px] w-10" style={{ background: COLOR.blue }} aria-hidden />
+                <h2 className="text-xl font-semibold text-white">Managed projects</h2>
               </div>
               <p className="text-sm text-white/40">
-                Click any project below to manage its files, publish it, or see what your client approved.
+                Briefs, tasks, and internal review — separate from your deliveries above.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project) => {
-                const isLive = true;
+              {managedProjects.map((mp) => {
+                const doneCount = mp.tasks.filter((t) => t.status === "DONE").length;
+                const totalCount = mp.tasks.length;
+                const isPublished = !!mp.publishedAt;
+                // Smart link: still managing it internally, or already
+                // live for the client — whichever is actually useful
+                // to land on right now.
+                const href = isPublished && mp.deliveryProject
+                  ? `/dashboard/${mp.deliveryProject.id}`
+                  : `/dashboard/managed/${mp.id}`;
+
                 return (
                   <Link
-                    key={project.id}
-                    href={`/dashboard/${project.id}`}
+                    key={mp.id}
+                    href={href}
                     className="group relative flex flex-col gap-4 rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5"
-                    style={{ background: COLOR.charcoal, boxShadow: "0 0 0 1px rgba(248,247,244,0.04)" }}
+                    style={{ background: COLOR.charcoal, boxShadow: "0 0 0 1px rgba(36,120,255,0.1)" }}
                   >
-                    <DeleteProjectButton projectId={project.id} clientName={project.clientName} />
-
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-start justify-between gap-2">
                       <span
                         className="rounded-full px-3 py-1 text-xs font-semibold"
                         style={
-                          isLive
-                            ? { background: "rgba(36,120,255,0.15)", color: COLOR.blue }
-                            : { background: "rgba(248,247,244,0.06)", color: "rgba(248,247,244,0.4)" }
+                          isPublished
+                            ? { background: "rgba(34,197,94,0.15)", color: "#4ade80" }
+                            : { background: "rgba(36,120,255,0.15)", color: COLOR.blue }
                         }
                       >
-                        {isLive ? "Live" : "Draft"}
+                        {isPublished ? "Published" : "In progress"}
                       </span>
+                      {mp.role === "collaborator" && (
+                        <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(255,204,0,0.12)", color: COLOR.accent }}>
+                          Collaborator
+                        </span>
+                      )}
                     </div>
 
                     <div>
-                      <p className="text-lg font-semibold text-white">{project.clientName}</p>
-                      <p className="mt-0.5 text-xs font-normal" style={{ color: COLOR.midGray }}>
-                        /{project.slug}
-                      </p>
+                      <p className="text-lg font-semibold text-white">{mp.name}</p>
+                      {mp.ownerLabel && (
+                        <p className="mt-0.5 text-xs font-normal" style={{ color: COLOR.midGray }}>
+                          Owned by {mp.ownerLabel}
+                        </p>
+                      )}
                     </div>
 
-                    <div
-                      className="flex items-center justify-between pt-3 text-xs font-normal"
-                      style={{ borderTop: "1px solid rgba(248,247,244,0.06)", color: COLOR.midGray }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <rect x="1.5" y="2" width="9" height="8" rx="1" stroke={COLOR.midGray} strokeWidth="1" />
-                            <path d="M1.5 7.5L4 5l2 2 2.5-2.5L10.5 7" stroke={COLOR.midGray} strokeWidth="1" />
-                          </svg>
-                          {project._count.media}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M1 6s1.8-3.5 5-3.5S11 6 11 6s-1.8 3.5-5 3.5S1 6 1 6z" stroke={COLOR.midGray} strokeWidth="1" />
-                            <circle cx="6" cy="6" r="1.4" stroke={COLOR.midGray} strokeWidth="1" />
-                          </svg>
-                          {project.viewCount}
-                        </span>
+                    {totalCount > 0 && (
+                      <div>
+                        <div className="mb-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${Math.round((doneCount / totalCount) * 100)}%`, background: COLOR.blue }}
+                          />
+                        </div>
+                        <p className="text-xs" style={{ color: COLOR.midGray }}>
+                          {doneCount} of {totalCount} tasks done
+                        </p>
                       </div>
-                      <span>{relativeTime(project.createdAt)}</span>
-                    </div>
+                    )}
 
                     <div
-                      className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold"
+                      className="mt-auto flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold"
                       style={{ background: "rgba(36,120,255,0.1)", color: COLOR.blue }}
                     >
-                      View project
+                      {isPublished ? "View delivery" : "Continue managing"}
                       <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
                     </div>
                   </Link>
                 );
               })}
             </div>
-
-            {/* ── PAGINATION ── */}
-            {totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-between">
-                <Link
-                  href={`/dashboard?page=${currentPage - 1}`}
-                  aria-disabled={currentPage <= 1}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
-                  style={
-                    currentPage <= 1
-                      ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)", pointerEvents: "none" }
-                      : { background: COLOR.charcoal, color: "white" }
-                  }
-                >
-                  ← Previous
-                </Link>
-
-                <span className="text-sm text-white/40">
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <Link
-                  href={`/dashboard?page=${currentPage + 1}`}
-                  aria-disabled={currentPage >= totalPages}
-                  className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
-                  style={
-                    currentPage >= totalPages
-                      ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)", pointerEvents: "none" }
-                      : { background: COLOR.charcoal, color: "white" }
-                  }
-                >
-                  Next →
-                </Link>
-              </div>
-            )}
-          </>
+          </div>
         )}
 
         {/* SUPPORT */}

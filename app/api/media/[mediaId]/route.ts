@@ -3,7 +3,17 @@ import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
 import { deleteObject } from "@/lib/r2";
 
-// DELETE a single file — creator-only, ownership checked.
+// Owner can manage any file on their project. A collaborator can only
+// manage files they themselves uploaded — never someone else's, same
+// "don't let people touch each other's work" boundary used everywhere
+// else in the collaboration system. Unlike sections, this is safe to
+// scope precisely because Media actually tracks who uploaded it
+// (uploadedByCreatorId), so there's no ambiguity to guess around.
+function canManage(media: { project: { creatorId: string }; uploadedByCreatorId: string | null }, creatorId: string): boolean {
+  return media.project.creatorId === creatorId || media.uploadedByCreatorId === creatorId;
+}
+
+// DELETE a single file — owner, or whoever uploaded it.
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ mediaId: string }> }
@@ -16,7 +26,7 @@ export async function DELETE(
     where: { id: mediaId },
     include: { project: true },
   });
-  if (!media || media.project.creatorId !== creator.id) {
+  if (!media || !canManage(media, creator.id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -34,7 +44,7 @@ export async function DELETE(
   return NextResponse.json({ ok: true });
 }
 
-// PATCH — edit a file's caption/label.
+// PATCH — edit a file's caption/label. Owner, or whoever uploaded it.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ mediaId: string }> }
@@ -49,7 +59,7 @@ export async function PATCH(
     where: { id: mediaId },
     include: { project: true },
   });
-  if (!media || media.project.creatorId !== creator.id) {
+  if (!media || !canManage(media, creator.id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

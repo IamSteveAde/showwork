@@ -10,6 +10,7 @@ import AddMoreFilesButton from "@/components/AddMoreFilesButton";
 import SectionHeader from "@/components/SectionHeader";
 import DeliveryStatusControl from "@/components/DeliveryStatusControl";
 import EditableField from "@/components/EditableField";
+import CollaboratorsPanel from "@/components/CollaboratorsPanel";
 
 const MAX_ADDITIONAL_UPLOAD_BATCHES = 3;
 
@@ -47,10 +48,19 @@ export default async function ProjectDetailPage({
           },
         },
       },
+      // Needed to check whether the current visitor is a collaborator
+      // (not just the owner) — a real bug fix, not a new feature: the
+      // collaboration system existed with no page anyone but the
+      // owner could actually load, so every accepted invite dead-ended
+      // in a 404 the moment someone landed here.
+      collaborators: { select: { creatorId: true } },
     },
   });
 
-  if (!project || project.creatorId !== creator.id || project.deletedAt) notFound();
+  const isOwner = project?.creatorId === creator.id;
+  const isCollaborator = project?.collaborators.some((c) => c.creatorId === creator.id) ?? false;
+
+  if (!project || (!isOwner && !isCollaborator) || project.deletedAt) notFound();
 
   const viewerEmails = await db.viewerEmail.findMany({
     where: { projectId: project.id },
@@ -106,19 +116,25 @@ export default async function ProjectDetailPage({
           Project
         </p>
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          {/* Editable project name — click to rename. Renaming now
-              also regenerates the project's slug (its public URL) to
-              match, so any link already shared with a client breaks
-              the moment this is saved — the confirmMessage below
-              warns about that before it happens. */}
-          <EditableField
-            projectId={project.id}
-            field="clientName"
-            value={project.clientName}
-            displayClassName="text-3xl font-bold text-white"
-            inputClassName="rounded-md px-3 py-1 text-3xl font-bold text-white"
-            confirmMessage="Renaming this project will also change its link. Any link you've already sent your client will stop working. Continue?"
-          />
+          {isOwner ? (
+            /* Editable project name — click to rename. Renaming now
+               also regenerates the project's slug (its public URL) to
+               match, so any link already shared with a client breaks
+               the moment this is saved — the confirmMessage below
+               warns about that before it happens. Owner-only: renaming
+               is an administrative action, not part of what a
+               collaborator was invited to do. */
+            <EditableField
+              projectId={project.id}
+              field="clientName"
+              value={project.clientName}
+              displayClassName="text-3xl font-bold text-white"
+              inputClassName="rounded-md px-3 py-1 text-3xl font-bold text-white"
+              confirmMessage="Renaming this project will also change its link. Any link you've already sent your client will stop working. Continue?"
+            />
+          ) : (
+            <h1 className="text-3xl font-bold text-white">{project.clientName}</h1>
+          )}
           <span
             className="rounded-full px-3 py-1 text-xs font-semibold"
             style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
@@ -138,9 +154,19 @@ export default async function ProjectDetailPage({
           </a>
         </div>
 
-        {/* DELIVERY STATUS — the client sees this exact same status */}
+        {/* DELIVERY STATUS — the client sees this exact same status.
+            Owner-only to change; a collaborator sees it read-only. */}
         <div className="mb-6">
-          <DeliveryStatusControl projectId={project.id} currentStatus={project.deliveryStatus} />
+          {isOwner ? (
+            <DeliveryStatusControl projectId={project.id} currentStatus={project.deliveryStatus} />
+          ) : (
+            <span
+              className="inline-block rounded-full px-3 py-1.5 text-xs font-semibold"
+              style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+            >
+              {project.deliveryStatus}
+            </span>
+          )}
         </div>
 
         {/* live URL card */}
@@ -160,26 +186,37 @@ export default async function ProjectDetailPage({
           </div>
         </div>
 
-        {/* PASSCODE */}
+        {/* PASSCODE — owner can edit, collaborator sees it read-only
+            (still useful for them to know, e.g. to preview the
+            client's view). */}
         <div className="mb-6 rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
           <p className="mb-2 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
             Client access code
           </p>
           {project.accessCode ? (
             <div className="flex items-center gap-3">
-              <EditableField
-                projectId={project.id}
-                field="accessCode"
-                value={project.accessCode}
-                displayClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
-                displayStyle={{ background: "rgba(255,255,255,0.08)" }}
-                inputClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
-                monospace
-              />
+              {isOwner ? (
+                <EditableField
+                  projectId={project.id}
+                  field="accessCode"
+                  value={project.accessCode}
+                  displayClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                  displayStyle={{ background: "rgba(255,255,255,0.08)" }}
+                  inputClassName="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                  monospace
+                />
+              ) : (
+                <span
+                  className="rounded px-3 py-1.5 font-mono text-lg font-semibold text-white"
+                  style={{ background: "rgba(255,255,255,0.08)" }}
+                >
+                  {project.accessCode}
+                </span>
+              )}
               <CopyLinkButton url={project.accessCode} />
               <span className="text-xs text-white/30">Share this with your client to unlock the delivery.</span>
             </div>
-          ) : (
+          ) : isOwner ? (
             <p className="text-xs text-white/30">
               This project was created before we started saving the plain code — set one now by clicking below.
               <EditableField
@@ -192,8 +229,21 @@ export default async function ProjectDetailPage({
                 monospace
               />
             </p>
+          ) : (
+            <p className="text-xs text-white/30">No access code set for this project yet.</p>
           )}
         </div>
+
+        {/* COLLABORATORS — invite others to upload their own files on
+            this project, search existing accounts or invite a raw
+            email for someone new. Owner-only: a collaborator can see
+            and upload files, but managing who else is on the project
+            (inviting, removing) stays with the owner. */}
+        {isOwner && (
+          <div className="mb-6">
+            <CollaboratorsPanel projectId={project.id} />
+          </div>
+        )}
 
         {/* ADD SECTION — prominent, top of page */}
         <div
@@ -314,39 +364,43 @@ export default async function ProjectDetailPage({
           </>
         )}
 
-        {/* CLIENT EMAILS — everyone who signed in to view this delivery */}
-        <div className="mt-10">
-          <h2 className="mb-3 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
-            Viewer emails ({viewerEmails.length})
-          </h2>
-          {viewerEmails.length === 0 ? (
-            <div className="rounded-2xl p-6 text-sm text-white/40" style={{ background: COLOR.charcoal }}>
-              No one has viewed this delivery yet.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {viewerEmails.map((v) => (
-                <div
-                  key={v.id}
-                  className="flex items-center justify-between rounded-md px-4 py-2.5 text-sm"
-                  style={{ background: COLOR.charcoal }}
-                >
-                  <span className="text-white/80">
-                    {v.name && <span className="font-medium text-white">{v.name}</span>}
-                    {v.name && " — "}
-                    {v.email}
-                  </span>
-                  <span className="text-xs text-white/30">
-                    {new Date(v.viewedAt).toLocaleDateString("en-NG", {
-                      day: "numeric", month: "short", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* CLIENT EMAILS — everyone who signed in to view this delivery.
+            Owner-only: this is exactly the "client emails/analytics"
+            category agreed to stay off-limits to collaborators. */}
+        {isOwner && (
+          <div className="mt-10">
+            <h2 className="mb-3 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.05em" }}>
+              Viewer emails ({viewerEmails.length})
+            </h2>
+            {viewerEmails.length === 0 ? (
+              <div className="rounded-2xl p-6 text-sm text-white/40" style={{ background: COLOR.charcoal }}>
+                No one has viewed this delivery yet.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {viewerEmails.map((v) => (
+                  <div
+                    key={v.id}
+                    className="flex items-center justify-between rounded-md px-4 py-2.5 text-sm"
+                    style={{ background: COLOR.charcoal }}
+                  >
+                    <span className="text-white/80">
+                      {v.name && <span className="font-medium text-white">{v.name}</span>}
+                      {v.name && " — "}
+                      {v.email}
+                    </span>
+                    <span className="text-xs text-white/30">
+                      {new Date(v.viewedAt).toLocaleDateString("en-NG", {
+                        day: "numeric", month: "short", year: "numeric",
+                        hour: "2-digit", minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );

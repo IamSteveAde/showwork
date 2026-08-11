@@ -29,6 +29,18 @@ export default async function SlugPage({
           },
         },
       },
+      // The project-management side, if this delivery was created
+      // through that flow — null for every regular, directly-created
+      // delivery, which is the majority case and behaves exactly as
+      // it always has.
+      managedProject: {
+        include: {
+          tasks: {
+            orderBy: { createdAt: "asc" },
+            select: { id: true, title: true, status: true },
+          },
+        },
+      },
     },
   });
 
@@ -85,6 +97,34 @@ export default async function SlugPage({
     ? media.find((m) => m.id === project.heroMediaId) ?? null
     : null;
 
+  // Only the fields a client should ever see about the managed
+  // project: task titles and statuses, never assignee identities,
+  // internal review notes, or who uploaded what — none of that is
+  // this audience's business. The brief itself is included only when
+  // the owner explicitly turned briefVisibleToClient on.
+  const managedProjectForClient = project.managedProject
+    ? {
+        name: project.managedProject.name,
+        publishedAt: project.managedProject.publishedAt?.toISOString() ?? null,
+        tasks: project.managedProject.tasks.map((t) => ({ id: t.id, title: t.title, status: t.status })),
+        brief: project.managedProject.briefVisibleToClient
+          ? {
+              objective: project.managedProject.briefObjective,
+              background: project.managedProject.briefBackground,
+              targetAudience: project.managedProject.briefTargetAudience,
+              creativeDirection: project.managedProject.briefCreativeDirection,
+              deliverables: project.managedProject.briefDeliverables,
+              brandGuidelines: project.managedProject.briefBrandGuidelines,
+              references: project.managedProject.briefReferences,
+              requiredFormats: project.managedProject.briefRequiredFormats,
+              platforms: project.managedProject.briefPlatforms,
+              importantNotes: project.managedProject.briefImportantNotes,
+              deadline: project.managedProject.briefDeadline?.toISOString() ?? null,
+            }
+          : null,
+      }
+    : null;
+
   // Check whether this browser already unlocked this project before —
   // if so, skip straight past both gates instead of asking again,
   // including the name they gave, now that it's embedded in this same
@@ -111,6 +151,7 @@ export default async function SlugPage({
       initiallyUnlocked={!!viewerSession}
       initialViewerEmail={viewerSession?.email ?? null}
       initialViewerName={viewerSession?.name ?? null}
+      managedProject={managedProjectForClient}
     />
   );
 }

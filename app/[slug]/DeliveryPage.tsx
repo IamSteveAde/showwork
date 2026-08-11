@@ -5,6 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import EmailGate from "@/components/EmailGate";
 import PasswordGate from "@/components/PasswordGate";
 import ProjectContent from "@/components/ProjectContent";
+import ManagedProjectClientView from "@/components/ManagedProjectClientView";
 import type { ReviewEntry } from "@/components/ReviewControls";
 
 export interface MediaItem {
@@ -24,6 +25,25 @@ export interface DeliverySection {
   media: MediaItem[];
 }
 
+interface ManagedProjectClientData {
+  name: string;
+  publishedAt: string | null;
+  tasks: { id: string; title: string; status: "TODO" | "IN_PROGRESS" | "DONE" }[];
+  brief: {
+    objective: string | null;
+    background: string | null;
+    targetAudience: string | null;
+    creativeDirection: string | null;
+    deliverables: string | null;
+    brandGuidelines: string | null;
+    references: string | null;
+    requiredFormats: string | null;
+    platforms: string | null;
+    importantNotes: string | null;
+    deadline: string | null;
+  } | null;
+}
+
 interface DeliveryPageProps {
   projectId: string;
   clientName: string;
@@ -40,6 +60,11 @@ interface DeliveryPageProps {
   initiallyUnlocked: boolean;
   initialViewerEmail: string | null;
   initialViewerName: string | null;
+  // Null for every regular delivery (the vast majority) — only set
+  // when this delivery was created through the project-management
+  // flow. Governs the one behavior change on this page: which view
+  // renders once the viewer is past both gates.
+  managedProject: ManagedProjectClientData | null;
 }
 
 export default function DeliveryPage({
@@ -58,6 +83,7 @@ export default function DeliveryPage({
   initiallyUnlocked,
   initialViewerEmail,
   initialViewerName,
+  managedProject,
 }: DeliveryPageProps) {
   // If this browser already unlocked this project before (checked
   // server-side via a signed cookie), start straight past both gates
@@ -66,6 +92,14 @@ export default function DeliveryPage({
   const [viewerName, setViewerName] = useState<string | null>(initialViewerName);
   const [viewerEmail, setViewerEmail] = useState<string | null>(initialViewerEmail);
   const [unlocked, setUnlocked] = useState(initiallyUnlocked);
+
+  // The one new decision on this page: once unlocked, does the client
+  // see task/progress status, or the actual delivered files? Only
+  // ever the progress view when there's a linked managed project AND
+  // it hasn't been published yet — every regular delivery (no managed
+  // project at all) and every published one still goes straight to
+  // ProjectContent exactly as before.
+  const showManagedProgress = !!managedProject && !managedProject.publishedAt;
 
   return (
     <div style={{ background: bgColor, minHeight: "100vh" }}>
@@ -92,6 +126,17 @@ export default function DeliveryPage({
             viewerEmail={viewerEmail}
             viewerName={viewerName}
             onUnlock={() => setUnlocked(true)}
+          />
+        ) : showManagedProgress ? (
+          <ManagedProjectClientView
+            key="progress"
+            clientName={clientName}
+            projectName={managedProject!.name}
+            primaryColor={primaryColor}
+            bgColor={bgColor}
+            logoUrl={logoUrl}
+            brief={managedProject!.brief}
+            tasks={managedProject!.tasks}
           />
         ) : (
           <ProjectContent

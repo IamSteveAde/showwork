@@ -22,7 +22,20 @@ export async function POST(req: NextRequest) {
   }
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project || project.creatorId !== creator.id) {
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // Same fix as every other route in this chain — a collaborator
+  // completing their own upload isn't the project owner.
+  const isOwner = project.creatorId === creator.id;
+  const isCollaborator =
+    !isOwner &&
+    (await db.projectCollaborator.findFirst({
+      where: { projectId, creatorId: creator.id },
+    })) !== null;
+
+  if (!isOwner && !isCollaborator) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -44,6 +57,12 @@ export async function POST(req: NextRequest) {
       caption: caption ?? null,
       displayOrder: displayOrder ?? 0,
       sectionId: sectionId ?? null,
+      // The actual point of the collaboration feature — every file
+      // now remembers exactly who uploaded it, whether that's the
+      // project owner or a collaborator. This is what will let client
+      // feedback get routed to the right specific person instead of
+      // always going to the project owner.
+      uploadedByCreatorId: creator.id,
     },
   });
 

@@ -39,7 +39,21 @@ export async function POST(req: NextRequest) {
   }
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project || project.creatorId !== creator.id) {
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // Same fix as the other project routes — a collaborator uploading
+  // their own work isn't the project owner, so the old owner-only
+  // check blocked every single one of their uploads at this exact step.
+  const isOwner = project.creatorId === creator.id;
+  const isCollaborator =
+    !isOwner &&
+    (await db.projectCollaborator.findFirst({
+      where: { projectId, creatorId: creator.id },
+    })) !== null;
+
+  if (!isOwner && !isCollaborator) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 

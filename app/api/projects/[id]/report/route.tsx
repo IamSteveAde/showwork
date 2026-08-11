@@ -240,7 +240,22 @@ export async function GET(
     },
   });
 
-  if (!project || project.creatorId !== creator.id) {
+  if (!project) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Read-only report — safe to open up to any collaborator on the
+  // project, not just the owner. Unlike deleting a section or another
+  // person's file, downloading a status summary can't damage anyone
+  // else's work.
+  const isOwner = project.creatorId === creator.id;
+  const isCollaborator =
+    !isOwner &&
+    (await db.projectCollaborator.findFirst({
+      where: { projectId: id, creatorId: creator.id },
+    })) !== null;
+
+  if (!isOwner && !isCollaborator) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

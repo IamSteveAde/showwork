@@ -103,6 +103,57 @@ model Creator {
   paymentRecords      PaymentRecord[]
   passwordResetTokens PasswordResetToken[]
   portfolio           Portfolio?
+
+  // ── Collaboration ──
+  // Projects (owned by someone else) this creator has been added to
+  // as a collaborator — distinct from `projects` above, which is
+  // projects they themselves own.
+  projectCollaborations ProjectCollaborator[] @relation("CollaboratorMemberships")
+  // Invites this creator has sent out, across any of their projects.
+  invitesSent           ProjectInvite[]       @relation("InvitesSent")
+  // Every file this specific creator has personally uploaded — across
+  // their own projects and any they collaborate on. This is the field
+  // that lets client feedback get routed to the right individual
+  // rather than always going to whoever owns the project.
+  uploadedMedia         Media[]               @relation("UploadedMedia")
+
+  // ── Lifecycle email sequence ──
+  // The anchor point every "day N" step is measured from — set to
+  // createdAt for a brand-new signup, but NOT the same as createdAt
+  // for accounts that existed before this system did: those get this
+  // set to "now" via a one-time backfill, so they experience the same
+  // staggered welcome → day 1 → day 2 sequence as a new signup,
+  // rather than every step firing at once because their real signup
+  // date is months in the past. Null only in the brief window before
+  // that backfill/signup-time set actually runs.
+  lifecycleSequenceStartedAt   DateTime?
+  welcomeEmailSentAt           DateTime?
+  portfolioInviteEmailSentAt   DateTime?
+  projectManagementEmailSentAt DateTime?
+  creativoPromoEmailSentAt     DateTime?
+  // Updated every time the recurring "deliver a project" reminder
+  // goes out — unlike the one-time steps above, this one repeats
+  // forever, so it needs a "last sent" timestamp rather than a
+  // single boolean-ish flag.
+  lastDeliveryReminderSentAt   DateTime?
+
+  // ── Project management (separate system from delivery) ──
+  // Managed projects this creator owns — briefs, tasks, and their own
+  // collaborator system, entirely independent of the delivery
+  // Project model above.
+  managedProjects              ManagedProject[]
+  // Managed projects (owned by someone else) this creator has been
+  // added to as a collaborator.
+  managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
+  // Every task assigned to this specific creator, across any managed
+  // project they're on — what lets "my tasks" be queried directly
+  // without joining through every project they collaborate on.
+  assignedTasks                Task[]                        @relation("AssignedTasks")
+  // Tasks this creator created/assigned to someone else — the
+  // opposite direction from assignedTasks above.
+  createdTasks                 Task[]                        @relation("CreatedTasks")
+  uploadedBriefAttachments     BriefAttachment[]              @relation("UploadedBriefAttachments")
+  uploadedTaskAssets           TaskAsset[]                    @relation("UploadedTaskAssets")
 }
 
 // ─────────────────────────────────────────────
@@ -197,6 +248,85 @@ model Project {
   media        Media[]
   viewerEmails ViewerEmail[]
   sections     MediaSection[]
+
+  // The managed project (brief + tasks) linked to this delivery, if
+  // any — lets the public delivery page also show task/progress
+  // alongside file review. Optional; most delivery projects won't
+  // have one. The actual foreign key lives on ManagedProject
+  // (deliveryProjectId), this is just its reverse for querying
+  // project.managedProject directly.
+  managedProject ManagedProject?
+
+  // ── Collaboration ──
+  // Everyone besides the owner who has access to this project. The
+  // owner is never a row here — ownership is `creatorId` above.
+  collaborators ProjectCollaborator[]
+  // Every invite ever sent for this project, pending or otherwise —
+  // kept even after acceptance/decline as a record of who was asked.
+  invites       ProjectInvite[]
+}
+
+// ─────────────────────────────────────────────
+// PROJECT COLLABORATOR — someone other than the project owner who has
+// been invited onto a project and can upload/view files on it. Created
+// the moment a ProjectInvite below gets accepted. Deliberately does
+// NOT carry a role field yet — every collaborator has the same access
+// today (upload, see other collaborators' files, but not client
+// emails/analytics, which stay owner-only) — a role/permission tier
+// can be layered on top of this table later without a breaking change.
+// ─────────────────────────────────────────────
+model ProjectCollaborator {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  creator   Creator  @relation("CollaboratorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String
+  addedAt   DateTime @default(now())
+
+  // One person can only be added to a given project once.
+  @@unique([projectId, creatorId])
+  @@index([projectId])
+  @@index([creatorId])
+}
+
+// ─────────────────────────────────────────────
+// PROJECT INVITE — a pending invitation to collaborate on a project,
+// sent to an email address. Works identically whether or not that
+// email already has a Creator account: if they do, opening the invite
+// link logs them straight in and adds them to the project; if they
+// don't, it walks them through signup first, then adds them — the
+// same two-path pattern used by Figma, Notion, and most collaborative
+// products. tokenHash (never the raw token) is stored here, same
+// principle as PasswordResetToken — the plain token only ever exists
+// in the emailed link itself, so a leaked database can't be used to
+// forge acceptance of someone else's invite.
+// ─────────────────────────────────────────────
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model ProjectInvite {
+  id                  String       @id @default(uuid())
+  project             Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId           String
+  invitedByCreator    Creator      @relation("InvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
+  invitedByCreatorId  String
+  // The invitee's email — always stored even when they're invited via
+  // an existing-account search, since the invite itself is fundamentally
+  // addressed to an email address, not an account id. Matched against
+  // Creator.email at signup/login time to auto-link this invite.
+  email               String
+  tokenHash           String       @unique
+  status               InviteStatus @default(PENDING)
+  expiresAt            DateTime
+  createdAt             DateTime     @default(now())
+  respondedAt           DateTime?
+
+  @@index([projectId])
+  @@index([email])
 }
 
 // ─────────────────────────────────────────────
@@ -219,6 +349,238 @@ model MediaSection {
   media Media[]
 
   @@index([projectId])
+}
+
+// ─────────────────────────────────────────────
+// MANAGED PROJECT — the project-management side of Showwork, entirely
+// separate from Project (client delivery) above. This is where the
+// actual work gets planned and tracked before anything is ever
+// delivered: a brief, an overall status, its own collaborators, and
+// per-person tasks. Optionally linked to a real delivery Project so
+// clients can see live task progress on the same page they already
+// use to review files — the two systems stay structurally
+// independent (deliberately not reusing ProjectCollaborator/
+// ProjectInvite, which are scoped to delivery projects specifically),
+// but can share one client-facing view when a creator wants that.
+// ─────────────────────────────────────────────
+enum ManagedProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model ManagedProject {
+  id        String  @id @default(uuid())
+  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String
+  name      String
+  // Manually set by the owner — distinct from the completion
+  // percentage (computed at read time from task statuses, never
+  // stored), since a project can genuinely be "in progress" with 0%
+  // of tasks marked done yet, or wrapped up as "completed" even with
+  // a couple of minor tasks never formally closed out.
+  status ManagedProjectStatus @default(NOT_STARTED)
+
+  // ── Creative brief — every field optional, filled in only where
+  // it's actually relevant to a given project. Editable by the owner
+  // (or an admin); collaborators can read but not edit.
+  briefObjective         String?
+  briefBackground        String?
+  briefTargetAudience    String?
+  briefCreativeDirection String?
+  briefDeliverables      String?
+  briefBrandGuidelines   String?
+  briefReferences        String?
+  briefRequiredFormats   String?
+  briefPlatforms         String?
+  briefImportantNotes    String?
+  briefDeadline          DateTime?
+  // A single on/off switch for the whole brief being visible on the
+  // client portal — simpler and safer-by-default than deciding
+  // field-by-field, and defaults to hidden until the owner
+  // deliberately shares it.
+  briefVisibleToClient   Boolean   @default(false)
+
+  // Optional link to a real client delivery — when set, that
+  // delivery's public page also shows this managed project's
+  // task/progress rollup. Unique: a delivery project can only ever be
+  // linked from one managed project, so there's never ambiguity about
+  // which task list a client should see.
+  deliveryProject   Project? @relation(fields: [deliveryProjectId], references: [id], onDelete: SetNull)
+  deliveryProjectId String?  @unique
+
+  // Null until the owner actually publishes — the single flag that
+  // decides what the client portal shows: task/progress status
+  // beforehand, or the actual finished files afterward. Set the
+  // moment publish happens; approved task uploads get promoted into
+  // real Media rows on the linked delivery project at that same time
+  // (see TaskAsset.promotedToMediaId).
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collaborators ManagedProjectCollaborator[]
+  tasks         Task[]
+  milestones    Milestone[]
+  briefAttachments BriefAttachment[]
+}
+
+// ─────────────────────────────────────────────
+// BRIEF ATTACHMENT — a reference file or piece of inspiration attached
+// to a managed project's brief. Uses the same R2 storage architecture
+// as delivery Media (fileKey), just a separate table since these
+// aren't deliverable client-facing files — they're internal reference
+// material for whoever's doing the work.
+// ─────────────────────────────────────────────
+model BriefAttachment {
+  id                  String         @id @default(uuid())
+  managedProject      ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId    String
+  fileKey             String
+  filename            String?
+  uploadedBy          Creator        @relation("UploadedBriefAttachments", fields: [uploadedByCreatorId], references: [id], onDelete: Cascade)
+  uploadedByCreatorId String
+  createdAt           DateTime       @default(now())
+
+  @@index([managedProjectId])
+}
+
+// ─────────────────────────────────────────────
+// MILESTONE — an optional grouping/phase for tasks within a managed
+// project (e.g. "Pre-production", "Shoot week", "Post & delivery").
+// A task doesn't have to belong to one.
+// ─────────────────────────────────────────────
+model Milestone {
+  id               String         @id @default(uuid())
+  managedProject   ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId String
+  name             String
+  dueDate          DateTime?
+  displayOrder     Int            @default(0)
+  createdAt        DateTime       @default(now())
+
+  tasks Task[]
+
+  @@index([managedProjectId])
+}
+
+// ─────────────────────────────────────────────
+// MANAGED PROJECT COLLABORATOR — who has access to a managed project,
+// separate from ProjectCollaborator (which is scoped to delivery
+// projects). Kept as its own table rather than reusing that one,
+// since the two systems are deliberately independent.
+// ─────────────────────────────────────────────
+model ManagedProjectCollaborator {
+  id               String         @id @default(uuid())
+  managedProject   ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId String
+  creator          Creator        @relation("ManagedProjectMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId        String
+  addedAt          DateTime       @default(now())
+
+  @@unique([managedProjectId, creatorId])
+  @@index([managedProjectId])
+  @@index([creatorId])
+}
+
+// ─────────────────────────────────────────────
+// TASK — one piece of work assigned to exactly one person on a
+// managed project. Only that person (or the project owner) is allowed
+// to move its status — enforced in the task update route, not here;
+// this model just holds the data.
+// ─────────────────────────────────────────────
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum InternalReviewStatus {
+  PENDING
+  APPROVED
+  NEEDS_CHANGES
+}
+
+model Task {
+  id                  String         @id @default(uuid())
+  managedProject      ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId    String
+  title               String
+  description         String?
+
+  assignedTo          Creator        @relation("AssignedTasks", fields: [assignedToCreatorId], references: [id], onDelete: Cascade)
+  assignedToCreatorId String
+  // Whoever created/assigned this task — usually the project owner,
+  // but kept distinct from assignedTo since they're frequently
+  // different people. Lets a task list show "assigned by X" alongside
+  // "assigned to Y".
+  createdBy           Creator        @relation("CreatedTasks", fields: [createdByCreatorId], references: [id], onDelete: Cascade)
+  createdByCreatorId  String
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+  dueDate  DateTime?
+
+  milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  milestoneId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // Set automatically the moment status transitions to DONE, cleared
+  // if it's ever moved back out of DONE — distinct from updatedAt,
+  // which changes on any edit, not only completion.
+  completedAt DateTime?
+
+  linkedAssets TaskAsset[]
+
+  @@index([managedProjectId])
+  @@index([assignedToCreatorId])
+  @@index([milestoneId])
+}
+
+// ─────────────────────────────────────────────
+// TASK ASSET — the actual file(s) uploaded to complete a task, plus
+// the project owner's internal review of it. This is the gate that
+// sits BEFORE anything ever reaches a client: the owner approves or
+// requests changes here first — entirely separate from, and earlier
+// than, the client's own approve/revision flow (MediaReview), which
+// only ever applies after publish, once this has been promoted into
+// a real Media row.
+// ─────────────────────────────────────────────
+model TaskAsset {
+  id                  String    @id @default(uuid())
+  task                Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId              String
+  fileKey             String
+  filename            String?
+  // The file's actual type — carried through to the promoted Media
+  // row at publish time, so a video uploaded to a task doesn't
+  // silently become mislabeled as a photo once it reaches the client.
+  type                MediaType @default(PHOTO)
+  uploadedBy          Creator   @relation("UploadedTaskAssets", fields: [uploadedByCreatorId], references: [id], onDelete: Cascade)
+  uploadedByCreatorId String
+
+  internalReviewStatus InternalReviewStatus @default(PENDING)
+  internalReviewNote   String?
+  internalReviewedAt   DateTime?
+
+  // Set once this asset has been promoted into a real, client-facing
+  // Media row at publish time — prevents the same asset from ever
+  // being published twice. Null until that happens.
+  promotedToMedia   Media?  @relation(fields: [promotedToMediaId], references: [id], onDelete: SetNull)
+  promotedToMediaId String? @unique
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
 }
 
 // ─────────────────────────────────────────────
@@ -254,6 +616,18 @@ model Media {
   section   MediaSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   sectionId String?
 
+  // Which specific creator actually uploaded this file — the project
+  // owner for a solo project, or possibly a collaborator on a shared
+  // one. Nullable for files uploaded before this field existed.
+  // onDelete: SetNull rather than Cascade — if an uploader's account
+  // is ever removed, their past uploads should stay in the project,
+  // just with the attribution cleared, not get deleted along with
+  // them. This is the field client feedback notifications are routed
+  // through: a review on this file emails whoever this points to,
+  // plus the project owner, rather than only ever the owner.
+  uploadedByCreator   Creator? @relation("UploadedMedia", fields: [uploadedByCreatorId], references: [id], onDelete: SetNull)
+  uploadedByCreatorId String?
+
   // Aggregate/cached view of this file's overall status, recomputed
   // from every individual review in MediaReview below whenever one is
   // added — not the only record of a review anymore. Kept here so the
@@ -267,6 +641,12 @@ model Media {
   reviewerEmail  String?
 
   reviews MediaReview[]
+
+  // Set only for Media rows that originated from the project
+  // management pipeline — this file was a task's uploaded work,
+  // internally approved by the owner, then promoted here at publish
+  // time. Most Media rows (regular deliveries) will have this null.
+  promotedFromTaskAsset TaskAsset?
 }
 
 // ─────────────────────────────────────────────

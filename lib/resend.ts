@@ -165,3 +165,402 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string, name?
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// COLLABORATION NOTIFICATIONS — invites, task assignment, review
+// decisions. All six share one visual template (emailShell below):
+// your actual hero image up top, the Showwork wordmark, and a real
+// gradient button — built once so changing the look later means
+// editing one function, not six emails that quietly drift apart.
+// Uses FROM (the same verified sender as every email above) rather
+// than a separate hardcoded address.
+// ─────────────────────────────────────────────
+
+const HERO_IMAGE_URL = `${process.env.NEXT_PUBLIC_APP_URL}/images/hero1.png`;
+const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
+
+function emailShell({
+  eyebrow,
+  headline,
+  body,
+  ctaLabel,
+  ctaUrl,
+}: {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  ctaLabel: string;
+  ctaUrl: string;
+}): string {
+  return `
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!--
+  These two meta tags tell email clients not to apply their own
+  automatic dark-mode color inversion on top of this email's own
+  colors — some clients (Zoho among them) otherwise flip an already-
+  dark design and can leave white text sitting on a white background
+  it never should've touched. Without these, the same inline color
+  styles below can render correctly in one client and unreadably in
+  another.
+-->
+<meta name="color-scheme" content="light only" />
+<meta name="supported-color-schemes" content="light only" />
+<title>Showwork</title>
+</head>
+<body style="margin:0; padding:0; background:#0A0A0A;" bgcolor="#0A0A0A">
+    <div style="background:#0A0A0A; padding:48px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;" bgcolor="#0A0A0A">
+      <div style="max-width:480px; margin:0 auto;">
+        <p style="margin:0 0 24px; font-size:18px; font-weight:700; color:#ffffff !important; text-align:center;">
+          Show<span style="color:#2478FF !important;">work</span>
+        </p>
+
+        <div style="background:#141414; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.06);" bgcolor="#141414">
+          <img
+            src="${HERO_IMAGE_URL}"
+            alt=""
+            width="480"
+            style="width:100%; max-width:480px; height:180px; object-fit:cover; display:block; background:#1a1a1a;"
+          />
+          <div style="padding:32px 28px 36px;">
+            <p style="margin:0 0 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#2478FF !important;">
+              ${eyebrow}
+            </p>
+            <h1 style="margin:0 0 16px; font-size:21px; line-height:1.35; font-weight:700; color:#ffffff !important;">
+              ${headline}
+            </h1>
+            <p style="margin:0 0 30px; font-size:14px; line-height:1.65; color:#B8B8B8 !important;">
+              ${body}
+            </p>
+            <a
+              href="${ctaUrl}"
+              style="display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#2478FF 0%,#0052FF 100%); background-color:#2478FF; color:#ffffff !important; text-decoration:none; border-radius:10px; font-weight:600; font-size:14px;"
+            >
+              ${ctaLabel}
+            </a>
+
+            <!-- Join Creativo — present on every email in this system,
+                 not just this one, since it's built into the shared
+                 shell rather than added per-email. Secondary/quieter
+                 styling on purpose: the main CTA above stays the
+                 primary action, this is a standing invitation, not a
+                 competing ask. -->
+            <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08);">
+              <p style="margin:0 0 12px; font-size:13px; color:#B8B8B8 !important;">
+                Not figuring this out alone helps — Creativo is a free community for creators.
+              </p>
+              <a
+                href="${COMMUNITY_URL}"
+                style="display:inline-block; padding:10px 20px; background:transparent; color:#ffffff !important; text-decoration:none; border-radius:8px; border:1px solid rgba(255,255,255,0.2); font-weight:600; font-size:13px;"
+              >
+                Join Creativo
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin:28px 0 0; text-align:center; font-size:11px; color:#666666 !important;">
+          Sent by Showwork &middot; useshowwork.com
+        </p>
+      </div>
+    </div>
+</body>
+</html>
+  `;
+}
+
+// ── Delivery-project collaboration invite ──
+export async function sendProjectInviteEmail({
+  to,
+  inviterName,
+  projectName,
+  acceptUrl,
+}: {
+  to: string;
+  inviterName: string;
+  projectName: string;
+  acceptUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${inviterName} invited you to collaborate on "${projectName}"`,
+    html: emailShell({
+      eyebrow: "You're invited",
+      headline: `${inviterName} wants you on "${projectName}"`,
+      body: `You've been invited to collaborate on this project on Showwork — upload your own work, and get credit for it directly. This invite expires in 7 days.`,
+      ctaLabel: "View invite",
+      ctaUrl: acceptUrl,
+    }),
+  });
+}
+
+// ── Managed-project collaborator added ──
+export async function sendCollaboratorAddedEmail({
+  to,
+  addedByName,
+  projectName,
+  projectUrl,
+}: {
+  to: string;
+  addedByName: string;
+  projectName: string;
+  projectUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${addedByName} added you to "${projectName}"`,
+    html: emailShell({
+      eyebrow: "You're on the team",
+      headline: `${addedByName} added you to "${projectName}"`,
+      body: `You're now a collaborator on this project — take a look at what's assigned to you and get started whenever you're ready.`,
+      ctaLabel: "View project",
+      ctaUrl: projectUrl,
+    }),
+  });
+}
+
+// ── Task assigned ──
+export async function sendTaskAssignedEmail({
+  to,
+  assignedByName,
+  taskTitle,
+  projectName,
+  projectUrl,
+}: {
+  to: string;
+  assignedByName: string;
+  taskTitle: string;
+  projectName: string;
+  projectUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `New task on "${projectName}": ${taskTitle}`,
+    html: emailShell({
+      eyebrow: "New task",
+      headline: taskTitle,
+      body: `${assignedByName} assigned you this task on "${projectName}". Head over whenever you're ready to get started.`,
+      ctaLabel: "View task",
+      ctaUrl: projectUrl,
+    }),
+  });
+}
+
+// ── The owner requested changes on an uploaded file ──
+export async function sendTaskNeedsChangesEmail({
+  to,
+  reviewerName,
+  taskTitle,
+  projectName,
+  note,
+  projectUrl,
+}: {
+  to: string;
+  reviewerName: string;
+  taskTitle: string;
+  projectName: string;
+  note: string | null;
+  projectUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Changes requested on "${taskTitle}"`,
+    html: emailShell({
+      eyebrow: "Needs a revision",
+      headline: `"${taskTitle}" needs a small fix`,
+      body: note
+        ? `${reviewerName} left a note on "${projectName}": "${note}"`
+        : `${reviewerName} requested changes to your upload on "${projectName}". Take a look whenever you get a chance.`,
+      ctaLabel: "View task",
+      ctaUrl: projectUrl,
+    }),
+  });
+}
+
+// ── The owner approved an uploaded file ──
+export async function sendTaskApprovedEmail({
+  to,
+  reviewerName,
+  taskTitle,
+  projectName,
+  projectUrl,
+}: {
+  to: string;
+  reviewerName: string;
+  taskTitle: string;
+  projectName: string;
+  projectUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `"${taskTitle}" was approved`,
+    html: emailShell({
+      eyebrow: "Approved",
+      headline: `Your work on "${taskTitle}" was approved`,
+      body: `${reviewerName} approved what you uploaded on "${projectName}" — nice work.`,
+      ctaLabel: "View project",
+      ctaUrl: projectUrl,
+    }),
+  });
+}
+
+// ── A collaborator uploaded something — the owner needs to review it ──
+export async function sendNewUploadReadyForReviewEmail({
+  to,
+  uploaderName,
+  taskTitle,
+  projectName,
+  projectUrl,
+}: {
+  to: string;
+  uploaderName: string;
+  taskTitle: string;
+  projectName: string;
+  projectUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${uploaderName} uploaded work on "${projectName}"`,
+    html: emailShell({
+      eyebrow: "Ready for your review",
+      headline: `${uploaderName} finished "${taskTitle}"`,
+      body: `A new file is ready for your review on "${projectName}" — take a look and approve it, or send back a note if it needs anything.`,
+      ctaLabel: "Review now",
+      ctaUrl: projectUrl,
+    }),
+  });
+}
+
+// ─────────────────────────────────────────────
+// LIFECYCLE SEQUENCE — the automatic emails every creator moves
+// through after signup: welcome immediately, a portfolio nudge on
+// day 1, then on day 2 both a project-management introduction and a
+// Creativo invite, followed by a "deliver a project" reminder that
+// then repeats every week from then on, forever. Driven by
+// lib/lifecycleEmails.ts, which decides *when* each of these fires —
+// these five functions are just the content.
+// ─────────────────────────────────────────────
+
+// ── Sent immediately at signup ──
+export async function sendWelcomeEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = name?.split(" ")[0];
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Welcome to Showwork",
+    html: emailShell({
+      eyebrow: "Welcome",
+      headline: firstName ? `Good to have you, ${firstName}.` : "Good to have you here.",
+      body: `Showwork is how your work gets delivered like the premium brand it already is — no more WeTransfer links, no more scattered folders. Your dashboard is ready whenever you are.`,
+      ctaLabel: "Go to your dashboard",
+      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+    }),
+  });
+}
+
+// ── Day 1 — invite to build a free portfolio ──
+export async function sendPortfolioInviteEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = name?.split(" ")[0];
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Your portfolio is free — and takes minutes",
+    html: emailShell({
+      eyebrow: "Free, always on",
+      headline: firstName ? `${firstName}, your portfolio is ready to build.` : "Your portfolio is ready to build.",
+      body: `A real portfolio — not a scattered Instagram feed — is often the first thing a serious client checks. Yours is free on every plan, always on, and takes minutes to set up.`,
+      ctaLabel: "Create your portfolio",
+      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio`,
+    }),
+  });
+}
+
+// ── Day 2 — introduce project management ──
+export async function sendProjectManagementIntroEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = name?.split(" ")[0];
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Plan the work, not just the delivery",
+    html: emailShell({
+      eyebrow: "Also on Showwork",
+      headline: firstName ? `${firstName}, there's more than delivery.` : "There's more than delivery.",
+      body: `Before a single file gets delivered, you can plan it properly — a real brief, tasks assigned to your team, and a review step before anything reaches a client. Your client even gets a live progress view while the work is happening.`,
+      ctaLabel: "Start a managed project",
+      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/start`,
+    }),
+  });
+}
+
+// ── Day 2, and every week after — invite to join Creativo ──
+export async function sendCreativoPromoEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = name?.split(" ")[0];
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "You don't have to figure this out alone",
+    html: emailShell({
+      eyebrow: "Introducing Creativo",
+      headline: firstName ? `${firstName}, meet Creativo.` : "Meet Creativo.",
+      body: `A free community for creators — not just Showwork users. Pricing, positioning, landing better clients, and the parts of this job nobody else teaches you, worked out alongside people actually doing it.`,
+      ctaLabel: "Join Creativo, it's free",
+      ctaUrl: COMMUNITY_URL,
+    }),
+  });
+}
+
+// ── Day 2, then weekly forever — reminder to deliver a project ──
+export async function sendDeliverReminderEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = name?.split(" ")[0];
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Ready to send your next delivery?",
+    html: emailShell({
+      eyebrow: "Whenever you're ready",
+      headline: firstName ? `${firstName}, got a delivery to send?` : "Got a delivery to send?",
+      body: `A branded, password-protected link says premium before you have to argue for it — and makes the number you're charging feel obvious. Takes minutes to set up your next one.`,
+      ctaLabel: "Deliver a project",
+      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/start`,
+    }),
+  });
+}

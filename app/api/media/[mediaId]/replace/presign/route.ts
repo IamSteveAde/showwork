@@ -32,11 +32,33 @@ export async function POST(
     return NextResponse.json({ error: `File exceeds ${MAX_FILE_SIZE_MB}MB limit` }, { status: 400 });
   }
 
+  // Includes the owner's subscription fields — same reasoning as the
+  // replace-complete route: the quota is based on whoever OWNS the
+  // project, not whoever happens to be uploading the replacement.
   const media = await db.media.findUnique({
     where: { id: mediaId },
-    include: { project: true },
+    include: {
+      project: {
+        include: {
+          creator: { select: { id: true, subscriptionActive: true, isComped: true } },
+        },
+      },
+    },
   });
-  if (!media || media.project.creatorId !== creator.id) {
+  if (!media) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // A collaborator getting a presigned URL to fix their own flagged
+  // file needs this to work too, not just the project owner.
+  const isOwner = media.project.creatorId === creator.id;
+  const isCollaborator =
+    !isOwner &&
+    (await db.projectCollaborator.findFirst({
+      where: { projectId: media.projectId, creatorId: creator.id },
+    })) !== null;
+
+  if (!isOwner && !isCollaborator) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -52,11 +74,12 @@ export async function POST(
   // Unlimited for active subscribers *and* comped (admin-granted free)
   // accounts — the cap only exists to stop the old one-time-payment
   // model being stretched into free ongoing use, which doesn't apply
-  // to either of those cases.
+  // to either of those cases. Checked against the project's owner,
+  // not whoever is currently requesting the replacement.
   if (
     media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT &&
-    !creator.subscriptionActive &&
-    !creator.isComped
+    !media.project.creator.subscriptionActive &&
+    !media.project.creator.isComped
   ) {
     return NextResponse.json(
       { error: "This project has reached its revision limit. Please create a new project for further work." },

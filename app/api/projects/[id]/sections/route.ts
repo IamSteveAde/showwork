@@ -15,7 +15,21 @@ export async function POST(
 
   const { id: projectId } = await params;
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project || project.creatorId !== creator.id) {
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // A collaborator needs to be able to create their own section to
+  // upload into (e.g. a videographer adding "B-Roll"), not just the
+  // project owner.
+  const isOwner = project.creatorId === creator.id;
+  const isCollaborator =
+    !isOwner &&
+    (await db.projectCollaborator.findFirst({
+      where: { projectId, creatorId: creator.id },
+    })) !== null;
+
+  if (!isOwner && !isCollaborator) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 

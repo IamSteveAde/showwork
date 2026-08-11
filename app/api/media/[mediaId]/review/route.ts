@@ -27,9 +27,17 @@ export async function PATCH(
     return NextResponse.json({ error: "viewerEmail is required" }, { status: 400 });
   }
 
+  // Now also fetches uploadedByCreator — the specific person who
+  // uploaded THIS file, which may be a collaborator, not just the
+  // project owner. Both need to be notified below; previously only
+  // the owner was ever fetched at all, so a collaborator's own upload
+  // had no way to reach them regardless of the status.
   const media = await db.media.findUnique({
     where: { id: mediaId },
-    include: { project: { include: { creator: true } } },
+    include: {
+      project: { include: { creator: true } },
+      uploadedByCreator: true,
+    },
   });
   if (!media) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -91,21 +99,49 @@ export async function PATCH(
     },
   });
 
-  // Notify the creator — best-effort, never let an email failure block
-  // the review itself from saving.
+  // Notify the owner — always, regardless of who uploaded the file.
+  // Best-effort: never let an email failure block the review itself
+  // from saving.
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/${media.projectId}`;
+  const fileLabel = media.caption || media.fileKey.split("/").pop() || "a file";
+
   if (media.project.creator.email) {
     try {
       await sendReviewNotificationEmail({
         to: media.project.creator.email,
         creatorName: media.project.creator.name,
         clientName: clientName || media.project.clientName,
-        fileLabel: media.caption || media.fileKey.split("/").pop() || "a file",
+        fileLabel,
         status,
         note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
-        dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/${media.projectId}`,
+        dashboardUrl,
       });
     } catch (err) {
-      console.error("Failed to send review notification email:", err);
+      console.error("Failed to send review notification email to owner:", err);
+    }
+  }
+
+  // Additionally notify whoever actually uploaded this specific file,
+  // if that's a different person from the owner (a collaborator).
+  // This is the whole point of tracking uploadedByCreatorId — an
+  // approval or revision request on a collaborator's own upload
+  // should reach them directly, not only the project owner.
+  const uploader = media.uploadedByCreator;
+  const uploaderIsDifferentFromOwner = uploader && uploader.id !== media.project.creator.id;
+
+  if (uploaderIsDifferentFromOwner && uploader.email) {
+    try {
+      await sendReviewNotificationEmail({
+        to: uploader.email,
+        creatorName: uploader.name,
+        clientName: clientName || media.project.clientName,
+        fileLabel,
+        status,
+        note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
+        dashboardUrl,
+      });
+    } catch (err) {
+      console.error("Failed to send review notification email to uploader:", err);
     }
   }
 
