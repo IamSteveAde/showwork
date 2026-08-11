@@ -564,3 +564,29 @@ export async function sendDeliverReminderEmail({
     }),
   });
 }
+
+// ── Managed-project invite for someone with no Showwork account yet ──
+export async function sendManagedProjectInviteEmail({
+  to,
+  inviterName,
+  projectName,
+  acceptUrl,
+}: {
+  to: string;
+  inviterName: string;
+  projectName: string;
+  acceptUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${inviterName} invited you to work on "${projectName}"`,
+    html: emailShell({
+      eyebrow: "You're invited",
+      headline: `${inviterName} wants you on "${projectName}"`,
+      body: `You've been invited to collaborate on this project on Showwork. If you don't have an account yet, you'll get one in a couple of clicks — this invite expires in 7 days.`,
+      ctaLabel: "View invite",
+      ctaUrl: acceptUrl,
+    }),
+  });
+}

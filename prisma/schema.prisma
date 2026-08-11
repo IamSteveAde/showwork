@@ -145,6 +145,7 @@ model Creator {
   // Managed projects (owned by someone else) this creator has been
   // added to as a collaborator.
   managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
+  managedProjectInvitesSent    ManagedProjectInvite[]       @relation("ManagedProjectInvitesSent")
   // Every task assigned to this specific creator, across any managed
   // project they're on — what lets "my tasks" be queried directly
   // without joining through every project they collaborate on.
@@ -427,6 +428,7 @@ model ManagedProject {
   updatedAt DateTime @updatedAt
 
   collaborators ManagedProjectCollaborator[]
+  invites       ManagedProjectInvite[]
   tasks         Task[]
   milestones    Milestone[]
   briefAttachments BriefAttachment[]
@@ -488,6 +490,33 @@ model ManagedProjectCollaborator {
   @@unique([managedProjectId, creatorId])
   @@index([managedProjectId])
   @@index([creatorId])
+}
+
+// ─────────────────────────────────────────────
+// MANAGED PROJECT INVITE — the same pattern as ProjectInvite (the
+// delivery-side collaboration invite), scoped to managed projects
+// instead. Lets an owner invite someone by email even when that
+// person has no Showwork account yet: accepting the link either logs
+// an existing account straight in and adds them, or walks a brand-new
+// person through signup first, then adds them — reusing InviteStatus,
+// the same enum ProjectInvite already uses, since the lifecycle is
+// identical.
+// ─────────────────────────────────────────────
+model ManagedProjectInvite {
+  id                 String         @id @default(uuid())
+  managedProject     ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId   String
+  invitedByCreator   Creator        @relation("ManagedProjectInvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
+  invitedByCreatorId String
+  email              String
+  tokenHash          String         @unique
+  status             InviteStatus   @default(PENDING)
+  expiresAt          DateTime
+  createdAt          DateTime       @default(now())
+  respondedAt        DateTime?
+
+  @@index([managedProjectId])
+  @@index([email])
 }
 
 // ─────────────────────────────────────────────
