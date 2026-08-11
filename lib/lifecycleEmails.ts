@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
   sendWelcomeEmail,
@@ -10,6 +11,15 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_MS = 7 * DAY_MS;
 
+// How many creators get processed at once, rather than one at a time.
+// The earlier version awaited every email send and every database
+// write sequentially per creator before moving to the next one —
+// with enough accounts, that easily exceeds a platform's function
+// timeout. Batches of 10 in parallel cuts wall-clock time roughly
+// 10x, and is conservative enough not to overwhelm Resend's own
+// rate limits.
+const CONCURRENCY = 10;
+
 function daysSince(date: Date): number {
   return (Date.now() - date.getTime()) / DAY_MS;
 }
@@ -21,20 +31,123 @@ interface RunSummary {
   projectManagementSent: number;
   creativoPromoSent: number;
   deliverReminderSent: number;
-  errors: { creatorId: string; step: string; message: string }[];
+  errors: { creatorId: string; message: string }[];
+}
+
+type CreatorForCheck = {
+  id: string;
+  name: string | null;
+  email: string;
+  lifecycleSequenceStartedAt: Date | null;
+  welcomeEmailSentAt: Date | null;
+  portfolioInviteEmailSentAt: Date | null;
+  projectManagementEmailSentAt: Date | null;
+  creativoPromoEmailSentAt: Date | null;
+  lastDeliveryReminderSentAt: Date | null;
+  projects: { createdAt: Date }[];
+};
+
+// Handles exactly one creator: figures out which steps are due, sends
+// every applicable email for them in parallel (there's rarely more
+// than one due on a given day, but during the initial backfill —
+// or if a run gets skipped for a few days — several can become due
+// at once), then writes every resulting field change in a single
+// combined database update instead of one write per step.
+async function processCreator(creator: CreatorForCheck, summary: RunSummary): Promise<void> {
+  const updates: Prisma.CreatorUpdateInput = {};
+
+  let sequenceStart = creator.lifecycleSequenceStartedAt;
+  if (!sequenceStart) {
+    sequenceStart = new Date();
+    updates.lifecycleSequenceStartedAt = sequenceStart;
+  }
+  const elapsedDays = daysSince(sequenceStart);
+
+  const tasks: Promise<void>[] = [];
+
+  if (!creator.welcomeEmailSentAt) {
+    tasks.push(
+      sendWelcomeEmail({ to: creator.email, name: creator.name }).then(() => {
+        updates.welcomeEmailSentAt = new Date();
+        summary.welcomeSent++;
+      })
+    );
+  }
+
+  if (elapsedDays >= 1 && !creator.portfolioInviteEmailSentAt) {
+    tasks.push(
+      sendPortfolioInviteEmail({ to: creator.email, name: creator.name }).then(() => {
+        updates.portfolioInviteEmailSentAt = new Date();
+        summary.portfolioInviteSent++;
+      })
+    );
+  }
+
+  if (elapsedDays >= 2 && !creator.projectManagementEmailSentAt) {
+    tasks.push(
+      sendProjectManagementIntroEmail({ to: creator.email, name: creator.name }).then(() => {
+        updates.projectManagementEmailSentAt = new Date();
+        summary.projectManagementSent++;
+      })
+    );
+  }
+
+  if (elapsedDays >= 2 && !creator.creativoPromoEmailSentAt) {
+    tasks.push(
+      sendCreativoPromoEmail({ to: creator.email, name: creator.name }).then(() => {
+        updates.creativoPromoEmailSentAt = new Date();
+        summary.creativoPromoSent++;
+      })
+    );
+  }
+
+  if (elapsedDays >= 2) {
+    const neverSent = !creator.lastDeliveryReminderSentAt;
+    const dueAgain = creator.lastDeliveryReminderSentAt
+      ? Date.now() - creator.lastDeliveryReminderSentAt.getTime() >= WEEK_MS
+      : false;
+
+    if (neverSent || dueAgain) {
+      const mostRecentProject = creator.projects[0];
+      const deliveredRecently = mostRecentProject && daysSince(mostRecentProject.createdAt) < 7;
+
+      if (!deliveredRecently) {
+        tasks.push(
+          sendDeliverReminderEmail({ to: creator.email, name: creator.name }).then(() => {
+            updates.lastDeliveryReminderSentAt = new Date();
+            summary.deliverReminderSent++;
+          })
+        );
+      }
+    }
+  }
+
+  // Every applicable email for this one creator, sent in parallel
+  // rather than one after another.
+  const results = await Promise.allSettled(tasks);
+  for (const result of results) {
+    if (result.status === "rejected") {
+      const message = result.reason instanceof Error ? result.reason.message : "Unknown error";
+      console.error(`Lifecycle email error for creator ${creator.id}:`, result.reason);
+      summary.errors.push({ creatorId: creator.id, message });
+    }
+  }
+
+  // One write for everything that succeeded on this creator, instead
+  // of up to six separate round trips.
+  if (Object.keys(updates).length > 0) {
+    await db.creator.update({ where: { id: creator.id }, data: updates });
+  }
 }
 
 /**
  * The actual decision logic for the lifecycle email sequence — called
  * by the protected API route (for manual testing) and the Netlify
- * Scheduled Function (for the real daily run). Deliberately kept
- * separate from both of those so it's testable on its own and not
- * tied to any particular trigger mechanism.
- *
- * Runs once per creator per invocation — intended to be called daily.
- * Every step checks its own "already sent" timestamp before sending,
- * so calling this more than once on the same day is safe and won't
- * double-send anything.
+ * Scheduled Function (for the real daily run). Processes creators in
+ * concurrent batches rather than one at a time, and writes each
+ * creator's field updates in a single combined call — both changes
+ * exist specifically to keep this comfortably inside a serverless
+ * function's execution time limit as the number of creators grows.
  */
 export async function runLifecycleEmailCheck(): Promise<RunSummary> {
   const summary: RunSummary = {
@@ -47,24 +160,18 @@ export async function runLifecycleEmailCheck(): Promise<RunSummary> {
     errors: [],
   };
 
-  // isDeactivated creators are skipped entirely — no point emailing
-  // an account that can't even log in right now.
   const creators = await db.creator.findMany({
     where: { isDeactivated: false },
     select: {
       id: true,
       name: true,
       email: true,
-      createdAt: true,
       lifecycleSequenceStartedAt: true,
       welcomeEmailSentAt: true,
       portfolioInviteEmailSentAt: true,
       projectManagementEmailSentAt: true,
       creativoPromoEmailSentAt: true,
       lastDeliveryReminderSentAt: true,
-      // Used only to decide whether to skip this round's delivery
-      // reminder — no point nagging someone who delivered something
-      // in the last week already.
       projects: {
         where: { deletedAt: null },
         orderBy: { createdAt: "desc" },
@@ -74,82 +181,19 @@ export async function runLifecycleEmailCheck(): Promise<RunSummary> {
     },
   });
 
-  for (const creator of creators) {
-    summary.processed++;
-    try {
-      // Anchor point for every "day N" step. Should already be set
-      // for everyone (via signup for new accounts, or the one-time
-      // backfill script for accounts that existed before this system
-      // did) — this is just a safety net for the rare case it isn't,
-      // so a creator never gets permanently stuck with nothing firing.
-      let sequenceStart = creator.lifecycleSequenceStartedAt;
-      if (!sequenceStart) {
-        sequenceStart = new Date();
-        await db.creator.update({
-          where: { id: creator.id },
-          data: { lifecycleSequenceStartedAt: sequenceStart },
-        });
-      }
-      const elapsedDays = daysSince(sequenceStart);
+  summary.processed = creators.length;
 
-      // ── Welcome — immediate ──
-      // Normally already sent directly at signup (see verify-otp),
-      // this is the catch-up path for the one-time backfill on
-      // existing accounts, or if the direct send ever failed.
-      if (!creator.welcomeEmailSentAt) {
-        await sendWelcomeEmail({ to: creator.email, name: creator.name });
-        await db.creator.update({ where: { id: creator.id }, data: { welcomeEmailSentAt: new Date() } });
-        summary.welcomeSent++;
-      }
-
-      // ── Day 1 — portfolio invite ──
-      if (elapsedDays >= 1 && !creator.portfolioInviteEmailSentAt) {
-        await sendPortfolioInviteEmail({ to: creator.email, name: creator.name });
-        await db.creator.update({ where: { id: creator.id }, data: { portfolioInviteEmailSentAt: new Date() } });
-        summary.portfolioInviteSent++;
-      }
-
-      // ── Day 2 — project management introduction ──
-      if (elapsedDays >= 2 && !creator.projectManagementEmailSentAt) {
-        await sendProjectManagementIntroEmail({ to: creator.email, name: creator.name });
-        await db.creator.update({ where: { id: creator.id }, data: { projectManagementEmailSentAt: new Date() } });
-        summary.projectManagementSent++;
-      }
-
-      // ── Day 2 — Creativo promotion (one-time, not the weekly repeat) ──
-      if (elapsedDays >= 2 && !creator.creativoPromoEmailSentAt) {
-        await sendCreativoPromoEmail({ to: creator.email, name: creator.name });
-        await db.creator.update({ where: { id: creator.id }, data: { creativoPromoEmailSentAt: new Date() } });
-        summary.creativoPromoSent++;
-      }
-
-      // ── Day 2, then every week forever — deliver-a-project reminder ──
-      if (elapsedDays >= 2) {
-        const neverSent = !creator.lastDeliveryReminderSentAt;
-        const dueAgain = creator.lastDeliveryReminderSentAt
-          ? Date.now() - creator.lastDeliveryReminderSentAt.getTime() >= WEEK_MS
-          : false;
-
-        if (neverSent || dueAgain) {
-          // Skip this round if they've delivered something in the
-          // last 7 days — a real, live project already covers the
-          // point of the nudge, and re-sending it anyway would just
-          // read as not paying attention.
-          const mostRecentProject = creator.projects[0];
-          const deliveredRecently = mostRecentProject && daysSince(mostRecentProject.createdAt) < 7;
-
-          if (!deliveredRecently) {
-            await sendDeliverReminderEmail({ to: creator.email, name: creator.name });
-            await db.creator.update({ where: { id: creator.id }, data: { lastDeliveryReminderSentAt: new Date() } });
-            summary.deliverReminderSent++;
-          }
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error(`Lifecycle email error for creator ${creator.id}:`, err);
-      summary.errors.push({ creatorId: creator.id, step: "unknown", message });
-    }
+  for (let i = 0; i < creators.length; i += CONCURRENCY) {
+    const batch = creators.slice(i, i + CONCURRENCY);
+    await Promise.all(
+      batch.map((creator) =>
+        processCreator(creator, summary).catch((err) => {
+          const message = err instanceof Error ? err.message : "Unknown error";
+          console.error(`Lifecycle email error for creator ${creator.id}:`, err);
+          summary.errors.push({ creatorId: creator.id, message });
+        })
+      )
+    );
   }
 
   return summary;
