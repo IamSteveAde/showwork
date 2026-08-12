@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentCreator } from "@/lib/auth";
+import { getCurrentCreator, hashPassword } from "@/lib/auth";
 
 // Standard URL-safe slugify: lowercase, spaces and non-alphanumerics
 // become single hyphens, no leading/trailing hyphens.
@@ -97,7 +97,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Access code can't be empty" }, { status: 400 });
   }
   if (typeof data.clientName === "string") data.clientName = data.clientName.trim();
-  if (typeof data.accessCode === "string") data.accessCode = data.accessCode.trim();
+
+  // The actual bug fix: accessCode is only ever the plain-text DISPLAY
+  // copy — the real gate a client's password entry gets checked
+  // against is passwordHash. Updating accessCode alone (as this route
+  // used to do) changed what the creator sees and copies, but left
+  // the real verification value untouched — so the old code kept
+  // working and the new one silently did nothing. Now both are always
+  // written together in the same request, from the same trimmed value.
+  if (typeof data.accessCode === "string") {
+    const trimmedCode = data.accessCode.trim();
+    data.accessCode = trimmedCode;
+    data.passwordHash = await hashPassword(trimmedCode);
+  }
 
   // Regenerate the slug whenever the name actually changes — skipped
   // if the trimmed name is identical to what's already stored, so
