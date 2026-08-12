@@ -148,12 +148,15 @@ export default async function DashboardPage() {
   const hasMoreShared = collaboratorMemberships.length > SHARED_DISPLAY_LIMIT;
 
   // Managed projects this creator can see — owned or collaborating,
-  // combined into one list. Each carries its linked delivery's id
-  // (for the smart link once published) and a raw task-status list
-  // (to compute a quick completion count without a separate query).
+  // combined into one list. Excludes any whose linked delivery has
+  // been soft-deleted: deleting a delivery only ever touches the
+  // Project row itself, never the ManagedProject linked to it, so
+  // without this filter a deleted delivery's managed project would
+  // keep showing here and 404 the moment anyone clicked through to
+  // its now-gone delivery page.
   const [ownedManagedProjects, collaboratingManagedProjects] = await Promise.all([
     db.managedProject.findMany({
-      where: { creatorId: creator.id },
+      where: { creatorId: creator.id, deliveryProject: { deletedAt: null } },
       orderBy: { createdAt: "desc" },
       include: {
         deliveryProject: { select: { id: true } },
@@ -161,7 +164,7 @@ export default async function DashboardPage() {
       },
     }),
     db.managedProject.findMany({
-      where: { collaborators: { some: { creatorId: creator.id } } },
+      where: { collaborators: { some: { creatorId: creator.id } }, deliveryProject: { deletedAt: null } },
       orderBy: { createdAt: "desc" },
       include: {
         deliveryProject: { select: { id: true } },
