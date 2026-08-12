@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -55,6 +56,209 @@ function uploadWithProgress(
     xhr.send(file);
   });
 }
+// Same as uploadWithProgress, but for one chunk of a multipart upload
+// — reads back the ETag R2 returns for that specific chunk, required
+// to tell R2 how to stitch every chunk together at the end. Requires
+// R2's CORS config on this bucket to expose ETag under
+// Access-Control-Expose-Headers, or this fails at the read step even
+// though the chunk itself uploaded fine.
+function uploadPartWithProgress(
+  url: string,
+  chunk: Blob,
+  onProgress: (loaded: number, total: number) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded, e.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const etag = xhr.getResponseHeader("ETag");
+        if (!etag) {
+          reject(new Error("R2 didn't return an ETag for this chunk — check ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
+          return;
+        }
+        resolve(etag);
+      } else {
+        reject(new Error(`Chunk upload failed (${xhr.status})`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
+    xhr.send(chunk);
+  });
+}
+
+// Resumable progress — keyed by localId (already stable per file in
+// this component's own state) rather than a fingerprint, since a
+// stable id already exists here.
+function multipartStorageKey(localId: string): string {
+  return `showwork-newproject-multipart:${localId}`;
+}
+interface MultipartProgress {
+  fileKey: string;
+  uploadId: string;
+  completedParts: { partNumber: number; etag: string }[];
+}
+function getMultipartProgress(localId: string): MultipartProgress | null {
+  try {
+    const raw = localStorage.getItem(multipartStorageKey(localId));
+    return raw ? (JSON.parse(raw) as MultipartProgress) : null;
+  } catch {
+    return null;
+  }
+}
+function saveMultipartProgress(localId: string, progress: MultipartProgress) {
+  try {
+    localStorage.setItem(multipartStorageKey(localId), JSON.stringify(progress));
+  } catch {
+    // ignore — resuming just won't work this time
+  }
+}
+function clearMultipartProgress(localId: string) {
+  try {
+    localStorage.removeItem(multipartStorageKey(localId));
+  } catch {
+    // ignore
+  }
+}
+
+const MULTIPART_THRESHOLD_MB = 100;
+const CHUNK_SIZE_MB = 200;
+const CHUNK_CONCURRENCY = 2;
+const MAX_RETRIES_PER_CHUNK = 3;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Uploads one large file via multipart, chunked with 2 concurrent
+// workers, reporting progress back through the exact same
+// setLoadedMap callback pattern the existing small-file path already
+// uses — so the UI's progress bar keeps working identically whether
+// a file went through the simple or chunked path.
+async function uploadLargeFileMultipart(
+  file: File,
+  localId: string,
+  projectId: string,
+  sectionId: string,
+  mediaType: string,
+  onLoaded: (loaded: number) => void,
+  onChunkStatus: (msg: string) => void
+): Promise<{ fileKey: string }> {
+  const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
+  const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
+  let progress = getMultipartProgress(localId);
+  if (!progress) {
+    const startRes = await fetch("/api/upload/multipart/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        filename: file.name,
+        contentType: file.type,
+        fileSizeMb: file.size / (1024 * 1024),
+      }),
+    });
+    if (!startRes.ok) {
+      const data = await startRes.json();
+      throw new Error(data.error ?? "Failed to start large-file upload");
+    }
+    const { uploadId, fileKey } = await startRes.json();
+    progress = { fileKey, uploadId, completedParts: [] };
+    saveMultipartProgress(localId, progress);
+  }
+
+  const completedPartNumbers = new Set(progress.completedParts.map((p) => p.partNumber));
+  const remainingPartNumbers: number[] = [];
+  for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
+    if (!completedPartNumbers.has(partNumber)) remainingPartNumbers.push(partNumber);
+  }
+
+  // Total bytes already accounted for by previously-completed chunks
+  // (on a resumed upload) — the progress bar should start from here,
+  // not from zero, if some chunks already succeeded in a prior attempt.
+  let loadedBytes = completedPartNumbers.size * chunkSizeBytes;
+  onLoaded(loadedBytes);
+
+  let completedChunkCount = completedPartNumbers.size;
+  let firstError: string | null = null;
+
+const uploadOneChunk = async (partNumber: number): Promise<void> => {
+    if (firstError) return;
+    onChunkStatus(`Uploading chunk ${completedChunkCount + 1} of ${totalChunks}`);
+    const start = (partNumber - 1) * chunkSizeBytes;
+    const end = Math.min(start + chunkSizeBytes, file.size);
+    const chunk = file.slice(start, end);
+
+    let chunkSucceeded = false;
+    let lastError = "Upload failed";
+
+    for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
+      try {
+        const signRes = await fetch("/api/upload/multipart/sign-part", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ projectId, fileKey: progress!.fileKey, uploadId: progress!.uploadId, partNumber }),
+        });
+        if (!signRes.ok) {
+          const data = await signRes.json();
+          throw new Error(data.error ?? "Failed to sign chunk");
+        }
+        const { uploadUrl } = await signRes.json();
+
+        const etag = await uploadPartWithProgress(uploadUrl, chunk, () => {});
+
+      progress!.completedParts.push({ partNumber, etag });
+        saveMultipartProgress(localId, progress!);
+        loadedBytes += chunk.size;
+        completedChunkCount++;
+        onLoaded(loadedBytes);
+        onChunkStatus(`${completedChunkCount} of ${totalChunks} chunks done`);
+
+        chunkSucceeded = true;
+        break;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : "Upload failed";
+        if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
+      }
+    }
+    if (!chunkSucceeded && !firstError) {
+      firstError = `${lastError} (chunk ${partNumber} of ${totalChunks})`;
+    }
+  };
+
+  const queue = [...remainingPartNumbers];
+  const workers = Array.from({ length: CHUNK_CONCURRENCY }, async () => {
+    while (queue.length > 0 && !firstError) {
+      const partNumber = queue.shift();
+      if (partNumber !== undefined) await uploadOneChunk(partNumber);
+    }
+  });
+  await Promise.all(workers);
+
+  if (firstError) throw new Error(firstError);
+
+  const completeRes = await fetch("/api/upload/multipart/complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      projectId,
+      fileKey: progress.fileKey,
+      uploadId: progress.uploadId,
+      parts: progress.completedParts,
+      type: mediaType,
+      sectionId,
+    }),
+  });
+  if (!completeRes.ok) {
+    const data = await completeRes.json();
+    throw new Error(data.error ?? "Failed to finalize large file");
+  }
+  const { media } = await completeRes.json();
+
+  clearMultipartProgress(localId);
+  return { fileKey: media.id };
+}
 
 const CODE_WORDS = [
   "sunrise", "harbor", "velvet", "cobalt", "willow", "ember",
@@ -90,6 +294,7 @@ export default function NewProjectPage() {
 
   const [statusMap, setStatusMap] = useState<Record<string, FileStatus>>({});
   const [loadedMap, setLoadedMap] = useState<Record<string, number>>({});
+  const [chunkStatusMap, setChunkStatusMap] = useState<Record<string, string>>({});
 
   interface UsageInfo {
     planName: string;
@@ -306,43 +511,53 @@ export default function NewProjectPage() {
 
         for (const { file, localId } of section.files) {
           setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
-
           try {
-            const presignRes = await fetch("/api/upload/presign", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                filename: file.name,
-                contentType: file.type,
-                fileSizeMb: file.size / (1024 * 1024),
-              }),
-            });
-            if (!presignRes.ok) {
-              const data = await presignRes.json();
-              throw new Error(data.error ?? "presign failed");
+            const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
+
+            if (isLarge) {
+              const { fileKey: mediaId } = await uploadLargeFileMultipart(
+                file,
+                localId,
+                project.id,
+                createdSection.id,
+                section.mediaType,
+                (loaded) => setLoadedMap((prev) => ({ ...prev, [localId]: loaded })),
+                (msg) => setChunkStatusMap((prev) => ({ ...prev, [localId]: msg }))
+              );
+              if (localId === heroLocalId) heroMediaId = mediaId;
+            } else {
+              const presignRes = await fetch("/api/upload/presign", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  projectId: project.id,
+                  filename: file.name,
+                  contentType: file.type,
+                  fileSizeMb: file.size / (1024 * 1024),
+                }),
+              });
+              if (!presignRes.ok) {
+                const data = await presignRes.json();
+                throw new Error(data.error ?? "presign failed");
+              }
+              const { uploadUrl, fileKey } = await presignRes.json();
+              await uploadWithProgress(uploadUrl, file, (loaded) => {
+                setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
+              });
+              const completeRes = await fetch("/api/upload/complete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  projectId: project.id,
+                  fileKey,
+                  type: section.mediaType,
+                  sectionId: createdSection.id,
+                }),
+              });
+              if (!completeRes.ok) throw new Error("failed to save media record");
+              const { media } = await completeRes.json();
+              if (localId === heroLocalId) heroMediaId = media.id;
             }
-            const { uploadUrl, fileKey } = await presignRes.json();
-
-            await uploadWithProgress(uploadUrl, file, (loaded) => {
-              setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
-            });
-
-            const completeRes = await fetch("/api/upload/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                fileKey,
-                type: section.mediaType,
-                sectionId: createdSection.id,
-              }),
-            });
-            if (!completeRes.ok) throw new Error("failed to save media record");
-            const { media } = await completeRes.json();
-
-            if (localId === heroLocalId) heroMediaId = media.id;
-
             setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
             setLoadedMap((prev) => ({ ...prev, [localId]: file.size }));
           } catch (err) {
@@ -375,13 +590,15 @@ export default function NewProjectPage() {
   // UPLOAD PROGRESS SCREEN
   // ─────────────────────────────────────────────
   if (phase === "uploading" || phase === "done") {
+    
     return (
       <main
         className={`${jakarta.variable} flex min-h-screen items-center justify-center px-6`}
         style={{ background: COLOR.black, fontFamily: "var(--font-jakarta)" }}
-      >
+     >
         <div className="w-full max-w-lg">
-          <div className="mb-8 text-center">
+          <UploadPatienceBanner active={phase === "uploading"} />
+          <div className="mb-8 mt-4 text-center">
             <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
               {phase === "done" ? "All set" : "Uploading your project"}
             </p>
@@ -443,6 +660,9 @@ export default function NewProjectPage() {
                             }}
                           />
                         </div>
+                        {chunkStatusMap[f.localId] && !isDone && (
+                          <p className="mt-1.5 text-[11px] text-white/40">{chunkStatusMap[f.localId]}</p>
+                        )}
                       </div>
                     );
                   })}

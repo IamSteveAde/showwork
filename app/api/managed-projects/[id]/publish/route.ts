@@ -5,9 +5,13 @@ import { getCurrentCreator } from "@/lib/auth";
 // POST — the moment a managed project's work reaches the client.
 // Every TaskAsset the owner has internally approved (and not already
 // published) gets promoted into a real Media row on the linked
-// delivery project, with attribution preserved — whoever actually
-// uploaded the file stays the recorded uploader on the resulting
-// Media, exactly like a direct delivery upload. Owner-only.
+// delivery project — grouped into a section named after the task it
+// came from, not dumped into one flat ungrouped list. This is what
+// makes the client's delivery page actually organized: "Room
+// Renders," "Logo Concepts," whatever each task was called, becomes
+// a real section heading on their page. Attribution is preserved too
+// — whoever actually uploaded the file stays the recorded uploader.
+// Owner-only.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -26,6 +30,7 @@ export async function POST(
       { status: 400 }
     );
   }
+  const deliveryProjectId = managedProject.deliveryProjectId;
 
   const approvedUnpublishedAssets = await db.taskAsset.findMany({
     where: {
@@ -33,6 +38,7 @@ export async function POST(
       promotedToMediaId: null,
       task: { managedProjectId: id },
     },
+    include: { task: { select: { id: true, title: true } } },
   });
 
   if (approvedUnpublishedAssets.length === 0) {
@@ -40,6 +46,37 @@ export async function POST(
       { error: "Nothing approved and ready to publish yet." },
       { status: 400 }
     );
+  }
+
+  // One MediaSection per task, named after that task's title —
+  // created once and reused for every asset from the same task, and
+  // across repeat publish rounds too (a second batch of approved work
+  // from a task published earlier lands in that same existing
+  // section, rather than a duplicate one with the same name).
+  const sectionIdByTaskId = new Map<string, string>();
+
+  for (const taskId of new Set(approvedUnpublishedAssets.map((a) => a.task.id))) {
+    const taskTitle = approvedUnpublishedAssets.find((a) => a.task.id === taskId)!.task.title;
+
+    const existingSection = await db.mediaSection.findFirst({
+      where: { projectId: deliveryProjectId, name: taskTitle },
+    });
+
+    if (existingSection) {
+      sectionIdByTaskId.set(taskId, existingSection.id);
+    } else {
+      const firstAssetForTask = approvedUnpublishedAssets.find((a) => a.task.id === taskId)!;
+      const existingCount = await db.mediaSection.count({ where: { projectId: deliveryProjectId } });
+      const newSection = await db.mediaSection.create({
+        data: {
+          projectId: deliveryProjectId,
+          name: taskTitle,
+          mediaType: firstAssetForTask.type,
+          displayOrder: existingCount,
+        },
+      });
+      sectionIdByTaskId.set(taskId, newSection.id);
+    }
   }
 
   // Sequential rather than Promise.all — each promotion is two
@@ -51,10 +88,11 @@ export async function POST(
   for (const asset of approvedUnpublishedAssets) {
     const media = await db.media.create({
       data: {
-        projectId: managedProject.deliveryProjectId,
+        projectId: deliveryProjectId,
         fileKey: asset.fileKey,
         type: asset.type,
         uploadedByCreatorId: asset.uploadedByCreatorId,
+        sectionId: sectionIdByTaskId.get(asset.task.id),
       },
     });
     await db.taskAsset.update({ where: { id: asset.id }, data: { promotedToMediaId: media.id } });

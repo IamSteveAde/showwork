@@ -2,20 +2,115 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 
 type MediaType = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 
-function uploadWithProgress(url: string, file: File, onProgress: (loaded: number, total: number) => void): Promise<void> {
+function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
     xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`)));
     xhr.onerror = () => reject(new Error("Network error during upload"));
     xhr.send(file);
   });
 }
+function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const etag = xhr.getResponseHeader("ETag");
+        if (!etag) {
+          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
+          return;
+        }
+        resolve(etag);
+      } else {
+        reject(new Error(`Chunk upload failed (${xhr.status})`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
+    xhr.send(chunk);
+  });
+}
+
+function fileFingerprint(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+function progressStorageKey(sectionId: string): string {
+  return `showwork-portfolio-section-progress:${sectionId}`;
+}
+function getCompletedFingerprints(sectionId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(progressStorageKey(sectionId));
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+function markFingerprintCompleted(sectionId: string, fingerprint: string) {
+  const key = progressStorageKey(sectionId);
+  const current = getCompletedFingerprints(sectionId);
+  current.add(fingerprint);
+  try {
+    localStorage.setItem(key, JSON.stringify([...current]));
+  } catch {
+    // ignore
+  }
+}
+function clearProgress(sectionId: string) {
+  try {
+    localStorage.removeItem(progressStorageKey(sectionId));
+  } catch {
+    // ignore
+  }
+}
+
+interface MultipartProgress {
+  fileKey: string;
+  uploadId: string;
+  completedParts: { partNumber: number; etag: string }[];
+}
+function multipartStorageKey(sectionId: string, fingerprint: string): string {
+  return `showwork-portfolio-section-multipart:${sectionId}:${fingerprint}`;
+}
+function getMultipartProgress(sectionId: string, fingerprint: string): MultipartProgress | null {
+  try {
+    const raw = localStorage.getItem(multipartStorageKey(sectionId, fingerprint));
+    return raw ? (JSON.parse(raw) as MultipartProgress) : null;
+  } catch {
+    return null;
+  }
+}
+function saveMultipartProgress(sectionId: string, fingerprint: string, progress: MultipartProgress) {
+  try {
+    localStorage.setItem(multipartStorageKey(sectionId, fingerprint), JSON.stringify(progress));
+  } catch {
+    // ignore
+  }
+}
+function clearMultipartProgress(sectionId: string, fingerprint: string) {
+  try {
+    localStorage.removeItem(multipartStorageKey(sectionId, fingerprint));
+  } catch {
+    // ignore
+  }
+}
+
+const MULTIPART_THRESHOLD_MB = 100;
+const CHUNK_SIZE_MB = 200;
+const CHUNK_CONCURRENCY = 2;
+const BATCH_SIZE = 3;
+const INTER_FILE_PAUSE_MS = 150;
+const INTER_BATCH_PAUSE_MS = 3000;
+const MAX_RETRIES_PER_FILE = 2;
+const MAX_RETRIES_PER_CHUNK = 3;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function acceptFor(mediaType: MediaType): string {
   if (mediaType === "VIDEO") return "video/mp4,video/quicktime,video/webm";
@@ -42,6 +137,7 @@ export default function PortfolioSectionHeader({
 
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [chunkStatus, setChunkStatus] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,46 +157,197 @@ export default function PortfolioSectionHeader({
     router.refresh();
   };
 
-  // No session cap here at all — portfolio uploads are unlimited by
-  // design, unlike the project delivery flow's 3-batch limit.
-  const handleAddFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-    setUploadError(null);
-    setUploading(true);
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setUploadStatus(`Uploading ${i + 1} of ${files.length}...`);
-
+  const uploadOneFileWithRetry = async (file: File): Promise<{ ok: true } | { ok: false; error: string }> => {
+    for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
+      try {
         const presignRes = await fetch("/api/portfolio/upload/presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
         });
-        if (!presignRes.ok) {
-          const data = await presignRes.json();
-          throw new Error(data.error ?? "presign failed");
-        }
-        const { uploadUrl, fileKey } = await presignRes.json();
+        const presignData = await presignRes.json();
+        if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
 
-        await uploadWithProgress(uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, () => {});
 
         const completeRes = await fetch("/api/portfolio/upload/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileKey, type: mediaType, sectionId }),
+          body: JSON.stringify({ fileKey: presignData.fileKey, type: mediaType, sectionId }),
         });
         if (!completeRes.ok) throw new Error("Failed to save file");
+
+        return { ok: true };
+      } catch (err) {
+        if (attempt === MAX_RETRIES_PER_FILE) {
+          return { ok: false, error: err instanceof Error ? err.message : "Upload failed" };
+        }
+        await sleep(2000 * (attempt + 1));
+      }
+    }
+    return { ok: false, error: "Upload failed" };
+  };
+
+  const uploadLargeFileMultipart = async (file: File): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const fingerprint = fileFingerprint(file);
+    const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
+    let progress = getMultipartProgress(sectionId, fingerprint);
+    if (!progress) {
+      const startRes = await fetch("/api/portfolio/upload/multipart-start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) return { ok: false, error: startData.error ?? "Failed to start large-file upload" };
+      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [] };
+      saveMultipartProgress(sectionId, fingerprint, progress);
+    }
+
+    const completedPartNumbers = new Set(progress.completedParts.map((p) => p.partNumber));
+    const remainingPartNumbers: number[] = [];
+    for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
+      if (!completedPartNumbers.has(partNumber)) remainingPartNumbers.push(partNumber);
+    }
+
+    let completedCount = totalChunks - remainingPartNumbers.length;
+    let firstError: string | null = null;
+
+    const uploadOneChunk = async (partNumber: number): Promise<void> => {
+      if (firstError) return;
+      setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
+
+      const start = (partNumber - 1) * chunkSizeBytes;
+      const end = Math.min(start + chunkSizeBytes, file.size);
+      const chunk = file.slice(start, end);
+
+      let chunkSucceeded = false;
+      let lastError = "Upload failed";
+
+      for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
+        try {
+          const signRes = await fetch("/api/portfolio/upload/multipart-sign-part", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileKey: progress!.fileKey, uploadId: progress!.uploadId, partNumber }),
+          });
+          const signData = await signRes.json();
+          if (!signRes.ok) throw new Error(signData.error ?? "Failed to sign chunk");
+
+          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, () => {});
+
+          progress!.completedParts.push({ partNumber, etag });
+          saveMultipartProgress(sectionId, fingerprint, progress!);
+          completedCount++;
+          setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
+
+          chunkSucceeded = true;
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : "Upload failed";
+          if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
+        }
+      }
+      if (!chunkSucceeded && !firstError) {
+        firstError = `${lastError} (chunk ${partNumber} of ${totalChunks})`;
+      }
+    };
+
+    const queue = [...remainingPartNumbers];
+    const workers = Array.from({ length: CHUNK_CONCURRENCY }, async () => {
+      while (queue.length > 0 && !firstError) {
+        const partNumber = queue.shift();
+        if (partNumber !== undefined) await uploadOneChunk(partNumber);
+      }
+    });
+    await Promise.all(workers);
+
+    if (firstError) return { ok: false, error: firstError };
+
+    const completeRes = await fetch("/api/portfolio/upload/multipart-complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileKey: progress.fileKey,
+        uploadId: progress.uploadId,
+        parts: progress.completedParts,
+        type: mediaType,
+        sectionId,
+      }),
+    });
+    const completeData = await completeRes.json();
+    if (!completeRes.ok) return { ok: false, error: completeData.error ?? "Failed to finalize large file" };
+
+    clearMultipartProgress(sectionId, fingerprint);
+    return { ok: true };
+  };
+
+  // No session cap here at all — portfolio uploads are unlimited by
+  // design, unlike the project delivery flow's 3-batch limit.
+  const handleAddFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    if (selectedFiles.length === 0) return;
+
+    if (selectedFiles.length > 20) {
+      const proceed = window.confirm(
+        `You've selected ${selectedFiles.length} files. Uploading that many at once in one browser tab can occasionally crash on lower-memory devices — consider uploading in two smaller batches instead. Continue anyway?`
+      );
+      if (!proceed) {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+    }
+
+    setUploadError(null);
+    setUploading(true);
+
+    try {
+      const completed = getCompletedFingerprints(sectionId);
+      const filesToUpload = selectedFiles.filter((f) => !completed.has(fileFingerprint(f)));
+      const failedFiles: string[] = [];
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
+
+        setUploadStatus(`Uploading ${i + 1} of ${filesToUpload.length}...`);
+        setChunkStatus(null);
+
+        const result = isLarge ? await uploadLargeFileMultipart(file) : await uploadOneFileWithRetry(file);
+
+        if (result.ok) {
+          markFingerprintCompleted(sectionId, fileFingerprint(file));
+        } else {
+          failedFiles.push(`${file.name} (${result.error})`);
+        }
+
+        await sleep(INTER_FILE_PAUSE_MS);
+
+        if ((i + 1) % BATCH_SIZE === 0 && i + 1 < filesToUpload.length) {
+          setUploadStatus("Pausing briefly before the next batch...");
+          await sleep(INTER_BATCH_PAUSE_MS);
+        }
       }
 
+      if (failedFiles.length > 0) {
+        setUploadError(
+          `${filesToUpload.length - failedFiles.length} of ${filesToUpload.length} uploaded. ${failedFiles.length} failed — re-select the same files to resume just those.`
+        );
+        setUploadStatus(null);
+        setChunkStatus(null);
+        return;
+      }
+
+      clearProgress(sectionId);
       setUploadStatus("Done");
       router.refresh();
       setTimeout(() => setUploadStatus(null), 1200);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Something went wrong");
       setUploadStatus(null);
+      setChunkStatus(null);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -172,6 +419,13 @@ export default function PortfolioSectionHeader({
           </button>
         )}
       </div>
+
+      {uploading && (
+        <div className="mt-2">
+          <UploadPatienceBanner active={uploading} />
+          {chunkStatus && <p className="mt-1.5 text-[11px] text-white/40">{chunkStatus}</p>}
+        </div>
+      )}
       {uploadError && <p className="mt-1.5 text-xs text-red-400">{uploadError}</p>}
     </div>
   );

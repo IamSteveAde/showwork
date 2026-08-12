@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 
 const COLOR = { blue: "#2478FF", gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" };
 
@@ -48,6 +49,94 @@ interface AssigneeOption {
   email: string;
 }
 
+// ── Upload helpers — same pattern used in AddMoreFilesButton, the
+// new-project page, and SectionHeader: real progress via XHR, plus a
+// second version for multipart chunks that reads back the ETag R2
+// returns for that chunk. ──
+function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded, e.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(file);
+  });
+}
+function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded, e.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const etag = xhr.getResponseHeader("ETag");
+        if (!etag) {
+          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
+          return;
+        }
+        resolve(etag);
+      } else {
+        reject(new Error(`Chunk upload failed (${xhr.status})`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
+    xhr.send(chunk);
+  });
+}
+
+// Resumable chunk-level progress for a task upload — keyed by taskId
+// + a fingerprint of the specific file, since browsers give JS no way
+// to hold a real File reference across a crash or reload.
+function fileFingerprint(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`;
+}
+interface TaskMultipartProgress {
+  fileKey: string;
+  uploadId: string;
+  completedParts: { partNumber: number; etag: string }[];
+}
+function taskMultipartKey(taskId: string, fingerprint: string): string {
+  return `showwork-task-multipart:${taskId}:${fingerprint}`;
+}
+function getTaskMultipartProgress(taskId: string, fingerprint: string): TaskMultipartProgress | null {
+  try {
+    const raw = localStorage.getItem(taskMultipartKey(taskId, fingerprint));
+    return raw ? (JSON.parse(raw) as TaskMultipartProgress) : null;
+  } catch {
+    return null;
+  }
+}
+function saveTaskMultipartProgress(taskId: string, fingerprint: string, progress: TaskMultipartProgress) {
+  try {
+    localStorage.setItem(taskMultipartKey(taskId, fingerprint), JSON.stringify(progress));
+  } catch {
+    // ignore — resuming just won't work this time
+  }
+}
+function clearTaskMultipartProgress(taskId: string, fingerprint: string) {
+  try {
+    localStorage.removeItem(taskMultipartKey(taskId, fingerprint));
+  } catch {
+    // ignore
+  }
+}
+
+const TASK_MULTIPART_THRESHOLD_MB = 100;
+const TASK_CHUNK_SIZE_MB = 200;
+const TASK_CHUNK_CONCURRENCY = 2;
+const TASK_MAX_RETRIES = 2;
+const TASK_MAX_RETRIES_PER_CHUNK = 3;
+const taskSleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 // One task's upload control plus its list of attached files — each
 // with the owner's internal review state shown and, for the owner
 // only, the approve/request-changes buttons.
@@ -66,6 +155,7 @@ function TaskAssets({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [chunkStatus, setChunkStatus] = useState<string | null>(null);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewNote, setReviewNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -77,37 +167,154 @@ function TaskAssets({
     return "DOCUMENT";
   };
 
+  // ── Small files — single PUT, with retry ──
+  const uploadSmallFile = async (file: File, type: string): Promise<void> => {
+    for (let attempt = 0; attempt <= TASK_MAX_RETRIES; attempt++) {
+      try {
+        const presignRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-presign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        });
+        const presignData = await presignRes.json();
+        if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
+
+        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+
+        const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileKey: presignData.fileKey, filename: file.name, type }),
+        });
+        const completeData = await completeRes.json();
+        if (!completeRes.ok) throw new Error(completeData.error ?? "Failed to save upload");
+        return;
+      } catch (err) {
+        if (attempt === TASK_MAX_RETRIES) throw err;
+        await taskSleep(2000 * (attempt + 1));
+      }
+    }
+  };
+
+  // ── Large files — chunked multipart, 2 chunks concurrently, with
+  //    per-chunk resume ──
+  const uploadLargeFile = async (file: File, type: string): Promise<void> => {
+    const fingerprint = fileFingerprint(file);
+    const chunkSizeBytes = TASK_CHUNK_SIZE_MB * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
+    let progress = getTaskMultipartProgress(taskId, fingerprint);
+    if (!progress) {
+      const startRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) throw new Error(startData.error ?? "Failed to start large-file upload");
+      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [] };
+      saveTaskMultipartProgress(taskId, fingerprint, progress);
+    }
+
+    const completedPartNumbers = new Set(progress.completedParts.map((p) => p.partNumber));
+    const remainingPartNumbers: number[] = [];
+    for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
+      if (!completedPartNumbers.has(partNumber)) remainingPartNumbers.push(partNumber);
+    }
+
+    let completedCount = totalChunks - remainingPartNumbers.length;
+    let firstError: string | null = null;
+
+    const uploadOneChunk = async (partNumber: number): Promise<void> => {
+      if (firstError) return;
+      setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
+
+      const start = (partNumber - 1) * chunkSizeBytes;
+      const end = Math.min(start + chunkSizeBytes, file.size);
+      const chunk = file.slice(start, end);
+
+      let chunkSucceeded = false;
+      let lastError = "Upload failed";
+
+      for (let attempt = 0; attempt <= TASK_MAX_RETRIES_PER_CHUNK; attempt++) {
+        try {
+          const signRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-sign-part`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileKey: progress!.fileKey, uploadId: progress!.uploadId, partNumber }),
+          });
+          const signData = await signRes.json();
+          if (!signRes.ok) throw new Error(signData.error ?? "Failed to sign chunk");
+
+          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, () => {});
+
+          progress!.completedParts.push({ partNumber, etag });
+          saveTaskMultipartProgress(taskId, fingerprint, progress!);
+          completedCount++;
+          setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
+
+          chunkSucceeded = true;
+          break;
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : "Upload failed";
+          if (attempt < TASK_MAX_RETRIES_PER_CHUNK) await taskSleep(2000 * (attempt + 1));
+        }
+      }
+      if (!chunkSucceeded && !firstError) {
+        firstError = `${lastError} (chunk ${partNumber} of ${totalChunks})`;
+      }
+    };
+
+    const queue = [...remainingPartNumbers];
+    const workers = Array.from({ length: TASK_CHUNK_CONCURRENCY }, async () => {
+      while (queue.length > 0 && !firstError) {
+        const partNumber = queue.shift();
+        if (partNumber !== undefined) await uploadOneChunk(partNumber);
+      }
+    });
+    await Promise.all(workers);
+
+    if (firstError) throw new Error(firstError);
+
+    const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileKey: progress.fileKey,
+        uploadId: progress.uploadId,
+        parts: progress.completedParts,
+        filename: file.name,
+        type,
+      }),
+    });
+    const completeData = await completeRes.json();
+    if (!completeRes.ok) throw new Error(completeData.error ?? "Failed to finalize large file");
+
+    clearTaskMultipartProgress(taskId, fingerprint);
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     setError(null);
+    setChunkStatus(null);
     try {
       const type = detectType(file);
-      const presignRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-presign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
-      });
-      const presignData = await presignRes.json();
-      if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
+      const isLarge = file.size >= TASK_MULTIPART_THRESHOLD_MB * 1024 * 1024;
 
-      const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) throw new Error("Upload to storage failed");
-
-      const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileKey: presignData.fileKey, filename: file.name, type }),
-      });
-      const completeData = await completeRes.json();
-      if (!completeRes.ok) throw new Error(completeData.error ?? "Failed to save upload");
+      if (isLarge) {
+        await uploadLargeFile(file, type);
+      } else {
+        await uploadSmallFile(file, type);
+      }
 
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setChunkStatus(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -182,6 +389,8 @@ function TaskAssets({
 
       {canUpload && (
         <div className="mt-2">
+          {uploading && <UploadPatienceBanner active={uploading} />}
+          {chunkStatus && <p className="mb-1.5 mt-1.5 text-[11px] text-white/40">{chunkStatus}</p>}
           <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" id={`file-${taskId}`} disabled={uploading} />
           <label
             htmlFor={`file-${taskId}`}
@@ -315,14 +524,24 @@ export default function ManagedProjectTasks({
 
       {showForm && (
         <form onSubmit={createTask} className="mb-6 flex flex-col gap-3 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Task title"
-            required
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
-          />
+          <div>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Task title"
+              required
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            />
+            {/* Not just an internal label — once this task's work is
+                published, this exact title becomes the section
+                heading your client sees on their delivery page. Worth
+                a real, client-facing name, not shorthand only your
+                team would understand. */}
+            <p className="mt-1.5 text-[11px] text-white/30">
+              Becomes the section name your client sees once this is published — name it accordingly.
+            </p>
+          </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}

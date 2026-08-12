@@ -155,6 +155,12 @@ export default function ManagedProjectPublish({
                       Publishing is how you tell your client <strong className="text-white">the project is complete</strong>. If it isn&apos;t finished yet, select Cancel below and keep working on it — you can publish whenever you&apos;re actually ready.
                     </p>
                   </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckIcon />
+                    <p className="text-sm leading-relaxed text-white/70">
+                      Files are organized by task — each task&apos;s title becomes a section your client sees on their page.
+                    </p>
+                  </div>
                 </div>
 
                 {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
