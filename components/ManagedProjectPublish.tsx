@@ -73,6 +73,9 @@ export default function ManagedProjectPublish({
         >
           {publishedAt ? "Publish new approved work" : "Publish to client"}
         </button>
+        <p className="text-xs text-white/30">
+          Publishing shows your client the approved files immediately. You can keep adding and managing tasks afterward — nothing locks on your side.
+        </p>
         {publishResult && <p className="text-xs" style={{ color: "#4ade80" }}>{publishResult}</p>}
       </div>
 
@@ -117,7 +120,7 @@ export default function ManagedProjectPublish({
                 <div className="flex items-start gap-2.5">
                   <CheckIcon />
                   <p className="text-sm leading-relaxed text-white/70">
-                    You <strong className="text-white">won&apos;t be able to add new tasks</strong> to this project anymore — the scope of work locks in at this point.
+                    You can still add and manage tasks after publishing — this doesn&apos;t lock anything on your side, it only changes what the client sees.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">
