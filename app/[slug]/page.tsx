@@ -23,16 +23,29 @@ export default async function SlugPage({
       sections: {
         orderBy: { displayOrder: "asc" },
         include: {
+          // Files sitting directly in the section, with no
+          // sub-section — the fallback group shown after every named
+          // sub-section within it.
           media: {
+            where: { folderId: null },
             orderBy: { displayOrder: "asc" },
             include: { reviews: { orderBy: { createdAt: "asc" } } },
           },
+          // Every sub-section within this section, each with its own
+          // files — this is what lets a client browse "Sonos
+          // Campaign" and "Sonance Campaign" as genuinely separate
+          // groups within the same section, instead of one flat list.
+          folders: {
+            orderBy: { displayOrder: "asc" },
+            include: {
+              media: {
+                orderBy: { displayOrder: "asc" },
+                include: { reviews: { orderBy: { createdAt: "asc" } } },
+              },
+            },
+          },
         },
       },
-      // The project-management side, if this delivery was created
-      // through that flow — null for every regular, directly-created
-      // delivery, which is the majority case and behaves exactly as
-      // it always has.
       managedProject: {
         include: {
           tasks: {
@@ -53,7 +66,15 @@ export default async function SlugPage({
     data: { viewCount: { increment: 1 } },
   });
 
-  const mapMedia = (m: (typeof project.media)[number]) => ({
+  const mapMedia = (m: {
+    id: string;
+    type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
+    fileKey: string;
+    caption: string | null;
+    approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
+    approvalNote: string | null;
+    reviews: { reviewerName: string | null; reviewerEmail: string; status: "PENDING" | "APPROVED" | "NEEDS_REVISION"; note: string | null; createdAt: Date }[];
+  }) => ({
     id: m.id,
     type: m.type,
     url: publicUrlFor(m.fileKey),
@@ -73,14 +94,22 @@ export default async function SlugPage({
 
   // The client-facing view of each creator-named section — replaces the
   // old hardcoded "Films" / "Photography" split entirely. Only sections
-  // that actually have files in them are shown.
+  // that actually have files in them are shown — either directly in
+  // the section, or inside one of its sub-sections.
   const sections = project.sections
-    .filter((s) => s.media.length > 0)
+    .filter((s) => s.media.length > 0 || s.folders.some((f) => f.media.length > 0))
     .map((s) => ({
       id: s.id,
       name: s.name,
       mediaType: s.mediaType,
       media: s.media.map(mapMedia),
+      // Only sub-sections that actually have files — an empty
+      // sub-section a creator hasn't finished uploading to yet stays
+      // invisible to the client rather than showing as an empty
+      // heading with nothing under it.
+      folders: s.folders
+        .filter((f) => f.media.length > 0)
+        .map((f) => ({ id: f.id, name: f.name, media: f.media.map(mapMedia) })),
     }));
 
   // Anything not assigned to a section (older uploads from before
@@ -97,11 +126,6 @@ export default async function SlugPage({
     ? media.find((m) => m.id === project.heroMediaId) ?? null
     : null;
 
-  // Only the fields a client should ever see about the managed
-  // project: task titles and statuses, never assignee identities,
-  // internal review notes, or who uploaded what — none of that is
-  // this audience's business. The brief itself is included only when
-  // the owner explicitly turned briefVisibleToClient on.
   const managedProjectForClient = project.managedProject
     ? {
         name: project.managedProject.name,

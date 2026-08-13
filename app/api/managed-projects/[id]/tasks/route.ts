@@ -39,9 +39,14 @@ export async function GET(
           internalReviewNote: true,
           promotedToMediaId: true,
           uploadedByCreatorId: true,
+          folderId: true,
           createdAt: true,
         },
         orderBy: { createdAt: "asc" },
+      },
+      folders: {
+        orderBy: { displayOrder: "asc" },
+        select: { id: true, name: true },
       },
     },
   });
@@ -70,6 +75,19 @@ export async function POST(
   const managedProject = await db.managedProject.findUnique({ where: { id } });
   if (!managedProject) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (managedProject.creatorId !== creator.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Once published, new tasks can't be added — publishing is meant to
+  // be the point where the project's scope of work is locked in and
+  // the client starts seeing finished output instead of a progress
+  // view. Existing tasks can still be worked on and their approved
+  // uploads published in a later round; this only blocks starting
+  // brand-new work after that point.
+  if (managedProject.publishedAt) {
+    return NextResponse.json(
+      { error: "This project has already been published — new tasks can't be added anymore." },
+      { status: 403 }
+    );
+  }
 
   const { title, description, assignedToCreatorId, priority, dueDate, milestoneId } = await req.json();
 

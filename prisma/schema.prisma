@@ -347,9 +347,33 @@ model MediaSection {
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
 
-  media Media[]
+  media   Media[]
+  folders Folder[]
 
   @@index([projectId])
+}
+
+// ─────────────────────────────────────────────
+// FOLDER — an optional sub-grouping within a section, one level deep.
+// Client-facing, not just an internal organizing label: on the
+// delivery page, each folder gets its own real sub-heading and
+// gallery within the section it belongs to — e.g. a "Q3 Deliverables"
+// section might contain a "Sonos Campaign" folder and a separate
+// "Sonance Campaign" folder, each with its own distinct set of files.
+// A file in a section doesn't have to belong to a folder — folders
+// are optional structure, not a requirement.
+// ─────────────────────────────────────────────
+model Folder {
+  id           String       @id @default(uuid())
+  section      MediaSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId    String
+  name         String
+  displayOrder Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  media Media[]
+
+  @@index([sectionId])
 }
 
 // ─────────────────────────────────────────────
@@ -569,10 +593,31 @@ model Task {
   completedAt DateTime?
 
   linkedAssets TaskAsset[]
+  folders      TaskFolder[]
 
   @@index([managedProjectId])
   @@index([assignedToCreatorId])
   @@index([milestoneId])
+}
+
+// ─────────────────────────────────────────────
+// TASK FOLDER — an optional sub-grouping within a single task's own
+// uploaded work, one level deep. Same idea as Folder on the delivery
+// side, scoped to a task instead of a section — e.g. "Round 1
+// drafts" and "Round 2 final" as two separate folders under the same
+// task, each holding their own uploaded files.
+// ─────────────────────────────────────────────
+model TaskFolder {
+  id           String   @id @default(uuid())
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId       String
+  name         String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  assets TaskAsset[]
+
+  @@index([taskId])
 }
 
 // ─────────────────────────────────────────────
@@ -596,6 +641,12 @@ model TaskAsset {
   type                MediaType @default(PHOTO)
   uploadedBy          Creator   @relation("UploadedTaskAssets", fields: [uploadedByCreatorId], references: [id], onDelete: Cascade)
   uploadedByCreatorId String
+
+  // Which folder within this task, if any — optional extra layer of
+  // organization, not a requirement. Most uploads sit directly on the
+  // task with no folder.
+  folder   TaskFolder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId String?
 
   internalReviewStatus InternalReviewStatus @default(PENDING)
   internalReviewNote   String?
@@ -644,6 +695,14 @@ model Media {
   // permanently deletes every file inside it, not just the grouping.
   section   MediaSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   sectionId String?
+
+  // Which folder within that section, if any — folders are an
+  // optional extra layer of organization inside a section, not a
+  // requirement. Nullable: most files sit directly in their section
+  // with no folder. onDelete: Cascade — deleting a folder deletes the
+  // files inside it too, same reasoning as deleting a section.
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId String?
 
   // Which specific creator actually uploaded this file — the project
   // owner for a solo project, or possibly a collaborator on a shared

@@ -227,6 +227,7 @@ export default function AddMoreFilesButton({
   const [step, setStep] = useState<Step>("closed");
   const [mediaType, setMediaType] = useState<MediaType | null>(null);
   const [sectionName, setSectionName] = useState("");
+  const [folderName, setFolderName] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [resumedCount, setResumedCount] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -283,7 +284,8 @@ export default function AddMoreFilesButton({
   // ── Small/normal files — the existing single-PUT path, unchanged ──
   const uploadOneFileWithRetry = async (
     file: File,
-    sectionId: string
+    sectionId: string,
+    folderId: string | null
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
       try {
@@ -308,7 +310,7 @@ export default function AddMoreFilesButton({
         const completeRes = await fetch("/api/upload/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, fileKey, type: detectFileType(file, mediaType!), sectionId }),
+          body: JSON.stringify({ projectId, fileKey, type: detectFileType(file, mediaType!), sectionId, folderId }),
         });
         if (!completeRes.ok) throw new Error("Failed to save file");
 
@@ -328,6 +330,7 @@ export default function AddMoreFilesButton({
   const uploadLargeFileMultipart = async (
     file: File,
     sectionId: string,
+    folderId: string | null,
     onChunkStatus: (msg: string) => void
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     const fingerprint = fileFingerprint(file);
@@ -455,6 +458,7 @@ export default function AddMoreFilesButton({
         parts: progress.completedParts,
         type: detectFileType(file, mediaType!),
         sectionId,
+        folderId,
       }),
     });
     if (!completeRes.ok) {
@@ -501,6 +505,28 @@ export default function AddMoreFilesButton({
       }
       const { section } = await sectionRes.json();
 
+      // A named folder for this whole batch is entirely optional —
+      // created once, right after the section, and reused for every
+      // file in this upload. Leaving this blank keeps files sitting
+      // directly in the section with no extra grouping, same as
+      // before folders existed at all.
+      let folderId: string | null = null;
+      if (folderName.trim()) {
+        const folderRes = await fetch(`/api/sections/${section.id}/folders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: folderName.trim() }),
+        });
+        if (folderRes.ok) {
+          const folderData = await folderRes.json();
+          folderId = folderData.folder.id;
+        }
+        // A failed folder creation isn't treated as fatal — the
+        // section itself is already real at this point, and files
+        // are still perfectly valid sitting directly in it with no
+        // folder, rather than aborting the whole upload over this.
+      }
+
       const completed = getCompletedFingerprints(projectId, sectionName);
       const filesToUpload = files.filter((f) => !completed.has(fileFingerprint(f)));
       const failedFiles: string[] = [];
@@ -512,10 +538,10 @@ export default function AddMoreFilesButton({
         setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
 
         const result = isLarge
-          ? await uploadLargeFileMultipart(file, section.id, (chunkMsg) =>
+          ? await uploadLargeFileMultipart(file, section.id, folderId, (chunkMsg) =>
               setStatus(`Uploading ${i + 1} of ${filesToUpload.length} — ${chunkMsg}...`)
             )
-          : await uploadOneFileWithRetry(file, section.id);
+          : await uploadOneFileWithRetry(file, section.id, folderId);
 
         if (result.ok) {
           markFingerprintCompleted(projectId, sectionName, fileFingerprint(file));
@@ -621,6 +647,22 @@ export default function AddMoreFilesButton({
               placeholder="e.g. Ceremony Highlights"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/25"
             />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Folder <span className="normal-case text-white/25">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              placeholder="e.g. Sonos Campaign — leave blank for no folder"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition-colors focus:border-white/25"
+            />
+            <p className="mt-1.5 text-[11px] text-white/30">
+              Groups these files as a sub-section your client can browse separately — useful if this section will hold more than one distinct set of work.
+            </p>
           </div>
 
           <div>

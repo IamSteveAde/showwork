@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, fileKey, uploadId, parts, type, caption, displayOrder, sectionId } = await req.json();
+  const { projectId, fileKey, uploadId, parts, type, caption, displayOrder, sectionId, folderId } = await req.json();
 
   if (!projectId || !fileKey || !uploadId || !Array.isArray(parts) || parts.length === 0 || !type) {
     return NextResponse.json(
@@ -68,6 +68,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (folderId) {
+    if (!sectionId) {
+      return NextResponse.json({ error: "A folder requires a section" }, { status: 400 });
+    }
+    const folder = await db.folder.findUnique({ where: { id: folderId } });
+    if (!folder || folder.sectionId !== sectionId) {
+      return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+    }
+  }
+
   // This is the call that actually turns however many separately-
   // uploaded chunks into one real, complete, readable file in R2 —
   // nothing before this point is a usable object yet.
@@ -81,6 +91,7 @@ export async function POST(req: NextRequest) {
       caption: caption ?? null,
       displayOrder: displayOrder ?? 0,
       sectionId: sectionId ?? null,
+      folderId: folderId ?? null,
       uploadedByCreatorId: creator.id,
     },
   });

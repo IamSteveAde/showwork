@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
+import AddSubSection from "@/components/AddSubSection";
 
 type MediaType = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 
@@ -524,6 +525,10 @@ export default function SectionHeader({
             Delete section
           </button>
         )}
+      </div>
+
+      <div className="mt-3">
+        <AddSubSection projectId={projectId} sectionId={sectionId} mediaType={mediaType} />
       </div>
 
       {uploading && (

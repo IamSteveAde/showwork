@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Image from "next/image";
-import type { MediaItem, DeliverySection } from "@/app/[slug]/DeliveryPage";
+import type { MediaItem, DeliverySection, DeliveryFolder } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
@@ -293,18 +293,23 @@ interface JustifiedRow {
 }
 
 // The actual justified-gallery algorithm — the same technique behind
-// Google Photos / Flickr grids. Items are added to a row until that
-// row, scaled to the target height, would overflow the container's
-// width; then the whole row is rescaled so it fills the container's
-// width *exactly*, sharing one height across every item in it. This
-// is what guarantees zero gaps (and no black background showing
-// through) regardless of how differently-shaped the source media is.
+// Google Photos / Flickr grids. Items are added to a row until either
+// (a) that row, scaled to the target height, would overflow the
+// container's width, or (b) maxPerRow items are already in it —
+// whichever comes first. Without that second condition, a run of
+// narrow portrait pieces could mathematically keep fitting side by
+// side well past what actually looks right (5, 6+ in a row); the cap
+// forces a flush regardless of how much width math alone would still
+// allow. Once a row is flushed, it's rescaled so it fills the
+// container's width *exactly*, sharing one height across every item
+// in it — that part is what guarantees zero gaps, same as before.
 function computeJustifiedRows(
   items: MediaItem[],
   aspectRatios: Record<string, number>,
   containerWidth: number,
   targetRowHeight: number,
-  gap: number
+  gap: number,
+  maxPerRow: number
 ): JustifiedRow[] {
   const rows: JustifiedRow[] = [];
   let currentItems: MediaItem[] = [];
@@ -326,7 +331,7 @@ function computeJustifiedRows(
     aspectSum += ratio;
     const totalGap = gap * (currentItems.length - 1);
     const widthAtTargetHeight = aspectSum * targetRowHeight + totalGap;
-    if (widthAtTargetHeight >= containerWidth) {
+    if (widthAtTargetHeight >= containerWidth || currentItems.length >= maxPerRow) {
       flushRow(true);
     }
   }
@@ -356,6 +361,20 @@ function JustifiedWallGallery({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+  // Mobile forces exactly one item per row regardless of what the
+  // width math would otherwise allow — a row of two-plus items on a
+  // narrow phone screen reads as cramped no matter how the numbers
+  // work out, so this isn't just a lower version of the desktop cap,
+  // it's a hard override.
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -384,11 +403,14 @@ function JustifiedWallGallery({
   const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
   const gap = 1; // matches the tile's own 1px white border seam
   const targetRowHeight = 340;
+  // 1 on mobile always; 4 max on desktop, regardless of how narrow
+  // (portrait) the pieces in a given row happen to be.
+  const maxPerRow = isMobile ? 1 : 4;
 
   const rows = useMemo(() => {
     if (!allKnown || containerWidth === 0) return [];
-    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap);
-  }, [allKnown, containerWidth, items, aspectRatios]);
+    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap, maxPerRow);
+  }, [allKnown, containerWidth, items, aspectRatios, maxPerRow]);
 
   let runningIndex = 0;
 
@@ -808,16 +830,17 @@ export default function ProjectContent({
     name: string;
     mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
     media: MediaItem[];
+    folders: DeliveryFolder[];
   }[] = [
-    ...sections.map((s) => ({ id: s.id, name: s.name, mediaType: s.mediaType, media: s.media })),
+    ...sections.map((s) => ({ id: s.id, name: s.name, mediaType: s.mediaType, media: s.media, folders: s.folders })),
     ...(ungroupedVideos.length > 0
-      ? [{ id: "ungrouped-video", name: "Other films", mediaType: "VIDEO" as const, media: ungroupedVideos }]
+      ? [{ id: "ungrouped-video", name: "Other films", mediaType: "VIDEO" as const, media: ungroupedVideos, folders: [] }]
       : []),
     ...(ungroupedPhotos.length > 0
-      ? [{ id: "ungrouped-photo", name: "Other photos", mediaType: "PHOTO" as const, media: ungroupedPhotos }]
+      ? [{ id: "ungrouped-photo", name: "Other photos", mediaType: "PHOTO" as const, media: ungroupedPhotos, folders: [] }]
       : []),
     ...(ungroupedDocs.length > 0
-      ? [{ id: "ungrouped-docs", name: "Other documents", mediaType: "PDF" as const, media: ungroupedDocs }]
+      ? [{ id: "ungrouped-docs", name: "Other documents", mediaType: "PDF" as const, media: ungroupedDocs, folders: [] }]
       : []),
   ];
 
@@ -926,10 +949,10 @@ export default function ProjectContent({
                 // A real justified gallery — every image and video
                 // keeps its own true, uncropped aspect ratio, but rows
                 // are computed so they always fill the full width
-                // exactly, at one shared height per row. This is what
-                // actually eliminates gaps (and the black background
-                // showing through them) between differently-shaped
-                // pieces, the same fix already used on the portfolio.
+                // exactly, at one shared height per row, and never
+                // exceed the per-row cap (1 on mobile, 4 on desktop) —
+                // eliminating both the black-gap issue and the
+                // too-many-narrow-items-in-one-row issue at once.
                 <JustifiedWallGallery
                   items={section.media.map(withLiveStatus)}
                   viewerEmail={viewerEmail}
@@ -961,6 +984,61 @@ export default function ProjectContent({
                   })}
                 </div>
               )}
+
+              {/* Every sub-section within this section, each as its
+                  own titled gallery — shown after the section's own
+                  direct files, so a sub-section reads as extra,
+                  deliberately separated work sitting underneath the
+                  section's main content, not competing with it for
+                  first position. Uses the exact same gallery/doc-grid
+                  pattern as the section-level rendering above, just
+                  scoped to this folder's own files. */}
+              {section.folders.map((folder) => (
+                <div
+                  key={folder.id}
+                  className="mb-10 mt-8 pl-6 md:pl-10"
+                  style={{ borderLeft: `2px solid ${isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"}` }}
+                >
+                  <h3
+                    className="mb-5 text-base font-light uppercase"
+                    style={{ color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)", letterSpacing: "0.08em" }}
+                  >
+                    {folder.name}
+                  </h3>
+                  {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
+                    <JustifiedWallGallery
+                      items={folder.media.map(withLiveStatus)}
+                      viewerEmail={viewerEmail}
+                      primaryColor={primaryColor}
+                      onOpen={(item) => {
+                        const list = section.mediaType === "VIDEO" ? videos : photos;
+                        const globalIdx = list.findIndex((x) => x.id === item.id);
+                        section.mediaType === "VIDEO" ? setOpenVideoIdx(globalIdx) : setOpenPhotoIdx(globalIdx);
+                      }}
+                      onReview={(mediaId, status, note) => submitReview(mediaId, status, note)}
+                      onDeleteReview={(mediaId) => deleteReview(mediaId)}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      {folder.media.map((d, i) => {
+                        const live = withLiveStatus(d);
+                        const globalIdx = docs.findIndex((x) => x.id === d.id);
+                        return (
+                          <DocTile
+                            key={d.id}
+                            doc={live}
+                            index={i}
+                            viewerEmail={viewerEmail}
+                            onOpen={() => setOpenDocIdx(globalIdx)}
+                            onReview={(status, note) => submitReview(d.id, status, note)}
+                            onDeleteReview={() => deleteReview(d.id)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </section>
         );

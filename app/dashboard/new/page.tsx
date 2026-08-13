@@ -33,6 +33,7 @@ interface PendingSection {
   files: QueuedFile[];
 }
 
+
 type FileStatus = "pending" | "uploading" | "done" | "error";
 type BuilderStep = "closed" | "type" | "details";
 

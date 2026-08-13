@@ -18,11 +18,18 @@ export interface MediaItem {
   reviews: ReviewEntry[];
 }
 
+export interface DeliveryFolder {
+  id: string;
+  name: string;
+  media: MediaItem[];
+}
+
 export interface DeliverySection {
   id: string;
   name: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   media: MediaItem[];
+  folders: DeliveryFolder[];
 }
 
 interface ManagedProjectClientData {

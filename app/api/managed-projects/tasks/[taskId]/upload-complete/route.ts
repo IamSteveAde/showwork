@@ -19,7 +19,7 @@ export async function POST(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { taskId } = await params;
-  const { fileKey, filename, type } = await req.json();
+  const { fileKey, filename, type, folderId } = await req.json();
   if (!fileKey) return NextResponse.json({ error: "fileKey is required" }, { status: 400 });
   if (type && !["PHOTO", "VIDEO", "DOCUMENT", "PDF"].includes(type)) {
     return NextResponse.json({ error: "type must be PHOTO, VIDEO, DOCUMENT, or PDF" }, { status: 400 });
@@ -35,12 +35,23 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Confirm the folder actually belongs to this task before attaching
+  // — otherwise a file could get silently tied to a folder from a
+  // completely different task.
+  if (folderId) {
+    const folder = await db.taskFolder.findUnique({ where: { id: folderId } });
+    if (!folder || folder.taskId !== taskId) {
+      return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+    }
+  }
+
   const asset = await db.taskAsset.create({
     data: {
       taskId,
       fileKey,
       filename: typeof filename === "string" ? filename : null,
       type: type || "PHOTO",
+      folderId: folderId ?? null,
       uploadedByCreatorId: creator.id,
     },
   });

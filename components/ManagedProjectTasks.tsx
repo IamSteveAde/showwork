@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
+import AddTaskSubSection from "@/components/AddTaskSubSection";
 
 const COLOR = { blue: "#2478FF", gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" };
 
@@ -31,6 +32,11 @@ interface TaskAssetRow {
   internalReviewNote: string | null;
   promotedToMediaId: string | null;
   uploadedByCreatorId: string;
+  folderId: string | null;
+}
+interface TaskFolderRow {
+  id: string;
+  name: string;
 }
 interface TaskRow {
   id: string;
@@ -42,6 +48,7 @@ interface TaskRow {
   assignedTo: { id: string; name: string | null; email: string; avatarUrl: string | null };
   createdBy: { id: string; name: string | null; email: string };
   linkedAssets: TaskAssetRow[];
+  folders: TaskFolderRow[];
 }
 interface AssigneeOption {
   id: string;
@@ -143,12 +150,14 @@ const taskSleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 function TaskAssets({
   taskId,
   assets,
+  folders,
   canUpload,
   isOwner,
   onChanged,
 }: {
   taskId: string;
   assets: TaskAssetRow[];
+  folders: TaskFolderRow[];
   canUpload: boolean;
   isOwner: boolean;
   onChanged: () => void;
@@ -330,62 +339,91 @@ function TaskAssets({
     onChanged();
   };
 
+  // One asset's full row — pulled out as its own function rather than
+  // inlined twice, since it needs to render identically whether it's
+  // sitting in the ungrouped list or inside a named sub-section below.
+  const renderAssetRow = (asset: TaskAssetRow) => {
+    const review = REVIEW_COLORS[asset.internalReviewStatus];
+    return (
+      <div key={asset.id} className="rounded-md p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+        <div className="flex items-center justify-between gap-2">
+          <a href={asset.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-xs font-medium underline" style={{ color: COLOR.blue }}>
+            {asset.filename || "View file"}
+          </a>
+          <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: review.bg, color: review.text }}>
+            {asset.promotedToMediaId ? "Published" : review.label}
+          </span>
+        </div>
+        {asset.internalReviewNote && (
+          <p className="mt-1.5 text-xs italic text-white/50">&ldquo;{asset.internalReviewNote}&rdquo;</p>
+        )}
+        {isOwner && asset.internalReviewStatus === "PENDING" && !asset.promotedToMediaId && (
+          <div className="mt-2">
+            {reviewingId === asset.id ? (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  placeholder="What needs to change?"
+                  rows={2}
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => submitReview(asset.id, "NEEDS_CHANGES")} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}>
+                    Send request
+                  </button>
+                  <button onClick={() => setReviewingId(null)} className="text-[11px] text-white/40 hover:text-white">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => submitReview(asset.id, "APPROVED")} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>
+                  Approve
+                </button>
+                <button onClick={() => setReviewingId(asset.id)} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}>
+                  Request changes
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Direct uploads first (no sub-section), each named sub-section
+  // shown after — same ordering and visual treatment as sections and
+  // sub-sections on the delivery side.
+  const ungroupedAssets = assets.filter((a) => !a.folderId);
+
   return (
     <div className="mt-3 border-t border-white/5 pt-3">
-      {assets.length > 0 && (
+      {ungroupedAssets.length > 0 && (
         <div className="flex flex-col gap-2">
-          {assets.map((asset) => {
-            const review = REVIEW_COLORS[asset.internalReviewStatus];
-            return (
-              <div key={asset.id} className="rounded-md p-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
-                <div className="flex items-center justify-between gap-2">
-                  <a href={asset.url} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-xs font-medium underline" style={{ color: COLOR.blue }}>
-                    {asset.filename || "View file"}
-                  </a>
-                  <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: review.bg, color: review.text }}>
-                    {asset.promotedToMediaId ? "Published" : review.label}
-                  </span>
-                </div>
-                {asset.internalReviewNote && (
-                  <p className="mt-1.5 text-xs italic text-white/50">&ldquo;{asset.internalReviewNote}&rdquo;</p>
-                )}
-                {isOwner && asset.internalReviewStatus === "PENDING" && !asset.promotedToMediaId && (
-                  <div className="mt-2">
-                    {reviewingId === asset.id ? (
-                      <div className="flex flex-col gap-2">
-                        <textarea
-                          value={reviewNote}
-                          onChange={(e) => setReviewNote(e.target.value)}
-                          placeholder="What needs to change?"
-                          rows={2}
-                          className="w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none focus:border-white/25"
-                        />
-                        <div className="flex gap-2">
-                          <button onClick={() => submitReview(asset.id, "NEEDS_CHANGES")} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}>
-                            Send request
-                          </button>
-                          <button onClick={() => setReviewingId(null)} className="text-[11px] text-white/40 hover:text-white">
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button onClick={() => submitReview(asset.id, "APPROVED")} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>
-                          Approve
-                        </button>
-                        <button onClick={() => setReviewingId(asset.id)} className="rounded-md px-2.5 py-1 text-[11px] font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}>
-                          Request changes
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {ungroupedAssets.map(renderAssetRow)}
         </div>
       )}
+
+      {folders.map((folder) => {
+        const folderAssets = assets.filter((a) => a.folderId === folder.id);
+        if (folderAssets.length === 0) return null;
+        return (
+          <div
+            key={folder.id}
+            className="mt-4 border-l-2 pl-3"
+            style={{ borderColor: "rgba(36,120,255,0.25)" }}
+          >
+            <p className="mb-2 text-[10px] font-semibold uppercase text-white/40" style={{ letterSpacing: "0.06em" }}>
+              {folder.name}
+            </p>
+            <div className="flex flex-col gap-2">
+              {folderAssets.map(renderAssetRow)}
+            </div>
+          </div>
+        );
+      })}
 
       {canUpload && (
         <div className="mt-2">
@@ -400,6 +438,10 @@ function TaskAssets({
             {uploading ? "Uploading..." : "+ Upload file"}
           </label>
           {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+
+          <div className="mt-2.5">
+            <AddTaskSubSection taskId={taskId} onChanged={onChanged} />
+          </div>
         </div>
       )}
     </div>
@@ -644,6 +686,7 @@ export default function ManagedProjectTasks({
                 <TaskAssets
                   taskId={task.id}
                   assets={task.linkedAssets}
+                  folders={task.folders}
                   canUpload={canUpload}
                   isOwner={isOwner}
                   onChanged={loadTasks}

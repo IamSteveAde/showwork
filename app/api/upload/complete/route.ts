@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, fileKey, type, caption, displayOrder, sectionId } = await req.json();
+  const { projectId, fileKey, type, caption, displayOrder, sectionId, folderId } = await req.json();
 
   if (!projectId || !fileKey || !type) {
     return NextResponse.json(
@@ -49,6 +49,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Same check for folderId — must genuinely belong to the section
+  // being uploaded into, not just any folder that happens to exist
+  // somewhere else in the project.
+  if (folderId) {
+    if (!sectionId) {
+      return NextResponse.json({ error: "A folder requires a section" }, { status: 400 });
+    }
+    const folder = await db.folder.findUnique({ where: { id: folderId } });
+    if (!folder || folder.sectionId !== sectionId) {
+      return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+    }
+  }
+
   const media = await db.media.create({
     data: {
       projectId,
@@ -57,6 +70,7 @@ export async function POST(req: NextRequest) {
       caption: caption ?? null,
       displayOrder: displayOrder ?? 0,
       sectionId: sectionId ?? null,
+      folderId: folderId ?? null,
       // The actual point of the collaboration feature — every file
       // now remembers exactly who uploaded it, whether that's the
       // project owner or a collaborator. This is what will let client

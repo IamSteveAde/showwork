@@ -18,7 +18,7 @@ export async function POST(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { taskId } = await params;
-  const { fileKey, uploadId, parts, filename, type } = await req.json();
+  const { fileKey, uploadId, parts, filename, type, folderId } = await req.json();
 
   if (!fileKey || !uploadId || !Array.isArray(parts) || parts.length === 0) {
     return NextResponse.json({ error: "fileKey, uploadId, and parts are required" }, { status: 400 });
@@ -43,6 +43,13 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (folderId) {
+    const folder = await db.taskFolder.findUnique({ where: { id: folderId } });
+    if (!folder || folder.taskId !== taskId) {
+      return NextResponse.json({ error: "Invalid folder" }, { status: 400 });
+    }
+  }
+
   // The call that actually turns however many separately-uploaded
   // chunks into one real, complete file in R2 — nothing before this
   // point is a usable object yet.
@@ -54,6 +61,7 @@ export async function POST(
       fileKey,
       filename: typeof filename === "string" ? filename : null,
       type: type || "PHOTO",
+      folderId: folderId ?? null,
       uploadedByCreatorId: creator.id,
     },
   });
