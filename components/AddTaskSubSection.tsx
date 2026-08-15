@@ -233,11 +233,19 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
     }
 
     let completedCount = totalChunks - remainingPartNumbers.length;
+    let totalLoadedBytes = completedPartNumbers.size * chunkSizeBytes;
+    const perChunkLastReported = new Map<number, number>();
+    const reportChunkProgress = (partNumber: number, loaded: number) => {
+      const last = perChunkLastReported.get(partNumber) ?? 0;
+      totalLoadedBytes += loaded - last;
+      perChunkLastReported.set(partNumber, loaded);
+      const percent = Math.min(100, Math.round((totalLoadedBytes / file.size) * 100));
+      setChunkStatus(`${percent}% uploaded`);
+    };
     let firstError: string | null = null;
 
     const uploadOneChunk = async (partNumber: number): Promise<void> => {
       if (firstError) return;
-      setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
 
       const start = (partNumber - 1) * chunkSizeBytes;
       const end = Math.min(start + chunkSizeBytes, file.size);
@@ -256,12 +264,11 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
           const signData = await signRes.json();
           if (!signRes.ok) throw new Error(signData.error ?? "Failed to sign chunk");
 
-          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, () => {});
+          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, (loaded) => reportChunkProgress(partNumber, loaded));
 
           progress!.completedParts.push({ partNumber, etag });
           saveMultipartProgress(scopeKey, fingerprint, progress!);
           completedCount++;
-          setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
 
           chunkSucceeded = true;
           break;

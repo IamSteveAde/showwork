@@ -26,11 +26,23 @@ interface QueuedFile {
   localId: string;
 }
 
+// A named sub-grouping within a section, built up in the browser
+// alongside the section itself — not created for real in the database
+// until submit, same as the section it belongs to. Inherits its
+// parent section's media type, so there's no separate type-picker
+// step for one of these.
+interface PendingSubSection {
+  subSectionLocalId: string;
+  name: string;
+  files: QueuedFile[];
+}
+
 interface PendingSection {
   sectionLocalId: string;
   name: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   files: QueuedFile[];
+  subSections: PendingSubSection[];
 }
 
 
@@ -135,7 +147,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // workers, reporting progress back through the exact same
 // setLoadedMap callback pattern the existing small-file path already
 // uses — so the UI's progress bar keeps working identically whether
-// a file went through the simple or chunked path.
+// a file went through the simple or chunked path. Accepts an optional
+// folderId — set when this file belongs to a sub-section, left
+// undefined for a file sitting directly in the section.
 async function uploadLargeFileMultipart(
   file: File,
   localId: string,
@@ -143,7 +157,8 @@ async function uploadLargeFileMultipart(
   sectionId: string,
   mediaType: string,
   onLoaded: (loaded: number) => void,
-  onChunkStatus: (msg: string) => void
+  onChunkStatus: (msg: string) => void,
+  folderId?: string
 ): Promise<{ fileKey: string }> {
   const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
   const totalChunks = Math.ceil(file.size / chunkSizeBytes);
@@ -249,6 +264,7 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
       parts: progress.completedParts,
       type: mediaType,
       sectionId,
+      ...(folderId ? { folderId } : {}),
     }),
   });
   if (!completeRes.ok) {
@@ -353,6 +369,7 @@ export default function NewProjectPage() {
       name: builderName.trim(),
       mediaType: builderType,
       files: builderFiles,
+      subSections: [],
     };
 
     setSections((prev) => {
@@ -382,7 +399,8 @@ export default function NewProjectPage() {
     setSections((prev) => {
       const removed = prev.find((s) => s.sectionLocalId === sectionLocalId);
       const next = prev.filter((s) => s.sectionLocalId !== sectionLocalId);
-      if (removed && removed.files.some((f) => f.localId === heroLocalId)) {
+      const removedFiles = removed ? [...removed.files, ...removed.subSections.flatMap((sub) => sub.files)] : [];
+      if (removed && removedFiles.some((f) => f.localId === heroLocalId)) {
         const firstRemaining = next.flatMap((s) => s.files)[0];
         setHeroLocalId(firstRemaining ? firstRemaining.localId : null);
       }
@@ -428,8 +446,9 @@ export default function NewProjectPage() {
             ? { ...s, files: s.files.filter((f) => f.localId !== fileLocalId) }
             : s
         )
-        // A section with nothing left in it doesn't make sense to keep around.
-        .filter((s) => s.files.length > 0);
+        // A section with nothing left in it — no direct files and no
+        // sub-sections either — doesn't make sense to keep around.
+        .filter((s) => s.files.length > 0 || s.subSections.length > 0);
 
       if (heroLocalId === fileLocalId) {
         const firstRemaining = next.flatMap((s) => s.files)[0];
@@ -439,10 +458,84 @@ export default function NewProjectPage() {
     });
   };
 
+  // ── sub-sections — a named grouping within a section, built up the
+  // same way sections themselves are, and only actually created (as a
+  // real Folder, tied to the real section) once the whole form is
+  // submitted. Inherits the parent section's media type, so there's
+  // no type-picker step here — just a name and files. ──
+  const [addingSubSectionTo, setAddingSubSectionTo] = useState<string | null>(null);
+  const [subSectionDraftName, setSubSectionDraftName] = useState("");
+  const [subSectionDraftFiles, setSubSectionDraftFiles] = useState<QueuedFile[]>([]);
+  const subSectionFileInputRef = useRef<HTMLInputElement>(null);
+
+  const startAddingSubSection = (sectionLocalId: string) => {
+    setAddingSubSectionTo(sectionLocalId);
+    setSubSectionDraftName("");
+    setSubSectionDraftFiles([]);
+    setError(null);
+  };
+
+  const cancelAddingSubSection = () => {
+    setAddingSubSectionTo(null);
+    setSubSectionDraftName("");
+    setSubSectionDraftFiles([]);
+    if (subSectionFileInputRef.current) subSectionFileInputRef.current.value = "";
+  };
+
+  const handleSubSectionFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []).map((file) => ({
+      file,
+      localId: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
+    }));
+    setSubSectionDraftFiles(selected);
+  };
+
+  const confirmSubSection = () => {
+    if (!addingSubSectionTo) return;
+    if (!subSectionDraftName.trim()) {
+      setError("Give this sub-section a name");
+      return;
+    }
+    if (subSectionDraftFiles.length === 0) {
+      setError("Choose at least one file");
+      return;
+    }
+    setError(null);
+
+    const newSubSection: PendingSubSection = {
+      subSectionLocalId: `sub-${Math.random().toString(36).slice(2)}`,
+      name: subSectionDraftName.trim(),
+      files: subSectionDraftFiles,
+    };
+
+    setSections((prev) =>
+      prev.map((s) =>
+        s.sectionLocalId === addingSubSectionTo
+          ? { ...s, subSections: [...s.subSections, newSubSection] }
+          : s
+      )
+    );
+
+    cancelAddingSubSection();
+  };
+
+  const removeSubSection = (sectionLocalId: string, subSectionLocalId: string) => {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.sectionLocalId === sectionLocalId
+          ? { ...s, subSections: s.subSections.filter((sub) => sub.subSectionLocalId !== subSectionLocalId) }
+          : s
+      )
+    );
+  };
+
   const addingToSection = sections.find((s) => s.sectionLocalId === addingToSectionId);
 
   const anyVideoSection = sections.some((s) => s.mediaType === "VIDEO" && s.files.length > 0);
-  const allFilesForPreview = sections.flatMap((s) => s.files);
+  // Every file across every section AND every sub-section — this has
+  // to include sub-section files too, or the overall progress bar and
+  // done-count would silently ignore whatever's inside a sub-section.
+  const allFilesForPreview = sections.flatMap((s) => [...s.files, ...s.subSections.flatMap((sub) => sub.files)]);
   const previewFileKey = allFilesForPreview.map((f) => f.localId).join(",");
 
   // Real local thumbnails for the banner picker — generated from the
@@ -461,7 +554,7 @@ export default function NewProjectPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewFileKey]);
-  const allFiles = sections.flatMap((s) => s.files);
+  const allFiles = sections.flatMap((s) => [...s.files, ...s.subSections.flatMap((sub) => sub.files)]);
   // Documents and PDFs aren't sensible banner candidates — a banner is
   // meant to be the visual first impression, so only photo/video
   // sections are offered here, even though docs/PDFs upload normally.
@@ -498,6 +591,76 @@ export default function NewProjectPage() {
 
       let heroMediaId: string | null = null;
 
+      // Uploads one file, either through the simple single-PUT path or
+      // the chunked multipart path depending on size — shared by both
+      // a section's own direct files and every sub-section's files
+      // below, since the mechanics are identical either way, just
+      // with folderId set or not.
+      const uploadOneFile = async (
+        file: File,
+        localId: string,
+        sectionId: string,
+        mediaType: string,
+        folderId?: string
+      ) => {
+        setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
+        try {
+          const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
+
+          if (isLarge) {
+            const { fileKey: mediaId } = await uploadLargeFileMultipart(
+              file,
+              localId,
+              project.id,
+              sectionId,
+              mediaType,
+              (loaded) => setLoadedMap((prev) => ({ ...prev, [localId]: loaded })),
+              (msg) => setChunkStatusMap((prev) => ({ ...prev, [localId]: msg })),
+              folderId
+            );
+            if (localId === heroLocalId) heroMediaId = mediaId;
+          } else {
+            const presignRes = await fetch("/api/upload/presign", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                filename: file.name,
+                contentType: file.type,
+                fileSizeMb: file.size / (1024 * 1024),
+              }),
+            });
+            if (!presignRes.ok) {
+              const data = await presignRes.json();
+              throw new Error(data.error ?? "presign failed");
+            }
+            const { uploadUrl, fileKey } = await presignRes.json();
+            await uploadWithProgress(uploadUrl, file, (loaded) => {
+              setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
+            });
+            const completeRes = await fetch("/api/upload/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                projectId: project.id,
+                fileKey,
+                type: mediaType,
+                sectionId,
+                ...(folderId ? { folderId } : {}),
+              }),
+            });
+            if (!completeRes.ok) throw new Error("failed to save media record");
+            const { media } = await completeRes.json();
+            if (localId === heroLocalId) heroMediaId = media.id;
+          }
+          setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
+          setLoadedMap((prev) => ({ ...prev, [localId]: file.size }));
+        } catch (err) {
+          setStatusMap((prev) => ({ ...prev, [localId]: "error" }));
+          throw err;
+        }
+      };
+
       for (const section of sections) {
         const sectionRes = await fetch(`/api/projects/${project.id}/sections`, {
           method: "POST",
@@ -511,59 +674,31 @@ export default function NewProjectPage() {
         const { section: createdSection } = await sectionRes.json();
 
         for (const { file, localId } of section.files) {
-          setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
-          try {
-            const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
+          await uploadOneFile(file, localId, createdSection.id, section.mediaType);
+        }
 
-            if (isLarge) {
-              const { fileKey: mediaId } = await uploadLargeFileMultipart(
-                file,
-                localId,
-                project.id,
-                createdSection.id,
-                section.mediaType,
-                (loaded) => setLoadedMap((prev) => ({ ...prev, [localId]: loaded })),
-                (msg) => setChunkStatusMap((prev) => ({ ...prev, [localId]: msg }))
-              );
-              if (localId === heroLocalId) heroMediaId = mediaId;
-            } else {
-              const presignRes = await fetch("/api/upload/presign", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  projectId: project.id,
-                  filename: file.name,
-                  contentType: file.type,
-                  fileSizeMb: file.size / (1024 * 1024),
-                }),
-              });
-              if (!presignRes.ok) {
-                const data = await presignRes.json();
-                throw new Error(data.error ?? "presign failed");
-              }
-              const { uploadUrl, fileKey } = await presignRes.json();
-              await uploadWithProgress(uploadUrl, file, (loaded) => {
-                setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
-              });
-              const completeRes = await fetch("/api/upload/complete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  projectId: project.id,
-                  fileKey,
-                  type: section.mediaType,
-                  sectionId: createdSection.id,
-                }),
-              });
-              if (!completeRes.ok) throw new Error("failed to save media record");
-              const { media } = await completeRes.json();
-              if (localId === heroLocalId) heroMediaId = media.id;
-            }
-            setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
-            setLoadedMap((prev) => ({ ...prev, [localId]: file.size }));
-          } catch (err) {
-            setStatusMap((prev) => ({ ...prev, [localId]: "error" }));
-            throw err;
+        // Every sub-section within this section — created as a real
+        // Folder right after the section itself, then its own files
+        // uploaded into it. Skipped entirely if a sub-section somehow
+        // has no files (shouldn't happen given confirmSubSection
+        // requires at least one, but a pointless empty folder is worth
+        // guarding against regardless).
+        for (const subSection of section.subSections) {
+          if (subSection.files.length === 0) continue;
+
+          const folderRes = await fetch(`/api/sections/${createdSection.id}/folders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: subSection.name }),
+          });
+          if (!folderRes.ok) {
+            const data = await folderRes.json();
+            throw new Error(data.error ?? "Couldn't create sub-section");
+          }
+          const { folder } = await folderRes.json();
+
+          for (const { file, localId } of subSection.files) {
+            await uploadOneFile(file, localId, createdSection.id, section.mediaType, folder.id);
           }
         }
       }
@@ -625,51 +760,60 @@ export default function NewProjectPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {sections.map((section) => (
-              <div key={section.sectionLocalId}>
-                <p className="mb-1.5 text-xs font-semibold uppercase text-white/40">
-                  {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
-                </p>
-                <div className="flex flex-col gap-2">
-                  {section.files.map((f) => {
-                    const status = statusMap[f.localId] ?? "pending";
-                    const loaded = loadedMap[f.localId] ?? 0;
-                    const percent = f.file.size > 0 ? Math.round((loaded / f.file.size) * 100) : 0;
-                    const isDone = status === "done" || phase === "done";
-                    const isError = status === "error";
+            {sections.map((section) => {
+              const renderFileRow = (f: QueuedFile) => {
+                const status = statusMap[f.localId] ?? "pending";
+                const loaded = loadedMap[f.localId] ?? 0;
+                const percent = f.file.size > 0 ? Math.round((loaded / f.file.size) * 100) : 0;
+                const isDone = status === "done" || phase === "done";
+                const isError = status === "error";
 
-                    return (
-                      <div key={f.localId} className="rounded-lg p-3.5" style={{ background: COLOR.charcoal }}>
-                        <div className="mb-2 flex items-center justify-between text-xs">
-                          <span className="max-w-[220px] truncate text-white/70">{f.file.name}</span>
-                          <span className="flex items-center gap-1.5 font-medium">
-                            {isDone ? (
-                              <span style={{ color: COLOR.green }}>✓ Done</span>
-                            ) : isError ? (
-                              <span className="text-red-400">Failed</span>
-                            ) : (
-                              <span className="text-white/50">{percent}%</span>
-                            )}
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className="h-full rounded-full transition-all duration-200 ease-out"
-                            style={{
-                              width: `${isDone ? 100 : isError ? 100 : percent}%`,
-                              background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.gold,
-                            }}
-                          />
-                        </div>
-                        {chunkStatusMap[f.localId] && !isDone && (
-                          <p className="mt-1.5 text-[11px] text-white/40">{chunkStatusMap[f.localId]}</p>
+                return (
+                  <div key={f.localId} className="rounded-lg p-3.5" style={{ background: COLOR.charcoal }}>
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="max-w-[220px] truncate text-white/70">{f.file.name}</span>
+                      <span className="flex items-center gap-1.5 font-medium">
+                        {isDone ? (
+                          <span style={{ color: COLOR.green }}>✓ Done</span>
+                        ) : isError ? (
+                          <span className="text-red-400">Failed</span>
+                        ) : (
+                          <span className="text-white/50">{percent}%</span>
                         )}
-                      </div>
-                    );
-                  })}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full transition-all duration-200 ease-out"
+                        style={{
+                          width: `${isDone ? 100 : isError ? 100 : percent}%`,
+                          background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.gold,
+                        }}
+                      />
+                    </div>
+                    {chunkStatusMap[f.localId] && !isDone && (
+                      <p className="mt-1.5 text-[11px] text-white/40">{chunkStatusMap[f.localId]}</p>
+                    )}
+                  </div>
+                );
+              };
+
+              return (
+                <div key={section.sectionLocalId}>
+                  <p className="mb-1.5 text-xs font-semibold uppercase text-white/40">
+                    {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                  </p>
+                  <div className="flex flex-col gap-2">{section.files.map(renderFileRow)}</div>
+
+                  {section.subSections.map((sub) => (
+                    <div key={sub.subSectionLocalId} className="mt-3 border-l-2 pl-3" style={{ borderColor: "rgba(245,200,66,0.25)" }}>
+                      <p className="mb-1.5 text-[11px] font-semibold uppercase text-white/30">{sub.name}</p>
+                      <div className="flex flex-col gap-2">{sub.files.map(renderFileRow)}</div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {error && <p className="mt-6 text-center text-xs text-red-400">{error}</p>}
@@ -839,10 +983,20 @@ export default function NewProjectPage() {
               onChange={handleAddMoreFilesToSection}
               className="hidden"
             />
+            {/* Shared hidden input for sub-section files, same reuse
+                pattern as above — scoped by addingSubSectionTo instead. */}
+            <input
+              ref={subSectionFileInputRef}
+              type="file"
+              multiple
+              onChange={handleSubSectionFileSelect}
+              className="hidden"
+            />
 
             {/* existing sections — each expanded to show every file with
                 its own remove button, plus a way to add more to this
-                exact section without needing to start a new one */}
+                exact section without needing to start a new one, and now
+                a way to add a named sub-section underneath it too */}
             {sections.length > 0 && (
               <div className="mb-4 flex flex-col gap-3">
                 {sections.map((section) => (
@@ -877,6 +1031,9 @@ export default function NewProjectPage() {
                       </div>
                     </div>
 
+                    {/* Direct files in the section render first — a
+                        sub-section is meant to read as extra,
+                        deliberately separated work, not the main event. */}
                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                       {section.files.map((f) => {
                         const previewUrl = previewUrls[f.localId];
@@ -904,6 +1061,101 @@ export default function NewProjectPage() {
                         );
                       })}
                     </div>
+
+                    {/* Every sub-section already added to this section,
+                        each indented underneath with its own thumbnail
+                        grid — shown after the section's own direct files. */}
+                    {section.subSections.map((sub) => (
+                      <div
+                        key={sub.subSectionLocalId}
+                        className="mt-3 border-l-2 pl-3"
+                        style={{ borderColor: "rgba(245,200,66,0.3)" }}
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-xs font-semibold uppercase text-white/50" style={{ letterSpacing: "0.05em" }}>
+                            {sub.name}
+                            <span className="ml-2 normal-case text-white/25">
+                              {sub.files.length} file{sub.files.length === 1 ? "" : "s"}
+                            </span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeSubSection(section.sectionLocalId, sub.subSectionLocalId)}
+                            className="text-[11px] text-white/40 hover:text-white"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                          {sub.files.map((f) => {
+                            const previewUrl = previewUrls[f.localId];
+                            return (
+                              <div key={f.localId} className="relative aspect-square overflow-hidden rounded-md bg-black/40">
+                                {previewUrl &&
+                                  (section.mediaType === "VIDEO" ? (
+                                    <video src={previewUrl} muted playsInline className="h-full w-full object-cover" />
+                                  ) : (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+                                  ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* The actual "+ Add sub-section" action — a real,
+                        deliberate action of its own, not a small picker
+                        tucked away. Opens an inline name + file form
+                        scoped to this exact section. */}
+                    {addingSubSectionTo === section.sectionLocalId ? (
+                      <div
+                        className="mt-3 flex flex-col gap-2.5 rounded-lg p-3"
+                        style={{ background: "rgba(245,200,66,0.05)", border: "1px solid rgba(245,200,66,0.2)" }}
+                      >
+                        <input
+                          type="text"
+                          value={subSectionDraftName}
+                          onChange={(e) => setSubSectionDraftName(e.target.value)}
+                          placeholder="e.g. Sonos Campaign"
+                          autoFocus
+                          style={{ fontSize: "16px" }}
+                          className="w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white outline-none focus:border-white/25"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => subSectionFileInputRef.current?.click()}
+                          className="rounded-md border border-dashed border-white/15 px-2.5 py-2 text-center text-[11px] text-white/50 hover:border-white/25"
+                        >
+                          {subSectionDraftFiles.length > 0
+                            ? `${subSectionDraftFiles.length} file${subSectionDraftFiles.length === 1 ? "" : "s"} selected — click to change`
+                            : "Choose files"}
+                        </button>
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={confirmSubSection}
+                            className="rounded-md px-3 py-1.5 text-[11px] font-semibold"
+                            style={{ background: COLOR.gold, color: COLOR.black }}
+                          >
+                            Create sub-section
+                          </button>
+                          <button type="button" onClick={cancelAddingSubSection} className="text-[11px] text-white/40 underline">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startAddingSubSection(section.sectionLocalId)}
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-[11px] font-semibold transition-colors hover:bg-white/5"
+                        style={{ borderColor: "rgba(245,200,66,0.3)", color: COLOR.gold }}
+                      >
+                        + Add sub-section
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
