@@ -76,6 +76,10 @@ export default async function PortfolioPage({
       facebookUrl={portfolio.facebookUrl}
       youtubeUrl={portfolio.youtubeUrl}
       testimonials={portfolio.testimonials}
+      bioText={portfolio.bioText}
+      bioSkills={portfolio.bioSkills}
+      bioStat={portfolio.bioStat}
+      bioPhotoUrl={portfolio.bioPhotoUrl}
     />
   );
 }

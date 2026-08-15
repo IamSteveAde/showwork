@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const COLOR = { gold: "#F5C842", black: "#0A0A0A" };
-
 interface BannerCandidate {
   id: string;
   url: string;
@@ -25,6 +23,10 @@ export default function PortfolioDetailsForm({
   tiktokUrl,
   facebookUrl,
   youtubeUrl,
+  bioText: initialBioText,
+  bioSkills: initialBioSkills,
+  bioStat: initialBioStat,
+  bioPhotoUrl: initialBioPhotoUrl,
 }: {
   companyName: string;
   heroTagline: string | null;
@@ -39,8 +41,13 @@ export default function PortfolioDetailsForm({
   tiktokUrl: string | null;
   facebookUrl: string | null;
   youtubeUrl: string | null;
+  bioText?: string | null;
+  bioSkills?: string[];
+  bioStat?: string | null;
+  bioPhotoUrl?: string | null;
 }) {
   const router = useRouter();
+
   const [name, setName] = useState(companyName);
   const [tagline, setTagline] = useState(heroTagline ?? "");
   const [selectedHero, setSelectedHero] = useState(heroMediaId);
@@ -56,7 +63,54 @@ export default function PortfolioDetailsForm({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const anyVideo = bannerCandidates.some((b) => b.type === "VIDEO");
+  // ── Intro / bio section — shown before the portfolio's own sections
+  // on the public page. Separate state from everything above, but
+  // saved together in the same save() call below. ──
+  const [bioText, setBioText] = useState(initialBioText ?? "");
+  const [bioSkills, setBioSkills] = useState<string[]>(initialBioSkills ?? []);
+  const [skillDraft, setSkillDraft] = useState("");
+  const [bioStat, setBioStat] = useState(initialBioStat ?? "");
+  const [bioPhotoUrl, setBioPhotoUrl] = useState(initialBioPhotoUrl ?? "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const uploadBioPhoto = async (file: File) => {
+    setUploadingPhoto(true);
+    try {
+      const presignRes = await fetch("/api/portfolio/upload/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+      });
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
+
+      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+
+      // A profile photo isn't gallery work, so this deliberately never
+      // calls /api/portfolio/upload/complete — that route creates a
+      // PortfolioMedia row meant for actual portfolio pieces, which
+      // isn't what a bio photo is. presignData.publicUrl is what gets
+      // saved directly.
+      setBioPhotoUrl(presignData.publicUrl);
+    } catch {
+      // silently ignored — matches how this form already handles
+      // upload-adjacent actions without an inline error state
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const addSkill = () => {
+    const trimmed = skillDraft.trim();
+    if (trimmed && !bioSkills.includes(trimmed)) {
+      setBioSkills([...bioSkills, trimmed]);
+    }
+    setSkillDraft("");
+  };
+
+  const removeSkill = (skill: string) => {
+    setBioSkills(bioSkills.filter((s) => s !== skill));
+  };
 
   const save = async () => {
     setSaving(true);
@@ -76,6 +130,10 @@ export default function PortfolioDetailsForm({
         tiktokUrl: tiktok,
         facebookUrl: facebook,
         youtubeUrl: youtube,
+        bioText,
+        bioSkills,
+        bioStat,
+        bioPhotoUrl,
       }),
     });
     setSaving(false);
@@ -84,125 +142,266 @@ export default function PortfolioDetailsForm({
     router.refresh();
   };
 
-  const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none";
-  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
-
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Company / brand name</label>
-        <input type="text" value={name} onChange={(e) => setName(e.target.value)} style={{ fontSize: "16px" }} className={inputClass} />
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          Company / brand name
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+        />
       </div>
 
       <div>
-        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Banner headline</label>
-        <input type="text" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={80} style={{ fontSize: "16px" }} className={inputClass} />
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          Tagline
+        </label>
+        <input
+          type="text"
+          value={tagline}
+          onChange={(e) => setTagline(e.target.value)}
+          placeholder="e.g. Director & Cinematographer"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+        />
       </div>
 
       {bannerCandidates.length > 0 && (
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-            Choose your banner
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Banner
           </label>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {bannerCandidates.map((b) => {
-              const selectable = !anyVideo || b.type === "VIDEO";
-              const isSelected = b.id === selectedHero;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  disabled={!selectable}
-                  onClick={() => setSelectedHero(b.id)}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-black/40 disabled:cursor-not-allowed disabled:opacity-30"
-                  style={{ border: isSelected ? `2px solid ${COLOR.gold}` : "2px solid rgba(255,255,255,0.08)" }}
-                >
-                  {b.type === "VIDEO" ? (
-                    <video src={b.url} muted className="h-full w-full object-cover" />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={b.url} alt="" className="h-full w-full object-cover" />
-                  )}
-                  {isSelected && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-                      <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold" style={{ background: COLOR.gold, color: COLOR.black }}>
-                        ✓
-                      </span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-4 gap-2">
+            {bannerCandidates.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setSelectedHero(b.id)}
+                className="relative aspect-square overflow-hidden rounded-lg"
+                style={{ border: selectedHero === b.id ? "2px solid #F5C842" : "2px solid rgba(255,255,255,0.08)" }}
+              >
+                {b.type === "VIDEO" ? (
+                  <video src={b.url} muted className="h-full w-full object-cover" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={b.url} alt="" className="h-full w-full object-cover" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="my-1 h-px bg-white/5" />
-      <p className="text-xs font-semibold uppercase text-white/30" style={{ letterSpacing: "0.08em" }}>How clients reach you</p>
-
       <div>
-        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Contact email</label>
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@yourstudio.com" style={{ fontSize: "16px" }} className={inputClass} />
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          Contact email
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+        />
       </div>
 
       <div>
-        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>WhatsApp number</label>
-        <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+2348012345678" style={{ fontSize: "16px" }} className={inputClass} />
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          WhatsApp number
+        </label>
+        <input
+          type="text"
+          value={whatsapp}
+          onChange={(e) => setWhatsapp(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+        />
       </div>
 
       <div>
-        <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Call-to-action text</label>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          Call-to-action text
+        </label>
         <input
           type="text"
           value={cta}
           onChange={(e) => setCta(e.target.value)}
-          placeholder="Let's create something worth remembering — reach out and let's deliver the best for your next project."
-          maxLength={140}
-          style={{ fontSize: "16px" }}
-          className={inputClass}
+          placeholder="e.g. Let's work together"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
         />
-        <p className="mt-1 text-xs text-white/30">Leave blank to use the default.</p>
       </div>
 
-      <div className="my-1 h-px bg-white/5" />
-      <p className="text-xs font-semibold uppercase text-white/30" style={{ letterSpacing: "0.08em" }}>
-        Social media <span className="normal-case text-white/25">(only shown in the footer if filled in)</span>
-      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Instagram
+          </label>
+          <input
+            type="text"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Twitter / X
+          </label>
+          <input
+            type="text"
+            value={twitter}
+            onChange={(e) => setTwitter(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            LinkedIn
+          </label>
+          <input
+            type="text"
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            TikTok
+          </label>
+          <input
+            type="text"
+            value={tiktok}
+            onChange={(e) => setTiktok(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Facebook
+          </label>
+          <input
+            type="text"
+            value={facebook}
+            onChange={(e) => setFacebook(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            YouTube
+          </label>
+          <input
+            type="text"
+            value={youtube}
+            onChange={(e) => setYoutube(e.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Instagram</label>
-          <input type="url" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="https://instagram.com/yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
+      {/* ── Intro / about section — shown before the portfolio's own
+          sections on the public page. Its own visually distinct block
+          so it reads as a deliberate addition, not just another field
+          in the list above. ── */}
+      <div className="mt-2 rounded-xl p-5" style={{ background: "rgba(245,200,66,0.05)", border: "1px solid rgba(245,200,66,0.2)" }}>
+        <h3 className="mb-4 text-sm font-semibold text-white">Introduce yourself</h3>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Photo
+          </label>
+          <div className="flex items-center gap-3">
+            {bioPhotoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={bioPhotoUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
+            )}
+            <label
+              className="cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2 text-xs text-white/50 hover:border-white/25"
+            >
+              {uploadingPhoto ? "Uploading..." : bioPhotoUrl ? "Change photo" : "Upload photo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={uploadingPhoto}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadBioPhoto(file);
+                }}
+              />
+            </label>
+          </div>
         </div>
-        <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>X / Twitter</label>
-          <input type="url" value={twitter} onChange={(e) => setTwitter(e.target.value)} placeholder="https://x.com/yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            About you
+          </label>
+          <textarea
+            value={bioText}
+            onChange={(e) => setBioText(e.target.value)}
+            rows={4}
+            placeholder="A short introduction — who you are, what you do, what you care about in your work."
+            className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
         </div>
-        <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>LinkedIn</label>
-          <input type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" style={{ fontSize: "16px" }} className={inputClass} />
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Skills / specialties
+          </label>
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {bioSkills.map((skill) => (
+              <span
+                key={skill}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
+                style={{ background: "rgba(245,200,66,0.15)", color: "#F5C842" }}
+              >
+                {skill}
+                <button type="button" onClick={() => removeSkill(skill)} className="text-white/40 hover:text-white">
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <input
+            type="text"
+            value={skillDraft}
+            onChange={(e) => setSkillDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addSkill();
+              }
+            }}
+            placeholder="Type a skill and press Enter"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
         </div>
+
         <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>TikTok</label>
-          <input type="url" value={tiktok} onChange={(e) => setTiktok(e.target.value)} placeholder="https://tiktok.com/@yourhandle" style={{ fontSize: "16px" }} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>Facebook</label>
-          <input type="url" value={facebook} onChange={(e) => setFacebook(e.target.value)} placeholder="https://facebook.com/yourpage" style={{ fontSize: "16px" }} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass} style={{ letterSpacing: "0.08em" }}>YouTube</label>
-          <input type="url" value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="https://youtube.com/@yourchannel" style={{ fontSize: "16px" }} className={inputClass} />
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            Stat <span className="normal-case text-white/25">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={bioStat}
+            onChange={(e) => setBioStat(e.target.value)}
+            placeholder="e.g. 50+ projects delivered"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          />
         </div>
       </div>
 
       <button
         onClick={save}
         disabled={saving}
-        className="w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
-        style={{ background: COLOR.gold, color: COLOR.black }}
+        className="mt-2 w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+        style={{ background: "#F5C842", color: "#0A0A0A" }}
       >
-        {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
+        {saving ? "Saving..." : saved ? "✓ Saved" : "Save changes"}
       </button>
     </div>
   );

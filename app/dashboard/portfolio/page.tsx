@@ -92,6 +92,10 @@ export default async function PortfolioDashboardPage() {
             tiktokUrl={portfolio.tiktokUrl}
             facebookUrl={portfolio.facebookUrl}
             youtubeUrl={portfolio.youtubeUrl}
+            bioText={portfolio.bioText}
+            bioSkills={portfolio.bioSkills}
+            bioStat={portfolio.bioStat}
+            bioPhotoUrl={portfolio.bioPhotoUrl}
           />
         </div>
 

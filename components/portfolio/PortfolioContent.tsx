@@ -5,6 +5,170 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import PortfolioMediaModal, { type PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
 import WhatsAppChatWidget from "@/components/portfolio/WhatsAppChatWidget";
 
+// ─────────────────────────────────────────────
+// INTRO / ABOUT — a creator introducing themselves, shown as the
+// first real content after the hero. Soft, slowly drifting gradient
+// orbs built from the portfolio's own primaryColor, everything
+// animating in as it scrolls into view. Renders nothing if a creator
+// hasn't filled any of this in yet.
+// ─────────────────────────────────────────────
+function FloatingOrb({
+  color,
+  size,
+  initialX,
+  initialY,
+  duration,
+  delay,
+}: {
+  color: string;
+  size: number;
+  initialX: string;
+  initialY: string;
+  duration: number;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      className="pointer-events-none absolute rounded-full"
+      style={{
+        width: size,
+        height: size,
+        left: initialX,
+        top: initialY,
+        background: `radial-gradient(circle, ${color}55 0%, ${color}00 70%)`,
+        filter: "blur(40px)",
+      }}
+      animate={{ x: [0, 40, -30, 0], y: [0, -50, 30, 0], scale: [1, 1.15, 0.95, 1] }}
+      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+    />
+  );
+}
+
+function IntroSection({
+  companyName,
+  primaryColor,
+  bioText,
+  bioSkills,
+  bioStat,
+  bioPhotoUrl,
+}: {
+  companyName: string;
+  primaryColor: string;
+  bioText?: string | null;
+  bioSkills?: string[];
+  bioStat?: string | null;
+  bioPhotoUrl?: string | null;
+}) {
+  const skills = bioSkills ?? [];
+  const hasContent = Boolean(bioText || bioPhotoUrl || bioStat || skills.length > 0);
+  if (!hasContent) return null;
+
+  return (
+    <section className="relative overflow-hidden px-6 py-24 md:px-14 md:py-32">
+      <div className="absolute inset-0 overflow-hidden">
+        <FloatingOrb color={primaryColor} size={420} initialX="-10%" initialY="-15%" duration={18} delay={0} />
+        <FloatingOrb color={primaryColor} size={320} initialX="70%" initialY="40%" duration={22} delay={2} />
+        <FloatingOrb color={primaryColor} size={260} initialX="20%" initialY="70%" duration={16} delay={4} />
+      </div>
+      <div
+        className="absolute inset-0 opacity-[0.07]"
+        style={{ backgroundImage: `radial-gradient(${primaryColor} 1px, transparent 1px)`, backgroundSize: "28px 28px" }}
+      />
+
+      <motion.div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 md:flex-row md:items-start md:gap-16">
+        {bioPhotoUrl && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="relative flex-shrink-0"
+          >
+            <div className="absolute -inset-3 rounded-full opacity-40 blur-2xl" style={{ background: primaryColor }} aria-hidden />
+            <div className="relative h-40 w-40 overflow-hidden rounded-full md:h-52 md:w-52" style={{ border: `2px solid ${primaryColor}55` }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={bioPhotoUrl} alt={companyName} className="h-full w-full object-cover" />
+            </div>
+          </motion.div>
+        )}
+
+        <div className="flex-1 text-center md:text-left">
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mb-3 text-xs font-medium uppercase"
+            style={{ color: primaryColor, letterSpacing: "0.3em" }}
+          >
+            About
+          </motion.p>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="text-3xl font-light leading-tight text-white md:text-4xl"
+          >
+            {companyName}
+          </motion.h2>
+
+          {bioText && (
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/60 md:mx-0"
+            >
+              {bioText}
+            </motion.p>
+          )}
+
+          {skills.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-7 flex flex-wrap justify-center gap-2 md:justify-start"
+            >
+              {skills.map((skill, i) => (
+                <motion.span
+                  key={skill}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.4, delay: 0.45 + i * 0.05 }}
+                  className="rounded-full px-4 py-1.5 text-xs font-medium"
+                  style={{ background: `${primaryColor}1a`, color: primaryColor, border: `1px solid ${primaryColor}33` }}
+                >
+                  {skill}
+                </motion.span>
+              ))}
+            </motion.div>
+          )}
+
+          {bioStat && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.55 }}
+              className="mt-8 inline-block"
+            >
+              <p className="text-2xl font-light text-white md:text-3xl" style={{ color: primaryColor }}>
+                {bioStat}
+              </p>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
 interface PortfolioSectionData {
   id: string;
   name: string;
@@ -738,6 +902,10 @@ export default function PortfolioContent({
   tiktokUrl,
   facebookUrl,
   youtubeUrl,
+  bioText,
+  bioSkills,
+  bioStat,
+  bioPhotoUrl,
   testimonials,
 }: {
   companyName: string;
@@ -757,6 +925,10 @@ export default function PortfolioContent({
   tiktokUrl: string | null;
   facebookUrl: string | null;
   youtubeUrl: string | null;
+  bioText?: string | null;
+  bioSkills?: string[];
+  bioStat?: string | null;
+  bioPhotoUrl?: string | null;
   testimonials: PortfolioTestimonialData[];
 }) {
   const [scrolled, setScrolled] = useState(false);
@@ -890,8 +1062,16 @@ export default function PortfolioContent({
         </>
       )}
 
-      <div className="relative z-10" style={{ background: bgColor }}>
+    <div className="relative z-10" style={{ background: bgColor }}>
         <div ref={contentRef} />
+        <IntroSection
+          companyName={companyName}
+          primaryColor={primaryColor}
+          bioText={bioText}
+          bioSkills={bioSkills}
+          bioStat={bioStat}
+          bioPhotoUrl={bioPhotoUrl}
+        />
 
         {selectedSectionId === null ? (
           // ── CATEGORY GRID — the "different segments" the creator has

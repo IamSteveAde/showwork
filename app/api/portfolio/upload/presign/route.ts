@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
-import { getPresignedUploadUrl, isAllowedContentType } from "@/lib/r2";
+import { getPresignedUploadUrl, isAllowedContentType, publicUrlFor } from "@/lib/r2";
 
 const MAX_FILE_SIZE_MB = 5000;
 
@@ -27,5 +27,10 @@ export async function POST(req: NextRequest) {
   const fileKey = `portfolios/${portfolio.id}/${Date.now()}-${safeName}`;
   const uploadUrl = await getPresignedUploadUrl(fileKey, contentType);
 
-  return NextResponse.json({ uploadUrl, fileKey });
+  // Included so callers that only need a direct, standalone file (like
+  // a bio photo) can save this straight to their own field without a
+  // separate step — unlike a portfolio gallery piece, a bio photo has
+  // no PortfolioMedia row to create, so /upload/complete doesn't apply
+  // here at all.
+  return NextResponse.json({ uploadUrl, fileKey, publicUrl: publicUrlFor(fileKey) });
 }

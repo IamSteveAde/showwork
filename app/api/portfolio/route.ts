@@ -100,6 +100,10 @@ export async function PATCH(req: NextRequest) {
     "tiktokUrl",
     "facebookUrl",
     "youtubeUrl",
+    "bioText",
+    "bioPhotoUrl",
+    "bioSkills",
+    "bioStat",
   ] as const;
   const data: Record<string, unknown> = {};
   for (const field of allowedFields) {

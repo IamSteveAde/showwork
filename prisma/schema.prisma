@@ -910,6 +910,16 @@ model Portfolio {
   facebookUrl  String?
   youtubeUrl   String?
 
+  // Intro / about section, shown before the portfolio's own sections
+  // on the public page — a creator introducing themselves, like a
+  // short resume. heroTagline above already covers the role/title
+  // line; these cover the rest. All optional, same philosophy as
+  // contact info: show only whatever's actually been filled in.
+  bioText   String?
+  bioPhotoUrl String?
+  bioSkills String[] @default([])
+  bioStat   String? // e.g. "50+ projects delivered"
+
   creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId String  @unique
 
