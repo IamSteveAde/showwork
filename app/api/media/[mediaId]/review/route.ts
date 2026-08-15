@@ -18,7 +18,7 @@ export async function PATCH(
   { params }: { params: Promise<{ mediaId: string }> }
 ) {
   const { mediaId } = await params;
-  const { status, note, reviewerName, viewerEmail, clientName, videoTimestampSeconds } = await req.json();
+  const { status, note, reviewerName, viewerEmail, clientName } = await req.json();
 
   if (!["APPROVED", "NEEDS_REVISION"].includes(status)) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -62,15 +62,6 @@ export async function PATCH(
     );
   }
 
-  // Where in the video this note refers to, in seconds — only
-  // meaningful alongside a NEEDS_REVISION note, same reasoning as why
-  // `note` itself is only ever kept for that status below. A plain
-  // approval has no note for a timestamp to be attached to.
-  const timestampToStore =
-    status === "NEEDS_REVISION" && typeof videoTimestampSeconds === "number"
-      ? videoTimestampSeconds
-      : null;
-
   // Either their first review, or they're changing their mind — update
   // in place if a row exists, otherwise create it.
   await db.mediaReview.upsert({
@@ -79,7 +70,6 @@ export async function PATCH(
       status,
       reviewerName: reviewerName?.trim() || null,
       note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
-      videoTimestampSeconds: timestampToStore,
     },
     create: {
       mediaId,
@@ -87,7 +77,6 @@ export async function PATCH(
       reviewerEmail: viewerEmail,
       status,
       note: status === "NEEDS_REVISION" ? note?.trim() || null : null,
-      videoTimestampSeconds: timestampToStore,
     },
   });
 
