@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useInView } from "fra
 import Image from "next/image";
 import type { MediaItem, DeliverySection, DeliveryFolder } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
+import type { VideoCommentEntry } from "@/components/VideoComments";
 import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
 import DocModal from "@/components/Docmodal";
@@ -12,10 +13,6 @@ import DeliveryStatusBanner from "@/components/DeliveryStatusBanner";
 import { downloadFile, downloadAllAsZip } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 
-// ─────────────────────────────────────────────
-// DOWNLOAD BUTTON — small icon, used on every grid tile and inside
-// both modals. Shows a brief spinner state while the fetch is in flight.
-// ─────────────────────────────────────────────
 function DownloadIconButton({
   onDownload,
   light = false,
@@ -80,9 +77,6 @@ function DownloadIconButton({
   );
 }
 
-// ─────────────────────────────────────────────
-// HEADER
-// ─────────────────────────────────────────────
 function Header({
   clientName,
   logoUrl,
@@ -129,9 +123,6 @@ function Header({
   );
 }
 
-// ─────────────────────────────────────────────
-// HERO
-// ─────────────────────────────────────────────
 function Hero({
   heroMedia,
   tagline,
@@ -232,9 +223,6 @@ function Hero({
   );
 }
 
-// Shared across every video tile on the page — caps how many videos
-// can ever be decoding/playing at once, which is what actually causes
-// scroll jank on a media-heavy page, not the entrance animations.
 const MAX_CONCURRENT_VIDEOS = 3;
 const playingVideos: HTMLVideoElement[] = [];
 function requestPlay(vid: HTMLVideoElement) {
@@ -253,18 +241,6 @@ function officeViewerUrl(url: string) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 }
 
-// ─────────────────────────────────────────────
-// WALL TILE — photo or video, true to size (never cropped), packed
-// edge-to-edge with a hairline white seam between every piece (the
-// gallery wall's own white background peeking through a 1px margin).
-// Shows at full clarity immediately, no hover required — hovering
-// still adds a subtle glowing colored border and a slight zoom, but
-// never gates whether the content itself is visible.
-// ─────────────────────────────────────────────
-// Detects a file's real aspect ratio (width/height) without rendering
-// it visibly — a plain in-memory Image for photos, and a detached
-// <video> listening for loadedmetadata for videos, since there's no
-// built-in equivalent of `new Image()` for video.
 function detectAspectRatio(item: MediaItem): Promise<number> {
   return new Promise((resolve) => {
     if (item.type === "VIDEO") {
@@ -292,17 +268,6 @@ interface JustifiedRow {
   height: number;
 }
 
-// The actual justified-gallery algorithm — the same technique behind
-// Google Photos / Flickr grids. Items are added to a row until either
-// (a) that row, scaled to the target height, would overflow the
-// container's width, or (b) maxPerRow items are already in it —
-// whichever comes first. Without that second condition, a run of
-// narrow portrait pieces could mathematically keep fitting side by
-// side well past what actually looks right (5, 6+ in a row); the cap
-// forces a flush regardless of how much width math alone would still
-// allow. Once a row is flushed, it's rescaled so it fills the
-// container's width *exactly*, sharing one height across every item
-// in it — that part is what guarantees zero gaps, same as before.
 function computeJustifiedRows(
   items: MediaItem[],
   aspectRatios: Record<string, number>,
@@ -335,9 +300,6 @@ function computeJustifiedRows(
       flushRow(true);
     }
   }
-  // Last, possibly-incomplete row — left at the target height rather
-  // than stretched, so a couple of leftover pieces don't get blown up
-  // to fill the full width on their own.
   flushRow(false);
 
   return rows;
@@ -361,11 +323,6 @@ function JustifiedWallGallery({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
-  // Mobile forces exactly one item per row regardless of what the
-  // width math would otherwise allow — a row of two-plus items on a
-  // narrow phone screen reads as cramped no matter how the numbers
-  // work out, so this isn't just a lower version of the desktop cap,
-  // it's a hard override.
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -401,10 +358,8 @@ function JustifiedWallGallery({
   }, [items]);
 
   const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
-  const gap = 1; // matches the tile's own 1px white border seam
+  const gap = 1;
   const targetRowHeight = 340;
-  // 1 on mobile always; 4 max on desktop, regardless of how narrow
-  // (portrait) the pieces in a given row happen to be.
   const maxPerRow = isMobile ? 1 : 4;
 
   const rows = useMemo(() => {
@@ -472,25 +427,10 @@ function WallTile({
   }, [nearView]);
 
   useEffect(() => {
-    // Only trigger play once, right after the video actually mounts —
-    // no opposing pause call tied to a separate "inView" check here.
-    // The previous version paused the video the instant it wasn't
-    // strictly in view, which could fire in the very same tick as the
-    // native autoplay attempt, killing it before a single frame had
-    // even decoded — exactly what showed as a permanent black screen
-    // rather than a paused frame.
     const vid = videoRef.current;
     if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
     requestPlay(vid);
 
-    // Mobile browsers (iOS Safari especially) can block a video's
-    // very first autoplay attempt if it wasn't tied to a direct user
-    // gesture, even with muted/playsInline/autoPlay all correctly
-    // set — a scroll alone isn't always treated as sufficient on iOS
-    // the way it is on desktop. Retrying on the very first tap
-    // anywhere on the page catches this: once genuinely triggered by
-    // a real gesture, mobile browsers reliably allow it from then on,
-    // including for videos that mount afterward.
     const retryOnFirstTouch = () => requestPlay(vid);
     window.addEventListener("touchstart", retryOnFirstTouch, { once: true });
     window.addEventListener("click", retryOnFirstTouch, { once: true });
@@ -507,10 +447,6 @@ function WallTile({
       whileInView={{ opacity: 1 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
-      // Sized to the exact pixel dimensions computed by the justified
-      // layout — every row is scaled so its items share one height
-      // and fill the container's full width exactly, with zero gaps
-      // and no black background showing through anywhere.
       style={{ border: "1px solid #FFFFFF", width }}
     >
       <div
@@ -532,8 +468,6 @@ function WallTile({
               controlsList="nodownload noremoteplayback"
               disablePictureInPicture
               draggable={false}
-              // True size, full clarity immediately — no dimming, no
-              // hover required to see the actual content.
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
             />
           )
@@ -549,9 +483,6 @@ function WallTile({
           />
         )}
 
-        {/* The "wakes up" glow — a soft colored ring plus an outward
-            bloom, both invisible at rest and fading in together on
-            hover, like the piece is lighting up from within. */}
         <div
           className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
           style={{ boxShadow: `inset 0 0 0 1.5px ${primaryColor}, 0 0 28px 2px ${primaryColor}66` }}
@@ -602,13 +533,6 @@ function WallTile({
   );
 }
 
-// ─────────────────────────────────────────────
-// DOCUMENT GRID TILE — PDF and DOCX. Shows the real first page, full
-// height, never cropped like a photo would be — a document reads
-// completely differently squeezed into a square. 2 per row on desktop,
-// 1 per row on mobile, matching how much room a document actually needs
-// to be legible at a glance.
-// ─────────────────────────────────────────────
 function DocTile({
   doc,
   index,
@@ -686,9 +610,6 @@ function DocTile({
   );
 }
 
-// ─────────────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────────────
 export default function ProjectContent({
   clientName,
   primaryColor,
@@ -724,6 +645,14 @@ export default function ProjectContent({
   const contentStartRef = useRef<HTMLDivElement>(null);
 
   const [items, setItems] = useState(media);
+
+  // Timestamped video comments, per media item — kept as its own
+  // piece of state rather than folded into `items`, since comments
+  // have nothing to do with approval status the way reviews do; this
+  // is purely a display/annotation concern layered on top.
+  const [commentsByMedia, setCommentsByMedia] = useState<Record<string, VideoCommentEntry[]>>(
+    Object.fromEntries(media.map((m) => [m.id, m.comments ?? []]))
+  );
 
   const submitReview = async (
     mediaId: string,
@@ -804,6 +733,73 @@ export default function ProjectContent({
       }
     } catch {
       setItems(previousItems);
+    }
+  };
+
+  // Adds a new timestamped comment — optimistic with a temporary id,
+  // swapped for the real one once the server confirms it, removed
+  // entirely if the request fails.
+  const addComment = async (mediaId: string, note: string, videoTimestampSeconds: number) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimisticComment: VideoCommentEntry = {
+      id: tempId,
+      reviewerName: viewerName,
+      reviewerEmail: viewerEmail,
+      note,
+      videoTimestampSeconds,
+      createdAt: new Date().toISOString(),
+    };
+
+    setCommentsByMedia((prev) => ({
+      ...prev,
+      [mediaId]: [...(prev[mediaId] ?? []), optimisticComment],
+    }));
+
+    try {
+      const res = await fetch(`/api/media/${mediaId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note, videoTimestampSeconds, reviewerName: viewerName, viewerEmail }),
+      });
+      if (!res.ok) {
+        setCommentsByMedia((prev) => ({
+          ...prev,
+          [mediaId]: (prev[mediaId] ?? []).filter((c) => c.id !== tempId),
+        }));
+        return;
+      }
+      const { comment } = await res.json();
+      setCommentsByMedia((prev) => ({
+        ...prev,
+        [mediaId]: (prev[mediaId] ?? []).map((c) => (c.id === tempId ? comment : c)),
+      }));
+    } catch {
+      setCommentsByMedia((prev) => ({
+        ...prev,
+        [mediaId]: (prev[mediaId] ?? []).filter((c) => c.id !== tempId),
+      }));
+    }
+  };
+
+  const deleteComment = async (mediaId: string, commentId: string) => {
+    const previousComments = commentsByMedia[mediaId] ?? [];
+
+    setCommentsByMedia((prev) => ({
+      ...prev,
+      [mediaId]: (prev[mediaId] ?? []).filter((c) => c.id !== commentId),
+    }));
+
+    try {
+      const res = await fetch(`/api/media/${mediaId}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ viewerEmail }),
+      });
+      if (!res.ok) {
+        setCommentsByMedia((prev) => ({ ...prev, [mediaId]: previousComments }));
+      }
+    } catch {
+      setCommentsByMedia((prev) => ({ ...prev, [mediaId]: previousComments }));
     }
   };
 
@@ -946,13 +942,6 @@ export default function ProjectContent({
               </div>
 
               {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
-                // A real justified gallery — every image and video
-                // keeps its own true, uncropped aspect ratio, but rows
-                // are computed so they always fill the full width
-                // exactly, at one shared height per row, and never
-                // exceed the per-row cap (1 on mobile, 4 on desktop) —
-                // eliminating both the black-gap issue and the
-                // too-many-narrow-items-in-one-row issue at once.
                 <JustifiedWallGallery
                   items={section.media.map(withLiveStatus)}
                   viewerEmail={viewerEmail}
@@ -985,14 +974,6 @@ export default function ProjectContent({
                 </div>
               )}
 
-              {/* Every sub-section within this section, each as its
-                  own titled gallery — shown after the section's own
-                  direct files, so a sub-section reads as extra,
-                  deliberately separated work sitting underneath the
-                  section's main content, not competing with it for
-                  first position. Uses the exact same gallery/doc-grid
-                  pattern as the section-level rendering above, just
-                  scoped to this folder's own files. */}
               {section.folders.map((folder) => (
                 <div
                   key={folder.id}
@@ -1071,6 +1052,9 @@ export default function ProjectContent({
             onNext={() => setOpenVideoIdx((i) => (i! + 1) % videos.length)}
             onReview={(status, note) => submitReview(videos[openVideoIdx].id, status, note)}
             onDeleteReview={() => deleteReview(videos[openVideoIdx].id)}
+            comments={commentsByMedia[videos[openVideoIdx].id] ?? []}
+            onAddComment={(note, timestamp) => addComment(videos[openVideoIdx].id, note, timestamp)}
+            onDeleteComment={(commentId) => deleteComment(videos[openVideoIdx].id, commentId)}
           />
         )}
       </AnimatePresence>

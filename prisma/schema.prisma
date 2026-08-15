@@ -729,6 +729,7 @@ model Media {
   reviewerEmail  String?
 
   reviews MediaReview[]
+  videoComments VideoComment[]
 
   // Set only for Media rows that originated from the project
   // management pipeline — this file was a task's uploaded work,
@@ -760,6 +761,28 @@ model MediaReview {
   // mind) or is rejected as a duplicate (if it's identical to what they
   // already said). Never a second row for the same person.
   @@unique([mediaId, reviewerEmail])
+  @@index([mediaId])
+}
+
+// ─────────────────────────────────────────────
+// VIDEO COMMENT — a pinned note tied to one exact moment in a video's
+// playback, entirely separate from the single approve/needs-revision
+// verdict a MediaReview represents. Unlike a review, there's no limit
+// here: the same person can leave as many timestamped comments as they
+// want on one video, each independent of the others — "the logo's
+// wrong at 0:15" and "the audio cuts out at 1:45" are two different
+// comments, not one overwriting the other.
+// ─────────────────────────────────────────────
+model VideoComment {
+  id                    String   @id @default(uuid())
+  media                 Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  mediaId               String
+  reviewerName          String?
+  reviewerEmail         String
+  note                  String
+  videoTimestampSeconds Float
+  createdAt             DateTime @default(now())
+
   @@index([mediaId])
 }
 

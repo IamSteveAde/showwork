@@ -37,7 +37,7 @@ export default async function ProjectDetailPage({
     include: {
       media: {
         orderBy: { displayOrder: "asc" },
-        include: { reviews: { orderBy: { createdAt: "asc" } } },
+        include: { reviews: { orderBy: { createdAt: "asc" } }, videoComments: { orderBy: { createdAt: "asc" } } },
       },
       sections: {
         orderBy: { displayOrder: "asc" },
@@ -48,7 +48,7 @@ export default async function ProjectDetailPage({
           media: {
             where: { folderId: null },
             orderBy: { displayOrder: "asc" },
-            include: { reviews: { orderBy: { createdAt: "asc" } } },
+            include: { reviews: { orderBy: { createdAt: "asc" } }, videoComments: { orderBy: { createdAt: "asc" } } },
           },
           // Every sub-section within this section, each with its own
           // files — rendered as its own titled group, in the order
@@ -58,7 +58,7 @@ export default async function ProjectDetailPage({
             include: {
               media: {
                 orderBy: { displayOrder: "asc" },
-                include: { reviews: { orderBy: { createdAt: "asc" } } },
+                include: { reviews: { orderBy: { createdAt: "asc" } }, videoComments: { orderBy: { createdAt: "asc" } } },
               },
             },
           },
@@ -301,6 +301,14 @@ export default async function ProjectDetailPage({
                           note: r.note,
                           createdAt: r.createdAt.toISOString(),
                         }))}
+                      comments={m.videoComments.map((c) => ({
+                        id: c.id,
+                        reviewerName: c.reviewerName,
+                        reviewerEmail: c.reviewerEmail,
+                        note: c.note,
+                        videoTimestampSeconds: c.videoTimestampSeconds,
+                        createdAt: c.createdAt.toISOString(),
+                      }))}
                       />
                     ))}
                   </div>
@@ -335,6 +343,14 @@ export default async function ProjectDetailPage({
                             note: r.note,
                             createdAt: r.createdAt.toISOString(),
                           }))}
+                        comments={m.videoComments.map((c) => ({
+                          id: c.id,
+                          reviewerName: c.reviewerName,
+                          reviewerEmail: c.reviewerEmail,
+                          note: c.note,
+                          videoTimestampSeconds: c.videoTimestampSeconds,
+                          createdAt: c.createdAt.toISOString(),
+                        }))}
                         />
                       ))}
                     </div>
@@ -366,6 +382,14 @@ export default async function ProjectDetailPage({
                         note: r.note,
                         createdAt: r.createdAt.toISOString(),
                       }))}
+                    comments={m.videoComments.map((c) => ({
+                      id: c.id,
+                      reviewerName: c.reviewerName,
+                      reviewerEmail: c.reviewerEmail,
+                      note: c.note,
+                      videoTimestampSeconds: c.videoTimestampSeconds,
+                      createdAt: c.createdAt.toISOString(),
+                    }))}
                     />
                   ))}
                 </div>

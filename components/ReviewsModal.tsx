@@ -24,6 +24,7 @@ export default function ReviewsModal({
   type,
   caption,
   reviews,
+  comments,
   onClose,
 }: {
   url: string;
@@ -31,6 +32,14 @@ export default function ReviewsModal({
   type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   caption: string | null;
   reviews: ReviewEntry[];
+
+  comments?: {
+    id: string;
+    reviewerName: string | null;
+    reviewerEmail: string;
+    note: string;
+    videoTimestampSeconds: number;
+  }[];
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -129,6 +138,43 @@ export default function ReviewsModal({
             </div>
           )}
         </div>
+
+        {type === "VIDEO" && comments && comments.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-semibold uppercase" style={{ letterSpacing: "0.08em", color: "#5B9DFF" }}>
+              Comments ({comments.length})
+            </p>
+            <div className="mt-3 flex flex-col gap-2.5">
+              {[...comments]
+                .sort((a, b) => a.videoTimestampSeconds - b.videoTimestampSeconds)
+                .map((c) => {
+                  const total = Math.max(0, Math.round(c.videoTimestampSeconds));
+                  const m = Math.floor(total / 60);
+                  const s = total % 60;
+                  const timestamp = `${m}:${String(s).padStart(2, "0")}`;
+                  return (
+                    <div key={c.id} className="overflow-hidden rounded-lg p-3" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-white">{c.reviewerName || "Unnamed viewer"}</p>
+                          <p className="truncate text-xs text-white/30">{c.reviewerEmail}</p>
+                        </div>
+                        <span
+                          className="flex-shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold"
+                          style={{ background: "rgba(36,120,255,0.18)", color: "#5B9DFF" }}
+                        >
+                          {timestamp}
+                        </span>
+                      </div>
+                      <p className="mt-2 rounded bg-black/30 px-2 py-1.5 text-xs text-white/70">
+                        {c.note}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

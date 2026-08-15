@@ -102,6 +102,64 @@ export async function sendReviewNotificationEmail({
 }
 
 /**
+ * Sent to the project owner (and the file's uploader, if different)
+ * whenever a client leaves a new timestamped comment on a video —
+ * separate from sendReviewNotificationEmail, since a comment isn't a
+ * verdict and there can be any number of them on one file.
+ */
+export async function sendVideoCommentNotificationEmail({
+  to,
+  creatorName,
+  clientName,
+  fileLabel,
+  note,
+  videoTimestampSeconds,
+  dashboardUrl,
+}: {
+  to: string;
+  creatorName?: string | null;
+  clientName: string;
+  fileLabel: string;
+  note: string;
+  videoTimestampSeconds: number;
+  dashboardUrl: string;
+}) {
+  const greeting = creatorName ? `Hi ${creatorName.split(" ")[0]},` : "Hi,";
+  const total = Math.max(0, Math.round(videoTimestampSeconds));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  const formattedTimestamp = `${m}:${String(s).padStart(2, "0")}`;
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${clientName} left a comment on ${fileLabel}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Showwork by Spotlite Africa
+        </p>
+        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
+        <p style="font-size: 15px; line-height: 1.6;">
+          ${clientName} left a comment at
+          <strong style="color: #2478FF;">${formattedTimestamp}</strong>
+          in a video in your project:
+        </p>
+        <p style="font-size: 14px; color: #F8F7F4; background: rgba(255,255,255,0.06); padding: 10px 14px; border-radius: 8px; margin: 16px 0;">
+          ${fileLabel}
+        </p>
+        <p style="font-size: 14px; line-height: 1.6; color: #F8F7F4; background: rgba(36,120,255,0.1); border-left: 3px solid #2478FF; padding: 12px 16px; margin: 16px 0;">
+          "${note}"
+        </p>
+        <a href="${dashboardUrl}" style="display: inline-block; margin-top: 16px; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 8px; text-decoration: none;">
+          View project
+        </a>
+      </div>
+    `,
+  });
+}
+
+/**
  * Sent to the client (viewer) once the creator uploads a corrected
  * version of something they flagged, so they know to come look again.
  */

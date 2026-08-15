@@ -7,6 +7,7 @@ import PasswordGate from "@/components/PasswordGate";
 import ProjectContent from "@/components/ProjectContent";
 import ManagedProjectClientView from "@/components/ManagedProjectClientView";
 import type { ReviewEntry } from "@/components/ReviewControls";
+import type { VideoCommentEntry } from "@/components/VideoComments";
 
 export interface MediaItem {
   id: string;
@@ -16,6 +17,10 @@ export interface MediaItem {
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
   reviews: ReviewEntry[];
+  // Only ever populated for VIDEO items — undefined/empty for photos
+  // and documents, since a timestamp only means something in the
+  // context of playback.
+  comments?: VideoCommentEntry[];
 }
 
 export interface DeliveryFolder {

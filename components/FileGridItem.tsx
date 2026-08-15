@@ -18,7 +18,16 @@ interface FileGridItemProps {
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
   reviews: ReviewEntry[];
+
+  comments?: {
+    id: string;
+    reviewerName: string | null;
+    reviewerEmail: string;
+    note: string;
+    videoTimestampSeconds: number;
+  }[];
 }
+
 
 // DOCX has no native browser preview — Microsoft's own public viewer
 // embed is the standard way to show one without building a conversion
@@ -36,6 +45,7 @@ export default function FileGridItem({
   approvalStatus,
   approvalNote,
   reviews,
+  comments,
 }: FileGridItemProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -136,6 +146,14 @@ export default function FileGridItem({
             {reviews.length} review{reviews.length === 1 ? "" : "s"}
           </div>
         )}
+        {(comments?.length ?? 0) > 0 && (
+          <div
+            className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-medium text-white/80"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+          >
+            💬 {comments!.length}
+          </div>
+        )}
 
         <div className="absolute inset-0 flex items-start justify-end gap-1.5 bg-black/0 p-2 opacity-0 transition-all duration-300 group-hover:bg-black/30 group-hover:opacity-100">
           <button
@@ -229,6 +247,7 @@ export default function FileGridItem({
             type={type}
             caption={caption}
             reviews={reviews}
+comments={comments}
             onClose={() => setShowReviews(false)}
           />
         )}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { MediaItem } from "@/app/[slug]/DeliveryPage";
 import { downloadFile } from "@/lib/download";
-import ReviewControls from "@/components/ReviewControls";
+import VideoComments, { type VideoCommentEntry } from "@/components/VideoComments";
 
 export default function VideoModal({
   video,
@@ -16,6 +16,9 @@ export default function VideoModal({
   onNext,
   onReview,
   onDeleteReview,
+  comments,
+  onAddComment,
+  onDeleteComment,
 }: {
   video: MediaItem;
   index: number;
@@ -26,6 +29,9 @@ export default function VideoModal({
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   viewerEmail: string;
   onDeleteReview: () => void;
+  comments: VideoCommentEntry[];
+  onAddComment: (note: string, videoTimestampSeconds: number) => void;
+  onDeleteComment: (commentId: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -143,7 +149,7 @@ export default function VideoModal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] max-w-[92vw] flex-col overflow-hidden rounded-2xl bg-black"
+        className="flex max-h-[92vh] max-w-[92vw] flex-col overflow-hidden rounded-2xl bg-black"
       >
         <video
           ref={videoRef}
@@ -156,13 +162,29 @@ export default function VideoModal({
           onContextMenu={(e) => e.preventDefault()}
           className="max-h-[70vh] max-w-[92vw] object-contain"
         />
-        <div style={{ background: "#141414" }}>
-          <ReviewControls
-            reviews={video.reviews}
+        <div
+          className="flex-shrink-0"
+          style={{ background: "#141414", maxHeight: "132px" }}
+        >
+          {/* Timestamped comments — the whole feedback mechanism for
+              video. No approve/revision buttons here: a client
+              watching and commenting at exact moments is a strictly
+              better way to give feedback on a video than one flat
+              verdict ever was. Kept deliberately compact — a slim bar
+              by default, only the comment list itself scrolls if it
+              grows, and the video keeps its normal size regardless. */}
+          <VideoComments
+            comments={comments}
             viewerEmail={viewerEmail}
-            onDeleteReview={onDeleteReview}
-            onApprove={() => onReview("APPROVED")}
-            onRequestRevision={(note) => onReview("NEEDS_REVISION", note)}
+            getCurrentTime={() => videoRef.current?.currentTime ?? 0}
+            onSeekTo={(seconds) => {
+              const vid = videoRef.current;
+              if (!vid) return;
+              vid.currentTime = seconds;
+              vid.play().catch(() => {});
+            }}
+            onAddComment={onAddComment}
+            onDeleteComment={onDeleteComment}
           />
         </div>
       </motion.div>

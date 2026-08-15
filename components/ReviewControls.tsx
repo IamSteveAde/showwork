@@ -101,9 +101,6 @@ export default function ReviewControls({
         </div>
       )}
 
-      {/* Clear "this is your own current verdict" indicator, distinct
-          from the reviews list above — makes it unmistakable that
-          clicking the same action again won't do anything new. */}
       {myReview && !showNoteInput && (
         <p className="text-center text-[11px] text-white/40">
           You {myReview.status === "APPROVED" ? "approved" : "flagged this for revision"} —
