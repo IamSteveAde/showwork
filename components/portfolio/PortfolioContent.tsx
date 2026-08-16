@@ -1062,17 +1062,18 @@ export default function PortfolioContent({
         </>
       )}
 
-    <div className="relative z-10" style={{ background: bgColor }}>
+   <div className="relative z-10" style={{ background: bgColor }}>
         <div ref={contentRef} />
-        <IntroSection
-          companyName={companyName}
-          primaryColor={primaryColor}
-          bioText={bioText}
-          bioSkills={bioSkills}
-          bioStat={bioStat}
-          bioPhotoUrl={bioPhotoUrl}
-        />
-
+        {selectedSectionId === null && (
+          <IntroSection
+            companyName={companyName}
+            primaryColor={primaryColor}
+            bioText={bioText}
+            bioSkills={bioSkills}
+            bioStat={bioStat}
+            bioPhotoUrl={bioPhotoUrl}
+          />
+        )}
         {selectedSectionId === null ? (
           // ── CATEGORY GRID — the "different segments" the creator has
           // built (Weddings, Logo Designs, Events, Corporate, etc), each
