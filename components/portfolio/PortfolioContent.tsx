@@ -539,7 +539,7 @@ function TiledTile({
           loading="lazy"
           decoding="async"
           draggable={false}
-          className="absolute inset-0 h-full w-full select-none object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
+         className="absolute inset-0 h-full w-full select-none object-cover"
         />
       )}
 
