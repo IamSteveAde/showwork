@@ -648,3 +648,45 @@ export async function sendManagedProjectInviteEmail({
     }),
   });
 }
+
+// ─────────────────────────────────────────────
+// CREATIVO WEBINAR HOST APPLICATION — sent to the Showwork team
+// (hello@useshowwork.com), never to the applicant. Matches the same
+// dark/gold visual language as every other email in this file rather
+// than inventing a new style for one form.
+// ─────────────────────────────────────────────
+export async function sendWebinarHostApplicationEmail({
+  name,
+  email,
+  category,
+  proposedTopic,
+  whyThem,
+}: {
+  name: string;
+  email: string;
+  category: string;
+  proposedTopic: string;
+  whyThem: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to: "hello@useshowwork.com",
+    replyTo: email,
+    subject: `Creativo webinar host application — ${name}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Creativo — Webinar Host Application
+        </p>
+        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 140px;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Category</td><td style="padding: 6px 0;">${category}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Proposed topic</td><td style="padding: 6px 0;">${proposedTopic}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Why them</td><td style="padding: 6px 0;">${whyThem}</td></tr>
+        </table>
+        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to respond to the applicant.</p>
+      </div>
+    `,
+  });
+}

@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import HostApplicationModal from "@/components/creativo/HostApplicationModal";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -132,6 +133,8 @@ export default function CreativoContent({
   webinars: WebinarData[];
 }) {
   const [filterCategory, setFilterCategory] = useState<Category | "All">("All");
+  const [hostModalOpen, setHostModalOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const heroRef = useRef<HTMLElement>(null);
@@ -191,9 +194,15 @@ export default function CreativoContent({
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 md:px-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo/creativo.svg" alt="Creativo" className="h-7 w-auto" />
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <Link href="/" className="hidden text-sm font-semibold text-white/60 transition-colors hover:text-white sm:block">
               Showwork
+            </Link>
+            <Link href="/login" className="hidden text-sm font-semibold text-white/60 transition-colors hover:text-white sm:block">
+              Log in
+            </Link>
+            <Link href="/signup" className="hidden text-sm font-semibold text-white/60 transition-colors hover:text-white sm:block">
+              Sign up
             </Link>
             <MagneticButton
               href="https://tinyurl.com/creativocommunity"
@@ -202,8 +211,50 @@ export default function CreativoContent({
             >
               Join community
             </MagneticButton>
+            {/* Hamburger — Showwork / Log in / Sign up collapse behind
+                this below sm, since the Join button already takes
+                priority on mobile and three more links won't fit. */}
+            <button
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              className="flex h-9 w-9 items-center justify-center rounded-full sm:hidden"
+              style={{ background: "rgba(255,255,255,0.08)" }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-white">
+                {mobileNavOpen ? (
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                ) : (
+                  <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden sm:hidden"
+              style={{ background: "rgba(10,10,10,0.97)", backdropFilter: "blur(16px)" }}
+            >
+              <div className="flex flex-col gap-1 px-6 pb-6 pt-2">
+                <Link href="/" onClick={() => setMobileNavOpen(false)} className="rounded-lg px-3 py-3 text-sm font-semibold text-white/75 hover:bg-white/5 hover:text-white">
+                  Showwork
+                </Link>
+                <Link href="/login" onClick={() => setMobileNavOpen(false)} className="rounded-lg px-3 py-3 text-sm font-semibold text-white/75 hover:bg-white/5 hover:text-white">
+                  Log in
+                </Link>
+                <Link href="/signup" onClick={() => setMobileNavOpen(false)} className="rounded-lg px-3 py-3 text-sm font-semibold text-white/75 hover:bg-white/5 hover:text-white">
+                  Sign up
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* ── 1. HERO — aurora gradient mesh, the page's signature moment ── */}
@@ -338,7 +389,24 @@ export default function CreativoContent({
         <div className="relative mx-auto max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }}>
             <p className="mb-3 text-xs font-bold uppercase" style={{ color: BLUE, letterSpacing: "0.2em" }}>Leaderboard</p>
-            <h2 className="mb-10 text-3xl font-extrabold tracking-tight text-black md:text-5xl">Who's winning right now.</h2>
+            <h2 className="mb-5 text-3xl font-extrabold tracking-tight text-black md:text-5xl">Who's winning right now.</h2>
+            <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+              <p className="max-w-lg text-base leading-relaxed text-black/55">
+                Every month, Creativo members submit real client work through
+                Showwork. The community votes, and the strongest work in each
+                category gets the spotlight — actual recognition, not a
+                popularity contest.
+              </p>
+              <a
+                href="https://tinyurl.com/creativocommunity"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 rounded-full px-6 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.03]"
+                style={{ background: BLUE, boxShadow: `0 12px 32px -10px ${BLUE}88` }}
+              >
+                Want your name up here? Join community →
+              </a>
+            </div>
           </motion.div>
 
           {availablePeriods.length === 0 ? (
@@ -481,7 +549,21 @@ export default function CreativoContent({
         <div className="relative mx-auto max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.7 }}>
             <p className="mb-3 text-xs font-bold uppercase" style={{ color: LIME, letterSpacing: "0.2em" }}>Webinars</p>
-            <h2 className="mb-14 max-w-xl text-3xl font-extrabold tracking-tight text-white md:text-5xl">Real sessions, real questions answered.</h2>
+            <h2 className="mb-5 max-w-xl text-3xl font-extrabold tracking-tight text-white md:text-5xl">Real sessions, real questions answered.</h2>
+            <div className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+              <p className="max-w-lg text-base leading-relaxed text-white/55">
+                Every session comes from someone who's actually done the work —
+                pricing conversations, landing clients, the parts of this job
+                nobody teaches. Know something worth sharing?
+              </p>
+              <button
+                onClick={() => setHostModalOpen(true)}
+                className="flex-shrink-0 rounded-full px-6 py-3 text-sm font-bold text-black transition-transform hover:scale-[1.03]"
+                style={{ background: LIME }}
+              >
+                Apply to host →
+              </button>
+            </div>
           </motion.div>
 
           {upcomingWebinars.length === 0 && pastWebinars.length === 0 ? (
@@ -613,10 +695,15 @@ export default function CreativoContent({
           <DriftBlob color={PINK} size={440} x="15%" y="10%" duration={22} delay={0} opacity={0.4} />
           <DriftBlob color={BLUE} size={360} x="65%" y="30%" duration={19} delay={2} opacity={0.35} />
         </div>
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7 }} className="relative">
-          <h2 className="mx-auto max-w-lg text-3xl font-extrabold tracking-tight text-white md:text-5xl">
-            Do you want to be part of it?
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7 }} className="relative mx-auto max-w-xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+            The best creators aren't figuring this out alone.
           </h2>
+          <p className="mx-auto mt-6 max-w-md text-base leading-relaxed text-white/55">
+            Real feedback, real referrals, a real shot at the monthly spotlight,
+            and sessions from people who've actually done it. Free, always — one
+            link away.
+          </p>
           <div className="mt-9">
             <MagneticButton
               href="https://tinyurl.com/creativocommunity"
@@ -632,6 +719,8 @@ export default function CreativoContent({
       <footer className="border-t border-white/5 px-6 py-8 text-center" style={{ background: "#08080A" }}>
         <p className="text-xs text-white/25">Creativo is a community by Showwork.</p>
       </footer>
+
+      <HostApplicationModal open={hostModalOpen} onClose={() => setHostModalOpen(false)} />
     </main>
   );
 }
