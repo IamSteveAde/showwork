@@ -855,6 +855,66 @@ model PaymentRecord {
 model PlatformSettings {
   id                    String @id @default("singleton")
   globalDiscountPercent Int    @default(0)
+  // A rough, admin-typed figure shown on the Creativo landing page
+  // (e.g. "50+ members") — deliberately not a precise live count, so
+  // it never needs a real membership-tracking query behind it.
+  creativoMemberCountLabel String?
+}
+
+// ─────────────────────────────────────────────
+// CREATIVO LEADERBOARD ENTRY — one winning member for one category in
+// one period, entered by hand in the admin. periodDate anchors it to
+// a real month (the 1st of whatever month it represents) so "this
+// month" / "last month" can be computed from the actual date rather
+// than a hand-typed label that could drift out of sync. A category +
+// period can genuinely have zero entries (nobody selected yet) or
+// just one — the public page has to render both of those honestly,
+// never padding with placeholder rows.
+// ─────────────────────────────────────────────
+model CreativoLeaderboardEntry {
+  id               String   @id @default(uuid())
+  name             String
+  profileImageUrl  String?
+  category         String // "Photography" | "Videography" | "Motion" | "Editing"
+  whatTheyDo       String? // short line — what they actually do
+  contact          String? // email, phone, or handle — admin's choice of format
+  // Shown as a real "View portfolio" link on the public page.
+  portfolioUrl     String?
+  // Digits only, no "+" or spaces (e.g. "2348012345678") — used to
+  // build a wa.me deep link on the public page, pre-filled with a
+  // message referencing the spotlight itself. Separate from `contact`
+  // because it needs a predictable, parseable format to build that
+  // link correctly, not free text.
+  whatsappNumber   String?
+  wonFor           String // e.g. "Best wedding series"
+  points           Int      @default(0)
+  periodDate       DateTime // the 1st of the month this entry represents
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([category, periodDate])
+}
+
+// ─────────────────────────────────────────────
+// CREATIVO WEBINAR — entered once in the admin with a real date/time;
+// upcoming vs. past is never stored, always computed by comparing
+// `startsAt` to the current time at render — so a webinar flips from
+// upcoming to past on its own the moment it's happened, with no admin
+// action required.
+// ─────────────────────────────────────────────
+model CreativoWebinar {
+  id          String   @id @default(uuid())
+  flyerImageUrl String?
+  topic       String
+  guests      String? // free text — one or more guest names
+  startsAt    DateTime
+  venue       String? // physical location, or "Online" / a platform name
+  applyUrl    String?
+  replayUrl   String? // filled in after the fact, for past webinars
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startsAt])
 }
 
 // ─────────────────────────────────────────────

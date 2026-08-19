@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import FloatingStartButton from "@/components/FloatingStartButton";
+import Navbar from "@/components/Navbar";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -500,22 +501,7 @@ function HeroSlider() {
           "cinematic" is texture. Almost imperceptible consciously, but
           it's what makes the hero feel shot on film rather than a
           flat digital background. */}
-      <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.05] mix-blend-overlay" aria-hidden>
-        <filter id="grain">
-          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" />
-        </filter>
-        <rect width="100%" height="100%" filter="url(#grain)" />
-      </svg>
-
-      <div className="relative z-10 flex items-center justify-between px-6 py-8 md:px-20">
-        <Wordmark size="lg" />
-        <Link href="/signup" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
-          Sign up
-        </Link>
-        <Link href="/login" className="text-sm font-semibold text-white/60 transition-colors hover:text-white">
-          Log in
-        </Link>
-      </div>
+      <Navbar />
 
       <div className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-16 md:px-20 md:pb-24">
         <div className="mx-auto max-w-[1280px]">
