@@ -9,6 +9,7 @@ interface Testimonial {
   clientRole: string | null;
   quote: string;
   rating: number | null;
+  isApproved: boolean;
 }
 
 function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
@@ -30,6 +31,55 @@ function StarPicker({ value, onChange }: { value: number; onChange: (n: number) 
   );
 }
 
+function TestimonialRow({
+  t,
+  onToggleApproval,
+  onDelete,
+  deletingId,
+  togglingId,
+}: {
+  t: Testimonial;
+  onToggleApproval: (id: string, next: boolean) => void;
+  onDelete: (id: string) => void;
+  deletingId: string | null;
+  togglingId: string | null;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.03)" }}>
+      <div className="flex-1">
+        {t.rating && (
+          <p className="mb-1 text-sm" style={{ color: "#F5C842" }}>
+            {"★".repeat(t.rating)}
+            <span style={{ color: "rgba(255,255,255,0.15)" }}>{"★".repeat(5 - t.rating)}</span>
+          </p>
+        )}
+        <p className="text-sm text-white/70">&ldquo;{t.quote}&rdquo;</p>
+        <p className="mt-1.5 text-xs font-semibold text-white">
+          {t.clientName}
+          {t.clientRole && <span className="font-normal text-white/40"> · {t.clientRole}</span>}
+        </p>
+      </div>
+      <div className="flex flex-shrink-0 flex-col items-end gap-2">
+        <button
+          onClick={() => onToggleApproval(t.id, !t.isApproved)}
+          disabled={togglingId === t.id}
+          className="text-xs font-semibold underline disabled:opacity-50"
+          style={{ color: t.isApproved ? "rgba(255,255,255,0.4)" : "#F5C842" }}
+        >
+          {togglingId === t.id ? "..." : t.isApproved ? "Hide from portfolio" : "Approve"}
+        </button>
+        <button
+          onClick={() => onDelete(t.id)}
+          disabled={deletingId === t.id}
+          className="text-xs text-red-400/70 underline hover:text-red-400 disabled:opacity-50"
+        >
+          {deletingId === t.id ? "Removing..." : "Remove"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PortfolioTestimonialsManager({ testimonials }: { testimonials: Testimonial[] }) {
   const router = useRouter();
   const [clientName, setClientName] = useState("");
@@ -39,6 +89,10 @@ export default function PortfolioTestimonialsManager({ testimonials }: { testimo
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const pending = testimonials.filter((t) => !t.isApproved);
+  const approved = testimonials.filter((t) => t.isApproved);
 
   const handleAdd = async () => {
     if (!clientName.trim() || !quote.trim()) {
@@ -78,33 +132,53 @@ export default function PortfolioTestimonialsManager({ testimonials }: { testimo
     router.refresh();
   };
 
+  const handleToggleApproval = async (id: string, next: boolean) => {
+    setTogglingId(id);
+    await fetch(`/api/portfolio/testimonials/${id}/approval`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isApproved: next }),
+    });
+    router.refresh();
+    setTogglingId(null);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      {testimonials.length > 0 && (
+      {pending.length > 0 && (
         <div className="flex flex-col gap-3">
-          {testimonials.map((t) => (
-            <div key={t.id} className="flex items-start justify-between gap-4 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <div className="flex-1">
-                {t.rating && (
-                  <p className="mb-1 text-sm" style={{ color: "#F5C842" }}>
-                    {"★".repeat(t.rating)}
-                    <span style={{ color: "rgba(255,255,255,0.15)" }}>{"★".repeat(5 - t.rating)}</span>
-                  </p>
-                )}
-                <p className="text-sm text-white/70">&ldquo;{t.quote}&rdquo;</p>
-                <p className="mt-1.5 text-xs font-semibold text-white">
-                  {t.clientName}
-                  {t.clientRole && <span className="font-normal text-white/40"> · {t.clientRole}</span>}
-                </p>
-              </div>
-              <button
-                onClick={() => handleDelete(t.id)}
-                disabled={deletingId === t.id}
-                className="flex-shrink-0 text-xs text-red-400/70 underline hover:text-red-400 disabled:opacity-50"
-              >
-                {deletingId === t.id ? "Removing..." : "Remove"}
-              </button>
-            </div>
+          <p className="text-xs font-semibold uppercase" style={{ color: "#F5C842", letterSpacing: "0.08em" }}>
+            Pending review ({pending.length})
+          </p>
+          {pending.map((t) => (
+            <TestimonialRow
+              key={t.id}
+              t={t}
+              onToggleApproval={handleToggleApproval}
+              onDelete={handleDelete}
+              deletingId={deletingId}
+              togglingId={togglingId}
+            />
+          ))}
+        </div>
+      )}
+
+      {approved.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {pending.length > 0 && (
+            <p className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              On your portfolio ({approved.length})
+            </p>
+          )}
+          {approved.map((t) => (
+            <TestimonialRow
+              key={t.id}
+              t={t}
+              onToggleApproval={handleToggleApproval}
+              onDelete={handleDelete}
+              deletingId={deletingId}
+              togglingId={togglingId}
+            />
           ))}
         </div>
       )}

@@ -1032,6 +1032,13 @@ model PortfolioTestimonial {
   clientRole   String?
   quote        String
   rating       Int?
+  // Defaults true so testimonials the creator types in directly (the
+  // existing "Add a testimonial" form) show up immediately, matching
+  // how the feature already worked. Only the new public submission
+  // route (clients submitting via a shared link) explicitly sets this
+  // false, so those sit pending until the creator reviews and
+  // approves them.
+  isApproved   Boolean   @default(true)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
 

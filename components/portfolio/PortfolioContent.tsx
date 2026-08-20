@@ -306,6 +306,7 @@ interface PortfolioTestimonialData {
   clientRole: string | null;
   quote: string;
   rating: number | null;
+  isApproved: boolean;
 }
 
 // The scrolling testimonial carousel — sits right after "Get in
@@ -1291,7 +1292,7 @@ export default function PortfolioContent({
           </section>
         )}
 
-        <TestimonialsCarousel testimonials={testimonials} primaryColor={primaryColor} />
+             <TestimonialsCarousel testimonials={testimonials.filter((t) => t.isApproved)} primaryColor={primaryColor} />
 
         <footer className="border-t border-white/5 bg-black px-6 py-14 md:px-14">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">

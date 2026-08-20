@@ -115,6 +115,7 @@ function initials(name: string | null, email: string) {
 export default async function DashboardPage() {
   const creator = await getCurrentCreator();
   if (!creator) redirect("/login");
+  const existingPortfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id }, select: { id: true } });
 
   // Initial data for the very first paint only — computed exactly the
   // same way /api/dashboard/projects computes it, so there's no
@@ -378,13 +379,13 @@ export default async function DashboardPage() {
                 <span className="text-base leading-none">+</span>
                 New project
               </Link>
-              <Link
+                            <Link
                 href="/dashboard/portfolio"
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                 style={{ border: "1px solid rgba(255,255,255,0.15)" }}
               >
                 <IconPortfolio className="h-4 w-4" />
-                Create your portfolio
+                {existingPortfolio ? "View portfolio" : "Create your portfolio"}
               </Link>
               <a
                 href={COMMUNITY_URL}

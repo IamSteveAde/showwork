@@ -42,6 +42,7 @@ export default async function PortfolioDashboardPage() {
   }
 
   const liveUrl = portfolioUrl(portfolio.slug);
+  const testimonialLink = `${process.env.NEXT_PUBLIC_APP_URL}/testimonial/${portfolio.slug}`;
   const ungroupedMedia = portfolio.media.filter((m) => !m.sectionId);
 
   const bannerCandidates = portfolio.sections
@@ -144,6 +145,25 @@ export default async function PortfolioDashboardPage() {
           <p className="mb-5 text-xs text-white/40">
             Shown as a scrolling carousel on your public portfolio, right after the &ldquo;Get in touch&rdquo; section.
           </p>
+
+          {/* Shareable link — a client submits their own testimonial
+              here, no account needed; it lands below as pending until
+              you approve it. */}
+          <div className="mb-5 rounded-lg p-4" style={{ background: "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.15)" }}>
+            <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.08em" }}>
+              Get testimonials directly from clients
+            </p>
+            <p className="mb-3 text-xs text-white/40">
+              Share this link — anything a client submits shows up below for your approval before it ever goes live.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 break-all rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/70">
+                {testimonialLink}
+              </span>
+              <CopyLinkButton url={testimonialLink} />
+            </div>
+          </div>
+
           <PortfolioTestimonialsManager testimonials={portfolio.testimonials} />
         </div>
       </div>
