@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "partNumber must be 1 or greater" }, { status: 400 });
   }
 
-  const portfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id } });
+  const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const uploadUrl = await getPresignedPartUploadUrl(fileKey, uploadId, partNumber);

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `File exceeds ${MAX_FILE_SIZE_MB}MB limit` }, { status: 400 });
   }
 
-  const portfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id } });
+  const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const safeName = filename.replace(/[^a-zA-Z0-9.\-_]/g, "_");

@@ -8,7 +8,7 @@ import { isValidNigerianPhone } from "@/lib/phone";
 // hold everything in PendingSignup. No Creator row exists yet — that
 // only happens once the code is confirmed in /api/auth/verify-otp.
 export async function POST(req: NextRequest) {
-  const { email, password, name, phone, companyName } = await req.json();
+    const { email, password, name, phone, companyName, accountType } = await req.json();
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
@@ -42,10 +42,16 @@ export async function POST(req: NextRequest) {
   // upsert: if they already started signing up (e.g. didn't finish
   // verifying last time), this just refreshes their code instead of
   // erroring on the unique email constraint.
+    // Only ever "AGENCY" if the form explicitly sent that — anything
+  // else (missing, malformed, tampered with) safely falls back to the
+  // default, ordinary account type rather than accidentally granting
+  // agency behavior.
+  const resolvedAccountType = accountType === "AGENCY" ? "AGENCY" : "CREATOR";
+
   await db.pendingSignup.upsert({
     where: { email },
-    update: { name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt },
-    create: { email, name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt },
+    update: { name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt, accountType: resolvedAccountType },
+    create: { email, name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt, accountType: resolvedAccountType },
   });
 
   try {

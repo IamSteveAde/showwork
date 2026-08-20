@@ -33,6 +33,12 @@ model Creator {
   email        String   @unique
   passwordHash String
   name         String?
+  // Set once, at signup — a real, distinct account type rather than a
+  // flag that gets toggled later. Determines whether this account can
+  // create more than one portfolio (agencies pay per additional
+  // portfolio; regular creators are limited to their one, same as
+  // before this existed).
+  accountType  AccountType @default(CREATOR)
   // Nigerian phone number, e.g. +2348012345678 — validated at signup
   // (must match +234 followed by 10 digits). Nullable since accounts
   // created before this field existed won't have one.
@@ -102,7 +108,10 @@ model Creator {
   projects            Project[]
   paymentRecords      PaymentRecord[]
   passwordResetTokens PasswordResetToken[]
-  portfolio           Portfolio?
+  // Was Portfolio? (one-to-one) — now an array, matching the removal
+  // of @unique on Portfolio.creatorId, so an agency account can hold
+  // more than one.
+  portfolios          Portfolio[]
 
   // ── Collaboration ──
   // Projects (owned by someone else) this creator has been added to
@@ -813,6 +822,9 @@ model PendingSignup {
   name         String?
   phone        String?
   companyName  String?
+  // Carried through from the signup form so verify-otp can set it on
+  // the real Creator row once the account is actually created.
+  accountType  AccountType @default(CREATOR)
   passwordHash String
   otpCode      String
   otpExpiresAt DateTime
@@ -826,10 +838,27 @@ model PendingSignup {
 // can't answer "how much did we make in March," so this table exists
 // specifically to make that answerable.
 // ─────────────────────────────────────────────
+enum AccountType {
+  CREATOR
+  AGENCY
+}
+
+enum PortfolioBillingStatus {
+  // A brand-new agency portfolio, created but the ₦5,000 setup fee
+  // hasn't been paid yet — genuinely not live, waiting on first
+  // payment, not the same situation as OFFLINE below.
+  PENDING_SETUP
+  ACTIVE
+  // Was active; the ₦1,000/month recurring charge failed.
+  OFFLINE
+}
+
 enum PaymentType {
   PROJECT_ONE_TIME
   SUBSCRIPTION_INITIAL
   SUBSCRIPTION_RENEWAL
+  PORTFOLIO_SUBSCRIPTION_INITIAL
+  PORTFOLIO_SUBSCRIPTION_RENEWAL
 }
 
 model PaymentRecord {
@@ -840,11 +869,15 @@ model PaymentRecord {
   type              PaymentType
   tier              SubscriptionTier?
   cycle             BillingCycle?
+  // Only set for PORTFOLIO_* payment types — which specific portfolio
+  // this charge was for, needed since one agency account can have many.
+  portfolioId       String?
   paystackReference String?
   createdAt         DateTime          @default(now())
 
   @@index([creatorId])
   @@index([createdAt])
+  @@index([portfolioId])
 }
 
 // ─────────────────────────────────────────────
@@ -981,7 +1014,37 @@ model Portfolio {
   bioStat   String? // e.g. "50+ projects delivered"
 
   creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId String  @unique
+  // No longer @unique — an agency account can own many portfolios. A
+  // regular creator still naturally ends up with one; nothing changes
+  // for them. Explicitly indexed since removing @unique also removes
+  // its implicit index.
+  creatorId String
+
+  // ── Agency billing — only ever populated for a portfolio beyond an
+  // account's first, created by an AGENCY account. A regular creator's
+  // one portfolio has none of this set and is simply always ACTIVE.
+  // One recurring charge — ₦5,000/year — no separate one-time fee. ──
+  billingStatus        PortfolioBillingStatus  @default(ACTIVE)
+  paystackSubscriptionCode String?
+  paystackEmailToken       String?
+  paystackCustomerCode     String?
+  subscriptionRenewsAt     DateTime?
+  // The reference from the very first subscription checkout — used to
+  // verify that charge directly with Paystack (needed for local
+  // development, where webhooks can't be delivered at all) before the
+  // webhook's own subscription.create event confirms it independently.
+  pendingSubscriptionRef   String?                 @unique
+  // Throttles the "your portfolio is offline" reminder email to at
+  // most once a day, rather than resending on every check a reminder
+  // script happens to run.
+  // Set the moment billingStatus actually transitions to OFFLINE, not
+  // read from updatedAt — updatedAt would be wrong the moment the
+  // creator edits anything else about the portfolio while it's
+  // offline, silently resetting how "recently" it went down.
+  wentOfflineAt              DateTime?
+  lastPaymentReminderSentAt DateTime?
+
+  @@index([creatorId])
 
   sections PortfolioSection[]
   media    PortfolioMedia[]

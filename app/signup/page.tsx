@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const COLOR = {
   black: "#0A0A0A",
@@ -49,7 +50,8 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
-  const [step, setStep] = useState<"details" | "verify">("details");
+    const [step, setStep] = useState<"details" | "verify">("details");
+  const [accountType, setAccountType] = useState<"CREATOR" | "AGENCY">("CREATOR");
 
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -68,10 +70,10 @@ function SignupForm() {
     setLoading(true);
     setError(null);
 
-    const res = await fetch("/api/auth/signup", {
+        const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name, phone, companyName }),
+      body: JSON.stringify({ email, password, name, phone, companyName, accountType }),
     });
 
     if (res.ok) {
@@ -105,10 +107,10 @@ function SignupForm() {
 
   const handleResend = async () => {
     setResendStatus("Sending...");
-    const res = await fetch("/api/auth/signup", {
+        const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name, phone, companyName }),
+      body: JSON.stringify({ email, password, name, phone, companyName, accountType }),
     });
     setResendStatus(res.ok ? "New code sent" : "Couldn't resend — try again");
     setTimeout(() => setResendStatus(null), 3000);
@@ -155,12 +157,50 @@ function SignupForm() {
               </p>
             </div>
 
-            <form
+                        <form
               onSubmit={handleSendCode}
               className="flex flex-col gap-4 rounded-2xl p-8"
               style={{ background: "rgba(26,26,26,0.7)", backdropFilter: "blur(16px)", border: "1px solid rgba(248,247,244,0.08)" }}
             >
               <div className="mb-1 h-[3px] w-8" style={{ background: COLOR.accent }} aria-hidden />
+
+                       <div>
+                <label className="mb-2 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+                  I'm signing up as a
+                </label>
+                <div
+                  className="relative inline-flex w-full rounded-full p-1"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <motion.div
+                    className="absolute inset-y-1 w-[calc(50%-4px)] rounded-full"
+                    style={{ background: COLOR.gradient }}
+                    animate={{ left: accountType === "CREATOR" ? 4 : "calc(50% + 0px)" }}
+                    transition={{ type: "spring", stiffness: 350, damping: 32 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("CREATOR")}
+                    className="relative z-10 flex-1 rounded-full py-2.5 text-sm font-semibold transition-colors duration-200"
+                    style={{ color: accountType === "CREATOR" ? "#FFFFFF" : "rgba(255,255,255,0.5)" }}
+                  >
+                    Creator
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("AGENCY")}
+                    className="relative z-10 flex-1 rounded-full py-2.5 text-sm font-semibold transition-colors duration-200"
+                    style={{ color: accountType === "AGENCY" ? "#FFFFFF" : "rgba(255,255,255,0.5)" }}
+                  >
+                    Agency
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-white/40">
+                  {accountType === "CREATOR"
+                    ? "One free portfolio, for your own work."
+                    : "Manage branded portfolios for multiple clients, billed per portfolio."}
+                </p>
+              </div>
 
               <div>
                 <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>

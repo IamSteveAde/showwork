@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const portfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id } });
+  const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const { clientName, clientRole, quote, rating } = await req.json();

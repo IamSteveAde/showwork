@@ -690,3 +690,88 @@ export async function sendWebinarHostApplicationEmail({
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// PORTFOLIO PAYMENT FAILED — sent to the agency the moment a client
+// portfolio's ₦1,000/month recurring charge fails and it goes
+// offline. This is the immediate notice; a separate scheduled job is
+// what re-sends reminders for as long as it stays unresolved.
+// ─────────────────────────────────────────────
+export async function sendPortfolioPaymentFailedEmail({
+  to,
+  name,
+  portfolioName,
+}: {
+  to: string;
+  name: string | null;
+  portfolioName: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Payment failed — "${portfolioName}" is now offline`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          The monthly payment for <strong style="color: #F8F7F4;">${portfolioName}</strong> didn't go through,
+          so that portfolio is now offline until it's resolved.
+        </p>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Update your payment details from your dashboard to bring it back online.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Update payment details
+        </a>
+      </div>
+    `,
+  });
+}
+
+// ─────────────────────────────────────────────
+// PORTFOLIO PAYMENT REMINDER — the repeated nag, distinct from
+// sendPortfolioPaymentFailedEmail (the one-time "just went offline"
+// notice sent directly from the webhook). This one is sent by a
+// separate scheduled script for as long as a portfolio stays
+// offline, so the wording reflects an ongoing situation rather than
+// something that just happened.
+// ─────────────────────────────────────────────
+export async function sendPortfolioOfflineReminderEmail({
+  to,
+  name,
+  portfolioName,
+  daysOffline,
+}: {
+  to: string;
+  name: string | null;
+  portfolioName: string;
+  daysOffline: number;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Reminder: "${portfolioName}" is still offline`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          <strong style="color: #F8F7F4;">${portfolioName}</strong> has now been offline for
+          ${daysOffline} day${daysOffline === 1 ? "" : "s"} due to a failed monthly payment.
+        </p>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Update your payment details to bring it back online — the client-facing link stays
+          inactive until this is resolved.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+          Update payment details
+        </a>
+      </div>
+    `,
+  });
+}

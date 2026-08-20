@@ -41,13 +41,14 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
-  const creator = await db.creator.create({
+   const creator = await db.creator.create({
     data: {
       email: pending.email,
       name: pending.name,
       phone: pending.phone,
       companyName: pending.companyName,
       passwordHash: pending.passwordHash,
+      accountType: pending.accountType,
       // The anchor point the whole lifecycle email sequence counts
       // from — set right here at real account creation, not left for
       // the daily cron job to fill in later, so "day 1" and "day 2"

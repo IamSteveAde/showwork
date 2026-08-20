@@ -26,7 +26,7 @@ export async function GET() {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const portfolio = await db.portfolio.findUnique({
+    const portfolio = await db.portfolio.findFirst({
     where: { creatorId: creator.id },
     include: {
       sections: {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const existing = await db.portfolio.findUnique({ where: { creatorId: creator.id } });
+  const existing = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (existing) {
     return NextResponse.json({ error: "You already have a portfolio — use PATCH to update it" }, { status: 409 });
   }
@@ -81,7 +81,7 @@ export async function PATCH(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const portfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id } });
+  const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const body = await req.json();

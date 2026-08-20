@@ -19,6 +19,16 @@ export const PROJECT_PRICE_KOBO = PROJECT_PRICE_NGN * 100;
 // appear as an option.
 const ALLOWED_CHANNELS = ["card", "bank_transfer", "ussd", "qr"];
 
+// Subscriptions (any Paystack plan-based checkout) can only ever
+// renew automatically off a saved card authorization — transfer,
+// USSD, and QR are one-time payment methods with nothing for
+// Paystack to charge again next cycle. Allowing them here would let
+// someone pay the first month successfully, then silently never be
+// charged again with no error surfaced anywhere. Used only by
+// initializeSubscription below; one-time charges above keep every
+// channel, since there's no renewal to protect there.
+const SUBSCRIPTION_ALLOWED_CHANNELS = ["card"];
+
 interface InitializeTransactionParams {
   email: string;       // the creator's email — Paystack requires this
   reference: string;   // a unique reference we generate, tied to the project
@@ -94,12 +104,14 @@ export async function initializeSubscription({
   callbackUrl,
   planCode,
   amount,
+  metadata,
 }: {
   email: string;
   reference: string;
   callbackUrl: string;
   planCode: string;
   amount: number;
+  metadata?: Record<string, unknown>;
 }): Promise<PaystackInitializeResponse> {
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
@@ -113,8 +125,9 @@ export async function initializeSubscription({
       reference,
       callback_url: callbackUrl,
       currency: "NGN",
-      channels: ALLOWED_CHANNELS,
+      channels: SUBSCRIPTION_ALLOWED_CHANNELS,
       plan: planCode,
+      metadata,
     }),
   });
 

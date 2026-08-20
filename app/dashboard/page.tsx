@@ -115,7 +115,7 @@ function initials(name: string | null, email: string) {
 export default async function DashboardPage() {
   const creator = await getCurrentCreator();
   if (!creator) redirect("/login");
-  const existingPortfolio = await db.portfolio.findUnique({ where: { creatorId: creator.id }, select: { id: true } });
+  const existingPortfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id }, select: { id: true } });
 
   // Initial data for the very first paint only — computed exactly the
   // same way /api/dashboard/projects computes it, so there's no
