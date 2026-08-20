@@ -50,7 +50,7 @@ export default async function AdminActivityPage() {
       lastLoginAt: true,
       createdAt: true,
       _count: { select: { projects: true } },
-      portfolio: { select: { slug: true } },
+      portfolios: { select: { slug: true } },
     },
   });
 
@@ -99,10 +99,12 @@ export default async function AdminActivityPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-white/70">{c._count.projects}</td>
-                  <td className="px-4 py-3">
-                    {c.portfolio ? (
-                      <a
-                        href={portfolioUrl(c.portfolio.slug)}
+                                 <td className="px-4 py-3">
+                    {c.portfolios.length === 0 ? (
+                      <span className="text-white/30">No</span>
+                    ) : c.portfolios.length === 1 ? (
+                      
+                        <a href={portfolioUrl(c.portfolios[0].slug)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5"
@@ -110,15 +112,15 @@ export default async function AdminActivityPage() {
                       >
                         Yes
                         <span className="text-white/30 underline decoration-white/20 hover:text-white/60">
-                          {c.portfolio.slug}
+                          {c.portfolios[0].slug}
                         </span>
                       </a>
                     ) : (
-                      <span className="text-white/30">No</span>
+                      // An agency account with more than one — this
+                      // overview table shows the count rather than
+                      // trying to list/link every slug in one cell.
+                      <span style={{ color: COLOR.gold }}>Yes ({c.portfolios.length})</span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-white/40">
-                    {c.createdAt.toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                   </td>
                 </tr>
               ))}
