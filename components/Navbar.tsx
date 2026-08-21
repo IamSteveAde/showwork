@@ -3,6 +3,15 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowUpRight,
+  Menu,
+  X,
+  Home,
+  UsersRound,
+  LogIn,
+  Sparkles,
+} from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
 /*                               BRAND SYSTEM                                 */
@@ -47,11 +56,10 @@ function Logo() {
         aria-label="Showwork"
         className="relative z-10 transition-transform duration-300 ease-out group-hover:scale-[1.04]"
         style={{
-          height: 27,
-          width: 124,
-
+          height: 24,
+          width: 112,
           background:
-            "linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 55%, #B8FF35 100%)",
+            "linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 58%, #B8FF35 100%)",
 
           WebkitMaskImage: "url(/images/logo/sw.svg)",
           maskImage: "url(/images/logo/sw.svg)",
@@ -92,12 +100,14 @@ const NAV_LINKS = [
     label: "Home",
     href: "/",
     color: COLOR.blueLight,
+    icon: Home,
   },
   {
     label: "Creativo Community",
     href: "/creativo",
     color: COLOR.lime,
     badge: "COMMUNITY",
+    icon: UsersRound,
   },
 ];
 
@@ -106,22 +116,25 @@ function NavLink({
   href,
   color,
   badge,
+  icon: Icon,
 }: {
   label: string;
   href: string;
   color: string;
   badge?: string;
+  icon: React.ElementType;
 }) {
   return (
     <Link
       href={href}
       className="group relative flex items-center gap-2 py-2 text-[13px] font-semibold tracking-[-0.01em] text-white/55 transition-colors duration-300 hover:text-white"
     >
-      <span
-        className="h-[7px] w-[7px] rounded-full transition-transform duration-300 group-hover:scale-125"
+      <Icon
+        size={14}
+        strokeWidth={2}
+        className="transition-transform duration-300 group-hover:scale-110"
         style={{
-          background: color,
-          boxShadow: `0 0 14px ${color}`,
+          color,
         }}
       />
 
@@ -206,29 +219,43 @@ export default function Navbar() {
       className="fixed inset-x-0 top-0 z-50 px-3 pt-3 transition-all duration-500 sm:px-5 sm:pt-5"
     >
       <div
-        className="relative mx-auto max-w-[1500px] transition-all duration-500"
+        className="relative mx-auto max-w-[1500px] overflow-hidden transition-all duration-500"
         style={{
-          background: scrolled
-            ? "rgba(8,8,8,0.78)"
+          background: mobileOpen
+            ? "rgba(8,8,8,0.97)"
+            : scrolled
+            ? "rgba(8,8,8,0.82)"
             : "rgba(8,8,8,0.18)",
 
           backdropFilter: "blur(22px)",
 
-          border: scrolled
-            ? "1px solid rgba(255,255,255,0.12)"
-            : "1px solid rgba(255,255,255,0.08)",
+          border:
+            scrolled || mobileOpen
+              ? "1px solid rgba(255,255,255,0.12)"
+              : "1px solid rgba(255,255,255,0.08)",
 
-          boxShadow: scrolled
-            ? "0 20px 70px -28px rgba(0,0,0,0.75)"
-            : "none",
+          boxShadow:
+            scrolled || mobileOpen
+              ? "0 20px 70px -28px rgba(0,0,0,0.75)"
+              : "none",
 
-          borderRadius: scrolled ? "999px" : "28px",
+          /*
+           * Important:
+           * When the mobile menu opens, force the container back
+           * to the normal rounded rectangle. This prevents the
+           * scrolled pill / oval shape from expanding with the menu.
+           */
+          borderRadius: mobileOpen
+            ? "26px"
+            : scrolled
+            ? "999px"
+            : "26px",
         }}
       >
-        {/* Ambient color glow */}
+        {/* Ambient glow */}
 
         <div
-          className="pointer-events-none absolute left-[10%] top-0 h-full w-40 opacity-30 blur-[45px]"
+          className="pointer-events-none absolute left-[10%] top-0 h-full w-40 opacity-25 blur-[45px]"
           style={{
             background: COLOR.blue,
           }}
@@ -263,9 +290,11 @@ export default function Navbar() {
           />
         </svg>
 
-        <nav className="relative z-10 flex items-center justify-between px-5 py-3.5 md:px-7 md:py-4">
-          {/* LEFT */}
+        {/* ------------------------------------------------------------------ */}
+        {/*                              NAV                                   */}
+        {/* ------------------------------------------------------------------ */}
 
+        <nav className="relative z-10 flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5 md:px-7 md:py-4">
           <div className="flex items-center gap-12">
             <Logo />
 
@@ -277,33 +306,37 @@ export default function Navbar() {
                   href={link.href}
                   color={link.color}
                   badge={link.badge}
+                  icon={link.icon}
                 />
               ))}
             </div>
           </div>
 
-          {/* RIGHT */}
+          {/* Desktop actions */}
 
           <div className="hidden items-center gap-6 sm:flex">
             <Link
               href="/login"
-              className="text-[13px] font-semibold text-white/55 transition-colors duration-300 hover:text-white"
+              className="group flex items-center gap-2 text-[13px] font-semibold text-white/55 transition-colors duration-300 hover:text-white"
             >
-              Log in
+              <LogIn
+                size={15}
+                strokeWidth={2}
+                className="transition-transform duration-300 group-hover:-translate-x-0.5"
+              />
+
+              <span>Log in</span>
             </Link>
 
             <Link
               href="/signup"
-              className="group relative overflow-hidden rounded-full px-6 py-3 text-[13px] font-bold text-black transition-transform duration-300 hover:scale-[1.04]"
+              className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-black transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
               style={{
                 background: COLOR.lime,
-
                 boxShadow:
                   "0 12px 35px -12px rgba(184,255,53,0.7)",
               }}
             >
-              {/* Hover gradient */}
-
               <span
                 className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
                 style={{
@@ -315,19 +348,21 @@ export default function Navbar() {
               <span className="relative z-10 flex items-center gap-2">
                 Get started
 
-                <span className="text-base leading-none transition-transform duration-300 group-hover:translate-x-1">
-                  ↗
-                </span>
+                <ArrowUpRight
+                  size={15}
+                  strokeWidth={2.5}
+                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
               </span>
             </Link>
           </div>
 
-          {/* MOBILE BUTTON */}
+          {/* Mobile button */}
 
           <button
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-white/10 sm:hidden"
+            className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/10 transition-colors duration-300 sm:hidden"
             style={{
               background: mobileOpen
                 ? COLOR.lime
@@ -343,40 +378,27 @@ export default function Navbar() {
               }}
             >
               {mobileOpen ? (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-[18px] w-[18px]"
+                <X
+                  size={19}
+                  strokeWidth={2.2}
                   style={{
                     color: COLOR.black,
                   }}
-                >
-                  <path
-                    d="M6 6L18 18M18 6L6 18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                />
               ) : (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-[18px] w-[18px] text-white"
-                >
-                  <path
-                    d="M4 7H20M4 12H20M4 17H20"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                <Menu
+                  size={20}
+                  strokeWidth={2}
+                  className="text-white"
+                />
               )}
             </motion.div>
           </button>
         </nav>
 
-        {/* MOBILE MENU */}
+        {/* ------------------------------------------------------------------ */}
+        {/*                          MOBILE MENU                                */}
+        {/* ------------------------------------------------------------------ */}
 
         <AnimatePresence>
           {mobileOpen && (
@@ -399,71 +421,98 @@ export default function Navbar() {
               }}
               className="relative overflow-hidden lg:hidden"
             >
-              <div className="border-t border-white/10 px-5 pb-5 pt-5">
-                <div className="grid gap-2">
-                  {NAV_LINKS.map((link, index) => (
-                    <motion.div
-                      key={link.href}
-                      initial={{
-                        opacity: 0,
-                        x: -15,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        x: 0,
-                      }}
-                      transition={{
-                        delay: 0.05 + index * 0.06,
-                        duration: 0.3,
-                      }}
-                    >
-                      <Link
-                        href={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        className="group flex items-center justify-between rounded-2xl px-4 py-4 transition-all duration-300 hover:bg-white/[0.06]"
+              <div className="border-t border-white/10 px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-5">
+                <div className="grid gap-1.5">
+                  {NAV_LINKS.map((link, index) => {
+                    const Icon = link.icon;
+
+                    return (
+                      <motion.div
+                        key={link.href}
+                        initial={{
+                          opacity: 0,
+                          x: -15,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          x: 0,
+                        }}
+                        transition={{
+                          delay: 0.05 + index * 0.06,
+                          duration: 0.3,
+                        }}
                       >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="h-2.5 w-2.5 rounded-full"
+                        <Link
+                          href={link.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="group flex items-center justify-between rounded-2xl px-3.5 py-3.5 transition-all duration-300 hover:bg-white/[0.06]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="flex h-8 w-8 items-center justify-center rounded-xl"
+                              style={{
+                                background: `${link.color}18`,
+                                border: `1px solid ${link.color}25`,
+                              }}
+                            >
+                              <Icon
+                                size={15}
+                                strokeWidth={2}
+                                style={{
+                                  color: link.color,
+                                }}
+                              />
+                            </div>
+
+                            <div className="flex flex-col">
+                              <span className="text-[14px] font-semibold text-white">
+                                {link.label}
+                              </span>
+
+                              {link.badge && (
+                                <span
+                                  className="mt-0.5 text-[8px] font-bold uppercase"
+                                  style={{
+                                    color: link.color,
+                                    letterSpacing: "0.12em",
+                                  }}
+                                >
+                                  {link.badge}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <ArrowUpRight
+                            size={17}
+                            strokeWidth={2}
+                            className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
                             style={{
-                              background: link.color,
-                              boxShadow: `0 0 12px ${link.color}`,
+                              color: link.color,
                             }}
                           />
-
-                          <span className="text-[15px] font-semibold text-white">
-                            {link.label}
-                          </span>
-                        </div>
-
-                        <span
-                          className="text-lg transition-transform duration-300 group-hover:translate-x-1"
-                          style={{
-                            color: link.color,
-                          }}
-                        >
-                          ↗
-                        </span>
-                      </Link>
-                    </motion.div>
-                  ))}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {/* Account actions */}
 
-                <div className="mt-5 grid gap-3 border-t border-white/10 pt-5">
+                <div className="mt-4 grid gap-2.5 border-t border-white/10 pt-4">
                   <Link
                     href="/login"
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-full border border-white/12 px-5 py-3.5 text-center text-sm font-bold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                    className="flex items-center justify-center gap-2 rounded-full border border-white/12 px-5 py-3 text-center text-[13px] font-bold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
                   >
+                    <LogIn size={15} strokeWidth={2} />
                     Log in
                   </Link>
 
                   <Link
                     href="/signup"
                     onClick={() => setMobileOpen(false)}
-                    className="group relative overflow-hidden rounded-full px-5 py-4 text-center text-sm font-bold text-black"
+                    className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-black"
                     style={{
                       background: COLOR.lime,
                     }}
@@ -476,17 +525,25 @@ export default function Navbar() {
                       }}
                     />
 
-                    <span className="relative z-10">
-                      Start creating ↗
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      <Sparkles size={15} strokeWidth={2.2} />
+
+                      Start creating
+
+                      <ArrowUpRight
+                        size={15}
+                        strokeWidth={2.5}
+                        className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      />
                     </span>
                   </Link>
                 </div>
 
                 {/* Brand line */}
 
-                <div className="mt-5 flex items-center gap-3 px-2">
+                <div className="mt-4 flex items-center gap-3 px-1">
                   <div
-                    className="h-1.5 flex-1 rounded-full"
+                    className="h-[2px] flex-1 rounded-full"
                     style={{
                       background:
                         "linear-gradient(90deg, #2478FF, #B8FF35, #FFCC00, #FF8A1F)",
@@ -494,9 +551,9 @@ export default function Navbar() {
                   />
 
                   <span
-                    className="text-[8px] font-bold uppercase text-white/25"
+                    className="whitespace-nowrap text-[7px] font-bold uppercase text-white/25"
                     style={{
-                      letterSpacing: "0.18em",
+                      letterSpacing: "0.16em",
                     }}
                   >
                     SHOW YOUR WORK

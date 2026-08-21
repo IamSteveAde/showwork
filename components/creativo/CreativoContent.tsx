@@ -10,6 +10,12 @@ import {
 } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import HostApplicationModal from "@/components/creativo/HostApplicationModal";
+import {
+  Send,
+  BadgeDollarSign,
+  UsersRound,
+  Eye,
+} from "lucide-react";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -504,10 +510,11 @@ export default function CreativoContent({
             border:
               "1px solid rgba(255,255,255,0.1)",
 
-            borderRadius:
-              scrolled
-                ? "999px"
-                : "28px",
+            borderRadius: scrolled
+  ? "28px"
+  : scrolled
+  ? "999px"
+  : "28px",
 
             boxShadow: scrolled
               ? "0 20px 70px -30px rgba(0,0,0,0.8)"
@@ -1684,194 +1691,196 @@ export default function CreativoContent({
 
 
       {/* ================================================================ */}
-      {/* WHY CREATIVO                                                     */}
-      {/* ================================================================ */}
+{/* WHY CREATIVO                                                     */}
+{/* ================================================================ */}
 
-      <section
-        className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
-        style={{
-          background:
-            COLOR.black,
-        }}
-      >
+<section
+  className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
+  style={{
+    background: COLOR.black,
+  }}
+>
+  <Orb
+    color={COLOR.magenta}
+    size={550}
+    left="-15%"
+    top="35%"
+    opacity={0.2}
+  />
 
-        <Orb
-          color={COLOR.magenta}
-          size={550}
-          left="-15%"
-          top="35%"
-          opacity={0.2}
-        />
+  <Orb
+    color={COLOR.blue}
+    size={450}
+    left="75%"
+    top="-10%"
+    opacity={0.18}
+  />
 
-        <Orb
-          color={COLOR.blue}
-          size={450}
-          left="75%"
-          top="-10%"
-          opacity={0.18}
-        />
+  <div className="relative mx-auto max-w-[1350px]">
+    {/* HEADING */}
 
-        <div className="relative mx-auto max-w-[1350px]">
+    <div className="max-w-3xl">
+      <SectionLabel color={COLOR.lime}>
+        Why be here?
+      </SectionLabel>
 
-          <div className="max-w-3xl">
+      <h2 className="text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-7xl">
+        The things you
+        <br />
+        cannot build
+        <br />
 
-            <SectionLabel
-              color={
-                COLOR.lime
-              }
-            >
-              Why be here?
-            </SectionLabel>
+        <span className="text-white/35">
+          alone.
+        </span>
+      </h2>
+    </div>
 
-            <h2 className="text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-7xl">
+    {/* CARDS */}
 
-              The things you
-              cannot build
-              <br />
+    <div className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 lg:grid-cols-4">
+      {[
+        {
+          number: "01",
+          title: "Referrals",
+          body:
+            "Opportunities that start inside the community before they ever reach a public job board.",
+          color: COLOR.coral,
+          Icon: Send,
+        },
+        {
+          number: "02",
+          title: "Better pricing",
+          body:
+            "Learn how other creators position their work, handle clients and charge with confidence.",
+          color: COLOR.magenta,
+          Icon: BadgeDollarSign,
+        },
+        {
+          number: "03",
+          title: "Real people",
+          body:
+            "A network of creators working in the same industries and dealing with the same challenges.",
+          color: COLOR.blue,
+          Icon: UsersRound,
+        },
+        {
+          number: "04",
+          title: "Visibility",
+          body:
+            "Your strongest work gets a chance to be discovered, celebrated and remembered.",
+          color: COLOR.lime,
+          Icon: Eye,
+        },
+      ].map((item, index) => {
+        const Icon = item.Icon;
 
-              <span className="text-white/35">
-                alone.
-              </span>
+        return (
+          <motion.div
+            key={item.title}
+            initial={{
+              opacity: 0,
+              y: 25,
+            }}
+            whileInView={{
+              opacity: 1,
+              y: 0,
+            }}
+            viewport={{
+              once: true,
+              amount: 0.25,
+            }}
+            transition={{
+              duration: 0.6,
+              delay: index * 0.08,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            whileHover={{
+              y: -8,
+            }}
+            className="group relative min-h-[320px] overflow-hidden rounded-[2rem] border border-white/10 p-6 transition-colors duration-500 md:p-7"
+            style={{
+              background:
+                "linear-gradient(145deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%)",
+            }}
+          >
+            {/* AMBIENT GLOW */}
 
-            </h2>
+            <div
+              className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl transition-transform duration-700 ease-out group-hover:scale-[1.7]"
+              style={{
+                background: item.color,
+                opacity: 0.2,
+              }}
+            />
 
-          </div>
+            {/* BOTTOM ACCENT */}
 
+            <div
+              className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 ease-out group-hover:w-full"
+              style={{
+                background: `linear-gradient(
+                  90deg,
+                  transparent,
+                  ${item.color},
+                  transparent
+                )`,
+              }}
+            />
 
-          <div className="mt-20 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="relative flex h-full min-h-[272px] flex-col justify-between">
+              {/* TOP */}
 
-            {[
-              {
-                number: "01",
-                title: "Referrals",
-                body:
-                  "Opportunities that start inside the community before they ever reach a public job board.",
-                color:
-                  COLOR.coral,
-              },
-              {
-                number: "02",
-                title:
-                  "Better pricing",
-                body:
-                  "Learn how other creators position their work, handle clients and charge with confidence.",
-                color:
-                  COLOR.magenta,
-              },
-              {
-                number: "03",
-                title:
-                  "Real people",
-                body:
-                  "A network of creators working in the same industries and dealing with the same challenges.",
-                color:
-                  COLOR.blue,
-              },
-              {
-                number: "04",
-                title:
-                  "Visibility",
-                body:
-                  "Your strongest work gets a chance to be discovered, celebrated and remembered.",
-                color:
-                  COLOR.lime,
-              },
-            ].map(
-              (
-                item,
-                index
-              ) => (
+              <div className="flex items-start justify-between">
+                {/* ICON */}
 
-                <motion.div
-                  key={
-                    item.title
-                  }
-                  initial={{
-                    opacity: 0,
-                    y: 25,
-                  }}
-                  whileInView={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  viewport={{
-                    once: true,
-                  }}
-                  transition={{
-                    duration: 0.6,
-                    delay:
-                      index * 0.08,
-                  }}
-                  whileHover={{
-                    y: -8,
-                  }}
-                  className="group relative min-h-[320px] overflow-hidden rounded-[2rem] border border-white/10 p-7"
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110"
                   style={{
-                    background:
-                      "rgba(255,255,255,0.045)",
+                    background: `${item.color}18`,
+                    borderColor: `${item.color}35`,
+                    boxShadow: `0 12px 30px -14px ${item.color}`,
                   }}
                 >
-
-                  <div
-                    className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl transition-transform duration-500 group-hover:scale-150"
+                  <Icon
+                    size={21}
+                    strokeWidth={1.8}
                     style={{
-                      background:
-                        item.color,
-
-                      opacity:
-                        0.2,
+                      color: item.color,
                     }}
                   />
+                </div>
 
-                  <div className="relative flex h-full flex-col justify-between">
+                {/* NUMBER */}
 
-                    <span
-                      className="text-xs font-extrabold"
-                      style={{
-                        color:
-                          item.color,
-                      }}
-                    >
-                      {
-                        item.number
-                      }
-                    </span>
+                <span
+                  className="text-xs font-extrabold tracking-[0.12em]"
+                  style={{
+                    color: item.color,
+                  }}
+                >
+                  {item.number}
+                </span>
+              </div>
 
+              {/* CONTENT */}
 
-                    <div>
+              <div>
+                <h3 className="text-xl font-extrabold tracking-[-0.03em] text-white md:text-2xl">
+                  {item.title}
+                </h3>
 
-                      <h3 className="text-2xl font-extrabold tracking-tight text-white">
-
-                        {
-                          item.title
-                        }
-
-                      </h3>
-
-                      <p className="mt-4 text-sm leading-relaxed text-white/45">
-
-                        {
-                          item.body
-                        }
-
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </motion.div>
-
-              )
-            )}
-
-          </div>
-
-        </div>
-
-      </section>
-
-
+                <p className="mt-4 max-w-[28ch] text-sm leading-relaxed text-white/45">
+                  {item.body}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  </div>
+</section>
       {/* ================================================================ */}
       {/* WEBINARS                                                         */}
       {/* ================================================================ */}
@@ -2006,13 +2015,15 @@ export default function CreativoContent({
 
                       // eslint-disable-next-line @next/next/no-img-element
 
-                      <div className="flex w-full items-center justify-center overflow-hidden rounded-[1.3rem] bg-black/20">
-  <img
-    src={webinar.flyerImageUrl}
-    alt={webinar.topic}
-    className="h-auto w-full object-contain"
-  />
-</div>
+                      <img
+                        src={
+                          webinar.flyerImageUrl
+                        }
+                        alt={
+                          webinar.topic
+                        }
+                        className="aspect-[16/9] w-full rounded-[1.3rem] object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                      />
 
                     )}
 
