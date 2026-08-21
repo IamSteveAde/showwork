@@ -1,5 +1,27 @@
+import { Metadata } from "next";
 import { db } from "@/lib/db";
 import CreativoContent from "@/components/creativo/CreativoContent";
+
+const CREATIVO_TITLE = "Creativo — Community for Photographers, Videographers & Creators | Showwork";
+const CREATIVO_DESCRIPTION =
+  "Join Creativo, the free community for photographers, videographers, editors, and motion designers who want better clients, better pay, and real visibility. Real feedback, referrals, monthly challenges, and live webinars — powered by Showwork.";
+const CREATIVO_IMAGE = `${process.env.NEXT_PUBLIC_APP_URL}/images/create.jpg`;
+
+export const metadata: Metadata = {
+  title: CREATIVO_TITLE,
+  description: CREATIVO_DESCRIPTION,
+  openGraph: {
+    title: CREATIVO_TITLE,
+    description: CREATIVO_DESCRIPTION,
+    images: [{ url: CREATIVO_IMAGE, width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: CREATIVO_TITLE,
+    description: CREATIVO_DESCRIPTION,
+    images: [CREATIVO_IMAGE],
+  },
+};
 
 export default async function CreativoPage() {
   const [settings, entries, webinars] = await Promise.all([

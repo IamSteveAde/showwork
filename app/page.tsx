@@ -27,20 +27,22 @@ export const metadata: Metadata = {
     "Creativo",
     "Showwork",
   ],
-  openGraph: {
-    title: "Showwork | Present and Price Your Work Like a Premium Brand",
+    openGraph: {
+    title: "Showwork | Present Your Work Like a Premium Brand",
     description:
-      "A professional portfolio, a premium client delivery, and a community built to help Nigerian creators price and position themselves properly. Free to start.",
+      "A professional portfolio, a premium client delivery, and a community built to help Nigerian creators position themselves properly. Free to start.",
     url: "https://useshowwork.com",
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
+    images: [{ url: `${process.env.NEXT_PUBLIC_APP_URL}/images/work.jpg`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Showwork | Present and Price Your Work Like a Premium Brand",
     description:
       "Stop sending Dropbox links. Deliver your client work — and your own portfolio — the way a premium brand would.",
+    images: [`${process.env.NEXT_PUBLIC_APP_URL}/images/work.jpg`],
   },
   robots: {
     index: true,

@@ -1,8 +1,41 @@
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import PortfolioContent from "@/components/portfolio/PortfolioContent";
 import type { PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
+
+// A lightweight, separate query — only what's needed for the
+// shared-link preview, not the full portfolio with all its
+// sections/media/testimonials includes.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const portfolio = await db.portfolio.findUnique({
+    where: { slug },
+    select: { companyName: true, heroTagline: true, logoUrl: true },
+  });
+
+  if (!portfolio) {
+    return { title: "Portfolio not found — Showwork" };
+  }
+
+  const title = `${portfolio.companyName} — Portfolio | Showwork`;
+  const description = portfolio.heroTagline
+    ? `${portfolio.heroTagline} — See ${portfolio.companyName}'s work, delivered and showcased with Showwork.`
+    : `Explore ${portfolio.companyName}'s work — a branded creative portfolio built with Showwork.`;
+  const image = `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
 
 export default async function PortfolioPage({
   params,

@@ -1,9 +1,41 @@
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { verifyViewerToken } from "@/lib/auth";
 import DeliveryPage from "./DeliveryPage";
+
+// A lightweight, separate query from the main page component below —
+// only the couple of fields actually needed for the shared-link
+// preview, not the full project with all its media/section includes.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await db.project.findUnique({
+    where: { slug },
+    select: { clientName: true, creator: { select: { companyName: true, name: true } } },
+  });
+
+  if (!project) {
+    return { title: "Project not found — Showwork" };
+  }
+
+  const creatorName = project.creator.companyName || project.creator.name || "Showwork";
+  const title = `${project.clientName} — Delivered by ${creatorName} | Showwork`;
+  const description = `Review, approve, and download your delivered files from ${creatorName} — securely hosted on Showwork, the branded client delivery platform for creative professionals.`;
+  const image = `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
 
 export default async function SlugPage({
   params,
