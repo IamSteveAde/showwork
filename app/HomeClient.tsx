@@ -112,6 +112,43 @@ function IconSend({ className }: { className?: string }) {
     </svg>
   );
 }
+function IconArrowUpRight({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M7 17L17 7M17 7H8M17 7V16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconPlay({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M8 5.5v13l11-6.5-11-6.5Z" />
+    </svg>
+  );
+}
+function IconClose({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconCheck({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconMusicNote({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M9 18V5.5l10-2v12.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="7" cy="18" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+      <circle cx="17" cy="15.5" r="2.5" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
 
 // The icon treatment used everywhere on the page — a soft blurred
 // glow sitting behind a crisp, generously-sized line icon. This one
@@ -476,7 +513,7 @@ function HeroSlider() {
 
   return (
     <section
-      className="relative min-h-[760px] overflow-hidden px-4 pb-5 pt-4 sm:px-6 md:min-h-[94vh] md:px-10 lg:px-16"
+      className="relative min-h-[100svh] overflow-hidden px-4 pb-5 pt-4 sm:px-6 md:min-h-[94vh] md:px-10 lg:px-16"
       style={{ background: COLOR.black }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -502,7 +539,7 @@ function HeroSlider() {
 
       <Navbar />
 
-      <div className="relative mx-auto flex min-h-[720px] max-w-[1500px] items-end pb-16 pt-40 md:min-h-[90vh] md:pb-24">
+      <div className="relative mx-auto flex min-h-[100svh] max-w-[1500px] items-end pb-14 pt-32 sm:pb-16 sm:pt-40 md:min-h-[90vh] md:pb-24">
         <div className="max-w-4xl">
           <AnimatePresence mode="wait">
             <motion.div
@@ -512,30 +549,30 @@ function HeroSlider() {
               exit={{ opacity: 0, y: -18 }}
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
             >
-              <div className="mb-7 inline-flex items-center gap-3 rounded-full border border-white/15 bg-black/20 px-4 py-2 backdrop-blur-xl">
+              <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-white/15 bg-black/20 px-4 py-2 backdrop-blur-xl sm:mb-7">
                 <span className="h-2 w-2 rounded-full" style={{ background: active === 0 ? COLOR.orange : active === 1 ? COLOR.blueLight : COLOR.lime }} />
                 <p className="text-[10px] font-bold uppercase text-white/70 sm:text-xs" style={{ letterSpacing: "0.16em" }}>{slide.eyebrow}</p>
               </div>
 
-              <h1 className="max-w-5xl text-[clamp(3.2rem,8vw,8.5rem)] font-bold leading-[0.9] tracking-[-0.07em] text-white">
+              <h1 className="max-w-5xl text-[clamp(2.2rem,9vw,5.5rem)] font-bold leading-[0.95] tracking-[-0.04em] text-white sm:leading-[0.9] sm:tracking-[-0.07em]">
                 {slide.headline}
               </h1>
 
-              <div className="mt-8 grid max-w-2xl gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
-                <p className="text-base leading-relaxed text-white/62 md:text-lg">{slide.body}</p>
+              <div className="mt-6 grid max-w-2xl gap-5 sm:mt-8 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-6">
+                <p className="text-sm leading-relaxed text-white/62 sm:text-base md:text-lg">{slide.body}</p>
                 <MagneticButton
                   href={slide.cta.href}
                   external={slide.cta.external}
-                  className="inline-flex w-fit items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-black shadow-2xl"
+                  className="inline-flex w-fit items-center gap-3 rounded-full px-5 py-3.5 text-sm font-bold text-black shadow-2xl sm:px-6 sm:py-4"
                   style={{ background: active === 0 ? COLOR.orange : active === 1 ? COLOR.lime : COLOR.accent }}
                 >
-                  {slide.cta.label}<span className="text-lg">↗</span>
+                  {slide.cta.label}<IconArrowUpRight className="h-4 w-4" />
                 </MagneticButton>
               </div>
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-12 flex items-center gap-5">
+          <div className="mt-8 flex items-center gap-5 sm:mt-12">
             <div className="flex gap-2">
               {SLIDES.map((_, i) => (
                 <button key={i} onClick={() => setActive(i)} aria-label={`Go to slide ${i + 1}`} className="group h-2 overflow-hidden rounded-full bg-white/20" style={{ width: i === active ? 48 : 10 }}>
@@ -639,32 +676,34 @@ export default function HomeClient() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.97 }}
               transition={{ type: "spring", stiffness: 240, damping: 24 }}
-              className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/15 bg-[#0B0B0B] p-7 shadow-2xl sm:p-10"
+              className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/15 bg-[#0B0B0B] p-6 shadow-2xl sm:p-10"
             >
               <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full blur-3xl" style={{ background: COLOR.blue, opacity: 0.45 }} />
               <div className="absolute -bottom-28 -left-20 h-56 w-56 rounded-full blur-3xl" style={{ background: COLOR.orange, opacity: 0.28 }} />
               <div className="relative">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl text-black" style={{ background: COLOR.lime }}>♪</span>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-black" style={{ background: COLOR.lime }}>
+                    <IconMusicNote className="h-6 w-6" />
+                  </span>
                   <div>
                     <p className="text-[10px] font-bold uppercase text-white/40" style={{ letterSpacing: ".2em" }}>A better first impression</p>
                     <p className="mt-1 text-sm font-semibold text-white">Showwork is ready.</p>
                   </div>
                 </div>
 
-                <h2 className="mt-9 text-4xl font-bold leading-[0.95] tracking-[-0.055em] text-white sm:text-5xl">
+                <h2 className="mt-7 text-3xl font-bold leading-[1] tracking-[-0.04em] text-white sm:mt-9 sm:text-4xl sm:leading-[0.95] sm:tracking-[-0.055em] md:text-5xl">
                   Want to experience it <span style={{ color: COLOR.lime }}>with sound?</span>
                 </h2>
 
-                <p className="mt-5 max-w-md text-base leading-relaxed text-white/55">
+                <p className="mt-4 max-w-md text-sm leading-relaxed text-white/55 sm:mt-5 sm:text-base">
                   We&apos;ll play the opening motion with audio once, then return to silent playback. You can always open the film later and watch the complete experience with sound.
                 </p>
 
-                <div className="mt-9 grid gap-3 sm:grid-cols-2">
+                <div className="mt-7 grid gap-3 sm:mt-9 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={startMotionWithSound}
-                    className="rounded-full px-6 py-4 text-sm font-bold text-black transition-transform hover:scale-[1.02]"
+                    className="rounded-full px-5 py-3.5 text-sm font-bold text-black transition-transform hover:scale-[1.02] sm:px-6 sm:py-4"
                     style={{ background: COLOR.lime }}
                   >
                     Yes, play with sound
@@ -672,7 +711,7 @@ export default function HomeClient() {
                   <button
                     type="button"
                     onClick={keepMotionMuted}
-                    className="rounded-full border border-white/15 px-6 py-4 text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    className="rounded-full border border-white/15 px-5 py-3.5 text-sm font-bold text-white/70 transition-colors hover:bg-white/10 hover:text-white sm:px-6 sm:py-4"
                   >
                     No, keep it muted
                   </button>
@@ -687,31 +726,39 @@ export default function HomeClient() {
         )}
       </AnimatePresence>
 
-      {/* MOTION — the new opening statement */}
-      <section className="relative overflow-hidden px-4 py-8 sm:px-6 md:px-10 md:py-12 lg:px-16" style={{ background: COLOR.black }}>
-        <div className="relative mx-auto max-w-[1500px] overflow-hidden rounded-[2rem] p-[1px] md:rounded-[3rem]" style={{ background: COLOR.rainbow }}>
-          <div className="relative overflow-hidden rounded-[calc(2rem-1px)] bg-[#0A0A0A] md:rounded-[calc(3rem-1px)]">
+            {/* MOTION — the new opening statement. Full viewport height on
+          mobile, content vertically centered with even breathing room
+          top and bottom; on md+ it drops back to a compact banner. */}
+      <section className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-4 py-10 sm:px-6 sm:py-8 md:min-h-0 md:block md:px-10 md:py-12 lg:px-16" style={{ background: COLOR.black }}>
+        <div className="relative mx-auto flex w-full max-w-[1500px] flex-col overflow-hidden rounded-[1.5rem] p-[1px] md:rounded-[3rem]" style={{ background: COLOR.rainbow }}>
+          <div className="relative flex flex-col overflow-hidden rounded-[calc(1.5rem-1px)] bg-[#0A0A0A] md:rounded-[calc(3rem-1px)]">
             <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 8% 12%, rgba(255,138,31,.45), transparent 26%), radial-gradient(circle at 90% 80%, rgba(184,255,53,.32), transparent 28%)" }} />
-            <div className="relative grid items-center gap-8 p-5 sm:p-8 md:grid-cols-[.8fr_1.2fr] md:p-12 lg:p-16">
+            <div className="relative flex flex-col justify-center gap-6 p-6 sm:gap-8 sm:p-8 md:grid md:grid-cols-[.8fr_1.2fr] md:items-center md:gap-8 md:p-12 lg:p-16">
               <div>
                 <p className="text-xs font-bold uppercase" style={{ color: COLOR.lime, letterSpacing: ".24em" }}>Showwork in motion</p>
-                <h2 className="mt-5 text-4xl font-bold leading-[.95] tracking-[-.06em] text-white md:text-6xl xl:text-7xl">
+                <h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-white sm:mt-5 sm:text-4xl sm:leading-[.95] sm:tracking-[-.06em] md:text-6xl xl:text-7xl">
                   Work this good deserves to be <span style={{ color: COLOR.yellowSoft }}>experienced.</span>
                 </h2>
-                <p className="mt-6 max-w-md text-base leading-relaxed text-white/55 md:text-lg">
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-white/55 sm:mt-6 sm:text-base md:text-lg">
                   The delivery is no longer the last step. It is part of the creative work.
                 </p>
-                <div className="mt-10 flex items-center gap-3">
+                <div className="mt-5 flex items-center gap-3 sm:mt-10">
                   <span className="h-3 w-3 animate-pulse rounded-full" style={{ background: COLOR.orange }} />
-                  <span className="text-xs font-semibold uppercase text-white/45" style={{ letterSpacing: ".18em" }}>Press play on the experience</span>
+                  <span className="text-[10px] font-semibold uppercase text-white/45 sm:text-xs" style={{ letterSpacing: ".18em" }}>Press play on the experience</span>
                 </div>
               </div>
-              <motion.div initial={{ opacity: 0, scale: .96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: .8 }} className="relative">
-                <div className="absolute -inset-5 rounded-[2rem] opacity-40 blur-2xl" style={{ background: "linear-gradient(135deg, #2478FF, #B8FF35, #FF8A1F)" }} />
+              <motion.div
+                initial={{ opacity: 0, scale: .96 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: .8 }}
+                className="relative"
+              >
+                <div className="absolute -inset-3 rounded-[1.5rem] opacity-40 blur-2xl sm:-inset-5 sm:rounded-[2rem]" style={{ background: "linear-gradient(135deg, #2478FF, #B8FF35, #FF8A1F)" }} />
                 <button
                   type="button"
                   onClick={() => setShowMotionFull(true)}
-                  className="group relative block w-full overflow-hidden rounded-[1.5rem] border border-white/15 bg-black text-left shadow-2xl"
+                  className="group relative block w-full overflow-hidden rounded-[1.25rem] border border-white/15 bg-black text-left shadow-2xl sm:rounded-[1.5rem]"
                   aria-label="Watch the complete Showwork motion film"
                 >
                   <video
@@ -723,14 +770,16 @@ export default function HomeClient() {
                     playsInline
                     preload="auto"
                     onEnded={handleMotionEnded}
-                    className="aspect-video w-full object-cover"
+                    className="aspect-[4/5] w-full object-cover sm:aspect-video"
                   />
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/75 via-black/10 to-transparent p-5">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/75 via-black/10 to-transparent p-4 sm:p-5">
                     <div>
                       <p className="text-[10px] font-bold uppercase text-white/45" style={{ letterSpacing: ".2em" }}>The complete experience</p>
-                      <p className="mt-1 font-semibold text-white">Click to watch with sound.</p>
+                      <p className="mt-1 text-sm font-semibold text-white">Click to watch with sound.</p>
                     </div>
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full text-black transition-transform duration-300 group-hover:scale-110" style={{ background: COLOR.lime }}>▶</div>
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-black transition-transform duration-300 group-hover:scale-110 sm:h-11 sm:w-11" style={{ background: COLOR.lime }}>
+                      <IconPlay className="h-4 w-4 sm:h-5 sm:w-5" />
+                    </div>
                   </div>
                 </button>
               </motion.div>
@@ -738,20 +787,20 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
-
+      
       {/* THREE DOORS */}
-      <section className="px-4 py-20 sm:px-6 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.offWhite }}>
+      <section className="px-4 py-14 sm:px-6 sm:py-20 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.offWhite }}>
         <div className="mx-auto max-w-[1500px]">
-          <div className="grid gap-10 lg:grid-cols-[.65fr_1.35fr]">
-            <div><p className="text-xs font-bold uppercase" style={{ color: COLOR.blue, letterSpacing: ".24em" }}>Choose your starting point</p><h2 className="mt-5 text-5xl font-bold leading-[.92] tracking-[-.06em] md:text-7xl" style={{ color: COLOR.ink }}>There is more than one way to <span style={{ color: COLOR.blue }}>show up.</span></h2></div>
+          <div className="grid gap-8 lg:grid-cols-[.65fr_1.35fr] lg:gap-10">
+            <div><p className="text-xs font-bold uppercase" style={{ color: COLOR.blue, letterSpacing: ".24em" }}>Choose your starting point</p><h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] sm:mt-5 sm:text-5xl sm:leading-[.92] sm:tracking-[-.06em] md:text-7xl" style={{ color: COLOR.ink }}>There is more than one way to <span style={{ color: COLOR.blue }}>show up.</span></h2></div>
             <div className="grid gap-4">
               {ROUTES.map((route, i) => {
                 const palette = [COLOR.blue, COLOR.lime, COLOR.orange][i];
-                const content = <motion.div whileHover={{ y: -5, scale: 1.005 }} className="group relative overflow-hidden rounded-[1.75rem] p-7 md:p-9" style={{ background: i === 1 ? COLOR.ink : COLOR.offWhiteCard, border: `1px solid ${i === 1 ? "transparent" : "rgba(16,16,16,.1)"}` }}>
-                  <div className="absolute right-0 top-0 text-[8rem] font-bold leading-none opacity-[.06]" style={{ color: i === 1 ? "#fff" : COLOR.ink }}>{route.number}</div>
-                  <div className="relative flex flex-col gap-7 md:flex-row md:items-start">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: palette, color: COLOR.black }}><route.Icon className="h-8 w-8" /></div>
-                    <div className="flex-1"><p className="text-xs font-bold uppercase" style={{ color: i === 1 ? COLOR.lime : palette, letterSpacing: ".18em" }}>0{i + 1}</p><h3 className="mt-2 text-2xl font-bold md:text-3xl" style={{ color: i === 1 ? "#fff" : COLOR.ink }}>{route.title}</h3><p className="mt-3 max-w-2xl leading-relaxed" style={{ color: i === 1 ? "rgba(255,255,255,.58)" : "rgba(16,16,16,.58)" }}>{route.body}</p><div className="mt-6 inline-flex items-center gap-2 text-sm font-bold" style={{ color: palette }}>{route.cta} <span>↗</span></div></div>
+                const content = <motion.div whileHover={{ y: -5, scale: 1.005 }} className="group relative overflow-hidden rounded-[1.5rem] p-6 sm:rounded-[1.75rem] sm:p-7 md:p-9" style={{ background: i === 1 ? COLOR.ink : COLOR.offWhiteCard, border: `1px solid ${i === 1 ? "transparent" : "rgba(16,16,16,.1)"}` }}>
+                  <div className="absolute right-0 top-0 text-[4rem] font-bold leading-none opacity-[.06] sm:text-[6rem] md:text-[8rem]" style={{ color: i === 1 ? "#fff" : COLOR.ink }}>{route.number}</div>
+                  <div className="relative flex flex-col gap-5 sm:gap-7 md:flex-row md:items-start">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl sm:h-16 sm:w-16" style={{ background: palette, color: COLOR.black }}><route.Icon className="h-7 w-7 sm:h-8 sm:w-8" /></div>
+                    <div className="flex-1"><p className="text-xs font-bold uppercase" style={{ color: i === 1 ? COLOR.lime : palette, letterSpacing: ".18em" }}>0{i + 1}</p><h3 className="mt-2 text-xl font-bold sm:text-2xl md:text-3xl" style={{ color: i === 1 ? "#fff" : COLOR.ink }}>{route.title}</h3><p className="mt-3 max-w-2xl text-sm leading-relaxed sm:text-base" style={{ color: i === 1 ? "rgba(255,255,255,.58)" : "rgba(16,16,16,.58)" }}>{route.body}</p><div className="mt-5 inline-flex items-center gap-2 text-sm font-bold sm:mt-6" style={{ color: palette }}>{route.cta} <IconArrowUpRight className="h-4 w-4" /></div></div>
                   </div>
                 </motion.div>;
                 return route.external ? <a key={route.number} href={route.href} target="_blank" rel="noopener noreferrer" className="block">{content}</a> : <Link key={route.number} href={route.href} className="block">{content}</Link>;
@@ -762,69 +811,69 @@ export default function HomeClient() {
       </section>
 
       {/* THE PROBLEM */}
-      <section className="relative overflow-hidden px-4 py-24 sm:px-6 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.orange }}>
+      <section className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.orange }}>
         <div className="absolute -right-40 -top-40 h-[36rem] w-[36rem] rounded-full border-[70px] border-[#FFB45A]/40" />
         <div className="relative mx-auto max-w-[1500px]">
           <p className="text-xs font-bold uppercase text-black/55" style={{ letterSpacing: ".24em" }}>The uncomfortable truth</p>
-          <h2 className="mt-5 max-w-5xl text-5xl font-bold leading-[.9] tracking-[-.065em] text-black md:text-7xl xl:text-8xl">Great work still gets delivered like an afterthought.</h2>
-          <div className="mt-16 grid gap-px overflow-hidden rounded-[2rem] bg-black/15 md:grid-cols-3">
-            {PAIN_POINTS.map((p, i) => <div key={p.title} className="min-h-[320px] p-8 md:p-10" style={{ background: i === 1 ? COLOR.black : "rgba(255,255,255,.12)" }}><div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: i === 1 ? COLOR.lime : COLOR.black, color: i === 1 ? COLOR.black : "#fff" }}><p.Icon className="h-7 w-7" /></div><h3 className="mt-10 text-2xl font-bold leading-tight" style={{ color: i === 1 ? "#fff" : COLOR.black }}>{p.title}</h3><p className="mt-4 leading-relaxed" style={{ color: i === 1 ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.6)" }}>{p.body}</p></div>)}
+          <h2 className="mt-4 max-w-5xl text-3xl font-bold leading-[1.05] tracking-[-0.03em] text-black sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.065em] md:text-7xl xl:text-8xl">Great work still gets delivered like an afterthought.</h2>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-[1.5rem] bg-black/15 sm:mt-16 sm:rounded-[2rem] md:grid-cols-3">
+            {PAIN_POINTS.map((p, i) => <div key={p.title} className="min-h-[260px] p-7 sm:min-h-[320px] sm:p-8 md:p-10" style={{ background: i === 1 ? COLOR.black : "rgba(255,255,255,.12)" }}><div className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: i === 1 ? COLOR.lime : COLOR.black, color: i === 1 ? COLOR.black : "#fff" }}><p.Icon className="h-7 w-7" /></div><h3 className="mt-8 text-xl font-bold leading-tight sm:mt-10 sm:text-2xl" style={{ color: i === 1 ? "#fff" : COLOR.black }}>{p.title}</h3><p className="mt-4 text-sm leading-relaxed sm:text-base" style={{ color: i === 1 ? "rgba(255,255,255,.55)" : "rgba(0,0,0,.6)" }}>{p.body}</p></div>)}
           </div>
-          <p className="mt-10 max-w-3xl text-2xl font-bold leading-tight text-black md:text-4xl">The way you present the work changes the way the work is perceived.</p>
+          <p className="mt-8 max-w-3xl text-xl font-bold leading-tight text-black sm:mt-10 sm:text-2xl md:text-4xl">The way you present the work changes the way the work is perceived.</p>
         </div>
       </section>
 
       {/* PRODUCT DEMO */}
-      <section className="relative overflow-hidden px-4 py-20 sm:px-6 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.blueDark }}>
+      <section className="relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.blueDark }}>
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "22px 22px" }} />
         <div className="relative mx-auto max-w-[1500px]">
-          <div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr] lg:items-end">
-            <div><p className="text-xs font-bold uppercase" style={{ color: COLOR.lime, letterSpacing: ".24em" }}>The moment they open it</p><h2 className="mt-5 text-5xl font-bold leading-[.9] tracking-[-.06em] text-white md:text-7xl">Make the handover feel like the work was worth waiting for.</h2><p className="mt-6 max-w-lg text-lg leading-relaxed text-white/60">No generic folder. No awkward download page. Your work takes over the screen.</p><a href="https://useshowwork.com/demo-2" target="_blank" rel="noopener noreferrer" className="mt-9 inline-flex items-center gap-3 rounded-full px-6 py-4 text-sm font-bold text-black" style={{ background: COLOR.lime }}>View live demo <span>↗</span></a></div>
-            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="overflow-hidden rounded-[1.8rem] border border-white/20 bg-black shadow-[30px_30px_0_rgba(0,0,0,.2)]"><div className="flex items-center gap-2 border-b border-white/10 px-5 py-4"><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.orange }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.accent }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.lime }} /><span className="ml-4 text-[10px] text-white/30">useshowwork.com/fashion-fest</span></div><div onClick={() => setShowFullVideo(true)} className="relative cursor-pointer"><video key={heroVideoSrc} src={heroVideoSrc} autoPlay muted loop playsInline className="max-h-[75vh] w-full object-contain" /><div className="absolute bottom-5 right-5 rounded-full px-4 py-2 text-xs font-bold text-black" style={{ background: COLOR.accent }}>WATCH FULL ↗</div></div></motion.div>
+          <div className="grid gap-8 lg:grid-cols-[.75fr_1.25fr] lg:items-end lg:gap-10">
+            <div><p className="text-xs font-bold uppercase" style={{ color: COLOR.lime, letterSpacing: ".24em" }}>The moment they open it</p><h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-white sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-7xl">Make the handover feel like the work was worth waiting for.</h2><p className="mt-4 max-w-lg text-sm leading-relaxed text-white/60 sm:mt-6 sm:text-lg">No generic folder. No awkward download page. Your work takes over the screen.</p><a href="https://useshowwork.com/demo-2" target="_blank" rel="noopener noreferrer" className="mt-7 inline-flex items-center gap-3 rounded-full px-5 py-3.5 text-sm font-bold text-black sm:mt-9 sm:px-6 sm:py-4" style={{ background: COLOR.lime }}>View live demo <IconArrowUpRight className="h-4 w-4" /></a></div>
+            <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="overflow-hidden rounded-[1.4rem] border border-white/20 bg-black shadow-[30px_30px_0_rgba(0,0,0,.2)] sm:rounded-[1.8rem]"><div className="flex items-center gap-2 border-b border-white/10 px-5 py-4"><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.orange }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.accent }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR.lime }} /><span className="ml-4 text-[10px] text-white/30">useshowwork.com/fashion-fest</span></div><div onClick={() => setShowFullVideo(true)} className="relative cursor-pointer"><video key={heroVideoSrc} src={heroVideoSrc} autoPlay muted loop playsInline className="max-h-[75vh] w-full object-contain" /><div className="absolute bottom-5 right-5 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold text-black" style={{ background: COLOR.accent }}>WATCH FULL <IconArrowUpRight className="h-3.5 w-3.5" /></div></div></motion.div>
           </div>
         </div>
       </section>
 
       {/* GALLERY */}
-      <section className="px-4 py-20 sm:px-6 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.lime }}>
-        <div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase text-black/55" style={{ letterSpacing: ".24em" }}>Every photo, presented properly</p><h2 className="mt-5 max-w-3xl text-5xl font-bold leading-[.9] tracking-[-.06em] text-black md:text-7xl">A gallery should feel like entering the work.</h2></div><p className="max-w-sm leading-relaxed text-black/60">Full quality. Approval and revision built in. Nothing lost in another message thread.</p></div>
-          <div className="mt-12 grid grid-cols-2 gap-3 md:grid-cols-6">
-            {[21,42,63,84,105,126].map((seed, i) => <motion.div key={seed} whileHover={{ y: -10 }} className={`relative overflow-hidden rounded-[1.4rem] ${i === 0 || i === 5 ? "md:mt-12" : i === 2 ? "md:-mt-10" : ""}`}><img src={`https://picsum.photos/seed/${seed}/600/750`} alt="" className="aspect-[4/5] w-full object-cover" /><span className="absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: i === 2 ? COLOR.orange : COLOR.offWhite }}>{i === 2 ? "REVISION" : i % 2 === 0 ? "APPROVED" : "PREVIEW"}</span></motion.div>)}
+      <section className="px-4 py-14 sm:px-6 sm:py-20 md:px-10 md:py-32 lg:px-16" style={{ background: COLOR.lime }}>
+        <div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-6 sm:gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase text-black/55" style={{ letterSpacing: ".24em" }}>Every photo, presented properly</p><h2 className="mt-4 max-w-3xl text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-black sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-7xl">A gallery should feel like entering the work.</h2></div><p className="max-w-sm text-sm leading-relaxed text-black/60 sm:text-base">Full quality. Approval and revision built in. Nothing lost in another message thread.</p></div>
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:mt-12 md:grid-cols-6">
+            {[21,42,63,84,105,126].map((seed, i) => <motion.div key={seed} whileHover={{ y: -10 }} className={`relative overflow-hidden rounded-[1.2rem] sm:rounded-[1.4rem] ${i === 0 || i === 5 ? "md:mt-12" : i === 2 ? "md:-mt-10" : ""}`}><img src={`https://picsum.photos/seed/${seed}/600/750`} alt="" className="aspect-[4/5] w-full object-cover" /><span className="absolute left-3 top-3 rounded-full px-3 py-1 text-[10px] font-bold" style={{ background: i === 2 ? COLOR.orange : COLOR.offWhite }}>{i === 2 ? "REVISION" : i % 2 === 0 ? "APPROVED" : "PREVIEW"}</span></motion.div>)}
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="px-4 py-24 sm:px-6 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.offWhite }}>
-        <div className="mx-auto max-w-[1500px]"><p className="text-xs font-bold uppercase" style={{ color: COLOR.orange, letterSpacing: ".24em" }}>Ridiculously simple</p><h2 className="mt-5 max-w-4xl text-5xl font-bold leading-[.9] tracking-[-.06em] md:text-7xl" style={{ color: COLOR.ink }}>Three steps. One better way to deliver.</h2>
-          <div className="mt-16 grid gap-5 md:grid-cols-3">{STEPS.map((step, i) => <motion.div key={step.number} whileHover={{ y: -8 }} className="relative min-h-[350px] overflow-hidden rounded-[2rem] p-8 md:p-10" style={{ background: [COLOR.blue, COLOR.accent, COLOR.black][i], color: i === 2 ? "#fff" : COLOR.black }}><span className="text-[6rem] font-bold leading-none opacity-15">{step.number}</span><div className="absolute bottom-0 left-0 right-0 p-8 md:p-10"><div className="mb-8 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: i === 2 ? COLOR.lime : "rgba(255,255,255,.45)" }}><step.Icon className="h-7 w-7" /></div><h3 className="text-2xl font-bold">{step.title}</h3><p className="mt-3 leading-relaxed" style={{ color: i === 2 ? "rgba(255,255,255,.6)" : "rgba(0,0,0,.62)" }}>{step.body}</p></div></motion.div>)}</div>
+      <section className="px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.offWhite }}>
+        <div className="mx-auto max-w-[1500px]"><p className="text-xs font-bold uppercase" style={{ color: COLOR.orange, letterSpacing: ".24em" }}>Ridiculously simple</p><h2 className="mt-4 max-w-4xl text-3xl font-bold leading-[1.02] tracking-[-0.03em] sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-7xl" style={{ color: COLOR.ink }}>Three steps. One better way to deliver.</h2>
+          <div className="mt-10 grid gap-4 sm:mt-16 sm:gap-5 md:grid-cols-3">{STEPS.map((step, i) => <motion.div key={step.number} whileHover={{ y: -8 }} className="relative min-h-[260px] overflow-hidden rounded-[1.5rem] p-7 sm:min-h-[350px] sm:rounded-[2rem] sm:p-8 md:p-10" style={{ background: [COLOR.blue, COLOR.accent, COLOR.black][i], color: i === 2 ? "#fff" : COLOR.black }}><span className="text-[3.5rem] font-bold leading-none opacity-15 sm:text-[6rem]">{step.number}</span><div className="absolute bottom-0 left-0 right-0 p-7 sm:p-8 md:p-10"><div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full sm:mb-8" style={{ background: i === 2 ? COLOR.lime : "rgba(255,255,255,.45)" }}><step.Icon className="h-7 w-7" /></div><h3 className="text-xl font-bold sm:text-2xl">{step.title}</h3><p className="mt-3 text-sm leading-relaxed sm:text-base" style={{ color: i === 2 ? "rgba(255,255,255,.6)" : "rgba(0,0,0,.62)" }}>{step.body}</p></div></motion.div>)}</div>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="px-4 py-24 sm:px-6 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.black }}>
-        <div className="mx-auto max-w-[1500px]"><div className="flex items-end justify-between gap-8"><div><p className="text-xs font-bold uppercase" style={{ color: COLOR.orange, letterSpacing: ".24em" }}>Creators are already here</p><h2 className="mt-5 text-5xl font-bold leading-[.9] tracking-[-.06em] text-white md:text-7xl">The work speaks.<br/><span style={{ color: COLOR.lime }}>The experience agrees.</span></h2></div><div className="hidden h-20 w-20 rounded-full md:block" style={{ background: COLOR.blue }} /></div>
-          <div className="mt-16 grid gap-4 md:grid-cols-3">{TESTIMONIALS.map((t,i) => <motion.div key={t.name} whileHover={{ rotate: i === 0 ? -1 : i === 2 ? 1 : 0, y: -6 }} className="rounded-[1.75rem] p-8" style={{ background: i === 0 ? COLOR.blue : i === 1 ? COLOR.charcoal : COLOR.offWhite, color: i === 2 ? COLOR.ink : "#fff" }}><span className="text-5xl font-bold" style={{ color: i === 2 ? COLOR.orange : COLOR.lime }}>&ldquo;</span><p className="mt-8 text-xl font-semibold leading-relaxed">{t.quote}</p><div className="mt-12 border-t pt-5" style={{ borderColor: i === 2 ? "rgba(0,0,0,.1)" : "rgba(255,255,255,.12)" }}><p className="font-bold">{t.name}</p><p className="mt-1 text-sm opacity-50">{t.role}</p></div></motion.div>)}</div>
+      <section className="px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1500px]"><div className="flex items-end justify-between gap-8"><div><p className="text-xs font-bold uppercase" style={{ color: COLOR.orange, letterSpacing: ".24em" }}>Creators are already here</p><h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-white sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-7xl">The work speaks.<br/><span style={{ color: COLOR.lime }}>The experience agrees.</span></h2></div><div className="hidden h-20 w-20 rounded-full md:block" style={{ background: COLOR.blue }} /></div>
+          <div className="mt-10 grid gap-4 sm:mt-16 md:grid-cols-3">{TESTIMONIALS.map((t,i) => <motion.div key={t.name} whileHover={{ rotate: i === 0 ? -1 : i === 2 ? 1 : 0, y: -6 }} className="rounded-[1.5rem] p-7 sm:rounded-[1.75rem] sm:p-8" style={{ background: i === 0 ? COLOR.blue : i === 1 ? COLOR.charcoal : COLOR.offWhite, color: i === 2 ? COLOR.ink : "#fff" }}><span className="text-4xl font-bold sm:text-5xl" style={{ color: i === 2 ? COLOR.orange : COLOR.lime }}>&ldquo;</span><p className="mt-6 text-lg font-semibold leading-relaxed sm:mt-8 sm:text-xl">{t.quote}</p><div className="mt-10 border-t pt-5 sm:mt-12" style={{ borderColor: i === 2 ? "rgba(0,0,0,.1)" : "rgba(255,255,255,.12)" }}><p className="font-bold">{t.name}</p><p className="mt-1 text-sm opacity-50">{t.role}</p></div></motion.div>)}</div>
         </div>
       </section>
 
       {/* PRICING */}
-      <section className="relative overflow-hidden px-4 py-24 sm:px-6 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.yellowSoft }}>
+      <section className="relative overflow-hidden px-4 py-16 sm:px-6 sm:py-24 md:px-10 md:py-36 lg:px-16" style={{ background: COLOR.yellowSoft }}>
         <div className="absolute right-[-12rem] top-[-10rem] h-[34rem] w-[34rem] rounded-full" style={{ background: COLOR.orange, opacity: .18 }} />
-        <div className="relative mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase text-black/50" style={{ letterSpacing: ".24em" }}>Pricing</p><h2 className="mt-5 text-5xl font-bold leading-[.9] tracking-[-.06em] text-black md:text-7xl">Start free.<br/>Grow when you&apos;re ready.</h2></div><div className="relative inline-flex w-fit rounded-full bg-black p-1"><button onClick={() => setBillingCycle("MONTHLY")} className="relative z-10 rounded-full px-5 py-3 text-sm font-bold" style={{ color: billingCycle === "MONTHLY" ? COLOR.black : "#fff" }}>Monthly</button><button onClick={() => setBillingCycle("ANNUAL")} className="relative z-10 rounded-full px-5 py-3 text-sm font-bold" style={{ color: billingCycle === "ANNUAL" ? COLOR.black : "#fff" }}>Annual · Save 5%</button><motion.div className="absolute inset-y-1 rounded-full" style={{ background: COLOR.lime, width: "50%" }} animate={{ left: billingCycle === "MONTHLY" ? 4 : "50%" }} /></div></div>
-          <div className="mt-14 grid gap-4 lg:grid-cols-4">{PRICING_TIERS.map((tier,i) => <div key={tier.key} className="relative flex flex-col overflow-hidden rounded-[1.75rem] p-7" style={{ background: i === 2 ? COLOR.black : COLOR.offWhiteCard, color: i === 2 ? "#fff" : COLOR.ink, border: i === 2 ? `2px solid ${COLOR.blue}` : "1px solid rgba(0,0,0,.08)" }}>{tier.highlight && <div className="absolute right-0 top-0 rounded-bl-2xl px-4 py-2 text-[10px] font-bold" style={{ background: COLOR.blue, color: "#fff" }}>{tier.highlight}</div>}<p className="text-xs font-bold uppercase" style={{ color: i === 2 ? COLOR.lime : [COLOR.blue,COLOR.orange,COLOR.lime,COLOR.black][i], letterSpacing: ".15em" }}>{tier.name}</p><h3 className="mt-5 text-4xl font-bold">{tier.key === "FREE" ? "₦0" : `₦${(billingCycle === "ANNUAL" ? Math.round(tier.priceAnnual/12) : tier.priceMonthly).toLocaleString()}`}<span className="text-sm font-normal opacity-50">/mo</span></h3><p className="mt-3 min-h-[48px] text-sm opacity-55">{tier.tagline}</p><ul className="mt-7 flex-1 space-y-3 text-sm">{(expandedTiers[tier.key] ? tier.features : tier.features.slice(0,5)).map(f => <li key={f} className="flex gap-2"><span style={{ color: i === 2 ? COLOR.lime : COLOR.blue }}>✓</span><span className="opacity-75">{f}</span></li>)}</ul>{tier.features.length > 5 && <button onClick={() => toggleTierExpanded(tier.key)} className="mt-5 text-left text-xs font-bold underline opacity-60">{expandedTiers[tier.key] ? "Show less" : "View all features"}</button>}<Link href={tier.key === "FREE" ? tier.href : `${tier.href}&cycle=${billingCycle}`} className="mt-8 flex justify-center rounded-full px-5 py-4 text-sm font-bold" style={{ background: i === 2 ? COLOR.lime : i === 0 ? COLOR.black : COLOR.blue, color: i === 0 ? "#fff" : i === 2 ? COLOR.black : "#fff" }}>{tier.cta}</Link></div>)}</div>
+        <div className="relative mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-6 sm:gap-8 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase text-black/50" style={{ letterSpacing: ".24em" }}>Pricing</p><h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-black sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-7xl">Start free.<br/>Grow when you&apos;re ready.</h2></div><div className="relative inline-flex w-fit rounded-full bg-black p-1"><button onClick={() => setBillingCycle("MONTHLY")} className="relative z-10 rounded-full px-4 py-2.5 text-xs font-bold sm:px-5 sm:py-3 sm:text-sm" style={{ color: billingCycle === "MONTHLY" ? COLOR.black : "#fff" }}>Monthly</button><button onClick={() => setBillingCycle("ANNUAL")} className="relative z-10 rounded-full px-4 py-2.5 text-xs font-bold sm:px-5 sm:py-3 sm:text-sm" style={{ color: billingCycle === "ANNUAL" ? COLOR.black : "#fff" }}>Annual · Save 5%</button><motion.div className="absolute inset-y-1 rounded-full" style={{ background: COLOR.lime, width: "50%" }} animate={{ left: billingCycle === "MONTHLY" ? 4 : "50%" }} /></div></div>
+          <div className="mt-10 grid gap-4 sm:mt-14 lg:grid-cols-4">{PRICING_TIERS.map((tier,i) => <div key={tier.key} className="relative flex flex-col overflow-hidden rounded-[1.5rem] p-6 sm:rounded-[1.75rem] sm:p-7" style={{ background: i === 2 ? COLOR.black : COLOR.offWhiteCard, color: i === 2 ? "#fff" : COLOR.ink, border: i === 2 ? `2px solid ${COLOR.blue}` : "1px solid rgba(0,0,0,.08)" }}>{tier.highlight && <div className="absolute right-0 top-0 rounded-bl-2xl px-4 py-2 text-[10px] font-bold" style={{ background: COLOR.blue, color: "#fff" }}>{tier.highlight}</div>}<p className="text-xs font-bold uppercase" style={{ color: i === 2 ? COLOR.lime : [COLOR.blue,COLOR.orange,COLOR.lime,COLOR.black][i], letterSpacing: ".15em" }}>{tier.name}</p><h3 className="mt-4 text-3xl font-bold sm:mt-5 sm:text-4xl">{tier.key === "FREE" ? "₦0" : `₦${(billingCycle === "ANNUAL" ? Math.round(tier.priceAnnual/12) : tier.priceMonthly).toLocaleString()}`}<span className="text-sm font-normal opacity-50">/mo</span></h3><p className="mt-3 min-h-[40px] text-sm opacity-55 sm:min-h-[48px]">{tier.tagline}</p><ul className="mt-6 flex-1 space-y-3 text-sm sm:mt-7">{(expandedTiers[tier.key] ? tier.features : tier.features.slice(0,5)).map(f => <li key={f} className="flex gap-2"><span className="mt-0.5 flex-shrink-0" style={{ color: i === 2 ? COLOR.lime : COLOR.blue }}><IconCheck className="h-4 w-4" /></span><span className="opacity-75">{f}</span></li>)}</ul>{tier.features.length > 5 && <button onClick={() => toggleTierExpanded(tier.key)} className="mt-5 text-left text-xs font-bold underline opacity-60">{expandedTiers[tier.key] ? "Show less" : "View all features"}</button>}<Link href={tier.key === "FREE" ? tier.href : `${tier.href}&cycle=${billingCycle}`} className="mt-7 flex justify-center rounded-full px-5 py-3.5 text-sm font-bold sm:mt-8 sm:py-4" style={{ background: i === 2 ? COLOR.lime : i === 0 ? COLOR.black : COLOR.blue, color: i === 0 ? "#fff" : i === 2 ? COLOR.black : "#fff" }}>{tier.cta}</Link></div>)}</div>
         </div>
       </section>
 
       {/* CREATIVO */}
-      <section className="relative overflow-hidden px-4 py-28 text-center sm:px-6 md:px-10 md:py-44 lg:px-16" style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 42%, #B8FF35 100%)" }}>
+      <section className="relative overflow-hidden px-4 py-20 text-center sm:px-6 sm:py-28 md:px-10 md:py-44 lg:px-16" style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 42%, #B8FF35 100%)" }}>
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(135deg, transparent 48%, rgba(255,255,255,.55) 49%, transparent 50%)", backgroundSize: "90px 90px" }} />
-        <div className="relative mx-auto max-w-4xl"><div className="mb-12 flex items-center justify-center gap-8"><LogoMark src="/images/logo/sw.svg" size={92} color="#FFFFFF" /><span className="h-14 w-px bg-white/30" /><LogoMark src="/images/logo/creativo.svg" size={92} color="#101010" /></div><p className="text-xs font-bold uppercase text-black/60" style={{ letterSpacing: ".24em" }}>Introducing Creativo</p><h2 className="mt-5 text-5xl font-bold leading-[.9] tracking-[-.06em] text-black md:text-8xl">You don&apos;t have to build your creative career alone.</h2><p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-black/65">Positioning, pricing, landing better clients and figuring out what comes next — alongside creators who are actually doing the work.</p><MagneticButton href={COMMUNITY_URL} external className="mt-10 inline-flex items-center gap-3 rounded-full bg-black px-8 py-5 text-sm font-bold text-white shadow-2xl">Join Creativo, it&apos;s free <span>↗</span></MagneticButton></div>
+        <div className="relative mx-auto max-w-4xl"><div className="mb-8 flex items-center justify-center gap-5 sm:mb-12 sm:gap-8"><LogoMark src="/images/logo/sw.svg" size={56} color="#FFFFFF" /><span className="h-10 w-px bg-white/30 sm:h-14" /><LogoMark src="/images/logo/creativo.svg" size={56} color="#101010" /></div><p className="text-xs font-bold uppercase text-black/60" style={{ letterSpacing: ".24em" }}>Introducing Creativo</p><h2 className="mt-4 text-3xl font-bold leading-[1.02] tracking-[-0.03em] text-black sm:mt-5 sm:text-5xl sm:leading-[.9] sm:tracking-[-.06em] md:text-8xl">You don&apos;t have to build your creative career alone.</h2><p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-black/65 sm:mt-7 sm:text-lg">Positioning, pricing, landing better clients and figuring out what comes next — alongside creators who are actually doing the work.</p><MagneticButton href={COMMUNITY_URL} external className="mt-8 inline-flex items-center gap-3 rounded-full bg-black px-6 py-4 text-sm font-bold text-white shadow-2xl sm:mt-10 sm:px-8 sm:py-5">Join Creativo, it&apos;s free <IconArrowUpRight className="h-4 w-4" /></MagneticButton></div>
       </section>
 
       {/* FOOTER */}
-      <footer className="px-4 py-14 sm:px-6 md:px-10 lg:px-16" style={{ background: COLOR.black }}>
-        <div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-14 border-b border-white/10 pb-14 md:flex-row"><div><Wordmark size="lg" /><p className="mt-5 max-w-sm text-lg text-white/45">Positioned like the premium brand you already are.</p></div><div className="grid grid-cols-2 gap-10 text-sm"><div><p className="mb-4 text-xs font-bold uppercase text-white/30" style={{ letterSpacing: ".16em" }}>Contact</p><a href="mailto:hello@useshowwork.com" className="text-white/70 hover:text-white">hello@useshowwork.com</a></div><div className="flex flex-col gap-3"><p className="mb-1 text-xs font-bold uppercase text-white/30" style={{ letterSpacing: ".16em" }}>Explore</p><Link href="/start" className="text-white/70 hover:text-white">Deliver a project</Link><Link href="/signup?next=/dashboard/portfolio" className="text-white/70 hover:text-white">Create portfolio</Link><a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white">Join Creativo</a><Link href="/login" className="text-white/70 hover:text-white">Log in</Link></div></div></div><div className="flex flex-col justify-between gap-5 pt-7 text-xs text-white/25 md:flex-row"><span>© {new Date().getFullYear()} Showwork. All rights reserved.</span><span style={{ color: COLOR.lime }}>PREMIUM WORK. PRESENTED PROPERLY.</span></div></div>
+      <footer className="px-4 py-12 sm:px-6 sm:py-14 md:px-10 lg:px-16" style={{ background: COLOR.black }}>
+        <div className="mx-auto max-w-[1500px]"><div className="flex flex-col justify-between gap-10 border-b border-white/10 pb-10 sm:gap-14 sm:pb-14 md:flex-row"><div><Wordmark size="md" /><p className="mt-4 max-w-sm text-base text-white/45 sm:mt-5 sm:text-lg">Positioned like the premium brand you already are.</p></div><div className="grid grid-cols-2 gap-8 text-sm sm:gap-10"><div><p className="mb-4 text-xs font-bold uppercase text-white/30" style={{ letterSpacing: ".16em" }}>Contact</p><a href="mailto:hello@useshowwork.com" className="text-white/70 hover:text-white">hello@useshowwork.com</a></div><div className="flex flex-col gap-3"><p className="mb-1 text-xs font-bold uppercase text-white/30" style={{ letterSpacing: ".16em" }}>Explore</p><Link href="/start" className="text-white/70 hover:text-white">Deliver a project</Link><Link href="/signup?next=/dashboard/portfolio" className="text-white/70 hover:text-white">Create portfolio</Link><a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-white">Join Creativo</a><Link href="/login" className="text-white/70 hover:text-white">Log in</Link></div></div></div><div className="flex flex-col justify-between gap-4 pt-6 text-xs text-white/25 sm:gap-5 sm:pt-7 md:flex-row"><span>© {new Date().getFullYear()} Showwork. All rights reserved.</span><span style={{ color: COLOR.lime }}>PREMIUM WORK. PRESENTED PROPERLY.</span></div></div>
       </footer>
 
       {/* Complete Showwork motion film */}
@@ -841,9 +890,9 @@ export default function HomeClient() {
             <button
               onClick={() => setShowMotionFull(false)}
               aria-label="Close complete video"
-              className="absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-lg text-white backdrop-blur-xl transition-colors hover:bg-white/15"
+              className="absolute right-5 top-5 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white backdrop-blur-xl transition-colors hover:bg-white/15"
             >
-              ✕
+              <IconClose className="h-4 w-4" />
             </button>
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -881,7 +930,7 @@ export default function HomeClient() {
               aria-label="Close"
               className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10"
             >
-              ✕
+              <IconClose className="h-4 w-4" />
             </button>
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}

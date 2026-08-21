@@ -15,6 +15,12 @@ import {
   BadgeDollarSign,
   UsersRound,
   Eye,
+  ArrowUpRight,
+  ArrowDown,
+  X,
+  Sparkles,
+  Check,
+  Plus,
 } from "lucide-react";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -580,7 +586,7 @@ export default function CreativoContent({
 
               <MagneticButton
                 href="https://tinyurl.com/creativocommunity"
-                className="relative overflow-hidden rounded-full px-6 py-3 text-[13px] font-extrabold text-white"
+                className="relative inline-flex items-center gap-2 overflow-hidden rounded-full px-6 py-3 text-[13px] font-extrabold text-white"
                 style={{
                   background:
                     GRADIENT.creativo,
@@ -589,7 +595,7 @@ export default function CreativoContent({
                     "0 12px 35px -14px rgba(255,46,136,0.8)",
                 }}
               >
-                Join community ↗
+                Join community <ArrowUpRight className="h-3.5 w-3.5" />
               </MagneticButton>
 
             </div>
@@ -610,9 +616,7 @@ export default function CreativoContent({
             >
 
               {mobileNavOpen ? (
-                <span className="text-lg font-bold text-black">
-                  ×
-                </span>
+                <X className="h-5 w-5 text-black" strokeWidth={2.2} />
               ) : (
                 <svg
                   viewBox="0 0 24 24"
@@ -695,14 +699,13 @@ export default function CreativoContent({
                           item.label
                         }
 
-                        <span
+                        <ArrowUpRight
+                          className="h-4 w-4"
                           style={{
                             color:
                               COLOR.lime,
                           }}
-                        >
-                          ↗
-                        </span>
+                        />
 
                       </Link>
 
@@ -922,7 +925,7 @@ export default function CreativoContent({
 
                 <MagneticButton
                   href="https://tinyurl.com/creativocommunity"
-                  className="rounded-full px-8 py-4 text-sm font-extrabold text-white"
+                  className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-sm font-extrabold text-white"
                   style={{
                     background:
                       GRADIENT.creativo,
@@ -931,17 +934,17 @@ export default function CreativoContent({
                       "0 20px 60px -20px rgba(255,46,136,0.8)",
                   }}
                 >
-                  Join the community ↗
+                  Join the community <ArrowUpRight className="h-4 w-4" />
                 </MagneticButton>
 
 
-                <a
-                  href="#spotlight"
+                
+                  <a href="#spotlight"
                   className="group flex items-center gap-3 text-sm font-bold text-white/60 transition-colors hover:text-white"
                 >
 
                   <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 transition-all group-hover:border-white/40 group-hover:bg-white/5">
-                    ↓
+                    <ArrowDown className="h-4 w-4" />
                   </span>
 
                   See the spotlight
@@ -1017,7 +1020,7 @@ export default function CreativoContent({
                         COLOR.lime,
                     }}
                   >
-                    ✦
+                    <Sparkles className="h-4 w-4" strokeWidth={2} />
                   </span>
 
                 </div>
@@ -1099,17 +1102,15 @@ export default function CreativoContent({
                           </div>
 
 
-                          <span
-                            className="text-sm opacity-0 transition-opacity group-hover:opacity-100"
+                          <ArrowUpRight
+                            className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
                             style={{
                               color:
                                 RANK_COLOR[
                                   index
                                 ],
                             }}
-                          >
-                            ↗
-                          </span>
+                          />
 
                         </motion.div>
 
@@ -1312,8 +1313,8 @@ export default function CreativoContent({
               </p>
 
 
-              <a
-                href="https://tinyurl.com/creativocommunity"
+              
+                <a href="https://tinyurl.com/creativocommunity"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-7 inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-bold text-black transition-transform hover:scale-[1.03]"
@@ -1328,9 +1329,7 @@ export default function CreativoContent({
 
                 Want your work here?
 
-                <span>
-                  ↗
-                </span>
+                <ArrowUpRight className="h-4 w-4" />
 
               </a>
 
@@ -1632,12 +1631,12 @@ export default function CreativoContent({
                           </span>
 
 
-                          <div className="flex gap-3 text-xs font-bold">
+                          <div className="flex items-center gap-3 text-xs font-bold">
 
                             {entry.portfolioUrl && (
 
-                              <a
-                                href={
+                              
+                                <a href={
                                   entry.portfolioUrl
                                 }
                                 target="_blank"
@@ -1651,19 +1650,20 @@ export default function CreativoContent({
 
                             {entry.whatsappNumber && (
 
-                              <a
-                                href={spotlightWhatsappHref(
+                              
+                                <a href={spotlightWhatsappHref(
                                   entry.whatsappNumber,
                                   entry.name
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1"
                                 style={{
                                   color:
                                     COLOR.magenta,
                                 }}
                               >
-                                Work together ↗
+                                Work together <ArrowUpRight className="h-3.5 w-3.5" />
                               </a>
 
                             )}
@@ -1691,196 +1691,197 @@ export default function CreativoContent({
 
 
       {/* ================================================================ */}
-{/* WHY CREATIVO                                                     */}
-{/* ================================================================ */}
+      {/* WHY CREATIVO                                                     */}
+      {/* ================================================================ */}
 
-<section
-  className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
-  style={{
-    background: COLOR.black,
-  }}
->
-  <Orb
-    color={COLOR.magenta}
-    size={550}
-    left="-15%"
-    top="35%"
-    opacity={0.2}
-  />
+      <section
+        className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
+        style={{
+          background: COLOR.black,
+        }}
+      >
+        <Orb
+          color={COLOR.magenta}
+          size={550}
+          left="-15%"
+          top="35%"
+          opacity={0.2}
+        />
 
-  <Orb
-    color={COLOR.blue}
-    size={450}
-    left="75%"
-    top="-10%"
-    opacity={0.18}
-  />
+        <Orb
+          color={COLOR.blue}
+          size={450}
+          left="75%"
+          top="-10%"
+          opacity={0.18}
+        />
 
-  <div className="relative mx-auto max-w-[1350px]">
-    {/* HEADING */}
+        <div className="relative mx-auto max-w-[1350px]">
+          {/* HEADING */}
 
-    <div className="max-w-3xl">
-      <SectionLabel color={COLOR.lime}>
-        Why be here?
-      </SectionLabel>
+          <div className="max-w-3xl">
+            <SectionLabel color={COLOR.lime}>
+              Why be here?
+            </SectionLabel>
 
-      <h2 className="text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-7xl">
-        The things you
-        <br />
-        cannot build
-        <br />
+            <h2 className="text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-7xl">
+              The things you
+              <br />
+              cannot build
+              <br />
 
-        <span className="text-white/35">
-          alone.
-        </span>
-      </h2>
-    </div>
+              <span className="text-white/35">
+                alone.
+              </span>
+            </h2>
+          </div>
 
-    {/* CARDS */}
+          {/* CARDS */}
 
-    <div className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 lg:grid-cols-4">
-      {[
-        {
-          number: "01",
-          title: "Referrals",
-          body:
-            "Opportunities that start inside the community before they ever reach a public job board.",
-          color: COLOR.coral,
-          Icon: Send,
-        },
-        {
-          number: "02",
-          title: "Better pricing",
-          body:
-            "Learn how other creators position their work, handle clients and charge with confidence.",
-          color: COLOR.magenta,
-          Icon: BadgeDollarSign,
-        },
-        {
-          number: "03",
-          title: "Real people",
-          body:
-            "A network of creators working in the same industries and dealing with the same challenges.",
-          color: COLOR.blue,
-          Icon: UsersRound,
-        },
-        {
-          number: "04",
-          title: "Visibility",
-          body:
-            "Your strongest work gets a chance to be discovered, celebrated and remembered.",
-          color: COLOR.lime,
-          Icon: Eye,
-        },
-      ].map((item, index) => {
-        const Icon = item.Icon;
+          <div className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                number: "01",
+                title: "Referrals",
+                body:
+                  "Opportunities that start inside the community before they ever reach a public job board.",
+                color: COLOR.coral,
+                Icon: Send,
+              },
+              {
+                number: "02",
+                title: "Better pricing",
+                body:
+                  "Learn how other creators position their work, handle clients and charge with confidence.",
+                color: COLOR.magenta,
+                Icon: BadgeDollarSign,
+              },
+              {
+                number: "03",
+                title: "Real people",
+                body:
+                  "A network of creators working in the same industries and dealing with the same challenges.",
+                color: COLOR.blue,
+                Icon: UsersRound,
+              },
+              {
+                number: "04",
+                title: "Visibility",
+                body:
+                  "Your strongest work gets a chance to be discovered, celebrated and remembered.",
+                color: COLOR.lime,
+                Icon: Eye,
+              },
+            ].map((item, index) => {
+              const Icon = item.Icon;
 
-        return (
-          <motion.div
-            key={item.title}
-            initial={{
-              opacity: 0,
-              y: 25,
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0,
-            }}
-            viewport={{
-              once: true,
-              amount: 0.25,
-            }}
-            transition={{
-              duration: 0.6,
-              delay: index * 0.08,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            whileHover={{
-              y: -8,
-            }}
-            className="group relative min-h-[320px] overflow-hidden rounded-[2rem] border border-white/10 p-6 transition-colors duration-500 md:p-7"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%)",
-            }}
-          >
-            {/* AMBIENT GLOW */}
-
-            <div
-              className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl transition-transform duration-700 ease-out group-hover:scale-[1.7]"
-              style={{
-                background: item.color,
-                opacity: 0.2,
-              }}
-            />
-
-            {/* BOTTOM ACCENT */}
-
-            <div
-              className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 ease-out group-hover:w-full"
-              style={{
-                background: `linear-gradient(
-                  90deg,
-                  transparent,
-                  ${item.color},
-                  transparent
-                )`,
-              }}
-            />
-
-            <div className="relative flex h-full min-h-[272px] flex-col justify-between">
-              {/* TOP */}
-
-              <div className="flex items-start justify-between">
-                {/* ICON */}
-
-                <div
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110"
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{
+                    opacity: 0,
+                    y: 25,
+                  }}
+                  whileInView={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  viewport={{
+                    once: true,
+                    amount: 0.25,
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    delay: index * 0.08,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  whileHover={{
+                    y: -8,
+                  }}
+                  className="group relative min-h-[320px] overflow-hidden rounded-[2rem] border border-white/10 p-6 transition-colors duration-500 md:p-7"
                   style={{
-                    background: `${item.color}18`,
-                    borderColor: `${item.color}35`,
-                    boxShadow: `0 12px 30px -14px ${item.color}`,
+                    background:
+                      "linear-gradient(145deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.025) 100%)",
                   }}
                 >
-                  <Icon
-                    size={21}
-                    strokeWidth={1.8}
+                  {/* AMBIENT GLOW */}
+
+                  <div
+                    className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl transition-transform duration-700 ease-out group-hover:scale-[1.7]"
                     style={{
-                      color: item.color,
+                      background: item.color,
+                      opacity: 0.2,
                     }}
                   />
-                </div>
 
-                {/* NUMBER */}
+                  {/* BOTTOM ACCENT */}
 
-                <span
-                  className="text-xs font-extrabold tracking-[0.12em]"
-                  style={{
-                    color: item.color,
-                  }}
-                >
-                  {item.number}
-                </span>
-              </div>
+                  <div
+                    className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 ease-out group-hover:w-full"
+                    style={{
+                      background: `linear-gradient(
+                        90deg,
+                        transparent,
+                        ${item.color},
+                        transparent
+                      )`,
+                    }}
+                  />
 
-              {/* CONTENT */}
+                  <div className="relative flex h-full min-h-[272px] flex-col justify-between">
+                    {/* TOP */}
 
-              <div>
-                <h3 className="text-xl font-extrabold tracking-[-0.03em] text-white md:text-2xl">
-                  {item.title}
-                </h3>
+                    <div className="flex items-start justify-between">
+                      {/* ICON */}
 
-                <p className="mt-4 max-w-[28ch] text-sm leading-relaxed text-white/45">
-                  {item.body}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  </div>
-</section>
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110"
+                        style={{
+                          background: `${item.color}18`,
+                          borderColor: `${item.color}35`,
+                          boxShadow: `0 12px 30px -14px ${item.color}`,
+                        }}
+                      >
+                        <Icon
+                          size={21}
+                          strokeWidth={1.8}
+                          style={{
+                            color: item.color,
+                          }}
+                        />
+                      </div>
+
+                      {/* NUMBER */}
+
+                      <span
+                        className="text-xs font-extrabold tracking-[0.12em]"
+                        style={{
+                          color: item.color,
+                        }}
+                      >
+                        {item.number}
+                      </span>
+                    </div>
+
+                    {/* CONTENT */}
+
+                    <div>
+                      <h3 className="text-xl font-extrabold tracking-[-0.03em] text-white md:text-2xl">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-4 max-w-[28ch] text-sm leading-relaxed text-white/45">
+                        {item.body}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* ================================================================ */}
       {/* WEBINARS                                                         */}
       {/* ================================================================ */}
@@ -1959,14 +1960,14 @@ export default function CreativoContent({
                     true
                   )
                 }
-                className="mt-7 rounded-full px-6 py-3.5 text-sm font-extrabold text-black transition-transform hover:scale-[1.03]"
+                className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-extrabold text-black transition-transform hover:scale-[1.03]"
                 style={{
                   background:
                     COLOR.lime,
                 }}
               >
 
-                Apply to host ↗
+                Apply to host <ArrowUpRight className="h-4 w-4" />
 
               </button>
 
@@ -2071,8 +2072,8 @@ export default function CreativoContent({
 
                       {webinar.applyUrl && (
 
-                        <a
-                          href={
+                        
+                          <a href={
                             webinar.applyUrl
                           }
                           target="_blank"
@@ -2084,7 +2085,7 @@ export default function CreativoContent({
                           }}
                         >
 
-                          Reserve your spot ↗
+                          Reserve your spot <ArrowUpRight className="h-4 w-4" />
 
                         </a>
 
@@ -2151,20 +2152,20 @@ export default function CreativoContent({
 
                       {webinar.replayUrl && (
 
-                        <a
-                          href={
+                        
+                          <a href={
                             webinar.replayUrl
                           }
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm font-bold"
+                          className="inline-flex items-center gap-1.5 text-sm font-bold"
                           style={{
                             color:
                               COLOR.lime,
                           }}
                         >
 
-                          Watch replay ↗
+                          Watch replay <ArrowUpRight className="h-3.5 w-3.5" />
 
                         </a>
 
@@ -2251,7 +2252,7 @@ export default function CreativoContent({
               }}
             >
 
-              Explore Showwork ↗
+              Explore Showwork <ArrowUpRight className="h-4 w-4" />
 
             </Link>
 
@@ -2344,7 +2345,7 @@ export default function CreativoContent({
                     >
 
                       <span
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-extrabold text-black"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-black"
                         style={{
                           background:
                             index % 2 ===
@@ -2354,7 +2355,7 @@ export default function CreativoContent({
                         }}
                       >
 
-                        ✓
+                        <Check className="h-4 w-4" strokeWidth={2.5} />
 
                       </span>
 
@@ -2484,13 +2485,13 @@ export default function CreativoContent({
                     }
 
                     <span
-                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-xl transition-all duration-300 group-open:rotate-45"
+                      className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all duration-300 group-open:rotate-45"
                       style={{
                         background:
                           "rgba(0,0,0,0.05)",
                       }}
                     >
-                      +
+                      <Plus className="h-4 w-4" strokeWidth={2.2} />
                     </span>
 
                   </summary>
@@ -2629,7 +2630,7 @@ export default function CreativoContent({
 
             <MagneticButton
               href="https://tinyurl.com/creativocommunity"
-              className="rounded-full px-10 py-5 text-sm font-extrabold text-white"
+              className="inline-flex items-center gap-2 rounded-full px-10 py-5 text-sm font-extrabold text-white"
               style={{
                 background:
                   GRADIENT.creativo,
@@ -2639,7 +2640,7 @@ export default function CreativoContent({
               }}
             >
 
-              Join Creativo ↗
+              Join Creativo <ArrowUpRight className="h-4 w-4" />
 
             </MagneticButton>
 
@@ -2674,14 +2675,14 @@ export default function CreativoContent({
 
           <Link
             href="/"
-            className="text-xs font-bold transition-colors hover:text-white"
+            className="inline-flex items-center gap-1.5 text-xs font-bold transition-colors hover:text-white"
             style={{
               color:
                 COLOR.lime,
             }}
           >
 
-            Back to Showwork ↗
+            Back to Showwork <ArrowUpRight className="h-3.5 w-3.5" />
 
           </Link>
 

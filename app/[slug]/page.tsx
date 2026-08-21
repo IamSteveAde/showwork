@@ -17,7 +17,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = await db.project.findUnique({
     where: { slug },
-    select: { clientName: true, creator: { select: { companyName: true, name: true } } },
+    select: {
+      clientName: true,
+      heroMediaId: true,
+      creator: { select: { companyName: true, name: true } },
+      media: {
+        select: { id: true, fileKey: true, type: true },
+        orderBy: { displayOrder: "asc" },
+      },
+    },
   });
 
   if (!project) {
@@ -25,9 +33,20 @@ export async function generateMetadata({
   }
 
   const creatorName = project.creator.companyName || project.creator.name || "Showwork";
-  const title = `${project.clientName} — Delivered by ${creatorName} | Showwork`;
-  const description = `Review, approve, and download your delivered files from ${creatorName} — securely hosted on Showwork, the branded client delivery platform for creative professionals.`;
-  const image = `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+  const title = `${project.clientName} — Delivered by ${creatorName}`;
+  const description = `${creatorName} has delivered your project. View, approve, and download your final files. Sponsored by Showwork.`;
+
+  // The actual banner image the creator chose (or their first photo)
+  // — not a generic Showwork graphic. Only ever falls back to the
+  // generic image if the project genuinely has no photos at all
+  // (video-only or document-only deliveries), since a video file
+  // itself can't be used as a share-preview image.
+  const heroPhoto =
+    (project.heroMediaId && project.media.find((m) => m.id === project.heroMediaId && m.type === "PHOTO")) ||
+    project.media.find((m) => m.type === "PHOTO");
+  const image = heroPhoto
+    ? publicUrlFor(heroPhoto.fileKey)
+    : `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
 
   return {
     title,
