@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = "force-dynamic";
+
+
+
 export default async function CreativoPage() {
   const [settings, entries, webinars] = await Promise.all([
     db.platformSettings.findUnique({ where: { id: "singleton" } }),
