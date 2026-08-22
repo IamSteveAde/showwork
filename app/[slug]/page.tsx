@@ -36,16 +36,17 @@ export async function generateMetadata({
   const title = `${project.clientName} — Delivered by ${creatorName}`;
   const description = `${creatorName} has delivered your project. View, approve, and download your final files. Sponsored by Showwork.`;
 
-  // The actual banner image the creator chose (or their first photo)
-  // — not a generic Showwork graphic. Only ever falls back to the
-  // generic image if the project genuinely has no photos at all
-  // (video-only or document-only deliveries), since a video file
-  // itself can't be used as a share-preview image.
-  const heroPhoto =
-    (project.heroMediaId && project.media.find((m) => m.id === project.heroMediaId && m.type === "PHOTO")) ||
-    project.media.find((m) => m.type === "PHOTO");
-  const image = heroPhoto
-    ? publicUrlFor(heroPhoto.fileKey)
+   // Any real photo from this delivery, picked at random — not
+  // specifically the banner, and not a generic Showwork graphic.
+  // Only falls back to the generic image if the project genuinely
+  // has no photos at all (video-only or document-only deliveries),
+  // since a video file itself can't be used as a share-preview image.
+  const projectPhotos = project.media.filter((m) => m.type === "PHOTO");
+  const randomPhoto = projectPhotos.length > 0
+    ? projectPhotos[Math.floor(Math.random() * projectPhotos.length)]
+    : null;
+  const image = randomPhoto
+    ? publicUrlFor(randomPhoto.fileKey)
     : `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
 
   return {
