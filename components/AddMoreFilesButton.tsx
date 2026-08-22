@@ -283,10 +283,12 @@ export default function AddMoreFilesButton({
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  // ── Small/normal files — the existing single-PUT path, unchanged ──
+    // ── Small/normal files — the existing single-PUT path, now with
+  //    real progress reported back, matching the multipart path ──
   const uploadOneFileWithRetry = async (
     file: File,
-    sectionId: string
+    sectionId: string,
+    onProgress: (percent: number) => void
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
       try {
@@ -306,7 +308,9 @@ export default function AddMoreFilesButton({
         }
         const { uploadUrl, fileKey } = await presignRes.json();
 
-        await uploadWithProgress(uploadUrl, file, () => {});
+        await uploadWithProgress(uploadUrl, file, (loaded, total) => {
+          onProgress(Math.round((loaded / total) * 100));
+        });
 
         const completeRes = await fetch("/api/upload/complete", {
           method: "POST",
@@ -528,12 +532,14 @@ export default function AddMoreFilesButton({
 
         setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
 
-        const result = isLarge
+
+              const result = isLarge
           ? await uploadLargeFileMultipart(file, section.id, (chunkMsg) =>
               setStatus(`Uploading ${i + 1} of ${filesToUpload.length} — ${chunkMsg}...`)
             )
-          : await uploadOneFileWithRetry(file, section.id);
-
+          : await uploadOneFileWithRetry(file, section.id, (percent) =>
+              setStatus(`Uploading ${i + 1} of ${filesToUpload.length} — ${percent}% uploaded...`)
+            );
         if (result.ok) {
           markFingerprintCompleted(projectId, sectionName, fileFingerprint(file));
         } else {

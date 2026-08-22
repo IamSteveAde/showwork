@@ -199,10 +199,12 @@ export default function AddSubSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ projectId, filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
         });
-        const presignData = await presignRes.json();
+                const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
 
-        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+          setChunkStatus(`${Math.round((loaded / total) * 100)}% uploaded`);
+        });
 
         const completeRes = await fetch("/api/upload/complete", {
           method: "POST",
@@ -457,7 +459,7 @@ export default function AddSubSection({
       </div>
 
       {uploading && <UploadPatienceBanner active={uploading} />}
-      {chunkStatus && <p className="text-[11px] text-white/40">{chunkStatus}</p>}
+            {chunkStatus && <p className="text-xs font-semibold" style={{ color: "#2478FF" }}>{chunkStatus}</p>}
       {error && <p className="text-xs text-red-400">{error}</p>}
       {skippedFiles.length > 0 && (
         <div className="rounded-lg p-3 text-xs text-white/60" style={{ background: "rgba(249,115,22,0.1)" }}>
@@ -469,13 +471,13 @@ export default function AddSubSection({
       )}
 
       <div className="flex items-center gap-3">
-        <button
+                <button
           onClick={handleCreate}
           disabled={uploading}
           className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
         >
-          {uploading ? (status ?? "Uploading...") : skippedFiles.length > 0 ? "Retry remaining" : "Create sub-section"}
+          {uploading ? (chunkStatus ?? status ?? "Uploading...") : skippedFiles.length > 0 ? "Retry remaining" : "Create sub-section"}
         </button>
         <button onClick={reset} disabled={uploading} className="text-xs font-semibold text-white/40 hover:text-white disabled:opacity-50">
           Cancel

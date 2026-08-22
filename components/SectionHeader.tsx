@@ -190,7 +190,9 @@ export default function SectionHeader({
     router.refresh();
   };
 
-  // ── Small/normal files — single PUT, with retry ──
+   // ── Small/normal files — single PUT, with retry, now with real
+  //    progress reported back via the same chunkStatus line the
+  //    multipart path already displays ──
   const uploadOneFileWithRetry = async (file: File): Promise<{ ok: true } | { ok: false; error: string }> => {
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
       try {
@@ -210,7 +212,9 @@ export default function SectionHeader({
         }
         const { uploadUrl, fileKey } = await presignRes.json();
 
-        await uploadWithProgress(uploadUrl, file, () => {});
+        await uploadWithProgress(uploadUrl, file, (loaded, total) => {
+          setChunkStatus(`${Math.round((loaded / total) * 100)}% uploaded`);
+        });
 
         const completeRes = await fetch("/api/upload/complete", {
           method: "POST",
@@ -494,13 +498,13 @@ export default function SectionHeader({
           className="hidden"
           id={`add-to-section-${sectionId}`}
         />
-        {uploadSessionsRemaining > 0 ? (
+               {uploadSessionsRemaining > 0 ? (
           <label
             htmlFor={`add-to-section-${sectionId}`}
             className="cursor-pointer text-xs font-semibold underline"
             style={{ color: "#F5C842" }}
           >
-            {uploading ? (uploadStatus ?? "Uploading...") : "+ Add files"}
+            {uploading ? (chunkStatus ?? uploadStatus ?? "Uploading...") : "+ Add files"}
           </label>
         ) : (
           <span className="text-xs text-white/20">Add-more limit reached</span>
@@ -538,10 +542,10 @@ export default function SectionHeader({
         <AddSubSection projectId={projectId} sectionId={sectionId} mediaType={mediaType} />
       </div>
 
-      {uploading && (
+           {uploading && (
         <div className="mt-2">
           <UploadPatienceBanner active={uploading} />
-          {chunkStatus && <p className="mt-1.5 text-[11px] text-white/40">{chunkStatus}</p>}
+          {chunkStatus && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#F5C842" }}>{chunkStatus}</p>}
         </div>
       )}
       {uploadError && <p className="mt-1.5 text-xs text-red-400">{uploadError}</p>}
