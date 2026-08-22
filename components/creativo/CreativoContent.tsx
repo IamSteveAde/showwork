@@ -33,6 +33,8 @@ const jakarta = Plus_Jakarta_Sans({
 /*                               BRAND SYSTEM                                 */
 /* -------------------------------------------------------------------------- */
 
+// Reduced to three real colors — offwhite, black, blue — plus a single
+// yellow reserved for tiny accents (a rank badge, a small link, a chip).
 const COLOR = {
   black: "#080808",
   charcoal: "#121212",
@@ -41,24 +43,15 @@ const COLOR = {
 
   blue: "#2478FF",
   blueDark: "#0052FF",
+  blueLight: "#68B2FF",
 
-  lime: "#B8FF35",
-  orange: "#FF8A1F",
   yellow: "#FFCC00",
-
-  coral: "#FF5A5F",
-  magenta: "#FF2E88",
 };
 
 const GRADIENT = {
-  creativo:
-    "linear-gradient(135deg, #FF5A5F 0%, #FF2E88 45%, #FF8A1F 100%)",
-
-  showwork:
-    "linear-gradient(135deg, #2478FF 0%, #0052FF 45%, #B8FF35 100%)",
-
-  energy:
-    "linear-gradient(135deg, #2478FF 0%, #B8FF35 45%, #FFCC00 70%, #FF8A1F 100%)",
+  creativo: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+  showwork: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+  energy: "linear-gradient(135deg, #2478FF 0%, #0052FF 60%, #FFCC00 100%)",
 };
 
 type Category =
@@ -130,10 +123,12 @@ function spotlightWhatsappHref(
   )}`;
 }
 
+// Rank accent for the top three positions — one warm highlight for
+// first place, two blue shades for second and third.
 const RANK_COLOR = [
   COLOR.yellow,
-  COLOR.lime,
-  COLOR.orange,
+  COLOR.blueLight,
+  COLOR.blueDark,
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -183,7 +178,7 @@ function Orb({
 
 function SectionLabel({
   children,
-  color = COLOR.magenta,
+  color = COLOR.blue,
 }: {
   children: React.ReactNode;
   color?: string;
@@ -363,8 +358,8 @@ export default function CreativoContent({
   /* ---------------------------------------------------------------------- */
 
   const availablePeriods = useMemo(() => {
-    const seen = new Map<
-      string,
+    const seen = new Map
+    <  string,
       string
     >();
 
@@ -517,10 +512,8 @@ export default function CreativoContent({
               "1px solid rgba(255,255,255,0.1)",
 
             borderRadius: scrolled
-  ? "28px"
-  : scrolled
-  ? "999px"
-  : "28px",
+              ? "999px"
+              : "28px",
 
             boxShadow: scrolled
               ? "0 20px 70px -30px rgba(0,0,0,0.8)"
@@ -532,8 +525,8 @@ export default function CreativoContent({
             className="pointer-events-none absolute left-[10%] top-0 h-full w-40 blur-[50px]"
             style={{
               background:
-                COLOR.magenta,
-              opacity: 0.16,
+                COLOR.blue,
+              opacity: 0.18,
             }}
           />
 
@@ -541,7 +534,7 @@ export default function CreativoContent({
             className="pointer-events-none absolute right-[10%] top-0 h-full w-40 blur-[50px]"
             style={{
               background:
-                COLOR.orange,
+                COLOR.blueLight,
               opacity: 0.12,
             }}
           />
@@ -570,6 +563,13 @@ export default function CreativoContent({
                 Showwork
               </Link>
 
+                <Link
+                href="/blog"
+                className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
+              >
+                Blog
+              </Link>
+
               <Link
                 href="/login"
                 className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
@@ -592,7 +592,7 @@ export default function CreativoContent({
                     GRADIENT.creativo,
 
                   boxShadow:
-                    "0 12px 35px -14px rgba(255,46,136,0.8)",
+                    "0 12px 35px -14px rgba(36,120,255,0.7)",
                 }}
               >
                 Join community <ArrowUpRight className="h-3.5 w-3.5" />
@@ -610,13 +610,13 @@ export default function CreativoContent({
               style={{
                 background:
                   mobileNavOpen
-                    ? COLOR.lime
+                    ? COLOR.blue
                     : "rgba(255,255,255,0.08)",
               }}
             >
 
               {mobileNavOpen ? (
-                <X className="h-5 w-5 text-black" strokeWidth={2.2} />
+                <X className="h-5 w-5 text-white" strokeWidth={2.2} />
               ) : (
                 <svg
                   viewBox="0 0 24 24"
@@ -703,7 +703,7 @@ export default function CreativoContent({
                           className="h-4 w-4"
                           style={{
                             color:
-                              COLOR.lime,
+                              COLOR.blueLight,
                           }}
                         />
 
@@ -738,20 +738,20 @@ export default function CreativoContent({
       >
 
         <Orb
-          color={COLOR.magenta}
+          color={COLOR.blue}
           size={650}
           left="-18%"
           top="-20%"
-          opacity={0.35}
+          opacity={0.3}
           duration={24}
         />
 
         <Orb
-          color={COLOR.orange}
+          color={COLOR.blueLight}
           size={500}
           left="62%"
           top="-10%"
-          opacity={0.22}
+          opacity={0.18}
           duration={20}
         />
 
@@ -760,7 +760,7 @@ export default function CreativoContent({
           size={500}
           left="70%"
           top="55%"
-          opacity={0.2}
+          opacity={0.16}
           duration={26}
         />
 
@@ -811,10 +811,10 @@ export default function CreativoContent({
                   className="h-2.5 w-2.5 rounded-full"
                   style={{
                     background:
-                      COLOR.lime,
+                      COLOR.blueLight,
 
                     boxShadow:
-                      `0 0 20px ${COLOR.lime}`,
+                      `0 0 20px ${COLOR.blueLight}`,
                   }}
                 />
 
@@ -931,7 +931,7 @@ export default function CreativoContent({
                       GRADIENT.creativo,
 
                     boxShadow:
-                      "0 20px 60px -20px rgba(255,46,136,0.8)",
+                      "0 20px 60px -20px rgba(36,120,255,0.7)",
                   }}
                 >
                   Join the community <ArrowUpRight className="h-4 w-4" />
@@ -975,7 +975,7 @@ export default function CreativoContent({
             >
 
               <div
-                className="absolute -inset-1 rounded-[2rem] opacity-50 blur-xl"
+                className="absolute -inset-1 rounded-[2rem] opacity-40 blur-xl"
                 style={{
                   background:
                     GRADIENT.creativo,
@@ -1014,10 +1014,10 @@ export default function CreativoContent({
                   </div>
 
                   <span
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-black"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-white"
                     style={{
                       background:
-                        COLOR.lime,
+                        COLOR.blue,
                     }}
                   >
                     <Sparkles className="h-4 w-4" strokeWidth={2} />
@@ -1048,12 +1048,16 @@ export default function CreativoContent({
                         >
 
                           <span
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-xs font-extrabold text-black"
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-xs font-extrabold"
                             style={{
                               background:
                                 RANK_COLOR[
                                   index
                                 ],
+                              color:
+                                index === 0
+                                  ? COLOR.black
+                                  : COLOR.white,
                             }}
                           >
                             0
@@ -1163,7 +1167,7 @@ export default function CreativoContent({
 
               <SectionLabel
                 color={
-                  COLOR.lime
+                  COLOR.blue
                 }
               >
                 Step inside
@@ -1257,9 +1261,9 @@ export default function CreativoContent({
           className="pointer-events-none absolute right-[-10%] top-[10%] h-[500px] w-[500px] rounded-full blur-[120px]"
           style={{
             background:
-              COLOR.yellow,
+              COLOR.blue,
 
-            opacity: 0.12,
+            opacity: 0.08,
           }}
         />
 
@@ -1317,13 +1321,13 @@ export default function CreativoContent({
                 <a href="https://tinyurl.com/creativocommunity"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-7 inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-bold text-black transition-transform hover:scale-[1.03]"
+                className="mt-7 inline-flex items-center gap-3 rounded-full px-6 py-3.5 text-sm font-bold text-white transition-transform hover:scale-[1.03]"
                 style={{
                   background:
-                    COLOR.lime,
+                    COLOR.blue,
 
                   boxShadow:
-                    "0 18px 45px -18px rgba(184,255,53,0.9)",
+                    "0 18px 45px -18px rgba(36,120,255,0.6)",
                 }}
               >
 
@@ -1485,6 +1489,11 @@ export default function CreativoContent({
                       ] ??
                       COLOR.blue;
 
+                    const accentText =
+                      index === 0
+                        ? COLOR.black
+                        : COLOR.white;
+
                     return (
 
                       <motion.div
@@ -1570,12 +1579,16 @@ export default function CreativoContent({
 
 
                           <span
-                            className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-extrabold text-black"
+                            className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-extrabold"
                             style={{
                               background:
                                 index < 3
                                   ? accent
                                   : "rgba(0,0,0,0.06)",
+                              color:
+                                index < 3
+                                  ? accentText
+                                  : COLOR.black,
                             }}
                           >
 
@@ -1660,7 +1673,7 @@ export default function CreativoContent({
                                 className="inline-flex items-center gap-1"
                                 style={{
                                   color:
-                                    COLOR.magenta,
+                                    COLOR.blue,
                                 }}
                               >
                                 Work together <ArrowUpRight className="h-3.5 w-3.5" />
@@ -1701,26 +1714,26 @@ export default function CreativoContent({
         }}
       >
         <Orb
-          color={COLOR.magenta}
+          color={COLOR.blue}
           size={550}
           left="-15%"
           top="35%"
-          opacity={0.2}
+          opacity={0.16}
         />
 
         <Orb
-          color={COLOR.blue}
+          color={COLOR.blueLight}
           size={450}
           left="75%"
           top="-10%"
-          opacity={0.18}
+          opacity={0.14}
         />
 
         <div className="relative mx-auto max-w-[1350px]">
           {/* HEADING */}
 
           <div className="max-w-3xl">
-            <SectionLabel color={COLOR.lime}>
+            <SectionLabel color={COLOR.blue}>
               Why be here?
             </SectionLabel>
 
@@ -1736,7 +1749,9 @@ export default function CreativoContent({
             </h2>
           </div>
 
-          {/* CARDS */}
+          {/* CARDS — three blue shades carry the set; the fourth (Visibility)
+              gets the one yellow accent since it's literally about being
+              spotlighted. */}
 
           <div className="mt-14 grid gap-4 md:mt-20 md:grid-cols-2 lg:grid-cols-4">
             {[
@@ -1745,7 +1760,7 @@ export default function CreativoContent({
                 title: "Referrals",
                 body:
                   "Opportunities that start inside the community before they ever reach a public job board.",
-                color: COLOR.coral,
+                color: COLOR.blue,
                 Icon: Send,
               },
               {
@@ -1753,7 +1768,7 @@ export default function CreativoContent({
                 title: "Better pricing",
                 body:
                   "Learn how other creators position their work, handle clients and charge with confidence.",
-                color: COLOR.magenta,
+                color: COLOR.blueLight,
                 Icon: BadgeDollarSign,
               },
               {
@@ -1761,7 +1776,7 @@ export default function CreativoContent({
                 title: "Real people",
                 body:
                   "A network of creators working in the same industries and dealing with the same challenges.",
-                color: COLOR.blue,
+                color: COLOR.blueDark,
                 Icon: UsersRound,
               },
               {
@@ -1769,7 +1784,7 @@ export default function CreativoContent({
                 title: "Visibility",
                 body:
                   "Your strongest work gets a chance to be discovered, celebrated and remembered.",
-                color: COLOR.lime,
+                color: COLOR.yellow,
                 Icon: Eye,
               },
             ].map((item, index) => {
@@ -1883,309 +1898,316 @@ export default function CreativoContent({
       </section>
 
       {/* ================================================================ */}
-      {/* WEBINARS                                                         */}
-      {/* ================================================================ */}
+{/* WEBINARS                                                         */}
+{/* ================================================================ */}
 
-      <section
-        className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
-        style={{
-          background:
-            `linear-gradient(135deg, ${COLOR.blueDark} 0%, ${COLOR.blue} 55%, #426CFF 100%)`,
-        }}
-      >
+<section
+  className="relative overflow-hidden px-6 py-24 md:px-12 md:py-36"
+  style={{
+    background:
+      `linear-gradient(135deg, ${COLOR.blueDark} 0%, ${COLOR.blue} 100%)`,
+  }}
+>
 
-        <div
-          className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full blur-[120px]"
+  <div
+    className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full blur-[120px]"
+    style={{
+      background:
+        COLOR.yellow,
+
+      opacity:
+        0.14,
+    }}
+  />
+
+  <div className="relative mx-auto max-w-[1350px]">
+
+    <div className="grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end">
+
+      <div>
+
+        <SectionLabel
+          color={
+            COLOR.blueLight
+          }
+        >
+          Learn from the room
+        </SectionLabel>
+
+        <h2 className="max-w-3xl text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-6xl">
+
+          Conversations
+          that make your
+          next move
+          <span
+            style={{
+              color:
+                COLOR.yellow,
+            }}
+          >
+            {" "}
+            smarter.
+          </span>
+
+        </h2>
+
+      </div>
+
+
+      <div>
+
+        <p className="text-base leading-relaxed text-white/60">
+
+          Creativo sessions
+          bring experienced
+          people into the room
+          to talk about the
+          things creators
+          actually need help
+          figuring out.
+
+        </p>
+
+
+        <button
+          onClick={() =>
+            setHostModalOpen(
+              true
+            )
+          }
+          className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-extrabold text-black transition-transform hover:scale-[1.03]"
           style={{
             background:
-              COLOR.lime,
-
-            opacity:
-              0.25,
+              COLOR.white,
           }}
-        />
+        >
 
-        <div className="relative mx-auto max-w-[1350px]">
+          Apply to host <ArrowUpRight className="h-4 w-4" />
 
-          <div className="grid gap-10 lg:grid-cols-[1fr_.7fr] lg:items-end">
+        </button>
 
-            <div>
+      </div>
 
-              <SectionLabel
-                color={
-                  COLOR.lime
-                }
-              >
-                Learn from the room
-              </SectionLabel>
+    </div>
 
-              <h2 className="max-w-3xl text-4xl font-extrabold leading-[0.94] tracking-[-0.055em] text-white md:text-6xl">
 
-                Conversations
-                that make your
-                next move
-                <span
-                  style={{
-                    color:
-                      COLOR.lime,
-                  }}
-                >
-                  {" "}
-                  smarter.
+    {(upcomingWebinars.length >
+      0 ||
+      pastWebinars.length >
+        0) && (
+
+      /* No fixed aspect ratio on the image box — that's what was
+         forcing a crop. Each image just renders at its own natural
+         ratio, scaled to the card's width, so the full flyer always
+         shows regardless of exactly how tall or short it is. */
+
+      <div className="mt-16 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+
+        {upcomingWebinars.map(
+          (
+            webinar,
+            index
+          ) => (
+
+            <motion.div
+              key={
+                webinar.id
+              }
+              initial={{
+                opacity: 0,
+                y: 25,
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+              viewport={{
+                once: true,
+              }}
+              transition={{
+                duration: 0.6,
+                delay:
+                  index * 0.08,
+              }}
+              className="group flex flex-col overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] backdrop-blur-xl"
+            >
+
+              {webinar.flyerImageUrl && (
+
+                <div className="relative w-full">
+
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+
+                  <img
+                    src={
+                      webinar.flyerImageUrl
+                    }
+                    alt={
+                      webinar.topic
+                    }
+                    className="block w-full h-auto transition-transform duration-700 group-hover:scale-[1.02]"
+                  />
+
+                  <span
+                    className="absolute left-4 top-4 inline-flex rounded-full px-3 py-1 text-[9px] font-extrabold uppercase text-black"
+                    style={{
+                      background:
+                        COLOR.yellow,
+
+                      letterSpacing:
+                        "0.12em",
+                    }}
+                  >
+                    Upcoming
+                  </span>
+
+                </div>
+
+              )}
+
+
+              <div className="flex flex-1 flex-col p-5">
+
+                <h3 className="text-xl font-extrabold leading-tight text-white">
+
+                  {
+                    webinar.topic
+                  }
+
+                </h3>
+
+
+                <p className="mt-3 text-sm leading-relaxed text-white/50">
+
+                  {
+                    webinar.guests
+                  }
+
+                  {webinar.guests &&
+                    " · "}
+
+                  {new Date(
+                    webinar.startsAt
+                  ).toLocaleString()}
+
+                </p>
+
+
+                {webinar.applyUrl && (
+
+                  
+                    <a href={
+                      webinar.applyUrl
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold"
+                    style={{
+                      color:
+                        COLOR.yellow,
+                    }}
+                  >
+
+                    Reserve your spot <ArrowUpRight className="h-4 w-4" />
+
+                  </a>
+
+                )}
+
+              </div>
+
+            </motion.div>
+
+          )
+        )}
+
+
+        {pastWebinars.map(
+          (
+            webinar
+          ) => (
+
+            <motion.div
+              key={
+                webinar.id
+              }
+              whileHover={{
+                y: -5,
+              }}
+              className="flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/10"
+            >
+
+              {webinar.flyerImageUrl && (
+
+                <div className="w-full">
+
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+
+                  <img
+                    src={
+                      webinar.flyerImageUrl
+                    }
+                    alt=""
+                    className="block w-full h-auto opacity-90"
+                  />
+
+                </div>
+
+              )}
+
+
+              <div className="flex flex-1 flex-col p-5">
+
+                <span className="text-[9px] font-bold uppercase text-white/35">
+
+                  Past session
+
                 </span>
 
-              </h2>
+                <h3 className="mt-2 text-lg font-extrabold text-white">
 
-            </div>
+                  {
+                    webinar.topic
+                  }
 
-
-            <div>
-
-              <p className="text-base leading-relaxed text-white/60">
-
-                Creativo sessions
-                bring experienced
-                people into the room
-                to talk about the
-                things creators
-                actually need help
-                figuring out.
-
-              </p>
+                </h3>
 
 
-              <button
-                onClick={() =>
-                  setHostModalOpen(
-                    true
-                  )
-                }
-                className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-extrabold text-black transition-transform hover:scale-[1.03]"
-                style={{
-                  background:
-                    COLOR.lime,
-                }}
-              >
+                {webinar.replayUrl && (
 
-                Apply to host <ArrowUpRight className="h-4 w-4" />
-
-              </button>
-
-            </div>
-
-          </div>
-
-
-          {(upcomingWebinars.length >
-            0 ||
-            pastWebinars.length >
-              0) && (
-
-            <div className="mt-16 grid gap-5 md:grid-cols-2">
-
-              {upcomingWebinars.map(
-                (
-                  webinar,
-                  index
-                ) => (
-
-                  <motion.div
-                    key={
-                      webinar.id
+                  
+                    <a href={
+                      webinar.replayUrl
                     }
-                    initial={{
-                      opacity: 0,
-                      y: 25,
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-auto inline-flex items-center gap-1.5 pt-5 text-sm font-bold"
+                    style={{
+                      color:
+                        COLOR.yellow,
                     }}
-                    whileInView={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    viewport={{
-                      once: true,
-                    }}
-                    transition={{
-                      duration: 0.6,
-                      delay:
-                        index * 0.08,
-                    }}
-                    className="group overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] p-5 backdrop-blur-xl"
                   >
 
-                    {webinar.flyerImageUrl && (
+                  Watch replay <ArrowUpRight className="h-3.5 w-3.5" />
 
-                      // eslint-disable-next-line @next/next/no-img-element
+                  </a>
 
-                      <img
-                        src={
-                          webinar.flyerImageUrl
-                        }
-                        alt={
-                          webinar.topic
-                        }
-                        className="aspect-[16/9] w-full rounded-[1.3rem] object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-                      />
+                )}
 
-                    )}
+              </div>
 
+            </motion.div>
 
-                    <div className="px-2 pb-2 pt-6">
+          )
+        )}
 
-                      <span
-                        className="inline-flex rounded-full px-3 py-1 text-[9px] font-extrabold uppercase text-black"
-                        style={{
-                          background:
-                            COLOR.lime,
+      </div>
 
-                          letterSpacing:
-                            "0.12em",
-                        }}
-                      >
-                        Upcoming
-                      </span>
+    )}
 
+  </div>
 
-                      <h3 className="mt-5 text-2xl font-extrabold leading-tight text-white">
-
-                        {
-                          webinar.topic
-                        }
-
-                      </h3>
-
-
-                      <p className="mt-3 text-sm leading-relaxed text-white/50">
-
-                        {
-                          webinar.guests
-                        }
-
-                        {webinar.guests &&
-                          " · "}
-
-                        {new Date(
-                          webinar.startsAt
-                        ).toLocaleString()}
-
-                      </p>
-
-
-                      {webinar.applyUrl && (
-
-                        
-                          <a href={
-                            webinar.applyUrl
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-7 inline-flex items-center gap-2 text-sm font-bold"
-                          style={{
-                            color:
-                              COLOR.lime,
-                          }}
-                        >
-
-                          Reserve your spot <ArrowUpRight className="h-4 w-4" />
-
-                        </a>
-
-                      )}
-
-                    </div>
-
-                  </motion.div>
-
-                )
-              )}
-
-
-              {pastWebinars.map(
-                (
-                  webinar
-                ) => (
-
-                  <motion.div
-                    key={
-                      webinar.id
-                    }
-                    whileHover={{
-                      y: -5,
-                    }}
-                    className="flex gap-5 rounded-[1.75rem] border border-white/10 bg-black/10 p-5"
-                  >
-
-                    {webinar.flyerImageUrl && (
-
-                      // eslint-disable-next-line @next/next/no-img-element
-
-                      <img
-                        src={
-                          webinar.flyerImageUrl
-                        }
-                        alt=""
-                        className="h-28 w-24 rounded-2xl object-cover opacity-80"
-                      />
-
-                    )}
-
-
-                    <div className="flex min-w-0 flex-1 flex-col justify-between">
-
-                      <div>
-
-                        <span className="text-[9px] font-bold uppercase text-white/35">
-
-                          Past session
-
-                        </span>
-
-                        <h3 className="mt-2 text-lg font-extrabold text-white">
-
-                          {
-                            webinar.topic
-                          }
-
-                        </h3>
-
-                      </div>
-
-
-                      {webinar.replayUrl && (
-
-                        
-                          <a href={
-                            webinar.replayUrl
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-sm font-bold"
-                          style={{
-                            color:
-                              COLOR.lime,
-                          }}
-                        >
-
-                          Watch replay <ArrowUpRight className="h-3.5 w-3.5" />
-
-                        </a>
-
-                      )}
-
-                    </div>
-
-                  </motion.div>
-
-                )
-              )}
-
-            </div>
-
-          )}
-
-        </div>
-
-      </section>
-
+</section>
 
       {/* ================================================================ */}
       {/* SHOWWORK BRIDGE                                                  */}
@@ -2262,7 +2284,7 @@ export default function CreativoContent({
           <div className="relative">
 
             <div
-              className="absolute -inset-6 rounded-[3rem] opacity-30 blur-3xl"
+              className="absolute -inset-6 rounded-[3rem] opacity-25 blur-3xl"
               style={{
                 background:
                   GRADIENT.energy,
@@ -2345,13 +2367,18 @@ export default function CreativoContent({
                     >
 
                       <span
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-black"
+                        className="flex h-8 w-8 items-center justify-center rounded-full"
                         style={{
                           background:
                             index % 2 ===
                             0
-                              ? COLOR.lime
+                              ? COLOR.blue
                               : COLOR.yellow,
+                          color:
+                            index % 2 ===
+                            0
+                              ? COLOR.white
+                              : COLOR.black,
                         }}
                       >
 
@@ -2402,7 +2429,7 @@ export default function CreativoContent({
 
             <SectionLabel
               color={
-                COLOR.magenta
+                COLOR.blue
               }
             >
               Questions
@@ -2530,19 +2557,19 @@ export default function CreativoContent({
       >
 
         <Orb
-          color={COLOR.magenta}
+          color={COLOR.blue}
           size={600}
           left="-10%"
           top="10%"
-          opacity={0.28}
+          opacity={0.22}
         />
 
         <Orb
-          color={COLOR.orange}
+          color={COLOR.blueLight}
           size={500}
           left="65%"
           top="20%"
-          opacity={0.2}
+          opacity={0.16}
         />
 
         <div className="relative mx-auto max-w-5xl text-center">
@@ -2562,7 +2589,7 @@ export default function CreativoContent({
             className="text-[10px] font-extrabold uppercase"
             style={{
               color:
-                COLOR.lime,
+                COLOR.blueLight,
 
               letterSpacing:
                 "0.25em",
@@ -2636,7 +2663,7 @@ export default function CreativoContent({
                   GRADIENT.creativo,
 
                 boxShadow:
-                  "0 25px 70px -20px rgba(255,46,136,0.85)",
+                  "0 25px 70px -20px rgba(36,120,255,0.8)",
               }}
             >
 
@@ -2678,7 +2705,7 @@ export default function CreativoContent({
             className="inline-flex items-center gap-1.5 text-xs font-bold transition-colors hover:text-white"
             style={{
               color:
-                COLOR.lime,
+                COLOR.blueLight,
             }}
           >
 

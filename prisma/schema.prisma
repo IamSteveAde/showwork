@@ -1107,3 +1107,34 @@ model PortfolioTestimonial {
 
   @@index([portfolioId])
 }
+
+// ─────────────────────────────────────────────
+// BLOG — admin-managed posts. Body is stored as real HTML from the
+// rich text editor (Tiptap), not markdown — matches what the editor
+// actually produces, so no conversion step is needed to render it.
+// ─────────────────────────────────────────────
+model BlogPost {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  // Short summary — shown on the listing page's cards, and used as
+  // the meta description fallback if metaDescription isn't set.
+  excerpt     String?
+  bodyHtml    String   @db.Text
+  coverImageUrl String?
+  category    String?
+  // SEO overrides — fall back to title/excerpt when not explicitly
+  // set, so a post can be published without filling these in, but an
+  // admin who cares about ranking can tune them separately from the
+  // on-page headline.
+  metaTitle       String?
+  metaDescription String?
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, publishedAt])
+  @@index([category])
+}

@@ -92,12 +92,18 @@ export default async function AdminPage({
             </p>
             <h1 className="text-3xl font-bold text-white">Platform overview</h1>
           </div>
-          <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
             <Link href="/admin/activity" className="text-sm text-white/40 underline hover:text-white">
               Activity
             </Link>
-            <a
-              href="/api/admin/creators/export"
+            <Link href="/admin/creativo" className="text-sm text-white/40 underline hover:text-white">
+              Creativo
+            </Link>
+            <Link href="/admin/blog" className="text-sm text-white/40 underline hover:text-white">
+              Blog
+            </Link>
+            
+            <a  href="/api/admin/creators/export"
               className="rounded-lg px-3.5 py-1.5 text-xs font-semibold"
               style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
             >
@@ -106,8 +112,8 @@ export default async function AdminPage({
             <Link href="/dashboard" className="text-sm text-white/40 underline hover:text-white">
               Back to dashboard
             </Link>
-          </div>
-        </div>
+          </div>        
+            </div>
 
         {/* ── STAT CARDS ── */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

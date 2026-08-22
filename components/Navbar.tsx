@@ -11,12 +11,15 @@ import {
   UsersRound,
   LogIn,
   Sparkles,
+  Newspaper,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
 /*                               BRAND SYSTEM                                 */
 /* -------------------------------------------------------------------------- */
 
+// Reduced to three real colors — offwhite, black, blue — plus a single
+// yellow reserved for tiny accents (a badge, an underline, a hairline).
 const COLOR = {
   black: "#080808",
   charcoal: "#151515",
@@ -26,18 +29,9 @@ const COLOR = {
   blueDark: "#0052FF",
   blueLight: "#68B2FF",
 
-  lime: "#B8FF35",
-  orange: "#FF8A1F",
   yellow: "#FFCC00",
 
-  creativoCoral: "#FF5A5F",
-  creativoMagenta: "#FF2E88",
-
-  brandGradient:
-    "linear-gradient(135deg, #2478FF 0%, #0052FF 42%, #B8FF35 72%, #FFCC00 100%)",
-
-  creativoGradient:
-    "linear-gradient(135deg, #FF5A5F 0%, #FF2E88 100%)",
+  brandGradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
 };
 
 /* -------------------------------------------------------------------------- */
@@ -58,8 +52,7 @@ function Logo() {
         style={{
           height: 24,
           width: 112,
-          background:
-            "linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 58%, #B8FF35 100%)",
+          background: "linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 65%, #68B2FF 100%)",
 
           WebkitMaskImage: "url(/images/logo/sw.svg)",
           maskImage: "url(/images/logo/sw.svg)",
@@ -84,7 +77,7 @@ function Logo() {
           ease: [0.22, 1, 0.36, 1],
         }}
         style={{
-          background: COLOR.lime,
+          background: COLOR.blue,
         }}
       />
     </Link>
@@ -105,9 +98,15 @@ const NAV_LINKS = [
   {
     label: "Creativo Community",
     href: "/creativo",
-    color: COLOR.lime,
+    color: COLOR.blueLight,
     badge: "COMMUNITY",
     icon: UsersRound,
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+    color: COLOR.blueLight,
+    icon: Newspaper,
   },
 ];
 
@@ -144,9 +143,9 @@ function NavLink({
         <span
           className="ml-1 rounded-full px-2 py-[3px] text-[8px] font-bold"
           style={{
-            background: "rgba(184,255,53,0.12)",
-            color: COLOR.lime,
-            border: "1px solid rgba(184,255,53,0.18)",
+            background: "rgba(255,204,0,0.12)",
+            color: COLOR.yellow,
+            border: "1px solid rgba(255,204,0,0.22)",
             letterSpacing: "0.08em",
           }}
         >
@@ -252,7 +251,7 @@ export default function Navbar() {
             : "26px",
         }}
       >
-        {/* Ambient glow */}
+        {/* Ambient glow — one color, not two competing hues */}
 
         <div
           className="pointer-events-none absolute left-[10%] top-0 h-full w-40 opacity-25 blur-[45px]"
@@ -262,9 +261,9 @@ export default function Navbar() {
         />
 
         <div
-          className="pointer-events-none absolute right-[12%] top-0 h-full w-28 opacity-20 blur-[40px]"
+          className="pointer-events-none absolute right-[12%] top-0 h-full w-28 opacity-[0.12] blur-[40px]"
           style={{
-            background: COLOR.lime,
+            background: COLOR.blueLight,
           }}
         />
 
@@ -330,18 +329,16 @@ export default function Navbar() {
 
             <Link
               href="/signup"
-              className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-black transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
+              className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-white transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
               style={{
-                background: COLOR.lime,
-                boxShadow:
-                  "0 12px 35px -12px rgba(184,255,53,0.7)",
+                background: COLOR.blue,
+                boxShadow: "0 12px 35px -12px rgba(36,120,255,0.6)",
               }}
             >
               <span
                 className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
                 style={{
-                  background:
-                    "linear-gradient(135deg, #B8FF35 0%, #FFCC00 100%)",
+                  background: COLOR.brandGradient,
                 }}
               />
 
@@ -365,7 +362,7 @@ export default function Navbar() {
             className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/10 transition-colors duration-300 sm:hidden"
             style={{
               background: mobileOpen
-                ? COLOR.lime
+                ? COLOR.blue
                 : "rgba(255,255,255,0.08)",
             }}
           >
@@ -381,9 +378,7 @@ export default function Navbar() {
                 <X
                   size={19}
                   strokeWidth={2.2}
-                  style={{
-                    color: COLOR.black,
-                  }}
+                  className="text-white"
                 />
               ) : (
                 <Menu
@@ -473,7 +468,7 @@ export default function Navbar() {
                                 <span
                                   className="mt-0.5 text-[8px] font-bold uppercase"
                                   style={{
-                                    color: link.color,
+                                    color: COLOR.yellow,
                                     letterSpacing: "0.12em",
                                   }}
                                 >
@@ -512,16 +507,15 @@ export default function Navbar() {
                   <Link
                     href="/signup"
                     onClick={() => setMobileOpen(false)}
-                    className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-black"
+                    className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-white"
                     style={{
-                      background: COLOR.lime,
+                      background: COLOR.blue,
                     }}
                   >
                     <span
                       className="absolute inset-0 translate-y-full transition-transform duration-300 group-hover:translate-y-0"
                       style={{
-                        background:
-                          "linear-gradient(135deg, #B8FF35, #FFCC00)",
+                        background: COLOR.brandGradient,
                       }}
                     />
 
@@ -539,14 +533,14 @@ export default function Navbar() {
                   </Link>
                 </div>
 
-                {/* Brand line */}
+                {/* Brand line — one thin blue-to-yellow hairline, echoing the
+                    signature gradient used on the homepage motion section */}
 
                 <div className="mt-4 flex items-center gap-3 px-1">
                   <div
                     className="h-[2px] flex-1 rounded-full"
                     style={{
-                      background:
-                        "linear-gradient(90deg, #2478FF, #B8FF35, #FFCC00, #FF8A1F)",
+                      background: `linear-gradient(90deg, ${COLOR.blue}, ${COLOR.blueDark}, ${COLOR.yellow})`,
                     }}
                   />
 
