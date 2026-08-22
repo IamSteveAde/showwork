@@ -14,7 +14,7 @@ export default async function AdminBlogPage() {
 
   const posts = await db.blogPost.findMany({
     orderBy: { createdAt: "desc" },
-    select: { id: true, title: true, slug: true, published: true, publishedAt: true, category: true, coverImageUrl: true },
+    select: { id: true, title: true, slug: true, published: true, publishedAt: true, category: true, coverImageUrl: true, viewCount: true, deliverCtaClicks: true, portfolioCtaClicks: true },
   });
 
   return (

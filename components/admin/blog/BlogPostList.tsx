@@ -14,6 +14,9 @@ interface BlogPostSummary {
   publishedAt: string | null;
   category: string | null;
   coverImageUrl: string | null;
+  viewCount: number;
+  deliverCtaClicks: number;
+  portfolioCtaClicks: number;
 }
 
 export default function BlogPostList({ initialPosts }: { initialPosts: BlogPostSummary[] }) {
@@ -91,6 +94,12 @@ export default function BlogPostList({ initialPosts }: { initialPosts: BlogPostS
                 </span>
                 {post.category && <span className="text-white/30">· {post.category}</span>}
               </div>
+              {post.published && (
+                <div className="mt-2 flex items-center gap-4 text-xs text-white/40">
+                  <span>{post.viewCount.toLocaleString()} view{post.viewCount === 1 ? "" : "s"}</span>
+                  <span>{(post.deliverCtaClicks + post.portfolioCtaClicks).toLocaleString()} CTA click{post.deliverCtaClicks + post.portfolioCtaClicks === 1 ? "" : "s"}</span>
+                </div>
+              )}
             </Link>
             <button
               onClick={() => handleDelete(post.id)}

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 const COLOR = { blue: "#2478FF", blueDark: "#0052FF", lime: "#B8FF35", orange: "#FF8A1F", ink: "#101010" };
@@ -23,8 +25,19 @@ const VARIANTS = {
   },
 };
 
-export default function BlogPromoCTA({ variant }: { variant: "deliver" | "portfolio" }) {
+export default function BlogPromoCTA({ variant, postSlug }: { variant: "deliver" | "portfolio"; postSlug: string }) {
   const v = VARIANTS[variant];
+
+  const trackClick = () => {
+    // Fire-and-forget — never awaited, never blocks the actual
+    // navigation the person is trying to make. Best-effort only.
+    fetch(`/api/blog/${postSlug}/track-click`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variant }),
+    }).catch(() => {});
+  };
+
   return (
     <div
       className="not-prose my-12 overflow-hidden rounded-3xl p-8 text-center md:p-12"
@@ -41,6 +54,7 @@ export default function BlogPromoCTA({ variant }: { variant: "deliver" | "portfo
       </p>
       <Link
         href={v.href}
+        onClick={trackClick}
         className="mt-7 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-black transition-transform hover:scale-[1.03]"
         style={{ background: v.accent }}
       >

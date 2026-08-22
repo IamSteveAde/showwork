@@ -111,13 +111,13 @@ export default async function BlogPostPage({
         <div className="blog-body" dangerouslySetInnerHTML={{ __html: bodyPart1 }} />
         {bodyPart2 && (
           <>
-            <BlogPromoCTA variant="deliver" />
+            <BlogPromoCTA variant="deliver" postSlug={post.slug} />
             <div className="blog-body" dangerouslySetInnerHTML={{ __html: bodyPart2 }} />
-            <BlogPromoCTA variant="portfolio" />
+            <BlogPromoCTA variant="portfolio" postSlug={post.slug} />
             <div className="blog-body" dangerouslySetInnerHTML={{ __html: bodyPart3 }} />
           </>
         )}
-        {!bodyPart2 && <BlogPromoCTA variant="deliver" />}
+        {!bodyPart2 && <BlogPromoCTA variant="deliver" postSlug={post.slug} />}
       </article>
 
       <style>{`
