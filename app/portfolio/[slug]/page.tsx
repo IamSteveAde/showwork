@@ -14,9 +14,15 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const portfolio = await db.portfolio.findUnique({
+    const portfolio = await db.portfolio.findUnique({
     where: { slug },
-    select: { companyName: true, heroTagline: true, logoUrl: true },
+    select: {
+      companyName: true,
+      heroTagline: true,
+      media: {
+        select: { id: true, fileKey: true, type: true },
+      },
+    },
   });
 
   if (!portfolio) {
@@ -27,7 +33,18 @@ export async function generateMetadata({
   const description = portfolio.heroTagline
     ? `${portfolio.heroTagline} — See ${portfolio.companyName}'s work, delivered and showcased with Showwork.`
     : `Explore ${portfolio.companyName}'s work — a branded creative portfolio built with Showwork.`;
-  const image = `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+
+    // Any real photo from this creator's portfolio, picked at random —
+  // not a generic Showwork graphic. Only falls back to the generic
+  // image if the portfolio genuinely has no photos at all, since a
+  // video file itself can't be used as a share-preview image.
+  const portfolioPhotos = portfolio.media.filter((m) => m.type === "PHOTO");
+  const randomPhoto = portfolioPhotos.length > 0
+    ? portfolioPhotos[Math.floor(Math.random() * portfolioPhotos.length)]
+    : null;
+  const image = randomPhoto
+    ? publicUrlFor(randomPhoto.fileKey)
+    : `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
 
   return {
     title,
@@ -36,7 +53,6 @@ export async function generateMetadata({
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
-
 export default async function PortfolioPage({
   params,
 }: {
