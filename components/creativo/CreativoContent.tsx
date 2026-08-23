@@ -569,6 +569,19 @@ export default function CreativoContent({
               >
                 Blog
               </Link>
+              
+              <Link
+                href="/spotlight"
+                className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
+              >
+                Monthly Spotlight
+              </Link>
+              <Link
+                href="/leaderboard"
+                className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
+              >
+                Leaderboard
+              </Link>
 
               <Link
                 href="/login"

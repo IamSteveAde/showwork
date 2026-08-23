@@ -775,3 +775,47 @@ export async function sendPortfolioOfflineReminderEmail({
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// MONTHLY SPOTLIGHT — SUBMISSION NOTIFICATION — sent to the Showwork
+// team every time someone submits, matching the same dark/gold visual
+// language as every other email in this file.
+// ─────────────────────────────────────────────
+export async function sendSpotlightSubmissionEmail({
+  name,
+  email,
+  category,
+  projectLink,
+  description,
+  note,
+}: {
+  name: string;
+  email: string;
+  category: string;
+  projectLink: string;
+  description: string;
+  note: string | null;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to: "hello@useshowwork.com",
+    replyTo: email,
+    subject: `Spotlight submission — ${name} (${category})`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Monthly Spotlight — New Submission
+        </p>
+        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 140px;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Category</td><td style="padding: 6px 0;">${category}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Project link</td><td style="padding: 6px 0;"><a href="${projectLink}" style="color: #F5C842;">${projectLink}</a></td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Description</td><td style="padding: 6px 0;">${description}</td></tr>
+          ${note ? `<tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Note</td><td style="padding: 6px 0;">${note}</td></tr>` : ""}
+        </table>
+        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to respond to the submitter.</p>
+      </div>
+    `,
+  });
+}

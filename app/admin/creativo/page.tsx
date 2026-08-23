@@ -26,10 +26,21 @@ export default async function CreativoAdminPage() {
           ← Back to admin
         </Link>
 
-        <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
-          Creativo
-        </p>
-        <h1 className="mb-8 text-3xl font-bold text-white">Manage the landing page</h1>
+                <div className="mb-8 flex items-center justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+              Creativo
+            </p>
+            <h1 className="text-3xl font-bold text-white">Manage the landing page</h1>
+          </div>
+          <Link
+            href="/admin/spotlight"
+            className="rounded-lg px-4 py-2 text-xs font-semibold"
+            style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+          >
+            Manage Spotlight →
+          </Link>
+        </div>
 
         <div className="flex flex-col gap-6">
           <CreativoSettingsForm initialLabel={settings?.creativoMemberCountLabel ?? null} />

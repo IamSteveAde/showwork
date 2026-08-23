@@ -12,6 +12,8 @@ import {
   LogIn,
   Sparkles,
   Newspaper,
+  Trophy,
+  Star,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -101,6 +103,18 @@ const NAV_LINKS = [
     color: COLOR.blueLight,
     badge: "COMMUNITY",
     icon: UsersRound,
+  },
+  {
+    label: "Monthly Spotlight",
+    href: "/spotlight",
+    color: COLOR.yellow,
+    icon: Star,
+  },
+  {
+    label: "Leaderboard",
+    href: "/leaderboard",
+    color: COLOR.blueLight,
+    icon: Trophy,
   },
   {
     label: "Blog",

@@ -112,6 +112,7 @@ model Creator {
   // of @unique on Portfolio.creatorId, so an agency account can hold
   // more than one.
   portfolios          Portfolio[]
+  spotlightSubmissions SpotlightSubmission[]
 
   // ── Collaboration ──
   // Projects (owned by someone else) this creator has been added to
@@ -922,6 +923,11 @@ model CreativoLeaderboardEntry {
   wonFor           String // e.g. "Best wedding series"
   points           Int      @default(0)
   periodDate       DateTime // the 1st of the month this entry represents
+  // Only set when this entry was created by ranking a real Spotlight
+  // submission — null for entries an admin typed in directly. Lets
+  // un-ranking a submission (rank set back to null) find and remove
+  // the exact entry it created, rather than guessing by name/category.
+  sourceSubmissionId String? @unique
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -1144,4 +1150,61 @@ model BlogPost {
 
   @@index([published, publishedAt])
   @@index([category])
+}
+
+// ─────────────────────────────────────────────
+// MONTHLY SPOTLIGHT — one active cycle at a time. The real
+// submission gate is the date window (submissionOpensAt /
+// submissionDeadline), enforced server-side in the submit route
+// itself — isActive is a separate admin toggle for which cycle is
+// the one currently shown/used at all, since a cycle can exist in a
+// not-yet-activated draft state while an admin is still setting it up.
+// ─────────────────────────────────────────────
+model SpotlightCycle {
+  id                 String    @id @default(uuid())
+  monthLabel         String // e.g. "August 2026" — admin-set, not derived, since a cycle's real-world label doesn't always match the calendar month it runs in
+  heroImageUrl       String?
+  heroHeadline       String?
+  heroDescription    String?
+  submissionOpensAt  DateTime
+  submissionDeadline DateTime
+  isActive           Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  submissions SpotlightSubmission[]
+
+  @@index([isActive])
+}
+
+model SpotlightSubmission {
+  id         String         @id @default(uuid())
+  cycle      SpotlightCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId    String
+  // Optional — anyone can submit without an account. Only ever set
+  // if the person happened to be logged in at the moment they
+  // submitted, which is also what unlocks the "pick from your
+  // portfolio" option on the form instead of a plain manual link.
+  creator    Creator?       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId  String?
+  // Snapshot at submission time, not read live from the Creator row —
+  // a name change later shouldn't silently rewrite a past submission.
+  name        String
+  // The only way to ever reach a winner who didn't have an account —
+  // required regardless of whether they were logged in or not.
+  email       String
+  category    String // "Video" | "Graphics" | "Photography" | "Branding"
+  projectLink String // either a real Showwork portfolio URL, or a manual link
+  description String // max 150 chars, enforced in the API route
+  note        String?
+  isShortlisted Boolean @default(false)
+  // A submission with a real rank IS a winner — 1, 2, or 3. No
+  // separate winners table: duplicating name/category/link into a
+  // second record risks the two drifting out of sync if either ever
+  // needs correcting after the fact.
+  rank        Int?
+  submittedAt DateTime       @default(now())
+
+  @@index([cycleId])
+  @@index([cycleId, rank])
 }
