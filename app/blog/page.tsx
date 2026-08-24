@@ -12,6 +12,15 @@ export const metadata: Metadata = {
     "Pricing, positioning, and client delivery advice for photographers, videographers, and creative professionals — from the team behind Showwork.",
 };
 
+// Without this, Next.js can treat this page as fully static (no
+// cookies()/headers() call to otherwise force it dynamic) and serve
+// a cached HTML snapshot from the very first time it rendered —
+// meaning a newly published post would never show up here, no matter
+// how correctly it saved on the admin side.
+export const dynamic = "force-dynamic";
+
+export default async function BlogIndexPage() {
+
 export default async function BlogIndexPage() {
   const posts = await db.blogPost.findMany({
     where: { published: true },

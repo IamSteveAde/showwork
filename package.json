@@ -20,6 +20,7 @@
     "@tiptap/react": "^3.30.2",
     "@tiptap/starter-kit": "^3.30.2",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^17.4.2",
     "framer-motion": "^11.11.0",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
