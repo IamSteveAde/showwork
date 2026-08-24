@@ -193,104 +193,130 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
   return (
     <>
       {/* ── HERO ── */}
-      <section className="relative isolate min-h-[680px] overflow-hidden bg-[#05080F] sm:min-h-[720px]">
-        {/* Fixed hero image — clipped to this section */}
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+<section className="relative isolate min-h-[680px] overflow-hidden bg-[#05080F] sm:min-h-[720px]">
+
+  {/* Hero image */}
+  <div
+    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat sm:bg-center"
+    style={{
+      backgroundImage: "url('/images/hero1.png')",
+      backgroundAttachment: "scroll",
+    }}
+    aria-hidden="true"
+  />
+
+  {/* Cinematic overlay */}
+  <div
+    className="absolute inset-0 z-0"
+    style={{
+      background:
+        "linear-gradient(180deg, rgba(5,8,15,0.42) 0%, rgba(5,8,15,0.58) 45%, rgba(5,8,15,0.94) 100%)",
+    }}
+    aria-hidden="true"
+  />
+
+  {/* Blue atmospheric glow */}
+  <div
+    className="absolute inset-0 z-0"
+    style={{
+      background:
+        "radial-gradient(circle at 22% 38%, rgba(36,120,255,0.22), transparent 34%)",
+    }}
+    aria-hidden="true"
+  />
+
+  {/* Mobile-specific bottom fade */}
+  <div
+    className="absolute inset-x-0 bottom-0 z-[1] h-48 bg-gradient-to-t from-[#05080F] via-[#05080F]/45 to-transparent sm:hidden"
+    aria-hidden="true"
+  />
+
+  <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl items-center px-5 pb-14 pt-28 sm:min-h-[720px] sm:px-8 sm:pb-16 sm:pt-32 md:px-12 lg:px-16">
+
+    <div className="w-full max-w-5xl">
+
+      {/* Eyebrow */}
+      <div className="mb-6 flex items-center gap-3 sm:mb-7">
+        <span className="h-px w-8 bg-[#FFCC00] sm:w-9" />
+
+        <span className="text-[8px] font-extrabold uppercase tracking-[0.22em] text-white/55 sm:text-[10px] sm:tracking-[0.24em]">
+          Creativo · Monthly Spotlight
+        </span>
+      </div>
+
+      {/* Headline */}
+      <h1 className="max-w-5xl text-[3.15rem] font-extrabold leading-[0.9] tracking-[-0.07em] text-white sm:text-6xl md:text-7xl lg:text-[6.5rem]">
+
+        Great work
+        <br />
+
+        deserves to
+        <br />
+
+        <span
+          className="bg-clip-text text-transparent"
           style={{
-            backgroundImage: "url('/images/hero1.png')",
-            backgroundAttachment: "fixed",
+            backgroundImage:
+              "linear-gradient(100deg, #2478FF 0%, #68B2FF 48%, #FFCC00 100%)",
           }}
-          aria-hidden="true"
-        />
+        >
+          be seen.
+        </span>
 
-        {/* Minimal cinematic treatment */}
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(5,8,15,0.42) 0%, rgba(5,8,15,0.58) 45%, rgba(5,8,15,0.94) 100%)",
-          }}
-          aria-hidden="true"
-        />
+      </h1>
 
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            background:
-              "radial-gradient(circle at 22% 38%, rgba(36,120,255,0.22), transparent 34%)",
-          }}
-          aria-hidden="true"
-        />
+      {/* Description */}
+      <p className="mt-6 max-w-xl text-[13px] leading-6 text-white/55 sm:mt-7 sm:text-base sm:leading-7 md:text-lg">
+        Discover the creators setting the standard. Explore the
+        Spotlight leaderboard and join the community shaping what
+        comes next.
+      </p>
 
-        <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl items-center px-5 pb-16 pt-32 sm:min-h-[720px] sm:px-8 md:px-12 lg:px-16">
-          <div className="max-w-5xl">
-            <div className="mb-7 flex items-center gap-3">
-              <span className="h-px w-9 bg-[#FFCC00]" />
-              <span className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-white/55 sm:text-[10px]">
-                Creativo · Monthly Spotlight
-              </span>
-            </div>
+      {/* CTAs */}
+      <div className="mt-8 flex w-full flex-col gap-3 sm:mt-9 sm:flex-row">
 
-            <h1 className="max-w-5xl text-[3.35rem] font-extrabold leading-[0.91] tracking-[-0.065em] text-white sm:text-6xl md:text-7xl lg:text-[6.5rem]">
-              Great work
-              <br />
-              deserves to
-              <br />
-              <span
-                className="bg-clip-text text-transparent"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(100deg, #2478FF 0%, #68B2FF 48%, #FFCC00 100%)",
-                }}
-              >
-                be seen.
-              </span>
-            </h1>
+        <Link
+          href="/creativo"
+          className="group inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-[#2478FF] px-6 py-3.5 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF] hover:shadow-[0_24px_55px_-18px_#2478FF] sm:w-auto sm:min-w-[175px]"
+        >
+          <Users size={15} strokeWidth={2.4} />
 
-            <p className="mt-7 max-w-xl text-sm leading-7 text-white/55 sm:text-base md:text-lg">
-              Discover the creators setting the standard. Explore the
-              Spotlight leaderboard and join the community shaping what
-              comes next.
-            </p>
+          Join the community
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/creativo"
-                className="group inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full bg-[#2478FF] px-6 py-3.5 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF] hover:shadow-[0_24px_55px_-18px_#2478FF] sm:min-w-[175px]"
-              >
-                <Users size={15} strokeWidth={2.4} />
-                Join the community
-                <ArrowRight
-                  size={14}
-                  strokeWidth={2.5}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </Link>
+          <ArrowRight
+            size={14}
+            strokeWidth={2.5}
+            className="transition-transform duration-300 group-hover:translate-x-1"
+          />
+        </Link>
 
-              <Link
-                href="#leaderboard"
-                className="group inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-6 py-3.5 text-xs font-extrabold text-white backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.11] sm:min-w-[175px]"
-              >
-                View leaderboard
-                <ArrowUpRight
-                  size={14}
-                  strokeWidth={2.4}
-                  className="text-[#FFCC00] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                />
-              </Link>
-            </div>
+        <Link
+          href="#leaderboard"
+          className="group inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-6 py-3.5 text-xs font-extrabold text-white backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.11] sm:w-auto sm:min-w-[175px]"
+        >
+          View leaderboard
 
-            <div className="mt-10 flex items-center gap-3 text-white/25">
-              <span className="h-px w-8 bg-white/20" />
-              <span className="text-[8px] font-bold uppercase tracking-[0.2em]">
-                The creators to watch
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+          <ArrowUpRight
+            size={14}
+            strokeWidth={2.4}
+            className="text-[#FFCC00] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+          />
+        </Link>
 
+      </div>
+
+      {/* Bottom label */}
+      <div className="mt-9 flex items-center gap-3 text-white/25 sm:mt-10">
+        <span className="h-px w-7 bg-white/20 sm:w-8" />
+
+        <span className="text-[7px] font-bold uppercase tracking-[0.18em] sm:text-[8px] sm:tracking-[0.2em]">
+          The creators to watch
+        </span>
+      </div>
+
+    </div>
+  </div>
+</section>
       {/* ── LEADERBOARD ── */}
       <section id="leaderboard" className="relative z-10 overflow-hidden border-t border-black/[0.06] bg-[#F7F9FC] px-6 py-16 md:px-16 md:py-24">
         <div
