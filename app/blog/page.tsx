@@ -20,8 +20,6 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BlogIndexPage() {
-
-export default async function BlogIndexPage() {
   const posts = await db.blogPost.findMany({
     where: { published: true },
     orderBy: { publishedAt: "desc" },
