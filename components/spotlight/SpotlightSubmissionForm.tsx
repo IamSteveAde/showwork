@@ -7,6 +7,7 @@ import {
   FileText,
   Link2,
   Mail,
+  Phone,
   Sparkles,
   Upload,
   UserRound,
@@ -27,17 +28,15 @@ export default function SpotlightSubmissionForm({
   isOpen,
   defaultName,
   defaultEmail,
-  portfolioUrl,
 }: {
   isOpen: boolean;
   defaultName: string;
   defaultEmail: string;
-  portfolioUrl: string | null;
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
+  const [phone, setPhone] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [useOwnPortfolio, setUseOwnPortfolio] = useState(!!portfolioUrl);
   const [manualLink, setManualLink] = useState("");
   const [description, setDescription] = useState("");
   const [note, setNote] = useState("");
@@ -45,8 +44,7 @@ export default function SpotlightSubmissionForm({
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const projectLink =
-    useOwnPortfolio && portfolioUrl ? portfolioUrl : manualLink;
+  const projectLink = manualLink;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +52,12 @@ export default function SpotlightSubmissionForm({
     if (
       !name.trim() ||
       !email.trim() ||
+      !phone.trim() ||
       !projectLink.trim() ||
       !description.trim()
     ) {
       setError(
-        "Please fill in your name, email, project link, and description."
+        "Please fill in your name, email, WhatsApp number, project link, and description."
       );
       return;
     }
@@ -73,6 +72,7 @@ export default function SpotlightSubmissionForm({
         body: JSON.stringify({
           name,
           email,
+          phone,
           category,
           projectLink,
           description,
@@ -95,7 +95,7 @@ export default function SpotlightSubmissionForm({
   };
 
   const inputClass =
-    "w-full rounded-[15px] border border-black/[0.08] bg-[#F7F9FC] px-4 py-3.5 text-sm text-black outline-none transition-all duration-300 placeholder:text-black/25 hover:border-black/[0.14] focus:border-[#2478FF]/50 focus:bg-white focus:ring-4 focus:ring-[#2478FF]/[0.07]";
+    "w-full rounded-[15px] border border-black/[0.08] bg-[#F7F9FC] px-4 py-4 text-sm text-black outline-none transition-all duration-300 placeholder:text-black/25 hover:border-black/[0.14] focus:border-[#2478FF]/50 focus:bg-white focus:ring-4 focus:ring-[#2478FF]/[0.07]";
 
   const labelClass =
     "mb-2 flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-black/45";
@@ -106,7 +106,7 @@ export default function SpotlightSubmissionForm({
         id="submit"
         className="relative overflow-hidden bg-[#F7F9FC] px-4 py-10 sm:px-6 sm:py-16 md:px-16 md:py-24"
       >
-        <div className="relative mx-auto max-w-2xl overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 text-center sm:rounded-[32px] sm:p-8 shadow-[0_30px_90px_-55px_rgba(0,0,0,0.35)] md:p-12">
+        <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 text-center sm:rounded-[32px] sm:p-8 shadow-[0_30px_90px_-55px_rgba(0,0,0,0.35)] md:p-12">
           <div
             className="absolute -right-20 -top-20 h-48 w-48 rounded-full blur-3xl"
             style={{ background: `${COLOR.blue}15` }}
@@ -137,7 +137,7 @@ export default function SpotlightSubmissionForm({
         id="submit"
         className="relative overflow-hidden bg-[#F7F9FC] px-4 py-10 sm:px-6 sm:py-16 md:px-16 md:py-24"
       >
-        <div className="relative mx-auto max-w-2xl overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 text-center sm:rounded-[32px] sm:p-8 shadow-[0_30px_90px_-55px_rgba(0,0,0,0.35)] md:p-14">
+        <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-[24px] border border-black/[0.07] bg-white p-6 text-center sm:rounded-[32px] sm:p-8 shadow-[0_30px_90px_-55px_rgba(0,0,0,0.35)] md:p-14">
           <div
             className="absolute left-1/2 top-[-130px] h-[280px] w-[420px] -translate-x-1/2 rounded-full blur-[100px]"
             style={{ background: `${COLOR.blue}20` }}
@@ -181,20 +181,10 @@ export default function SpotlightSubmissionForm({
   return (
     <section
       id="submit"
-      className="relative overflow-hidden bg-[#F7F9FC] px-3.5 py-8 sm:px-8 sm:py-12 md:px-12 md:py-24 lg:px-16"
+      className="relative overflow-hidden bg-[#F7F9FC] px-0 py-0"
     >
-      {/* Ambient brand lighting */}
-      <div
-        className="pointer-events-none absolute -left-40 top-[-160px] h-[460px] w-[460px] rounded-full blur-[120px]"
-        style={{ background: `${COLOR.blue}10` }}
-      />
-      <div
-        className="pointer-events-none absolute -right-40 bottom-[-180px] h-[500px] w-[500px] rounded-full blur-[130px]"
-        style={{ background: `${COLOR.yellow}0D` }}
-      />
-
-      <div className="relative mx-auto max-w-7xl">
-        <div className="flex flex-col overflow-hidden rounded-[24px] border border-black/[0.07] bg-white shadow-[0_35px_100px_-55px_rgba(0,0,0,0.32)] lg:grid lg:grid-cols-[0.82fr_1.18fr] lg:rounded-[34px]">
+      <div className="relative mx-auto w-full max-w-[1500px]">
+        <div className="flex w-full flex-col overflow-hidden rounded-none border-y border-black/[0.07] bg-white shadow-none sm:rounded-[26px] lg:grid lg:grid-cols-[0.72fr_1.28fr] lg:rounded-[32px]">
 
           {/* ============================================================
               LEFT BRAND PANEL
@@ -316,8 +306,8 @@ export default function SpotlightSubmissionForm({
           {/* ============================================================
               FORM
               ============================================================ */}
-          <div className="order-1 p-5 sm:p-9 md:p-12 lg:order-2 lg:p-14">
-            <div className="mb-5 sm:mb-8">
+          <div className="order-1 p-4 sm:p-7 md:p-9 lg:order-2 lg:px-10 lg:py-11 xl:px-12">
+            <div className="mb-5 w-full sm:mb-8">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#2478FF]/[0.07] px-3 py-1.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#0052FF] sm:hidden">
                 <Sparkles size={10} />
                 Spotlight submission
@@ -327,7 +317,7 @@ export default function SpotlightSubmissionForm({
               </p>
 
               <h3 className="text-[1.7rem] font-extrabold leading-[1.05] tracking-[-0.045em] text-black sm:text-3xl">
-                Tell us about the project.
+                Submit your best work.
               </h3>
 
               <p className="mt-2 max-w-lg text-[13px] leading-5 text-black/40 sm:text-sm sm:leading-6">
@@ -337,9 +327,9 @@ export default function SpotlightSubmissionForm({
 
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-4 sm:gap-5"
+              className="flex w-full flex-col gap-4 sm:gap-5"
             >
-              <div className="grid gap-3.5 sm:gap-5 sm:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                 <div>
                   <label className={labelClass}>
                     <UserRound size={12} />
@@ -377,11 +367,34 @@ export default function SpotlightSubmissionForm({
 
               <div>
                 <label className={labelClass}>
+                  <Phone size={12} />
+                  WhatsApp number
+                </label>
+
+                <input
+                  type="tel"
+                  required
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  style={{ fontSize: "16px" }}
+                  className={inputClass}
+                  placeholder="+234 800 000 0000"
+                />
+
+                <p className="mt-2 text-[10px] leading-4 text-black/30">
+                  Use the number clients can reach you on WhatsApp.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>
                   <Sparkles size={12} />
                   Category
                 </label>
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:gap-2.5">
                   {CATEGORIES.map((c) => {
                     const selected = category === c;
 
@@ -432,78 +445,22 @@ export default function SpotlightSubmissionForm({
               <div>
                 <label className={labelClass}>
                   <Link2 size={12} />
-                  Project link
+                  Link to your best project
                 </label>
 
-                {portfolioUrl && (
-                  <div className="mb-2 flex rounded-[15px] bg-[#F1F4F8] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setUseOwnPortfolio(true)}
-                      className="flex-1 rounded-[11px] px-3 py-2.5 text-[10px] font-extrabold transition-all duration-300"
-                      style={{
-                        background: useOwnPortfolio
-                          ? "#FFFFFF"
-                          : "transparent",
-                        color: useOwnPortfolio
-                          ? COLOR.blueDark
-                          : "rgba(0,0,0,0.4)",
-                        boxShadow: useOwnPortfolio
-                          ? "0 4px 14px -8px rgba(0,0,0,0.25)"
-                          : undefined,
-                      }}
-                    >
-                      Use my portfolio
-                    </button>
+                <p className="mb-2.5 text-[11px] leading-5 text-black/35">
+                  Paste the link to the project you&apos;re most proud of this month.
+                </p>
 
-                    <button
-                      type="button"
-                      onClick={() => setUseOwnPortfolio(false)}
-                      className="flex-1 rounded-[11px] px-3 py-2.5 text-[10px] font-extrabold transition-all duration-300"
-                      style={{
-                        background: !useOwnPortfolio
-                          ? "#FFFFFF"
-                          : "transparent",
-                        color: !useOwnPortfolio
-                          ? COLOR.blueDark
-                          : "rgba(0,0,0,0.4)",
-                        boxShadow: !useOwnPortfolio
-                          ? "0 4px 14px -8px rgba(0,0,0,0.25)"
-                          : undefined,
-                      }}
-                    >
-                      Paste a link
-                    </button>
-                  </div>
-                )}
-
-                {useOwnPortfolio && portfolioUrl ? (
-                  <div className="flex items-center gap-3 rounded-[15px] border border-[#2478FF]/15 bg-[#2478FF]/[0.045] px-4 py-3.5">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-[#2478FF]/10">
-                      <Link2
-                        size={14}
-                        strokeWidth={2}
-                        className="text-[#2478FF]"
-                      />
-                    </div>
-
-                    <p className="truncate text-sm font-medium text-black/55">
-                      {portfolioUrl}
-                    </p>
-                  </div>
-                ) : (
-                  <input
-                    type="url"
-                    required
-                    placeholder="https://your-project.com"
-                    value={manualLink}
-                    onChange={(e) =>
-                      setManualLink(e.target.value)
-                    }
-                    style={{ fontSize: "16px" }}
-                    className={inputClass}
-                  />
-                )}
+                <input
+                  type="url"
+                  required
+                  placeholder="https://your-project.com"
+                  value={manualLink}
+                  onChange={(e) => setManualLink(e.target.value)}
+                  style={{ fontSize: "16px" }}
+                  className={inputClass}
+                />
               </div>
 
               <div>
@@ -572,7 +529,7 @@ export default function SpotlightSubmissionForm({
               <button
                 type="submit"
                 disabled={submitting}
-                className="group mt-1 inline-flex min-h-[48px] w-full items-center justify-center gap-3 rounded-full py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_-18px_rgba(36,120,255,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_55px_-18px_rgba(36,120,255,0.9)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                className="group mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-3 rounded-full py-3.5 text-sm font-extrabold text-white shadow-[0_18px_45px_-18px_rgba(36,120,255,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_55px_-18px_rgba(36,120,255,0.9)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                 style={{
                   background:
                     "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",

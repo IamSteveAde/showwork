@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Trophy, Calendar, Layers, Crown, ArrowUpRight, ArrowRight, ExternalLink } from "lucide-react";
+import { Trophy, ArrowUpRight, ArrowRight, ExternalLink, Users } from "lucide-react";
 
 const BLUE = "#2478FF";
 const BLUE_DARK = "#0052FF";
@@ -40,18 +40,6 @@ function spotlightWhatsappHref(whatsappNumber: string, name: string): string {
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-function StatCard({ icon: Icon, label, value, accent }: { icon: React.ElementType; label: string; value: string; accent: string }) {
-  return (
-    <div className="group rounded-[22px] border border-white/10 bg-white/[0.055] p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] sm:p-6">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-[13px]" style={{ background: `${accent}18`, border: `1px solid ${accent}35` }}>
-        <Icon size={18} strokeWidth={2} style={{ color: accent }} />
-      </div>
-      <p className="text-3xl font-extrabold tracking-tight text-white">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.1em" }}>{label}</p>
-    </div>
-  );
-}
-
 function EntryCard({ entry, rankIndex }: { entry: LeaderboardEntryData; rankIndex: number }) {
   const rankColor = RANK_COLOR[rankIndex] ?? "#00000022";
   return (
@@ -77,8 +65,13 @@ function EntryCard({ entry, rankIndex }: { entry: LeaderboardEntryData; rankInde
             {rankIndex + 1}
           </span>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-black">{entry.name}</p>
+                <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-sm font-bold text-black">{entry.name}</p>
+            <span className="flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold" style={{ background: `${rankColor}22`, color: rankColor }}>
+              {entry.points} pts
+            </span>
+          </div>
           <p className="truncate text-xs text-black/45">{entry.category} — {entry.wonFor}</p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {entry.portfolioUrl && (
@@ -122,6 +115,8 @@ function EntryCard({ entry, rankIndex }: { entry: LeaderboardEntryData; rankInde
 export default function LeaderboardPageContent({ entries }: { entries: LeaderboardEntryData[] }) {
   const [view, setView] = useState<"month" | "allTime">("month");
   const [filterCategory, setFilterCategory] = useState<string | "All">("All");
+  const [allTimePage, setAllTimePage] = useState(1);
+  const ALL_TIME_PER_PAGE = 10;
 
   const availablePeriods = useMemo(() => {
     const seen = new Map<string, string>();
@@ -151,8 +146,12 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
   const allTimeLeaders = useMemo(() => {
     const byName = new Map<string, { name: string; profileImageUrl: string | null; portfolioUrl: string | null; whatsappNumber: string | null; category: string; wins: number; totalPoints: number; mostRecentDate: string }>();
 
-    for (const e of entries.filter((e) => filterCategory === "All" || e.category === filterCategory)) {
-      const key = e.name.trim().toLowerCase();
+       for (const e of entries.filter((e) => filterCategory === "All" || e.category === filterCategory)) {
+      // WhatsApp number is the primary match — a phone number is a
+      // far more reliable "same person" signal than a typed name,
+      // which can vary slightly between separate months' entries.
+      // Only falls back to name when no WhatsApp number was recorded.
+      const key = e.whatsappNumber?.trim() ? `wa:${e.whatsappNumber.trim()}` : `name:${e.name.trim().toLowerCase()}`;
       const existing = byName.get(key);
       if (existing) {
         existing.wins += 1;
@@ -181,23 +180,21 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
     return [...byName.values()].sort((a, b) => b.wins - a.wins || b.totalPoints - a.totalPoints);
   }, [entries, filterCategory]);
 
-  const insights = useMemo(() => {
-    const totalWinners = entries.length;
-    const totalMonths = availablePeriods.length;
-    const categoryCounts = new Map<string, number>();
-    for (const e of entries) categoryCounts.set(e.category, (categoryCounts.get(e.category) ?? 0) + 1);
-    const topCategory = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-    const mostWins = Math.max(0, ...allTimeLeaders.map((l) => l.wins));
-    return { totalWinners, totalMonths, topCategory, mostWins };
-  }, [entries, availablePeriods, allTimeLeaders]);
+  const allTimeTotalPages = Math.max(
+    1,
+    Math.ceil(allTimeLeaders.length / ALL_TIME_PER_PAGE)
+  );
+
+  const paginatedAllTimeLeaders = useMemo(() => {
+    const start = (allTimePage - 1) * ALL_TIME_PER_PAGE;
+    return allTimeLeaders.slice(start, start + ALL_TIME_PER_PAGE);
+  }, [allTimeLeaders, allTimePage]);
 
   return (
     <>
       {/* ── HERO ── */}
-      <section className="relative isolate min-h-[760px] overflow-hidden bg-[#05080F]">
-        {/* Hero-only background. The image uses fixed background attachment while
-            remaining clipped to this hero section, so it never bleeds into the
-            leaderboard or footer. */}
+      <section className="relative isolate min-h-[680px] overflow-hidden bg-[#05080F] sm:min-h-[720px]">
+        {/* Fixed hero image — clipped to this section */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -207,12 +204,12 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
           aria-hidden="true"
         />
 
-        {/* Premium readability treatment over the photography. */}
+        {/* Minimal cinematic treatment */}
         <div
           className="absolute inset-0 z-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(5,8,15,0.62) 0%, rgba(5,8,15,0.72) 42%, rgba(5,8,15,0.94) 100%)",
+              "linear-gradient(180deg, rgba(5,8,15,0.42) 0%, rgba(5,8,15,0.58) 45%, rgba(5,8,15,0.94) 100%)",
           }}
           aria-hidden="true"
         />
@@ -221,75 +218,81 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
           className="absolute inset-0 z-0"
           style={{
             background:
-              "radial-gradient(circle at 18% 25%, rgba(36,120,255,0.34), transparent 32%), radial-gradient(circle at 86% 22%, rgba(255,204,0,0.13), transparent 22%)",
+              "radial-gradient(circle at 22% 38%, rgba(36,120,255,0.22), transparent 34%)",
           }}
           aria-hidden="true"
         />
 
-        <div
-          className="absolute inset-0 z-0 opacity-[0.045]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)",
-            backgroundSize: "80px 80px",
-          }}
-          aria-hidden="true"
-        />
-
-        <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl flex-col justify-end px-6 pb-12 pt-40 md:px-12 md:pb-16 lg:px-16">
-          <div className="grid items-end gap-12 lg:grid-cols-[1fr_440px]">
-            <div>
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3.5 py-2 backdrop-blur-xl">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#FFCC00] shadow-[0_0_14px_rgba(255,204,0,0.8)]" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/65">
-                  Creativo · Leaderboard
-                </span>
-              </div>
-
-              <h1 className="max-w-4xl text-5xl font-extrabold leading-[0.94] tracking-[-0.06em] text-white sm:text-6xl md:text-7xl lg:text-[5.8rem]">
-                Every winner,
-                <br />
-                every month,
-                <br />
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(100deg, #2478FF 0%, #68B2FF 45%, #FFFFFF 100%)",
-                  }}
-                >
-                  all in one place.
-                </span>
-              </h1>
-
-              <p className="mt-7 max-w-2xl text-sm leading-7 text-white/55 sm:text-base md:text-lg">
-                The full record of Creativo's Monthly Spotlight — filter by category and month, or see who&apos;s won the most, ever.
-              </p>
+        <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl items-center px-5 pb-16 pt-32 sm:min-h-[720px] sm:px-8 md:px-12 lg:px-16">
+          <div className="max-w-5xl">
+            <div className="mb-7 flex items-center gap-3">
+              <span className="h-px w-9 bg-[#FFCC00]" />
+              <span className="text-[9px] font-extrabold uppercase tracking-[0.24em] text-white/55 sm:text-[10px]">
+                Creativo · Monthly Spotlight
+              </span>
             </div>
 
-            <div className="relative">
-              <div className="absolute -inset-8 rounded-[40px] bg-[#2478FF]/10 blur-3xl" />
+            <h1 className="max-w-5xl text-[3.35rem] font-extrabold leading-[0.91] tracking-[-0.065em] text-white sm:text-6xl md:text-7xl lg:text-[6.5rem]">
+              Great work
+              <br />
+              deserves to
+              <br />
+              <span
+                className="bg-clip-text text-transparent"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(100deg, #2478FF 0%, #68B2FF 48%, #FFCC00 100%)",
+                }}
+              >
+                be seen.
+              </span>
+            </h1>
 
-              <div className="relative grid grid-cols-2 gap-2.5 sm:gap-3">
-                <StatCard icon={Trophy} label="Total winners" value={String(insights.totalWinners)} accent={YELLOW} />
-                <StatCard icon={Calendar} label="Months run" value={String(insights.totalMonths)} accent={BLUE} />
-                <StatCard icon={Layers} label="Top category" value={insights.topCategory} accent="#68B2FF" />
-                <StatCard icon={Crown} label="Most wins, one creator" value={String(insights.mostWins)} accent={YELLOW} />
-              </div>
+            <p className="mt-7 max-w-xl text-sm leading-7 text-white/55 sm:text-base md:text-lg">
+              Discover the creators setting the standard. Explore the
+              Spotlight leaderboard and join the community shaping what
+              comes next.
+            </p>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/creativo"
+                className="group inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full bg-[#2478FF] px-6 py-3.5 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF] hover:shadow-[0_24px_55px_-18px_#2478FF] sm:min-w-[175px]"
+              >
+                <Users size={15} strokeWidth={2.4} />
+                Join the community
+                <ArrowRight
+                  size={14}
+                  strokeWidth={2.5}
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                />
+              </Link>
+
+              <Link
+                href="#leaderboard"
+                className="group inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-6 py-3.5 text-xs font-extrabold text-white backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.11] sm:min-w-[175px]"
+              >
+                View leaderboard
+                <ArrowUpRight
+                  size={14}
+                  strokeWidth={2.4}
+                  className="text-[#FFCC00] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                />
+              </Link>
             </div>
-          </div>
 
-          <div className="mt-10 flex items-center gap-3 text-white/35">
-            <span className="h-px w-10 bg-white/20" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em]">
-              Scroll to explore
-            </span>
+            <div className="mt-10 flex items-center gap-3 text-white/25">
+              <span className="h-px w-8 bg-white/20" />
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em]">
+                The creators to watch
+              </span>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── LEADERBOARD ── */}
-      <section className="relative z-10 overflow-hidden border-t border-black/[0.06] bg-[#F7F9FC] px-6 py-16 md:px-16 md:py-24">
+      <section id="leaderboard" className="relative z-10 overflow-hidden border-t border-black/[0.06] bg-[#F7F9FC] px-6 py-16 md:px-16 md:py-24">
         <div
           className="pointer-events-none absolute -right-40 top-[-100px] h-[520px] w-[520px] rounded-full bg-[#2478FF]/10 blur-[120px]"
           aria-hidden="true"
@@ -347,7 +350,7 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
               {(["All", ...CATEGORIES] as const).map((c) => (
                 <button
                   key={c}
-                  onClick={() => setFilterCategory(c)}
+                  onClick={() => { setFilterCategory(c); setAllTimePage(1); }}
                   className="rounded-full px-4 py-2 text-xs font-bold transition-all"
                   style={filterCategory === c ? { background: BLUE, color: "#FFFFFF" } : { background: "rgba(0,0,0,0.05)", color: "rgba(0,0,0,0.55)" }}
                 >
@@ -375,7 +378,9 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
           {view === "month" ? (
             monthEntries.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-black/10 p-10 text-center text-sm text-black/35">
-                Nobody selected for {filterCategory === "All" ? "this period" : filterCategory} yet.
+                Nobody selected for{" "}
+                {filterCategory === "All" ? "this period" : filterCategory}{" "}
+                yet.
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -389,67 +394,149 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
               No winners in this category yet.
             </p>
           ) : (
-            <div className="flex flex-col gap-3">
-              {allTimeLeaders.map((leader, i) => (
-                <motion.div
-                  key={leader.name}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{ duration: 0.4, delay: (i % 8) * 0.05 }}
-                  className="flex items-center gap-4 rounded-2xl border border-black/[0.06] bg-white p-4"
-                >
-                  <span className="w-8 flex-shrink-0 text-center text-sm font-extrabold text-black/30">{i + 1}</span>
-                  <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
-                    {leader.profileImageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={leader.profileImageUrl} alt="" className="h-full w-full object-cover" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-black">{leader.name}</p>
-                    <p className="truncate text-xs text-black/45">{leader.category}</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <p className="text-sm font-extrabold" style={{ color: BLUE }}>{leader.wins} win{leader.wins === 1 ? "" : "s"}</p>
-                    <div className="mt-2 flex items-center justify-end gap-2">
-                      {leader.portfolioUrl && (
-                        <a
-                          href={leader.portfolioUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group/portfolio inline-flex items-center gap-1 rounded-full border border-[#2478FF]/15 bg-[#2478FF]/[0.07] px-2.5 py-1.5 text-[9px] font-extrabold text-[#0052FF] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2478FF]/30 hover:bg-[#2478FF] hover:text-white"
-                        >
-                          Portfolio
-                          <ExternalLink
-                            size={11}
-                            strokeWidth={2.4}
-                            className="transition-transform group-hover/portfolio:translate-x-0.5 group-hover/portfolio:-translate-y-0.5"
-                          />
-                        </a>
-                      )}
+            <>
+              <div className="flex flex-col gap-3">
+                {paginatedAllTimeLeaders.map((leader, pageIndex) => {
+                  const globalIndex =
+                    (allTimePage - 1) * ALL_TIME_PER_PAGE + pageIndex;
 
-                      {leader.whatsappNumber && (
-                        <a
-                          href={spotlightWhatsappHref(leader.whatsappNumber, leader.name)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group/contact inline-flex items-center gap-1 rounded-full border border-black/[0.07] bg-black/[0.035] px-2.5 py-1.5 text-[9px] font-extrabold text-black/50 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white"
-                        >
-                          Contact
-                          <ArrowRight
-                            size={11}
-                            strokeWidth={2.4}
-                            className="transition-transform group-hover/contact:translate-x-0.5"
+                  return (
+                    <motion.div
+                      key={leader.name}
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-40px" }}
+                      transition={{
+                        duration: 0.4,
+                        delay: (pageIndex % 8) * 0.05,
+                      }}
+                      className="flex items-center gap-4 rounded-2xl border border-black/[0.06] bg-white p-4"
+                    >
+                      <span className="w-8 flex-shrink-0 text-center text-sm font-extrabold text-black/30">
+                        {globalIndex + 1}
+                      </span>
+
+                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
+                        {leader.profileImageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={leader.profileImageUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
                           />
-                        </a>
-                      )}
-                    </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-black">
+                          {leader.name}
+                        </p>
+                        <p className="truncate text-xs text-black/45">
+                          {leader.category}
+                        </p>
+                      </div>
+
+                                           <div className="flex-shrink-0 text-right">
+                        <p
+                          className="text-sm font-extrabold"
+                          style={{ color: BLUE }}
+                        >
+                          {leader.wins}{" "}
+                          {leader.wins === 1 ? "win" : "wins"}
+                        </p>
+                        <p className="text-[11px] font-semibold text-black/40">
+                          {leader.totalPoints.toLocaleString()} pts total
+                        </p>
+
+                        <div className="mt-2 flex items-center justify-end gap-2">
+                          {leader.portfolioUrl && (
+                            <a
+                              href={leader.portfolioUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group/portfolio inline-flex items-center gap-1 rounded-full border border-[#2478FF]/15 bg-[#2478FF]/[0.07] px-2.5 py-1.5 text-[9px] font-extrabold text-[#0052FF] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2478FF]/30 hover:bg-[#2478FF] hover:text-white"
+                            >
+                              Portfolio
+                              <ExternalLink
+                                size={11}
+                                strokeWidth={2.4}
+                                className="transition-transform group-hover/portfolio:translate-x-0.5 group-hover/portfolio:-translate-y-0.5"
+                              />
+                            </a>
+                          )}
+
+                          {leader.whatsappNumber && (
+                            <a
+                              href={spotlightWhatsappHref(
+                                leader.whatsappNumber,
+                                leader.name
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group/contact inline-flex items-center gap-1 rounded-full border border-black/[0.07] bg-black/[0.035] px-2.5 py-1.5 text-[9px] font-extrabold text-black/50 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white"
+                            >
+                              Contact
+                              <ArrowRight
+                                size={11}
+                                strokeWidth={2.4}
+                                className="transition-transform group-hover/contact:translate-x-0.5"
+                              />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {allTimeTotalPages > 1 && (
+                <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/30">
+                    Showing{" "}
+                    {(allTimePage - 1) * ALL_TIME_PER_PAGE + 1}
+                    {"–"}
+                    {Math.min(
+                      allTimePage * ALL_TIME_PER_PAGE,
+                      allTimeLeaders.length
+                    )}{" "}
+                    of {allTimeLeaders.length} creators
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAllTimePage((page) => Math.max(1, page - 1))
+                      }
+                      disabled={allTimePage === 1}
+                      className="rounded-full border border-black/10 bg-white px-4 py-2.5 text-xs font-bold text-black/60 transition-all hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      Previous
+                    </button>
+
+                    <span className="min-w-[72px] text-center text-[10px] font-extrabold uppercase tracking-[0.12em] text-black/35">
+                      Page {allTimePage} / {allTimeTotalPages}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAllTimePage((page) =>
+                          Math.min(allTimeTotalPages, page + 1)
+                        )
+                      }
+                      disabled={allTimePage === allTimeTotalPages}
+                      className="rounded-full bg-[#2478FF] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0052FF] disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      Next
+                    </button>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                </div>
+              )}
+            </>
           )}
+
         </div>
       </section>
 
@@ -504,7 +591,7 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
 
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
                 <Link
-                  href="/projects"
+                  href="/start"
                   className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full bg-[#2478FF] px-6 py-4 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF]"
                 >
                   Deliver a project
@@ -512,7 +599,7 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
                 </Link>
 
                 <Link
-                  href="/portfolio"
+                  href="/signup?next=/dashboard/portfolio"
                   className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-6 py-4 text-xs font-extrabold text-white transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/10"
                 >
                   Create your portfolio

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 const CATEGORIES = ["Photography", "Videography", "Motion", "Editing"];
+const NEW_CREATOR_VALUE = "__new__";
 
 interface LeaderboardEntry {
   id: string;
@@ -42,14 +43,57 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [selectedCreatorKey, setSelectedCreatorKey] = useState(NEW_CREATOR_VALUE);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Every creator who's ever appeared on the leaderboard, deduplicated
+  // so each person shows up once regardless of how many months
+  // they've won. WhatsApp number is the primary match — a phone
+  // number is a far more reliable "this is the same person" signal
+  // than a typed name, which can vary slightly between entries. Only
+  // falls back to name when no WhatsApp number was ever recorded.
+  // Sorted so each person's most recent entry is what actually
+  // populates the dropdown's pre-fill, since that's their latest
+  // known details.
+  const pastCreators = useMemo(() => {
+    const byKey = new Map<string, LeaderboardEntry>();
+    const sorted = [...entries].sort((a, b) => new Date(b.periodDate).getTime() - new Date(a.periodDate).getTime());
+    for (const e of sorted) {
+      const key = e.whatsappNumber?.trim() ? `wa:${e.whatsappNumber.trim()}` : `name:${e.name.trim().toLowerCase()}`;
+      if (!byKey.has(key)) byKey.set(key, e);
+    }
+    return [...byKey.entries()]
+      .map(([key, entry]) => ({ key, entry }))
+      .sort((a, b) => a.entry.name.localeCompare(b.entry.name));
+  }, [entries]);
+
+  const selectExistingCreator = (key: string) => {
+    setSelectedCreatorKey(key);
+    if (key === NEW_CREATOR_VALUE) return;
+    const match = pastCreators.find((c) => c.key === key)?.entry;
+    if (!match) return;
+    // Pre-fills the person's known details, but never wonFor/points —
+    // those are specific to whichever new month this entry is for,
+    // not something carried over from a past win.
+    setForm((f) => ({
+      ...f,
+      name: match.name,
+      profileImageUrl: match.profileImageUrl ?? "",
+      category: match.category,
+      whatTheyDo: match.whatTheyDo ?? "",
+      contact: match.contact ?? "",
+      portfolioUrl: match.portfolioUrl ?? "",
+      whatsappNumber: match.whatsappNumber ?? "",
+    }));
+  };
+
   const startAdd = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setSelectedCreatorKey(NEW_CREATOR_VALUE);
     setAdding(true);
   };
 
@@ -74,6 +118,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
     setAdding(false);
     setEditingId(null);
     setForm(emptyForm);
+    setSelectedCreatorKey(NEW_CREATOR_VALUE);
     setUploadError(null);
     setSaveError(null);
   };
@@ -168,7 +213,24 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
       </div>
 
       {adding && (
-        <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "rgba(255,255,255,0.04)" }}>
+               <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "rgba(255,255,255,0.04)" }}>
+          {pastCreators.length > 0 && (
+            <div>
+              <label className={labelClass}>Select an existing creator <span className="normal-case text-white/25">(or fill in a new one below)</span></label>
+              <select
+                value={selectedCreatorKey}
+                onChange={(e) => selectExistingCreator(e.target.value)}
+                style={{ fontSize: "16px" }}
+                className={inputClass}
+              >
+                <option value={NEW_CREATOR_VALUE} style={{ background: COLOR.black }}>— New creator —</option>
+                {pastCreators.map(({ key, entry }) => (
+                  <option key={key} value={key} style={{ background: COLOR.black }}>{entry.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Name</label>
