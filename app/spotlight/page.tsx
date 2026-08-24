@@ -63,7 +63,7 @@ export default async function SpotlightPage() {
           isOpen={isOpen}
           defaultName={loggedInCreator?.name ?? ""}
           defaultEmail={loggedInCreator?.email ?? ""}
-          portfolioUrl={creatorPortfolioUrl}
+          
         />
       </section>
 
