@@ -3,7 +3,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
 
-const CATEGORIES = ["Photography", "Videography", "Motion", "Editing"];
+const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 
 export async function PATCH(
   req: NextRequest,

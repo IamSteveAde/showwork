@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
-const CATEGORIES = ["Photography", "Videography", "Motion", "Editing"];
+const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const NEW_CREATOR_VALUE = "__new__";
 
 interface LeaderboardEntry {

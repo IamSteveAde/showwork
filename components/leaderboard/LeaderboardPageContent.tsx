@@ -9,7 +9,7 @@ const BLUE = "#2478FF";
 const BLUE_DARK = "#0052FF";
 const BLACK = "#080808";
 const YELLOW = "#FFCC00";
-const CATEGORIES = ["Photography", "Videography", "Motion", "Editing"];
+const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const RANK_COLOR = ["#FFCC00", "#68B2FF", "#0052FF"];
 
 export interface LeaderboardEntryData {

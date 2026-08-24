@@ -21,7 +21,7 @@ const COLOR = {
   yellow: "#FFCC00",
 };
 
-const CATEGORIES = ["Video", "Graphics", "Photography", "Branding"];
+const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const MAX_DESCRIPTION_LENGTH = 150;
 
 export default function SpotlightSubmissionForm({

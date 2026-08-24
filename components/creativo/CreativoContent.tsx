@@ -55,16 +55,16 @@ const GRADIENT = {
 };
 
 type Category =
+  | "Video/Motion"
+  | "Graphics Design"
   | "Photography"
-  | "Videography"
-  | "Motion"
-  | "Editing";
+  | "Branding/Illustration";
 
 const CATEGORIES: Category[] = [
+  "Video/Motion",
+  "Graphics Design",
   "Photography",
-  "Videography",
-  "Motion",
-  "Editing",
+  "Branding/Illustration",
 ];
 
 export interface LeaderboardEntryData {

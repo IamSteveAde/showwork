@@ -3,7 +3,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sendSpotlightSubmissionEmail } from "@/lib/resend";
 
-const VALID_CATEGORIES = ["Video", "Graphics", "Photography", "Branding"];
+const VALID_CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const MAX_DESCRIPTION_LENGTH = 150;
 
 // POST — anyone can submit, no account required. The deadline check
