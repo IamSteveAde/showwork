@@ -678,6 +678,21 @@ export default function CreativoContent({
                     },
                     {
                       label:
+                        "Blog",
+                      href: "/blog",
+                    },
+                    {
+                      label:
+                        "Monthly Spotlight",
+                      href: "/spotlight",
+                    },
+                    {
+                      label:
+                        "Leaderboard",
+                      href: "/leaderboard",
+                    },
+                    {
+                      label:
                         "Log in",
                       href: "/login",
                     },
