@@ -499,27 +499,23 @@ export default function CreativoContent({
         className="fixed inset-x-0 top-0 z-50 px-3 pt-3 transition-all duration-500 sm:px-5 sm:pt-5"
       >
         <div
-          className="relative mx-auto max-w-[1450px] overflow-hidden transition-all duration-500"
-          style={{
-            background: scrolled
-              ? "rgba(8,8,8,0.82)"
-              : "rgba(8,8,8,0.28)",
+  className={`relative mx-auto max-w-[1450px] overflow-hidden rounded-[28px] transition-all duration-500 ${
+    scrolled ? "sm:rounded-full" : ""
+  }`}
+  style={{
+    background: scrolled
+      ? "rgba(8,8,8,0.82)"
+      : "rgba(8,8,8,0.28)",
 
-            backdropFilter:
-              "blur(22px)",
+    backdropFilter: "blur(22px)",
 
-            border:
-              "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid rgba(255,255,255,0.1)",
 
-            borderRadius: scrolled
-              ? "999px"
-              : "28px",
-
-            boxShadow: scrolled
-              ? "0 20px 70px -30px rgba(0,0,0,0.8)"
-              : "none",
-          }}
-        >
+    boxShadow: scrolled
+      ? "0 20px 70px -30px rgba(0,0,0,0.8)"
+      : "none",
+  }}
+>
 
           <div
             className="pointer-events-none absolute left-[10%] top-0 h-full w-40 blur-[50px]"
