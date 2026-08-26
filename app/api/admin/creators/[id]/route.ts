@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
-
+import { sendFreeAccessGrantedEmail, sendDiscountGrantedEmail } from "@/lib/resend";
 async function requireAdmin() {
   const creator = await getCurrentCreator();
   if (!creator || !isAdminEmail(creator.email)) return null;
@@ -46,7 +46,7 @@ export async function PATCH(
     return NextResponse.json({ creator: updated });
   }
 
-  const data: { isComped?: boolean; discountPercent?: number; freeTierLimitOverride?: number | null } = {};
+   const data: { isComped?: boolean; discountPercent?: number; freeTierLimitOverride?: number | null } = {};
   if (typeof isComped === "boolean") data.isComped = isComped;
   if (typeof discountPercent === "number") {
     if (discountPercent < 0 || discountPercent > 100) {
@@ -63,7 +63,31 @@ export async function PATCH(
     data.freeTierLimitOverride = freeTierLimitOverride;
   }
 
+  // Fetched before the update specifically to compare old vs. new —
+  // this is what lets the emails below fire only when something is
+  // genuinely being granted (turned on, or raised), never when it's
+  // being turned off or left unchanged.
+  const before = await db.creator.findUnique({ where: { id }, select: { isComped: true, discountPercent: true, email: true } });
+
   const updated = await db.creator.update({ where: { id }, data });
+
+  if (before) {
+    if (data.isComped === true && before.isComped === false) {
+      try {
+        await sendFreeAccessGrantedEmail({ to: before.email });
+      } catch (err) {
+        console.error(`Failed to send free-access email to ${before.email}:`, err);
+      }
+    }
+    if (typeof data.discountPercent === "number" && data.discountPercent > before.discountPercent) {
+      try {
+        await sendDiscountGrantedEmail({ to: before.email, discountPercent: data.discountPercent });
+      } catch (err) {
+        console.error(`Failed to send discount email to ${before.email}:`, err);
+      }
+    }
+  }
+
   return NextResponse.json({ creator: updated });
 }
 

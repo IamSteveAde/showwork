@@ -916,3 +916,61 @@ export async function sendAccountRecoveryEmail({ to }: { to: string }) {
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// FREE ACCESS GRANTED — sent the moment an admin comps an account,
+// so the person actually knows to go use it rather than finding out
+// by accident later.
+// ─────────────────────────────────────────────
+export async function sendFreeAccessGrantedEmail({ to }: { to: string }) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "You've got free access to all Showwork features",
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          A gift from the Showwork team
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          You now have full, free access to every Showwork feature — no subscription needed. Go ahead and use
+          everything the platform offers.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          Go to your dashboard
+        </a>
+        <p style="font-size: 13px; color: #888786; margin-top: 28px;">Enjoy — and let us know if you need anything.</p>
+      </div>
+    `,
+  });
+}
+
+// ─────────────────────────────────────────────
+// DISCOUNT GRANTED — sent the moment an admin sets a discount
+// percentage above what it was before, so it's not a silent number
+// change the person never notices.
+// ─────────────────────────────────────────────
+export async function sendDiscountGrantedEmail({ to, discountPercent }: { to: string; discountPercent: number }) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `You've got ${discountPercent}% off your next Showwork plan`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          A gift from the Showwork team
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          You've been given a <strong style="color: #F8F7F4;">${discountPercent}% discount</strong> on your next
+          Showwork subscription — it'll apply automatically the next time you start or switch a plan.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          Go to your dashboard
+        </a>
+        <p style="font-size: 13px; color: #888786; margin-top: 28px;">Enjoy — and let us know if you need anything.</p>
+      </div>
+    `,
+  });
+}
