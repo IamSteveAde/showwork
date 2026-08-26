@@ -942,18 +942,43 @@ model CreativoLeaderboardEntry {
 // action required.
 // ─────────────────────────────────────────────
 model CreativoWebinar {
-  id          String   @id @default(uuid())
+  id            String   @id @default(uuid())
+  slug          String   @unique // generated once from topic at creation, never auto-changed later
   flyerImageUrl String?
-  topic       String
-  guests      String? // free text — one or more guest names
-  startsAt    DateTime
-  venue       String? // physical location, or "Online" / a platform name
-  applyUrl    String?
-  replayUrl   String? // filled in after the fact, for past webinars
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  topic         String
+  description   String?  @db.Text // longer overview shown on the webinar's own landing page
+  whatToExpect  String?  @db.Text // one line per point — rendered as a bullet list
+  guests        String? // free text — one or more guest names, shown as "Speakers"
+  startsAt      DateTime
+  venue         String? // physical location, or "Online" / a platform name
+  applyUrl      String? // now doubles as the meeting link, emailed to confirmed RSVPs
+  replayUrl     String? // filled in after the fact, for past webinars
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rsvps         WebinarRsvp[]
 
   @@index([startsAt])
+}
+
+// ─────────────────────────────────────────────
+// WEBINAR RSVP — captured directly on the site instead of sending
+// people straight to an external meeting link. Lets the admin see
+// and export exactly who's coming to each specific webinar, and
+// triggers an immediate confirmation email with the meeting link.
+// ─────────────────────────────────────────────
+model WebinarRsvp {
+  id              String          @id @default(uuid())
+  webinar         CreativoWebinar @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+  webinarId       String
+  name            String
+  email           String
+  whatsappNumber  String
+  field           String // Videography, Photography, Graphics Design, Social Media Management, etc.
+  joinedCommunity Boolean // whether they've already joined the Creativo community
+  createdAt       DateTime        @default(now())
+
+  @@index([webinarId])
 }
 
 // ─────────────────────────────────────────────

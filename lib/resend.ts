@@ -819,3 +819,57 @@ export async function sendSpotlightSubmissionEmail({
     `,
   });
 }
+// ─────────────────────────────────────────────
+// WEBINAR RSVP CONFIRMATION — sent immediately to the person who just
+// RSVP'd, confirming their spot and including the meeting link
+// directly, matching the same dark/gold visual language as every
+// other email in this file.
+// ─────────────────────────────────────────────
+export async function sendWebinarRsvpConfirmationEmail({
+  to,
+  name,
+  topic,
+  startsAt,
+  venue,
+  meetingUrl,
+}: {
+  to: string;
+  name: string;
+  topic: string;
+  startsAt: Date;
+  venue: string | null;
+  meetingUrl: string | null;
+}) {
+  const formattedDate = startsAt.toLocaleString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `You're confirmed — ${topic}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Creativo Webinar — You're In
+        </p>
+        <p style="font-size: 16px; line-height: 1.6;">Hi ${name},</p>
+        <p style="font-size: 14px; line-height: 1.7; color: #D8D6D2;">Your spot for <strong style="color: #F8F7F4;">${topic}</strong> is confirmed.</p>
+        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse; margin-top: 16px;">
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 100px;">When</td><td style="padding: 6px 0;">${formattedDate}</td></tr>
+          ${venue ? `<tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Where</td><td style="padding: 6px 0;">${venue}</td></tr>` : ""}
+        </table>
+        ${
+          meetingUrl
+            ? `<a href="${meetingUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">Join the session</a>`
+            : `<p style="font-size: 13px; color: #888786; margin-top: 20px;">We'll follow up with the meeting link closer to the date.</p>`
+        }
+        <p style="font-size: 12px; color: #888786; margin-top: 28px;">See you there.</p>
+      </div>
+    `,
+  });
+}
