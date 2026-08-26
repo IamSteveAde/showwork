@@ -24,6 +24,14 @@ const COLOR = {
 const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const MAX_DESCRIPTION_LENGTH = 150;
 
+// Lets TypeScript know fbq exists on window (loaded by the Meta Pixel base
+// code script elsewhere in the app, e.g. root layout).
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
+}
+
 export default function SpotlightSubmissionForm({
   isOpen,
   defaultName,
@@ -65,6 +73,13 @@ export default function SpotlightSubmissionForm({
     setSubmitting(true);
     setError(null);
 
+    // Shared ID so the browser pixel event and the server-side Conversions
+    // API event get deduped by Meta as a single event instead of two.
+    const eventId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `spotlight-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     try {
       const res = await fetch("/api/spotlight/submit", {
         method: "POST",
@@ -77,6 +92,7 @@ export default function SpotlightSubmissionForm({
           projectLink,
           description,
           note,
+          eventId,
         }),
       });
 
@@ -84,6 +100,21 @@ export default function SpotlightSubmissionForm({
 
       if (res.ok) {
         setDone(true);
+
+        // Fire the browser-side Pixel event now that submission is confirmed.
+        // "Lead" is a standard Meta event, which gets better optimization
+        // and match quality than a fully custom event name.
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq(
+            "track",
+            "Lead",
+            {
+              content_name: "Spotlight Submission",
+              content_category: category,
+            },
+            { eventID: eventId }
+          );
+        }
       } else {
         setError(data.error ?? "Something went wrong — try again.");
       }
