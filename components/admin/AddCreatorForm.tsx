@@ -1,8 +1,6 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 export default function AddCreatorForm() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -11,7 +9,6 @@ export default function AddCreatorForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -34,7 +31,6 @@ export default function AddCreatorForm() {
     setLoading(false);
     router.refresh();
   };
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <input
@@ -63,8 +59,7 @@ export default function AddCreatorForm() {
       />
       <input
         type="text"
-        required
-        placeholder="Password (min 8 characters)"
+        placeholder="Password (optional — leave blank to have them set it themselves via email)"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={{ fontSize: "16px" }}
