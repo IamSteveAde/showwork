@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import HostApplicationModal from "@/components/creativo/HostApplicationModal";
+import WebinarRsvpModal from "@/components/creativo/WebinarRsvpModal";
 import {
   Send,
   BadgeDollarSign,
@@ -292,8 +293,11 @@ export default function CreativoContent({
   const [filterCategory, setFilterCategory] =
     useState<Category | "All">("All");
 
-  const [hostModalOpen, setHostModalOpen] =
+    const [hostModalOpen, setHostModalOpen] =
     useState(false);
+
+  const [rsvpWebinar, setRsvpWebinar] =
+    useState<WebinarData | null>(null);
 
   const [mobileNavOpen, setMobileNavOpen] =
     useState(false);
@@ -577,6 +581,12 @@ export default function CreativoContent({
                 className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
               >
                 Leaderboard
+              </Link>
+              <Link
+                href="/webinars"
+                className="text-[13px] font-semibold text-white/55 transition-colors hover:text-white"
+              >
+                Webinars
               </Link>
 
               <Link
@@ -2127,26 +2137,18 @@ export default function CreativoContent({
                 </p>
 
 
-                {webinar.applyUrl && (
+                              <button
+                  onClick={() => setRsvpWebinar(webinar)}
+                  className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold"
+                  style={{
+                    color:
+                      COLOR.yellow,
+                  }}
+                >
 
-                  
-                    <a href={
-                      webinar.applyUrl
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-bold"
-                    style={{
-                      color:
-                        COLOR.yellow,
-                    }}
-                  >
+                  Reserve your spot <ArrowUpRight className="h-4 w-4" />
 
-                    Reserve your spot <ArrowUpRight className="h-4 w-4" />
-
-                  </a>
-
-                )}
+                </button>
 
               </div>
 
@@ -2752,7 +2754,7 @@ export default function CreativoContent({
       </footer>
 
 
-      <HostApplicationModal
+           <HostApplicationModal
         open={hostModalOpen}
         onClose={() =>
           setHostModalOpen(
@@ -2760,6 +2762,14 @@ export default function CreativoContent({
           )
         }
       />
+
+      {rsvpWebinar && (
+        <WebinarRsvpModal
+          webinarId={rsvpWebinar.id}
+          topic={rsvpWebinar.topic}
+          onClose={() => setRsvpWebinar(null)}
+        />
+      )}
 
     </main>
   );

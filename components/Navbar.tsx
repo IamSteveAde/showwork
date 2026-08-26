@@ -111,6 +111,12 @@ const NAV_LINKS = [
     icon: Star,
   },
   {
+    label: "Webinars",
+    href: "/webinars",
+    color: COLOR.yellow,
+    icon: Star,
+  },
+  {
     label: "Leaderboard",
     href: "/leaderboard",
     color: COLOR.blueLight,

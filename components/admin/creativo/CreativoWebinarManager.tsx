@@ -6,13 +6,26 @@ const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 
 interface Webinar {
   id: string;
+  slug: string;
   flyerImageUrl: string | null;
   topic: string;
+  description: string | null;
+  whatToExpect: string | null;
   guests: string | null;
   startsAt: string;
   venue: string | null;
   applyUrl: string | null;
   replayUrl: string | null;
+}
+
+interface Rsvp {
+  id: string;
+  name: string;
+  email: string;
+  whatsappNumber: string;
+  field: string;
+  joinedCommunity: boolean;
+  createdAt: string;
 }
 
 function datetimeInputValue(iso: string): string {
@@ -24,6 +37,8 @@ function datetimeInputValue(iso: string): string {
 const emptyForm = {
   flyerImageUrl: "",
   topic: "",
+  description: "",
+  whatToExpect: "",
   guests: "",
   startsAt: "",
   venue: "",
@@ -39,6 +54,10 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [expandedWebinarId, setExpandedWebinarId] = useState<string | null>(null);
+  const [rsvpsByWebinar, setRsvpsByWebinar] = useState<Record<string, Rsvp[]>>({});
+  const [loadingRsvps, setLoadingRsvps] = useState(false);
+
   const startAdd = () => {
     setForm(emptyForm);
     setEditingId(null);
@@ -49,6 +68,8 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
     setForm({
       flyerImageUrl: w.flyerImageUrl ?? "",
       topic: w.topic,
+      description: w.description ?? "",
+      whatToExpect: w.whatToExpect ?? "",
       guests: w.guests ?? "",
       startsAt: datetimeInputValue(w.startsAt),
       venue: w.venue ?? "",
@@ -113,6 +134,21 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
     setWebinars((prev) => prev.filter((w) => w.id !== id));
   };
 
+  const toggleRsvps = async (id: string) => {
+    if (expandedWebinarId === id) {
+      setExpandedWebinarId(null);
+      return;
+    }
+    setExpandedWebinarId(id);
+    if (!rsvpsByWebinar[id]) {
+      setLoadingRsvps(true);
+      const res = await fetch(`/api/admin/creativo/webinars/${id}/rsvps`);
+      const data = await res.json();
+      if (res.ok) setRsvpsByWebinar((prev) => ({ ...prev, [id]: data.rsvps }));
+      setLoadingRsvps(false);
+    }
+  };
+
   const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/25";
   const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
 
@@ -164,6 +200,14 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
               <label className={labelClass}>Topic</label>
               <input type="text" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>Description <span className="normal-case text-white/25">(shown on the webinar's own landing page)</span></label>
+              <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={{ fontSize: "16px" }} className={`${inputClass} resize-none`} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelClass}>What to expect <span className="normal-case text-white/25">(one point per line — shown as a bullet list)</span></label>
+              <textarea rows={4} value={form.whatToExpect} onChange={(e) => setForm({ ...form, whatToExpect: e.target.value })} style={{ fontSize: "16px" }} className={`${inputClass} resize-none`} placeholder={"e.g.\nHow to price your first client project\nLive Q&A with the panel"} />
+            </div>
             <div>
               <label className={labelClass}>Guests</label>
               <input type="text" placeholder="One or more names" value={form.guests} onChange={(e) => setForm({ ...form, guests: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
@@ -177,7 +221,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
               <input type="text" placeholder="Physical location, or Online" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Apply link</label>
+              <label className={labelClass}>Meeting link <span className="normal-case text-white/25">(emailed to everyone who RSVPs)</span></label>
               <input type="url" placeholder="https://" value={form.applyUrl} onChange={(e) => setForm({ ...form, applyUrl: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div className="sm:col-span-2">
@@ -199,26 +243,80 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
         {webinars.length === 0 && <p className="text-sm text-white/30">No webinars yet.</p>}
         {webinars.map((w) => {
           const isPast = new Date(w.startsAt) < new Date();
+          const isExpanded = expandedWebinarId === w.id;
+          const rsvps = rsvpsByWebinar[w.id];
+
           return (
-            <div key={w.id} className="flex items-center justify-between gap-3 rounded-lg p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <div className="flex min-w-0 items-center gap-3">
-                {w.flyerImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={w.flyerImageUrl} alt="" className="h-11 w-9 flex-shrink-0 rounded object-cover" />
-                ) : (
-                  <div className="h-11 w-9 flex-shrink-0 rounded" style={{ background: "rgba(255,255,255,0.08)" }} />
-                )}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{w.topic}</p>
-                  <p className="truncate text-xs text-white/40">
-                    {new Date(w.startsAt).toLocaleString()} · {isPast ? "Past" : "Upcoming"}
-                  </p>
+            <div key={w.id} className="rounded-lg" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <div className="flex items-center justify-between gap-3 p-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  {w.flyerImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={w.flyerImageUrl} alt="" className="h-11 w-9 flex-shrink-0 rounded object-cover" />
+                  ) : (
+                    <div className="h-11 w-9 flex-shrink-0 rounded" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">{w.topic}</p>
+                    <p className="truncate text-xs text-white/40">
+                      {new Date(w.startsAt).toLocaleString()} · {isPast ? "Past" : "Upcoming"}
+                    </p>
+                    <a href={`/webinars/${w.slug}`} target="_blank" rel="noopener noreferrer" className="truncate text-xs underline" style={{ color: "#68B2FF" }}>
+                      /webinars/{w.slug}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-3">
+                  <button onClick={() => toggleRsvps(w.id)} className="text-xs font-semibold" style={{ color: "#68B2FF" }}>
+                    {isExpanded ? "Hide RSVPs" : "View RSVPs"}
+                  </button>
+                  <button onClick={() => startEdit(w)} className="text-xs font-semibold" style={{ color: COLOR.gold }}>Edit</button>
+                  <button onClick={() => remove(w.id)} className="text-xs text-white/30 hover:text-red-400">Remove</button>
                 </div>
               </div>
-              <div className="flex flex-shrink-0 items-center gap-3">
-                <button onClick={() => startEdit(w)} className="text-xs font-semibold" style={{ color: COLOR.gold }}>Edit</button>
-                <button onClick={() => remove(w.id)} className="text-xs text-white/30 hover:text-red-400">Remove</button>
-              </div>
+
+              {isExpanded && (
+                <div className="border-t border-white/10 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-white/50">
+                      {rsvps ? `${rsvps.length} RSVP${rsvps.length === 1 ? "" : "s"}` : "Loading..."}
+                    </p>
+                    {rsvps && rsvps.length > 0 && (
+                      <a
+                        href={`/api/admin/creativo/webinars/${w.id}/rsvps/export`}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                        style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+                      >
+                        Export CSV
+                      </a>
+                    )}
+                  </div>
+
+                  {loadingRsvps && !rsvps ? (
+                    <p className="text-xs text-white/30">Loading RSVPs...</p>
+                  ) : rsvps && rsvps.length === 0 ? (
+                    <p className="text-xs text-white/30">No RSVPs yet for this webinar.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {rsvps?.map((r) => (
+                        <div key={r.id} className="rounded-lg p-3 text-xs" style={{ background: "rgba(255,255,255,0.03)" }}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-white">{r.name}</span>
+                            <span className="text-white/30">·</span>
+                            <span className="text-white/50">{r.field}</span>
+                            {r.joinedCommunity && (
+                              <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>
+                                In community
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-white/40">{r.email} · {r.whatsappNumber}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
