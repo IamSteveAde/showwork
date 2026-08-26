@@ -873,3 +873,46 @@ export async function sendWebinarRsvpConfirmationEmail({
     `,
   });
 }
+
+// ─────────────────────────────────────────────
+// ACCOUNT RECOVERY EMAIL — sent once, the moment a bulk-created
+// account is created. Honest about a real technical issue without
+// unnecessary detail, takes ownership, and gives the one concrete
+// thing the person needs to do to get back in.
+// ─────────────────────────────────────────────
+export async function sendAccountRecoveryEmail({ to }: { to: string }) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "We ran into an issue — here's how to get back into your account",
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          An update on your account
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          We ran into a technical issue on our end while working on some infrastructure changes, which affected
+          account data for a number of users, including yours. We take full responsibility for this, and we're
+          sorry for the disruption it's caused.
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          Your account has been recreated under this same email address, but for your security, you'll need to
+          set a new password before you can log back in.
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          Please go to our login page, click <strong style="color: #F8F7F4;">"Forgot password,"</strong> and use
+          this same email address — you'll get a reset link right away to set your new password.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          Go to login
+        </a>
+        <p style="font-size: 14px; line-height: 1.7; color: #888786; margin-top: 28px;">
+          We've made changes to make sure this doesn't happen again, and we're committed to serving you better
+          going forward. If you have any questions or anything doesn't look right once you're back in, just
+          reply directly to this email — we'll help however we can.
+        </p>
+      </div>
+    `,
+  });
+}
