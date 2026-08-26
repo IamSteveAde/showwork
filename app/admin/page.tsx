@@ -4,9 +4,11 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminEmail } from "@/lib/admin";
 import AddCreatorForm from "@/components/admin/AddCreatorForm";
+import BulkCreatorImportForm from "@/components/admin/BulkCreatorImportForm";
 import GlobalDiscountForm from "@/components/admin/GlobalDiscountForm";
 import CreatorRowActions from "@/components/admin/CreatorRowActions";
 import { whatsappLinkFor } from "@/lib/phone";
+
 
 const COLOR = {
   black: "#0A0A0A",
@@ -182,7 +184,7 @@ export default async function AdminPage({
             <GlobalDiscountForm currentPercent={platformSettings?.globalDiscountPercent ?? 0} />
           </div>
 
-          <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+                    <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
             <h2 className="mb-3 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Add a creator
             </h2>
@@ -190,6 +192,17 @@ export default async function AdminPage({
               Creates an account directly, already verified — no OTP step.
             </p>
             <AddCreatorForm />
+
+            <div className="my-4 border-t border-white/10" />
+
+            <h3 className="mb-2 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Or bulk-create from a file
+            </h3>
+            <p className="mb-3 text-xs text-white/40">
+              Upload a CSV or text file — every email address found in it gets a fresh account, no password needed.
+              Each person gets an email telling them to use &quot;Forgot password&quot; to set their own.
+            </p>
+            <BulkCreatorImportForm />
           </div>
         </div>
 
