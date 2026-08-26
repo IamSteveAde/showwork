@@ -51,8 +51,9 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [uploading, setUploading] = useState(false);
+    const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [expandedWebinarId, setExpandedWebinarId] = useState<string | null>(null);
   const [rsvpsByWebinar, setRsvpsByWebinar] = useState<Record<string, Rsvp[]>>({});
@@ -105,29 +106,43 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
     }
   };
 
-  const submit = async () => {
+    const submit = async () => {
     setSaving(true);
-    if (editingId) {
-      const res = await fetch(`/api/admin/creativo/webinars/${editingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (res.ok) setWebinars((prev) => prev.map((w) => (w.id === editingId ? data.webinar : w)));
-    } else {
-      const res = await fetch("/api/admin/creativo/webinars", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (res.ok) setWebinars((prev) => [data.webinar, ...prev]);
+    setSaveError(null);
+    try {
+      if (editingId) {
+        const res = await fetch(`/api/admin/creativo/webinars/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setWebinars((prev) => prev.map((w) => (w.id === editingId ? data.webinar : w)));
+          cancel();
+        } else {
+          setSaveError(data.error ?? `Save failed (${res.status})`);
+        }
+      } else {
+        const res = await fetch("/api/admin/creativo/webinars", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setWebinars((prev) => [data.webinar, ...prev]);
+          cancel();
+        } else {
+          setSaveError(data.error ?? `Save failed (${res.status})`);
+        }
+      }
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Something went wrong — check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    cancel();
   };
-
   const remove = async (id: string) => {
     if (!confirm("Remove this webinar?")) return;
     await fetch(`/api/admin/creativo/webinars/${id}`, { method: "DELETE" });
@@ -230,6 +245,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
             </div>
           </div>
 
+                    {saveError && <p className="text-xs text-red-400">{saveError}</p>}
           <div className="flex items-center gap-3">
             <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: COLOR.black }}>
               {saving ? "Saving..." : editingId ? "Save changes" : "Add webinar"}
