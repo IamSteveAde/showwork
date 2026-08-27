@@ -34,7 +34,7 @@ TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 OUTPUT_FILE="backups/backup_${TIMESTAMP}.sql"
 
 echo "Backing up database to ${OUTPUT_FILE}..."
-pg_dump "$DIRECT_URL" > "$OUTPUT_FILE"
+pg_dump --clean --if-exists "$DIRECT_URL" > "$OUTPUT_FILE"
 
 echo "Done. Backup saved to ${OUTPUT_FILE} ($(du -h "$OUTPUT_FILE" | cut -f1))"
 echo ""
