@@ -31,7 +31,7 @@ jobs:
         run: |
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
           echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> "$GITHUB_ENV"
-          /usr/lib/postgresql/17/bin/pg_dump "$DIRECT_URL" > "backup_${TIMESTAMP}.sql"
+          /usr/lib/postgresql/17/bin/pg_dump --clean --if-exists "$DIRECT_URL" > "backup_${TIMESTAMP}.sql"
         # The plain "pg_dump" command still resolves to the older v16
         # binary the runner already had pre-installed, since both
         # versions end up installed side by side and PATH picks the
