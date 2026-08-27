@@ -14,17 +14,17 @@ jobs:
     steps:
       - name: Install postgresql-client 17 (matching Supabase's server version)
         run: |
+          sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
-        # ubuntu-latest's default apt repos only provide postgresql-
-        # client v16, while Supabase's actual database server runs
-        # v17 — pg_dump refuses to dump from a server newer than
-        # itself as a safety check, which is exactly what caused the
-        # earlier "server version mismatch" failure. Installing from
-        # PostgreSQL's own official repo gets a matching client
-        # version instead of whatever Ubuntu's default repo lags at.
+        # The azure-cli/microsoft-prod repos are pre-configured on
+        # GitHub's runners by default and unrelated to this workflow —
+        # they occasionally return 403, which fails the whole
+        # apt-get update even though the actual repo we need
+        # (PostgreSQL's) fetches successfully. Removing them first
+        # avoids that failure entirely, since we never need them.
       - name: Dump database
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
