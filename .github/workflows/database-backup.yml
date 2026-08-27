@@ -12,13 +12,19 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install postgresql-client (for pg_dump)
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-        # AWS CLI is deliberately not installed here — ubuntu-latest
-        # runners already come with it pre-installed, and running
-        # "apt-get install awscli" on top of that conflicts with its
-        # existing Python dependencies, which is exactly what caused
-        # the earlier exit code 100 failure.
+      - name: Install postgresql-client 17 (matching Supabase's server version)
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+        # ubuntu-latest's default apt repos only provide postgresql-
+        # client v16, while Supabase's actual database server runs
+        # v17 — pg_dump refuses to dump from a server newer than
+        # itself as a safety check, which is exactly what caused the
+        # earlier "server version mismatch" failure. Installing from
+        # PostgreSQL's own official repo gets a matching client
+        # version instead of whatever Ubuntu's default repo lags at.
       - name: Dump database
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
