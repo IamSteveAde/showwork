@@ -31,7 +31,12 @@ jobs:
         run: |
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
           echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> "$GITHUB_ENV"
-          pg_dump "$DIRECT_URL" > "backup_${TIMESTAMP}.sql"
+          /usr/lib/postgresql/17/bin/pg_dump "$DIRECT_URL" > "backup_${TIMESTAMP}.sql"
+        # The plain "pg_dump" command still resolves to the older v16
+        # binary the runner already had pre-installed, since both
+        # versions end up installed side by side and PATH picks the
+        # first one it finds — calling the v17 binary by its exact,
+        # full path sidesteps that ambiguity entirely.
       - name: Upload to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
