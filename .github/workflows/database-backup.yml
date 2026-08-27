@@ -1,5 +1,4 @@
 name: Daily Database Backup
-
 on:
   schedule:
     # Runs daily at 03:00 UTC — adjust the hour if you'd rather it run
@@ -9,17 +8,17 @@ on:
   # Lets you trigger a backup manually from the Actions tab any time,
   # without waiting for the schedule.
   workflow_dispatch:
-
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
       - name: Install postgresql-client (for pg_dump)
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Install AWS CLI (R2 is S3-compatible)
-        run: sudo apt-get install -y awscli
-
+        # AWS CLI is deliberately not installed here — ubuntu-latest
+        # runners already come with it pre-installed, and running
+        # "apt-get install awscli" on top of that conflicts with its
+        # existing Python dependencies, which is exactly what caused
+        # the earlier exit code 100 failure.
       - name: Dump database
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
@@ -27,7 +26,6 @@ jobs:
           TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
           echo "BACKUP_FILE=backup_${TIMESTAMP}.sql" >> "$GITHUB_ENV"
           pg_dump "$DIRECT_URL" > "backup_${TIMESTAMP}.sql"
-
       - name: Upload to R2
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
@@ -37,7 +35,6 @@ jobs:
         run: |
           aws s3 cp "$BACKUP_FILE" "s3://${R2_BUCKET_NAME}/database-backups/${BACKUP_FILE}" \
             --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-
       # Keeps storage bounded — deletes any backup older than 30 days,
       # so this runs forever without needing manual cleanup.
       - name: Prune backups older than 30 days
