@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
   }
 
   const token = createSessionToken(creator.id);
-  await setSessionCookie(token);
-
-  return NextResponse.json({ id: creator.id, email: creator.email });
+  const response = NextResponse.json({ id: creator.id, email: creator.email });
+  setSessionCookie(response, token);
+  return response;
 }
