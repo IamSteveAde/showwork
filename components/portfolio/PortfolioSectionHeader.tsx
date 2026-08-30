@@ -157,7 +157,10 @@ export default function PortfolioSectionHeader({
     router.refresh();
   };
 
-  const uploadOneFileWithRetry = async (file: File): Promise<{ ok: true } | { ok: false; error: string }> => {
+   const uploadOneFileWithRetry = async (
+    file: File,
+    onProgress: (percent: number) => void
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
       try {
         const presignRes = await fetch("/api/portfolio/upload/presign", {
@@ -168,7 +171,9 @@ export default function PortfolioSectionHeader({
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
 
-        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+          onProgress(Math.round((loaded / total) * 100));
+        });
 
         const completeRes = await fetch("/api/portfolio/upload/complete", {
           method: "POST",
@@ -236,12 +241,14 @@ export default function PortfolioSectionHeader({
           const signData = await signRes.json();
           if (!signRes.ok) throw new Error(signData.error ?? "Failed to sign chunk");
 
-          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, () => {});
+                   const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, (loaded) => {
+            const percent = Math.min(100, Math.round(((completedCount * chunkSizeBytes + loaded) / file.size) * 100));
+            setChunkStatus(`${percent}% uploaded`);
+          });
 
           progress!.completedParts.push({ partNumber, etag });
           saveMultipartProgress(sectionId, fingerprint, progress!);
           completedCount++;
-          setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
 
           chunkSucceeded = true;
           break;
@@ -315,7 +322,11 @@ export default function PortfolioSectionHeader({
         setUploadStatus(`Uploading ${i + 1} of ${filesToUpload.length}...`);
         setChunkStatus(null);
 
-        const result = isLarge ? await uploadLargeFileMultipart(file) : await uploadOneFileWithRetry(file);
+               const result = isLarge
+          ? await uploadLargeFileMultipart(file)
+          : await uploadOneFileWithRetry(file, (percent) =>
+              setUploadStatus(`Uploading ${i + 1} of ${filesToUpload.length} — ${percent}% uploaded...`)
+            );
 
         if (result.ok) {
           markFingerprintCompleted(sectionId, fileFingerprint(file));
@@ -399,8 +410,8 @@ export default function PortfolioSectionHeader({
           className="hidden"
           id={`portfolio-add-${sectionId}`}
         />
-        <label htmlFor={`portfolio-add-${sectionId}`} className="cursor-pointer text-xs font-semibold underline" style={{ color: "#F5C842" }}>
-          {uploading ? (uploadStatus ?? "Uploading...") : "+ Add files"}
+               <label htmlFor={`portfolio-add-${sectionId}`} className="cursor-pointer text-xs font-semibold underline" style={{ color: "#F5C842" }}>
+          {uploading ? (chunkStatus ?? uploadStatus ?? "Uploading...") : "+ Add files"}
         </label>
 
         <span className="text-white/15">·</span>
@@ -420,10 +431,10 @@ export default function PortfolioSectionHeader({
         )}
       </div>
 
-      {uploading && (
+           {uploading && (
         <div className="mt-2">
           <UploadPatienceBanner active={uploading} />
-          {chunkStatus && <p className="mt-1.5 text-[11px] text-white/40">{chunkStatus}</p>}
+          {chunkStatus && <p className="mt-1.5 text-xs font-semibold" style={{ color: "#F5C842" }}>{chunkStatus}</p>}
         </div>
       )}
       {uploadError && <p className="mt-1.5 text-xs text-red-400">{uploadError}</p>}

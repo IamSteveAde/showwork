@@ -171,9 +171,10 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
     }
   };
 
-  const uploadOneFileWithRetry = async (
+    const uploadOneFileWithRetry = async (
     file: File,
-    sectionId: string
+    sectionId: string,
+    onProgress: (percent: number) => void
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
       try {
@@ -185,7 +186,9 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
 
-        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+          onProgress(Math.round((loaded / total) * 100));
+        });
 
         const completeRes = await fetch("/api/portfolio/upload/complete", {
           method: "POST",
@@ -255,13 +258,14 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
           });
           const signData = await signRes.json();
           if (!signRes.ok) throw new Error(signData.error ?? "Failed to sign chunk");
-
-          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, () => {});
+          const etag = await uploadPartWithProgress(signData.uploadUrl, chunk, (loaded) => {
+            const percent = Math.min(100, Math.round(((completedCount * chunkSizeBytes + loaded) / file.size) * 100));
+            setChunkStatus(`${percent}% uploaded`);
+          });
 
           progress!.completedParts.push({ partNumber, etag });
           saveMultipartProgress(sectionName, fingerprint, progress!);
           completedCount++;
-          setChunkStatus(`${completedCount} of ${totalChunks} chunks done`);
 
           chunkSucceeded = true;
           break;
@@ -335,9 +339,11 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
         setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
         setChunkStatus(null);
 
-        const result = isLarge
+                const result = isLarge
           ? await uploadLargeFileMultipart(file, section.id)
-          : await uploadOneFileWithRetry(file, section.id);
+          : await uploadOneFileWithRetry(file, section.id, (percent) =>
+              setStatus(`Uploading ${i + 1} of ${filesToUpload.length} — ${percent}% uploaded...`)
+            );
 
         if (result.ok) {
           markFingerprintCompleted(sectionName, fileFingerprint(file));
@@ -463,8 +469,8 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
             </p>
           )}
 
-          {uploading && <UploadPatienceBanner active={uploading} />}
-          {chunkStatus && <p className="text-[11px] text-white/40">{chunkStatus}</p>}
+                    {uploading && <UploadPatienceBanner active={uploading} />}
+          {chunkStatus && <p className="text-xs font-semibold" style={{ color: "#F5C842" }}>{chunkStatus}</p>}
 
           <div className="flex items-center gap-3">
             <button onClick={handleUpload} disabled={uploading} className="rounded-lg px-4 py-2.5 text-sm font-semibold disabled:opacity-50" style={{ background: "#F5C842", color: "#0A0A0A" }}>
