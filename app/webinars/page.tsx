@@ -18,7 +18,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function WebinarsIndexPage() {
-  const webinars = await db.creativoWebinar.findMany({ orderBy: { startsAt: "desc" } });
+  const webinars = await db.creativoWebinar.findMany({
+    orderBy: { startsAt: "desc" },
+    include: { speakers: { orderBy: { displayOrder: "asc" }, take: 1 } },
+  });
 
   const now = new Date();
   const upcoming = webinars.filter((w) => w.startsAt >= now).sort((a, b) => +a.startsAt - +b.startsAt);
@@ -51,8 +54,12 @@ export default async function WebinarsIndexPage() {
                     <p className="mb-1.5 text-xs font-bold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
                       {w.startsAt.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
-                    <p className="text-lg font-bold text-black">{w.topic}</p>
-                    {w.guests && <p className="mt-1 truncate text-sm text-black/45">{w.guests}</p>}
+                                        <p className="text-lg font-bold text-black">{w.topic}</p>
+                    {w.speakers[0] ? (
+                      <p className="mt-1 truncate text-sm text-black/45">{w.speakers[0].name}{w.speakers.length > 1 ? " & others" : ""}</p>
+                    ) : (
+                      w.guests && <p className="mt-1 truncate text-sm text-black/45">{w.guests}</p>
+                    )}
                   </div>
                 </Link>
               ))}

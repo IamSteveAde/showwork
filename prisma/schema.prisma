@@ -948,7 +948,11 @@ model CreativoWebinar {
   topic         String
   description   String?  @db.Text // longer overview shown on the webinar's own landing page
   whatToExpect  String?  @db.Text // one line per point — rendered as a bullet list
-  guests        String? // free text — one or more guest names, shown as "Speakers"
+  // Legacy free-text field — kept as a fallback for any older webinar
+  // that only ever had this, never deleted so nothing already saved
+  // breaks. New webinars use the structured WebinarSpeaker model
+  // below instead, which is what the public page shows first.
+  guests        String?
   startsAt      DateTime
   venue         String? // physical location, or "Online" / a platform name
   applyUrl      String? // now doubles as the meeting link, emailed to confirmed RSVPs
@@ -957,8 +961,35 @@ model CreativoWebinar {
   updatedAt     DateTime @updatedAt
 
   rsvps         WebinarRsvp[]
+  speakers      WebinarSpeaker[]
 
   @@index([startsAt])
+}
+
+// ─────────────────────────────────────────────
+// WEBINAR SPEAKER — one host or guest speaker attached to a webinar.
+// Every field beyond name and title is optional — a speaker can be
+// added with just a name if that's all the admin has on hand, and
+// filled in more fully later. displayOrder lets the admin control
+// who shows up first (usually the host), rather than always sorting
+// by whenever they happened to be added.
+// ─────────────────────────────────────────────
+model WebinarSpeaker {
+  id              String          @id @default(uuid())
+  webinar         CreativoWebinar @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+  webinarId       String
+  name            String
+  title           String // e.g. "Host", "Guest Speaker" — free text, not an enum, since the actual titles in use will vary
+  bio             String? // max 185 characters, enforced in the API route
+  profileImageUrl String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  xUrl            String?
+  linkedinUrl     String?
+  displayOrder    Int             @default(0)
+  createdAt       DateTime        @default(now())
+
+  @@index([webinarId])
 }
 
 // ─────────────────────────────────────────────

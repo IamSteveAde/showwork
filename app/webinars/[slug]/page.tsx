@@ -39,7 +39,10 @@ export default async function WebinarLandingPage({
 }) {
   const { slug } = await params;
 
-  const webinar = await db.creativoWebinar.findUnique({ where: { slug } });
+  const webinar = await db.creativoWebinar.findUnique({
+    where: { slug },
+    include: { speakers: { orderBy: { displayOrder: "asc" } } },
+  });
   if (!webinar) notFound();
 
   const isPast = webinar.startsAt < new Date();

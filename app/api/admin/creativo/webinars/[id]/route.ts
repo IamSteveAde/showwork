@@ -3,6 +3,28 @@ import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
 
+const MAX_BIO_LENGTH = 185;
+
+interface SpeakerInput {
+  name: string;
+  title: string;
+  bio?: string;
+  profileImageUrl?: string;
+  instagramUrl?: string;
+  youtubeUrl?: string;
+  xUrl?: string;
+  linkedinUrl?: string;
+}
+
+function validateSpeakers(speakers: SpeakerInput[]): string | null {
+  for (const s of speakers) {
+    if (!s.name?.trim()) return "Every speaker needs a name";
+    if (!s.title?.trim()) return "Every speaker needs a title (e.g. Host, Guest Speaker)";
+    if (s.bio && s.bio.length > MAX_BIO_LENGTH) return `Bio for ${s.name} exceeds ${MAX_BIO_LENGTH} characters`;
+  }
+  return null;
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,7 +51,44 @@ export async function PATCH(
   // creation and never editable afterward, so an already-shared
   // webinar link can never silently break.
 
-  const webinar = await db.creativoWebinar.update({ where: { id }, data });
+  let speakerList: SpeakerInput[] | null = null;
+  if (Array.isArray(body.speakers)) {
+    speakerList = body.speakers;
+    const speakerError = validateSpeakers(speakerList!);
+    if (speakerError) {
+      return NextResponse.json({ error: speakerError }, { status: 400 });
+    }
+  }
+
+  // Wrapped in a transaction — the delete-then-recreate for speakers
+  // needs to succeed or fail as one unit, so a webinar is never left
+  // with zero speakers because the recreate half of the operation
+  // failed partway through.
+  const webinar = await db.$transaction(async (tx) => {
+    if (speakerList) {
+      await tx.webinarSpeaker.deleteMany({ where: { webinarId: id } });
+      await tx.webinarSpeaker.createMany({
+        data: speakerList.map((s, i) => ({
+          webinarId: id,
+          name: s.name.trim(),
+          title: s.title.trim(),
+          bio: s.bio?.trim() || null,
+          profileImageUrl: s.profileImageUrl?.trim() || null,
+          instagramUrl: s.instagramUrl?.trim() || null,
+          youtubeUrl: s.youtubeUrl?.trim() || null,
+          xUrl: s.xUrl?.trim() || null,
+          linkedinUrl: s.linkedinUrl?.trim() || null,
+          displayOrder: i,
+        })),
+      });
+    }
+    return tx.creativoWebinar.update({
+      where: { id },
+      data,
+      include: { speakers: { orderBy: { displayOrder: "asc" } } },
+    });
+  });
+
   return NextResponse.json({ webinar });
 }
 
