@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
@@ -19,9 +20,17 @@ export function createSessionToken(creatorId: string) {
   return jwt.sign({ creatorId }, JWT_SECRET, { expiresIn: "30d" });
 }
 
-export async function setSessionCookie(token: string) {
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
+// Sets the cookie directly on the actual NextResponse being returned,
+// rather than via cookies().set() from next/headers. That approach
+// relies on Next.js implicitly attaching the mutation to the outgoing
+// response through internal request-context tracking — reliable on
+// Vercel's own runtime, but a known source of inconsistency on other
+// deployment platforms (including Netlify's Next.js adapter), since
+// that auto-attach behavior isn't something every runtime replicates
+// identically. Setting it directly on the response object has no
+// such dependency and works the same regardless of platform.
+export function setSessionCookie(response: NextResponse, token: string) {
+  response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -30,9 +39,8 @@ export async function setSessionCookie(token: string) {
   });
 }
 
-export async function clearSessionCookie() {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
+export function clearSessionCookie(response: NextResponse) {
+  response.cookies.delete(SESSION_COOKIE);
 }
 
 /**

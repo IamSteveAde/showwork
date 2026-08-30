@@ -29,8 +29,9 @@ export async function POST(req: NextRequest) {
     console.error("Failed to record lastLoginAt:", err);
   }
 
-  const token = createSessionToken(creator.id);
-  await setSessionCookie(token);
+   const token = createSessionToken(creator.id);
+  const response = NextResponse.json({ id: creator.id, email: creator.email });
+  setSessionCookie(response, token);
 
-  return NextResponse.json({ id: creator.id, email: creator.email });
+  return response;
 }
