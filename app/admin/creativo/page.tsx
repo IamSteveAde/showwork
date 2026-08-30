@@ -16,7 +16,7 @@ export default async function CreativoAdminPage() {
   const [settings, entries, webinars] = await Promise.all([
     db.platformSettings.findUnique({ where: { id: "singleton" } }),
     db.creativoLeaderboardEntry.findMany({ orderBy: [{ periodDate: "desc" }, { points: "desc" }] }),
-    db.creativoWebinar.findMany({ orderBy: { startsAt: "desc" } }),
+       db.creativoWebinar.findMany({ orderBy: { startsAt: "desc" }, include: { speakers: { orderBy: { displayOrder: "asc" } } } }),
   ]);
 
   return (
