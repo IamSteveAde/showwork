@@ -193,7 +193,7 @@ function NavLink({
 /*                                  NAVBAR                                    */
 /* -------------------------------------------------------------------------- */
 
-export default function Navbar() {
+export default function Navbar({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -333,47 +333,76 @@ export default function Navbar() {
 
           {/* Desktop actions */}
 
-          <div className="hidden items-center gap-6 sm:flex">
-            <Link
-              href="/login"
-              className="group flex items-center gap-2 text-[13px] font-semibold text-white/55 transition-colors duration-300 hover:text-white"
-            >
-              <LogIn
-                size={15}
-                strokeWidth={2}
-                className="transition-transform duration-300 group-hover:-translate-x-0.5"
-              />
-
-              <span>Log in</span>
-            </Link>
-
-            <Link
-              href="/signup"
-              className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-white transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
-              style={{
-                background: COLOR.blue,
-                boxShadow: "0 12px 35px -12px rgba(36,120,255,0.6)",
-              }}
-            >
-              <span
-                className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
+                    <div className="hidden items-center gap-6 sm:flex">
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-white transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
                 style={{
-                  background: COLOR.brandGradient,
+                  background: COLOR.blue,
+                  boxShadow: "0 12px 35px -12px rgba(36,120,255,0.6)",
                 }}
-              />
-
-              <span className="relative z-10 flex items-center gap-2">
-                Get started
-
-                <ArrowUpRight
-                  size={15}
-                  strokeWidth={2.5}
-                  className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              >
+                <span
+                  className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
+                  style={{
+                    background: COLOR.brandGradient,
+                  }}
                 />
-              </span>
-            </Link>
-          </div>
 
+                <span className="relative z-10 flex items-center gap-2">
+                  Go to dashboard
+
+                  <ArrowUpRight
+                    size={15}
+                    strokeWidth={2.5}
+                    className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="group flex items-center gap-2 text-[13px] font-semibold text-white/55 transition-colors duration-300 hover:text-white"
+                >
+                  <LogIn
+                    size={15}
+                    strokeWidth={2}
+                    className="transition-transform duration-300 group-hover:-translate-x-0.5"
+                  />
+
+                  <span>Log in</span>
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="group relative overflow-hidden rounded-full px-5 py-2.5 text-[13px] font-bold text-white transition-transform duration-300 hover:scale-[1.04] md:px-6 md:py-3"
+                  style={{
+                    background: COLOR.blue,
+                    boxShadow: "0 12px 35px -12px rgba(36,120,255,0.6)",
+                  }}
+                >
+                  <span
+                    className="absolute inset-0 translate-y-full transition-transform duration-300 ease-out group-hover:translate-y-0"
+                    style={{
+                      background: COLOR.brandGradient,
+                    }}
+                  />
+
+                  <span className="relative z-10 flex items-center gap-2">
+                    Get started
+
+                    <ArrowUpRight
+                      size={15}
+                      strokeWidth={2.5}
+                      className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    />
+                  </span>
+                </Link>
+              </>
+            )}
+          </div>
           {/* Mobile button */}
 
           <button
@@ -514,45 +543,74 @@ export default function Navbar() {
 
                 {/* Account actions */}
 
-                <div className="mt-4 grid gap-2.5 border-t border-white/10 pt-4">
-                  <Link
-                    href="/login"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center justify-center gap-2 rounded-full border border-white/12 px-5 py-3 text-center text-[13px] font-bold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    <LogIn size={15} strokeWidth={2} />
-                    Log in
-                  </Link>
-
-                  <Link
-                    href="/signup"
-                    onClick={() => setMobileOpen(false)}
-                    className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-white"
-                    style={{
-                      background: COLOR.blue,
-                    }}
-                  >
-                    <span
-                      className="absolute inset-0 translate-y-full transition-transform duration-300 group-hover:translate-y-0"
+                                <div className="mt-4 grid gap-2.5 border-t border-white/10 pt-4">
+                  {isLoggedIn ? (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileOpen(false)}
+                      className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-white"
                       style={{
-                        background: COLOR.brandGradient,
+                        background: COLOR.blue,
                       }}
-                    />
-
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      <Sparkles size={15} strokeWidth={2.2} />
-
-                      Start creating
-
-                      <ArrowUpRight
-                        size={15}
-                        strokeWidth={2.5}
-                        className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    >
+                      <span
+                        className="absolute inset-0 translate-y-full transition-transform duration-300 group-hover:translate-y-0"
+                        style={{
+                          background: COLOR.brandGradient,
+                        }}
                       />
-                    </span>
-                  </Link>
-                </div>
 
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        Go to dashboard
+
+                        <ArrowUpRight
+                          size={15}
+                          strokeWidth={2.5}
+                          className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                        />
+                      </span>
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-center gap-2 rounded-full border border-white/12 px-5 py-3 text-center text-[13px] font-bold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <LogIn size={15} strokeWidth={2} />
+                        Log in
+                      </Link>
+
+                      <Link
+                        href="/signup"
+                        onClick={() => setMobileOpen(false)}
+                        className="group relative overflow-hidden rounded-full px-5 py-3.5 text-center text-[13px] font-bold text-white"
+                        style={{
+                          background: COLOR.blue,
+                        }}
+                      >
+                        <span
+                          className="absolute inset-0 translate-y-full transition-transform duration-300 group-hover:translate-y-0"
+                          style={{
+                            background: COLOR.brandGradient,
+                          }}
+                        />
+
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                          <Sparkles size={15} strokeWidth={2.2} />
+
+                          Start creating
+
+                          <ArrowUpRight
+                            size={15}
+                            strokeWidth={2.5}
+                            className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                          />
+                        </span>
+                      </Link>
+                    </>
+                  )}
+                </div>
                 {/* Brand line — one thin blue-to-yellow hairline, echoing the
                     signature gradient used on the homepage motion section */}
 

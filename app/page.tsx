@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import HomeClient from "./HomeClient";
 
@@ -53,11 +52,12 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  // Anyone already logged in gets sent straight to their dashboard
-  // instead of the marketing homepage — no reason to make them look
-  // at their own landing page again once they're already a user.
+  // No forced redirect — someone might genuinely want to look at
+  // their own marketing homepage even while logged in (checking
+  // current copy, sharing the link, etc). Instead, just tell the
+  // page whether they're logged in, so it can offer a direct
+  // "Go to dashboard" option rather than deciding for them.
   const creator = await getCurrentCreator();
-  if (creator) redirect("/dashboard");
 
-  return <HomeClient />;
+  return <HomeClient isLoggedIn={!!creator} />;
 }
