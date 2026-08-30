@@ -54,9 +54,19 @@ export default async function WebinarsIndexPage() {
                     <p className="mb-1.5 text-xs font-bold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
                       {w.startsAt.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
-                                        <p className="text-lg font-bold text-black">{w.topic}</p>
+                                                           <p className="text-lg font-bold text-black">{w.topic}</p>
                     {w.speakers[0] ? (
-                      <p className="mt-1 truncate text-sm text-black/45">{w.speakers[0].name}{w.speakers.length > 1 ? " & others" : ""}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        {w.speakers[0].profileImageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={w.speakers[0].profileImageUrl} alt="" className="h-6 w-6 flex-shrink-0 rounded-full object-cover" />
+                        )}
+                        <p className="truncate text-sm text-black/45">
+                          <span className="font-semibold text-black/60">{w.speakers[0].name}</span>
+                          {" · "}{w.speakers[0].title}
+                          {w.speakers.length > 1 ? ` + ${w.speakers.length - 1} more` : ""}
+                        </p>
+                      </div>
                     ) : (
                       w.guests && <p className="mt-1 truncate text-sm text-black/45">{w.guests}</p>
                     )}
