@@ -496,7 +496,7 @@ function LogoMark({ src, size = 26, color = "#FFFFFF" }: { src: string; size?: n
 // the headline itself carries a quiet white-to-blue gradient — the
 // one deliberate flourish on an otherwise flat, minimal hero.
 // ─────────────────────────────────────────────
-function HeroSlider() {
+function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -563,8 +563,8 @@ function HeroSlider() {
         }}
       />
 
-      <div className="relative z-20">
-        <Navbar />
+           <div className="relative z-20">
+        <Navbar isLoggedIn={isLoggedIn} />
       </div>
 
       {/* Minimal hero copy */}
@@ -702,7 +702,7 @@ function CommunityCounter() {
   );
 }
 
-export default function HomeClient() {
+export default function HomeClient({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [showFullVideo, setShowFullVideo] = useState(false);
   const [showMotionFull, setShowMotionFull] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -723,7 +723,7 @@ export default function HomeClient() {
   return (
     <main className={`${jakarta.variable} ${fraunces.variable}`} style={{ fontFamily: "var(--font-jakarta)" }}>
       <FloatingStartButton />
-      <HeroSlider />
+            <HeroSlider isLoggedIn={isLoggedIn} />
 
       {/* THE FILM — one plain card, hairline border, no glow, no pattern.
           The video itself is the only thing drawing attention. */}
