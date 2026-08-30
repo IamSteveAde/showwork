@@ -248,28 +248,30 @@ function SolidButton({
 
 const SLIDES = [
   {
-    image: "/images/del.png",
+    image: "/images/sec.webp",
+    desktopImage: "/images/first.webp",
     eyebrow: "Client delivery, done properly",
     headline: "The way premium work should arrive.",
     body: "A branded, password-protected delivery for your photography and film — so the client feels the value before a single file downloads.",
     cta: { label: "Deliver a project", href: "/start", external: false },
   },
   {
-    image: "/images/ports.png",
+    image: "/images/secondm.webp",
+    desktopImage: "/images/second.webp",
     eyebrow: "Your work, in one place",
     headline: "A portfolio built to be taken seriously.",
     body: "One considered link that shows a client exactly what you do — and why it costs what it does. Free, always.",
     cta: { label: "Create your portfolio", href: "/signup?next=/dashboard/portfolio", external: false },
   },
   {
-    image: "/images/coms.png",
+    image: "/images/thirdm.webp",
+    desktopImage: "/images/third.webp",
     eyebrow: "You're not building this alone",
     headline: "For creators who charge what they're worth.",
     body: "Positioning, pricing, and better clients — worked out alongside people doing the same work you are.",
     cta: { label: "Join Creativo", href: COMMUNITY_URL, external: true },
   },
 ];
-
 const ROUTES = [
   {
     number: "01",
@@ -522,7 +524,11 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Full-bleed photography, pinned to the viewport on every screen
-          size — background-attachment: fixed, unconditionally. */}
+          size — background-attachment: fixed, unconditionally. Mobile
+          and desktop each load their own dedicated file (the "m"
+          suffix is the desktop-framed version), switched purely via
+          CSS media queries rather than JS detection, so there's no
+          hydration flicker or wrong-image flash on first paint. */}
       <div className="absolute inset-0">
         <AnimatePresence mode="sync">
           <motion.div
@@ -534,22 +540,34 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
             className="absolute inset-0"
           >
             <div
-              className="h-full w-full bg-fixed bg-cover bg-center"
+              className="block h-full w-full bg-fixed bg-cover bg-center md:hidden"
               style={{ backgroundImage: `url(${slide.image})` }}
+            />
+            <div
+              className="hidden h-full w-full bg-fixed bg-cover bg-center md:block"
+              style={{ backgroundImage: `url(${slide.desktopImage})` }}
             />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* One scrim across the whole frame so the centered text holds
-          contrast against any photo — darker at the edges, lightest
-          where the eye actually needs to read the image, but never so
-          light the headline loses its footing. */}
+      {/* Asymmetric overlay — darkest along the left edge where the
+          text now actually sits, easing off toward the right so the
+          photograph itself still gets room to breathe, layered under
+          a standard top/bottom scrim for overall contrast regardless
+          of what's in the frame. */}
       <div
         className="pointer-events-none absolute inset-0 z-[5]"
         style={{
           background:
-            "linear-gradient(180deg, rgba(6,7,10,.62) 0%, rgba(6,7,10,.42) 42%, rgba(6,7,10,.4) 60%, rgba(6,7,10,.66) 100%)",
+            "linear-gradient(180deg, rgba(4,5,8,.55) 0%, rgba(4,5,8,.3) 35%, rgba(4,5,8,.35) 65%, rgba(4,5,8,.78) 100%)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 z-[6]"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(4,5,8,.75) 0%, rgba(4,5,8,.4) 42%, rgba(4,5,8,0) 75%)",
         }}
       />
 
@@ -563,27 +581,43 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
         }}
       />
 
-           <div className="relative z-20">
+      <div className="relative z-20">
         <Navbar isLoggedIn={isLoggedIn} />
       </div>
 
-      {/* Minimal hero copy */}
-      <div className="relative z-10 flex h-full items-center justify-center px-5 pt-20 sm:px-8 lg:px-12">
+      {/* Hero copy — left-aligned, anchored toward the bottom-left,
+          the way a considered editorial or studio site reads rather
+          than a centered stock-template hero. */}
+      <div className="relative z-10 flex h-full flex-col justify-end px-5 pb-24 pt-20 sm:px-8 sm:pb-28 lg:px-16 lg:pb-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 22 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -14 }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-4xl text-center"
+            className="max-w-2xl text-left"
           >
-            <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.2em] text-white/85 sm:mb-7 sm:text-xs">
-              {slide.eyebrow}
-            </p>
+            <div className="mb-5 flex items-center gap-3 sm:mb-7">
+              {/* The glowing element — a small solid dot with a soft
+                  blurred halo behind it in the same blue, the one spot
+                  of color that reads as deliberate rather than
+                  decorative, echoing the blue used once more below in
+                  the CTA. */}
+              <span className="relative flex h-2 w-2 flex-shrink-0">
+                <span
+                  className="absolute inset-0 -m-1.5 rounded-full blur-md"
+                  style={{ background: COLOR.blue, opacity: 0.9 }}
+                />
+                <span className="relative h-2 w-2 rounded-full" style={{ background: COLOR.blue }} />
+              </span>
+              <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/85 sm:text-xs">
+                {slide.eyebrow}
+              </p>
+            </div>
 
             <h1
-              className="mx-auto max-w-4xl bg-clip-text font-[var(--font-fraunces)] text-[clamp(2.7rem,7vw,6.5rem)] font-normal leading-[0.98] tracking-[-0.035em] text-transparent"
+              className="max-w-2xl bg-clip-text font-[var(--font-fraunces)] text-[clamp(2.6rem,6.4vw,5.6rem)] font-normal leading-[0.98] tracking-[-0.035em] text-transparent"
               style={{
                 backgroundImage: `linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 45%, #C9D8FF 75%, ${COLOR.blue} 115%)`,
               }}
@@ -591,25 +625,35 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
               {slide.headline}
             </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-white/90 sm:mt-7 sm:text-base lg:text-lg">
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-white/90 sm:mt-7 sm:text-base lg:text-lg">
               {slide.body}
             </p>
 
-            <div className="mt-8 flex justify-center sm:mt-10">
-              <SolidButton
-                href={slide.cta.href}
-                external={slide.cta.external}
-                tone="blue"
-              >
-                {slide.cta.label}
-              </SolidButton>
+            <div className="mt-8 flex justify-start sm:mt-10">
+              {/* Glowing CTA — a soft blurred halo in the same blue
+                  sitting behind the solid button, the second and last
+                  deliberate use of the glow motif in the hero. */}
+              <div className="relative inline-flex">
+                <span
+                  className="absolute inset-0 -z-10 rounded-full blur-2xl"
+                  style={{ background: COLOR.blue, opacity: 0.55 }}
+                />
+                <SolidButton
+                  href={slide.cta.href}
+                  external={slide.cta.external}
+                  tone="blue"
+                >
+                  {slide.cta.label}
+                </SolidButton>
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Quiet slide navigation */}
-      <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-4 sm:bottom-10">
+      {/* Quiet slide navigation — left-aligned now too, sitting under
+          the copy rather than centered at the base of the frame. */}
+      <div className="absolute bottom-8 left-5 z-20 flex items-center gap-4 sm:bottom-10 sm:left-8 lg:left-16">
         <div className="flex gap-1.5">
           {SLIDES.map((_, i) => (
             <button
@@ -620,7 +664,8 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
               style={{ width: i === active ? 34 : 12 }}
             >
               <motion.span
-                className="block h-full bg-white"
+                className="block h-full"
+                style={{ background: COLOR.blue, boxShadow: i === active ? `0 0 8px ${COLOR.blue}` : "none" }}
                 animate={{ width: i === active ? "100%" : "0%" }}
                 transition={{ duration: 0.4 }}
               />
@@ -635,7 +680,6 @@ function HeroSlider({ isLoggedIn }: { isLoggedIn: boolean }) {
     </section>
   );
 }
-
 function CommunityCounter() {
   const [count, setCount] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
