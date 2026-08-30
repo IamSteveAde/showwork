@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentCreator } from "@/lib/auth";
 import HomeClient from "./HomeClient";
 
 // Strong, Nigeria-targeted SEO. Title and description use language a
@@ -50,6 +52,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Anyone already logged in gets sent straight to their dashboard
+  // instead of the marketing homepage — no reason to make them look
+  // at their own landing page again once they're already a user.
+  const creator = await getCurrentCreator();
+  if (creator) redirect("/dashboard");
+
   return <HomeClient />;
 }
