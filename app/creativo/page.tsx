@@ -37,7 +37,7 @@ export default async function CreativoPage() {
       orderBy: [{ periodDate: "desc" }, { points: "desc" }],
       take: 100,
     }),
-    db.creativoWebinar.findMany({ orderBy: { startsAt: "desc" } }),
+        db.creativoWebinar.findMany({ orderBy: { startsAt: "desc" }, include: { speakers: { orderBy: { displayOrder: "asc" }, take: 1 } } }),
   ]);
 
   return (
