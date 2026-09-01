@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import type { MediaItem } from "@/app/[slug]/DeliveryPage";
 import { downloadFile } from "@/lib/download";
@@ -11,7 +11,6 @@ import ReviewControls from "@/components/ReviewControls";
 // counts as "go to the next/previous photo" rather than an accidental
 // small drag — matches the feel of a native gallery app's swipe.
 const SWIPE_DISTANCE_THRESHOLD = 60;
-const SWIPE_VELOCITY_THRESHOLD = 500;
 
 export default function Lightbox({
   photo,
@@ -56,13 +55,28 @@ export default function Lightbox({
     }
   };
 
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    const { offset, velocity } = info;
-    if (offset.x > SWIPE_DISTANCE_THRESHOLD || velocity.x > SWIPE_VELOCITY_THRESHOLD) {
+    // Plain touch events instead of Framer Motion's drag gesture —
+  // drag attaches its own pointer listeners and temporarily alters
+  // body styles internally while active, and if this component ever
+  // unmounts abruptly mid-gesture (which ours does, via a state
+  // change rather than a natural release), that cleanup can be left
+  // behind, breaking interaction with the page afterward. Plain touch
+  // events have no such internal state to leave stuck.
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    if (deltaX > SWIPE_DISTANCE_THRESHOLD) {
       onPrev();
-    } else if (offset.x < -SWIPE_DISTANCE_THRESHOLD || velocity.x < -SWIPE_VELOCITY_THRESHOLD) {
+    } else if (deltaX < -SWIPE_DISTANCE_THRESHOLD) {
       onNext();
     }
+    touchStartX.current = null;
   };
 
    // Runs exactly once on mount, exactly once on unmount — deliberately
@@ -74,8 +88,10 @@ export default function Lightbox({
   // and leaving the page stuck unable to scroll afterward.
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    console.log("[SCROLL DEBUG] Lightbox mounted, scroll locked");
     return () => {
       document.body.style.overflow = "";
+      console.log("[SCROLL DEBUG] Lightbox unmounting, scroll unlocked");
     };
   }, []);
 
@@ -100,19 +116,19 @@ export default function Lightbox({
       {/* Full-bleed image — no card, no rounded corners, no max-width.
           Draggable horizontally for swipe navigation; a small drag
           that doesn't cross the threshold just snaps back in place. */}
-      <motion.div
+          {/* No initial/animate/exit of its own — the outer container
+          already handles the whole overlay's fade in/out. Giving this
+          inner element its own separate exit animation while it also
+          has an active drag gesture is what could leave the component
+          stuck mid-transition, unable to fully unmount, blocking every
+          click underneath it even once it's visually gone. */}
+          <div
         key={photo.id}
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.6}
-        onDragEnd={handleDragEnd}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className="relative h-full w-full"
       >
-        <Image
+               <Image
           src={photo.url}
           alt={photo.caption}
           fill
@@ -122,7 +138,7 @@ export default function Lightbox({
           onContextMenu={(e) => e.preventDefault()}
           className="object-contain select-none"
         />
-      </motion.div>
+      </div>
 
       {/* Minimal top-corner controls — small, semi-transparent, out of
           the way of the actual image. No prev/next arrows at all;
