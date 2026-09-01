@@ -1058,9 +1058,10 @@ export default function ProjectContent({
           />
         )}
       </AnimatePresence>
-      <AnimatePresence>
+            <AnimatePresence>
         {openPhotoIdx !== null && photos[openPhotoIdx] && (
           <Lightbox
+            key="lightbox"
             photo={photos[openPhotoIdx]}
             index={openPhotoIdx}
             total={photos.length}
