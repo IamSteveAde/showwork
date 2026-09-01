@@ -81,48 +81,76 @@ function Header({
   clientName,
   logoUrl,
   primaryColor,
+  sections,
 }: {
   clientName: string;
   logoUrl: string | null;
   primaryColor: string;
+  sections: { id: string; name: string }[];
 }) {
   const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
+   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-6 transition-all duration-500 md:px-14"
+      className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
       style={{
         background: scrolled ? "rgba(0,0,0,0.7)" : "transparent",
         backdropFilter: scrolled ? "blur(12px)" : "none",
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
       }}
     >
-      <div className="flex items-center gap-3">
-        {logoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt={clientName} className="h-7 w-auto" />
-        ) : (
-          <span className="text-sm font-medium uppercase text-white" style={{ letterSpacing: "0.2em" }}>
-            {clientName}
-          </span>
-        )}
+      <div className="flex items-center justify-between px-6 py-6 md:px-14">
+        <div className="flex items-center gap-3">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={clientName} className="h-7 w-auto" />
+          ) : (
+            <span className="text-sm font-medium uppercase text-white" style={{ letterSpacing: "0.2em" }}>
+              {clientName}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: primaryColor }} />
+          <p className="text-xs font-medium uppercase text-white/40" style={{ letterSpacing: "0.25em" }}>
+            Private preview
+          </p>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ background: primaryColor }} />
-        <p className="text-xs font-medium uppercase text-white/40" style={{ letterSpacing: "0.25em" }}>
-          Private preview
-        </p>
-      </div>
+
+      {/* Section tabs — horizontally scrollable when there are more
+          than fit on screen, rather than wrapping or shrinking to
+          illegibility. Each tab smooth-scrolls to its matching
+          section's real DOM id below. */}
+      {sections.length > 0 && (
+        <div
+          className="scrollbar-hide flex items-center gap-1 overflow-x-auto px-6 pb-3 md:px-14"
+          style={{ borderTop: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent" }}
+        >
+          {sections.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => scrollToSection(s.id)}
+              className="flex-shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+      )}
     </header>
   );
 }
-
 function Hero({
   heroMedia,
   tagline,
@@ -870,8 +898,12 @@ export default function ProjectContent({
       transition={{ duration: 0.6 }}
       className="min-h-screen bg-black"
     >
-      <Header clientName={clientName} logoUrl={logoUrl} primaryColor={primaryColor} />
-
+           <Header
+        clientName={clientName}
+        logoUrl={logoUrl}
+        primaryColor={primaryColor}
+        sections={renderSections.map((s) => ({ id: s.id, name: s.name }))}
+      />
       {heroMedia && (
         <Hero
           heroMedia={heroMedia}
@@ -894,9 +926,10 @@ export default function ProjectContent({
         const isZipping = zippingSectionId === section.id;
 
         return (
-          <section
+                    <section
             key={section.id}
-            className="px-6 py-16 md:px-14 md:py-24"
+            id={section.id}
+            className="scroll-mt-32 px-6 py-16 md:scroll-mt-36 md:px-14 md:py-24"
             style={{ background: bg }}
           >
             <div className="mx-auto max-w-6xl">
