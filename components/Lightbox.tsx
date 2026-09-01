@@ -65,6 +65,20 @@ export default function Lightbox({
     }
   };
 
+   // Runs exactly once on mount, exactly once on unmount — deliberately
+  // never in between. Locking scroll and the keyboard listener used
+  // to share one effect keyed on [onClose, onPrev, onNext]; since
+  // those are freshly-created functions on every parent re-render,
+  // that effect could tear down and re-run mid-close, occasionally
+  // re-applying the scroll lock right as the component was exiting
+  // and leaving the page stuck unable to scroll afterward.
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -72,11 +86,7 @@ export default function Lightbox({
       if (e.key === "ArrowRight") onNext();
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [onClose, onPrev, onNext]);
 
   return (
@@ -163,14 +173,20 @@ export default function Lightbox({
           bottom-right rather than a bar permanently occupying the
           screen. Tapping it slides the real controls up from the
           bottom; tapping again (or picking an action) dismisses it. */}
-      <button
+            <button
         onClick={() => setReviewPanelOpen((v) => !v)}
         aria-label={reviewPanelOpen ? "Hide review options" : "Show review options"}
         className="absolute bottom-5 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        {reviewPanelOpen ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
       </button>
 
       {total > 1 && (
