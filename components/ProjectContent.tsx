@@ -132,20 +132,42 @@ function Header({
           than fit on screen, rather than wrapping or shrinking to
           illegibility. Each tab smooth-scrolls to its matching
           section's real DOM id below. */}
-      {sections.length > 0 && (
+            {sections.length > 0 && (
         <div
-          className="scrollbar-hide flex items-center gap-1 overflow-x-auto px-6 pb-3 md:px-14"
+          className="relative"
           style={{ borderTop: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent" }}
         >
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => scrollToSection(s.id)}
-              className="flex-shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              {s.name}
-            </button>
-          ))}
+          {/* Real breathing room above and below the pills, so they
+              sit clearly clear of the divider line rather than
+              touching it directly. */}
+          <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-6 py-3.5 md:px-14">
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => scrollToSection(s.id)}
+                className="flex-shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-all hover:scale-[1.04] hover:bg-white/[0.14] active:scale-[0.97]"
+                style={{
+                  background: "rgba(255,255,255,0.08)",
+                  borderColor: "rgba(255,255,255,0.14)",
+                  color: "rgba(255,255,255,0.82)",
+                }}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Edge fades — a quiet visual hint that the row scrolls
+              further, rather than the content just cutting off
+              abruptly at the screen edge. */}
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 w-8 md:w-14"
+            style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.55), transparent)" }}
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 md:w-14"
+            style={{ background: "linear-gradient(270deg, rgba(0,0,0,0.55), transparent)" }}
+          />
         </div>
       )}
     </header>
