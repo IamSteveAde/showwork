@@ -90,11 +90,17 @@ function EntryCard({ entry, rankIndex }: { entry: LeaderboardEntryData; rankInde
               </a>
             )}
 
-            {entry.whatsappNumber && (
-              <a
-                href={spotlightWhatsappHref(entry.whatsappNumber, entry.name)}
+                      {entry.whatsappNumber && (
+              
+                <a href={spotlightWhatsappHref(entry.whatsappNumber, entry.name)}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  window.fbq?.("track", "Contact", {
+                    content_name: entry.name,
+                    content_category: "CREATIVO Leaderboard",
+                  });
+                }}
                 className="group/contact inline-flex items-center gap-1.5 rounded-full border border-black/[0.07] bg-black/[0.035] px-3 py-1.5 text-[10px] font-extrabold text-black/55 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white hover:shadow-[0_8px_20px_-10px_#25D366]"
               >
                 Contact creator
@@ -491,14 +497,20 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
                             </a>
                           )}
 
-                          {leader.whatsappNumber && (
-                            <a
-                              href={spotlightWhatsappHref(
+                                                    {leader.whatsappNumber && (
+                            
+                              <a href={spotlightWhatsappHref(
                                 leader.whatsappNumber,
                                 leader.name
                               )}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={() => {
+                                window.fbq?.("track", "Contact", {
+                                  content_name: leader.name,
+                                  content_category: "CREATIVO Leaderboard",
+                                });
+                              }}
                               className="group/contact inline-flex items-center gap-1 rounded-full border border-black/[0.07] bg-black/[0.035] px-2.5 py-1.5 text-[9px] font-extrabold text-black/50 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white"
                             >
                               Contact
