@@ -20,6 +20,16 @@ export const metadata: Metadata = {
   description: "Present your content deliveries like a premium brand.",
 };
 
+// Lets TypeScript know window.fbq exists (set by the Meta Pixel
+// script below) — without this, any file that calls window.fbq
+// elsewhere in the app would get a type error, since fbq isn't a
+// real, built-in property of Window.
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -27,7 +37,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={brandFont.variable}>
-      <body>
+           <body>
+        
         {/* Meta Pixel Code — loads on every page, tracks pageviews site-wide */}
         <Script id="meta-pixel" strategy="afterInteractive">
           {`

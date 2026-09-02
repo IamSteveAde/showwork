@@ -1695,7 +1695,7 @@ export default function CreativoContent({
 
                             )}
 
-                            {entry.whatsappNumber && (
+                                                        {entry.whatsappNumber && (
 
                               
                                 <a href={spotlightWhatsappHref(
@@ -1704,6 +1704,12 @@ export default function CreativoContent({
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() => {
+                                  window.fbq?.("track", "Contact", {
+                                    content_name: entry.name,
+                                    content_category: "CREATIVO Leaderboard",
+                                  });
+                                }}
                                 className="inline-flex items-center gap-1"
                                 style={{
                                   color:
