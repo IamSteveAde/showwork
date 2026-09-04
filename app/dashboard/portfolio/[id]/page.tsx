@@ -94,10 +94,14 @@ export default async function PortfolioDetailPage({
           <h2 className="mb-5 text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
             Details
           </h2>
-          <PortfolioDetailsForm
+                    <PortfolioDetailsForm
             companyName={portfolio.companyName}
             heroTagline={portfolio.heroTagline}
             heroMediaId={portfolio.heroMediaId}
+                       heroBannerDesktopUrl={portfolio.heroBannerDesktopUrl}
+            heroBannerDesktopType={portfolio.heroBannerDesktopType}
+            heroBannerMobileUrl={portfolio.heroBannerMobileUrl}
+            heroBannerMobileType={portfolio.heroBannerMobileType}
             bannerCandidates={bannerCandidates}
             contactEmail={portfolio.contactEmail}
             whatsappNumber={portfolio.whatsappNumber}

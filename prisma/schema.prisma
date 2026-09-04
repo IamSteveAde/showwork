@@ -1041,7 +1041,19 @@ model Portfolio {
   slug         String   @unique // useshowwork.com/p/{slug}
   companyName  String
   heroTagline  String?
+  // Legacy — picks one already-uploaded section photo as the hero.
+  // Kept only as a fallback for portfolios that never set either
+  // dedicated banner below; new portfolios use those two instead.
   heroMediaId  String?
+  // Two dedicated, directly-uploaded banner images — not picked from
+  // section media. A single image can't look right on both a wide
+  // desktop screen and a tall phone screen at once (it either gets
+  // awkwardly cropped or leaves empty space), so each screen size
+  // gets its own purpose-shot image instead.
+    heroBannerDesktopUrl  String? // recommended landscape, e.g. 1920x1080
+  heroBannerDesktopType String? // "IMAGE" | "VIDEO" — which tag to render on the public page
+  heroBannerMobileUrl   String? // recommended portrait, e.g. 1080x1350
+  heroBannerMobileType  String? // "IMAGE" | "VIDEO"
   logoUrl      String?
   primaryColor String?
   bgColor      String?
