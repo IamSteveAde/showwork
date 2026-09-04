@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import PortfolioMediaModal, { type PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
 import WhatsAppChatWidget from "@/components/portfolio/WhatsAppChatWidget";
-import MediaWithSkeleton from "@/components/portfolio/MediaWithSkeleton";
+
 
 // ─────────────────────────────────────────────
 // INTRO / ABOUT — a creator introducing themselves, shown as the
@@ -625,20 +625,16 @@ function MiniSectionCard({
         outlineOffset: "2px",
       }}
     >
-           {cover ? (
-        isDocType ? (
+      {cover ? (
+        cover.type === "VIDEO" ? (
+          <video src={cover.url} autoPlay muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+        ) : isDocType ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
             <IconDocument className="h-8 w-8 text-white/25" />
           </div>
         ) : (
-          <div className="absolute inset-0">
-            <MediaWithSkeleton
-              src={cover.url}
-              type={cover.type === "VIDEO" ? "VIDEO" : "PHOTO"}
-              className="absolute inset-0 h-full w-full object-cover"
-              videoProps={{ autoPlay: true, muted: true, playsInline: true, preload: "metadata" }}
-            />
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )
       ) : (
         <div className="absolute inset-0 bg-white/5" />
@@ -676,20 +672,27 @@ function CategoryCard({
       onClick={onSelect}
       className="group relative aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/20 md:w-[calc((100%-3rem)/3)]"
     >
-       {cover ? (
-        isDocType ? (
+      {cover ? (
+        cover.type === "VIDEO" ? (
+          <video
+            src={cover.url}
+            autoPlay
+            muted
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+          />
+        ) : isDocType ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
             <IconDocument className="h-16 w-16 text-white/25" />
           </div>
         ) : (
-          <div className="absolute inset-0">
-            <MediaWithSkeleton
-              src={cover.url}
-              type={cover.type === "VIDEO" ? "VIDEO" : "PHOTO"}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
-              videoProps={{ autoPlay: true, muted: true, playsInline: true, preload: "metadata" }}
-            />
-          </div>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={cover.url}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+          />
         )
       ) : (
         <div className="absolute inset-0 bg-white/5" />
@@ -1170,16 +1173,20 @@ export default function PortfolioContent({
                 transition={{ duration: 1.4, ease: [0.19, 1, 0.22, 1] }}
                 className="absolute inset-0"
               >
-                               {selectedCover ? (
-                  <div className="relative h-full w-full">
-                    <MediaWithSkeleton
-                      key={selectedCover.url}
-                      src={selectedCover.url}
-                      type={selectedCover.type === "VIDEO" ? "VIDEO" : "PHOTO"}
-                      className="h-full w-full object-cover"
-                      videoProps={{ autoPlay: true, muted: true, loop: true, playsInline: true }}
-                    />
-                  </div>
+                {selectedCover?.type === "VIDEO" ? (
+                  <video
+                    key={selectedCover.url}
+                    src={selectedCover.url}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="h-full w-full object-cover"
+                    style={{ opacity: 0.8 }}
+                  />
+                ) : selectedCover ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={selectedCover.url} src={selectedCover.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.8 }} />
                 ) : null}
               </motion.div>
               <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.95) 100%)" }} />
