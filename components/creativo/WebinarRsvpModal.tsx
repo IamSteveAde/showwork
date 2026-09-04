@@ -97,8 +97,9 @@ export default function WebinarRsvpModal({
             </div>
 
             <div>
-              <label className={labelClass}>WhatsApp number</label>
+              <label className={labelClass}>Your WhatsApp number <span className="normal-case text-black/25">(we'll reach out to confirm your spot here)</span></label>
               <input type="tel" required value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} style={{ fontSize: "16px" }} className={inputClass} placeholder="+234 800 000 0000" />
+              <p className="mt-1.5 text-[11px] text-black/35">Please make sure this is a number that's actually active on WhatsApp.</p>
             </div>
 
             <div>

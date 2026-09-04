@@ -974,3 +974,41 @@ export async function sendDiscountGrantedEmail({ to, discountPercent }: { to: st
     `,
   });
 }
+// ─────────────────────────────────────────────
+// WEBINAR RSVP NOTIFICATION — sent to the team, not the RSVP'er, the
+// moment someone signs up. Separate from sendWebinarRsvpConfirmationEmail
+// above (which goes to the person themselves) — this one lets the
+// team see exactly who's coming, with a fast way to reach out.
+// ─────────────────────────────────────────────
+export async function sendWebinarRsvpNotificationEmail({
+  webinarTopic,
+  name,
+  email,
+  whatsappNumber,
+}: {
+  webinarTopic: string;
+  name: string;
+  email: string;
+  whatsappNumber: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to: "hello@useshowwork.com",
+    replyTo: email,
+    subject: `New RSVP — ${webinarTopic}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
+          Webinar — New RSVP
+        </p>
+        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 100px;">Webinar</td><td style="padding: 6px 0;">${webinarTopic}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
+          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">WhatsApp</td><td style="padding: 6px 0;">${whatsappNumber}</td></tr>
+        </table>
+        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to reach out to them.</p>
+      </div>
+    `,
+  });
+}

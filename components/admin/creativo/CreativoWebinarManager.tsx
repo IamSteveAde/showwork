@@ -3,6 +3,15 @@
 import { useState } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
+
+// wa.me needs a plain digit string — the RSVP form allows spaces and
+// a leading "+" (e.g. "+234 800 000 0000"), so those get stripped
+// here rather than requiring the admin to clean the number up first.
+function rsvpWhatsappHref(whatsappNumber: string, name: string, webinarTopic: string): string {
+  const digitsOnly = whatsappNumber.replace(/[^0-9]/g, "");
+  const message = `Hi ${name}, thanks for RSVPing to "${webinarTopic}"!`;
+  return `https://wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`;
+}
 const MAX_BIO_LENGTH = 185;
 
 interface Speaker {
@@ -499,18 +508,29 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                   ) : (
                     <div className="flex flex-col gap-2">
                       {rsvps?.map((r) => (
-                        <div key={r.id} className="rounded-lg p-3 text-xs" style={{ background: "rgba(255,255,255,0.03)" }}>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-white">{r.name}</span>
-                            <span className="text-white/30">·</span>
-                            <span className="text-white/50">{r.field}</span>
-                            {r.joinedCommunity && (
-                              <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>
-                                In community
-                              </span>
-                            )}
+                        <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg p-3 text-xs" style={{ background: "rgba(255,255,255,0.03)" }}>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-white">{r.name}</span>
+                              <span className="text-white/30">·</span>
+                              <span className="text-white/50">{r.field}</span>
+                              {r.joinedCommunity && (
+                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>
+                                  In community
+                                </span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-white/40">{r.email} · {r.whatsappNumber}</p>
                           </div>
-                          <p className="mt-1 text-white/40">{r.email} · {r.whatsappNumber}</p>
+                          <a
+                            href={rsvpWhatsappHref(r.whatsappNumber, r.name, w.topic)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                            style={{ background: "rgba(37,211,102,0.15)", color: "#25D366" }}
+                          >
+                            Message on WhatsApp
+                          </a>
                         </div>
                       ))}
                     </div>
