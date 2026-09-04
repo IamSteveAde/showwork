@@ -13,6 +13,10 @@ export default function PortfolioDetailsForm({
   companyName,
   heroTagline,
   heroMediaId,
+    heroBannerDesktopUrl: initialBannerDesktopUrl,
+  heroBannerDesktopType: initialBannerDesktopType,
+  heroBannerMobileUrl: initialBannerMobileUrl,
+  heroBannerMobileType: initialBannerMobileType,
   bannerCandidates,
   contactEmail,
   whatsappNumber,
@@ -28,9 +32,13 @@ export default function PortfolioDetailsForm({
   bioStat: initialBioStat,
   bioPhotoUrl: initialBioPhotoUrl,
 }: {
-  companyName: string;
+   companyName: string;
   heroTagline: string | null;
   heroMediaId: string | null;
+    heroBannerDesktopUrl: string | null;
+  heroBannerDesktopType: string | null;
+  heroBannerMobileUrl: string | null;
+  heroBannerMobileType: string | null;
   bannerCandidates: BannerCandidate[];
   contactEmail: string | null;
   whatsappNumber: string | null;
@@ -48,9 +56,15 @@ export default function PortfolioDetailsForm({
 }) {
   const router = useRouter();
 
-  const [name, setName] = useState(companyName);
+   const [name, setName] = useState(companyName);
   const [tagline, setTagline] = useState(heroTagline ?? "");
   const [selectedHero, setSelectedHero] = useState(heroMediaId);
+    const [bannerDesktopUrl, setBannerDesktopUrl] = useState(initialBannerDesktopUrl ?? "");
+  const [bannerDesktopType, setBannerDesktopType] = useState<"IMAGE" | "VIDEO">((initialBannerDesktopType as "IMAGE" | "VIDEO") ?? "IMAGE");
+  const [bannerMobileUrl, setBannerMobileUrl] = useState(initialBannerMobileUrl ?? "");
+  const [bannerMobileType, setBannerMobileType] = useState<"IMAGE" | "VIDEO">((initialBannerMobileType as "IMAGE" | "VIDEO") ?? "IMAGE");
+  const [uploadingDesktopBanner, setUploadingDesktopBanner] = useState(false);
+  const [uploadingMobileBanner, setUploadingMobileBanner] = useState(false);
   const [email, setEmail] = useState(contactEmail ?? "");
   const [whatsapp, setWhatsapp] = useState(whatsappNumber ?? "");
   const [cta, setCta] = useState(ctaText ?? "");
@@ -100,6 +114,37 @@ export default function PortfolioDetailsForm({
     }
   };
 
+     const uploadBanner = async (
+    file: File,
+    setUrl: (url: string) => void,
+    setType: (type: "IMAGE" | "VIDEO") => void,
+    setUploading: (v: boolean) => void
+  ) => {
+    setUploading(true);
+    try {
+      const presignRes = await fetch("/api/portfolio/upload/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+      });
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
+
+      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+
+      // Same reasoning as the bio photo above — a banner isn't a
+      // gallery piece, so this never calls /api/portfolio/upload/
+      // complete; the public URL is saved directly. The type is
+      // recorded alongside it so the public page knows whether to
+      // render this as an <img> or a <video>.
+      setUrl(presignData.publicUrl);
+      setType(file.type.startsWith("video/") ? "VIDEO" : "IMAGE");
+    } catch {
+      // silently ignored, matching how uploadBioPhoto already handles this
+    } finally {
+      setUploading(false);
+    }
+  };
   const addSkill = () => {
     const trimmed = skillDraft.trim();
     if (trimmed && !bioSkills.includes(trimmed)) {
@@ -118,9 +163,13 @@ export default function PortfolioDetailsForm({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        companyName: name,
+               companyName: name,
         heroTagline: tagline,
         heroMediaId: selectedHero,
+                heroBannerDesktopUrl: bannerDesktopUrl,
+        heroBannerDesktopType: bannerDesktopType,
+        heroBannerMobileUrl: bannerMobileUrl,
+        heroBannerMobileType: bannerMobileType,
         contactEmail: email,
         whatsappNumber: whatsapp,
         ctaText: cta,
@@ -169,10 +218,91 @@ export default function PortfolioDetailsForm({
         />
       </div>
 
+            {/* ── Banner — two dedicated uploads, one per screen shape.
+          A single image can't look right on both a wide desktop
+          screen and a tall phone screen at once: a landscape photo
+          either gets awkwardly cropped on mobile, or shrinks down
+          with empty space above and below it. Two purpose-shot
+          images, each matching the screen it's actually for, is what
+          lets the banner genuinely fill the screen properly on both. ── */}
+      <div className="rounded-xl p-5" style={{ background: "rgba(36,120,255,0.05)", border: "1px solid rgba(36,120,255,0.2)" }}>
+        <h3 className="mb-1 text-sm font-semibold text-white">Your portfolio's banner</h3>
+        <p className="mb-4 text-xs leading-relaxed text-white/45">
+          Upload two versions of your banner — one shaped for wide desktop screens, one shaped for tall phone screens.
+          Visitors automatically see whichever one actually fits their screen.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Desktop banner
+            </label>
+            <p className="mb-2 text-[11px] text-white/35">
+              Landscape — wider than it is tall. Recommended around 1920×1080px. Image or video.
+            </p>
+            {bannerDesktopUrl && (
+              bannerDesktopType === "VIDEO" ? (
+                <video src={bannerDesktopUrl} muted className="mb-2 aspect-video w-full rounded-lg object-cover" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={bannerDesktopUrl} alt="" className="mb-2 aspect-video w-full rounded-lg object-cover" />
+              )
+            )}
+            <label className="block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+              {uploadingDesktopBanner ? "Uploading..." : bannerDesktopUrl ? "Change desktop banner" : "Upload desktop banner"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                className="hidden"
+                disabled={uploadingDesktopBanner}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadBanner(file, setBannerDesktopUrl, setBannerDesktopType, setUploadingDesktopBanner);
+                }}
+              />
+            </label>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+              Mobile banner
+            </label>
+            <p className="mb-2 text-[11px] text-white/35">
+              Portrait — taller than it is wide. Recommended around 1080×1350px. Image or video.
+            </p>
+            {bannerMobileUrl && (
+              bannerMobileType === "VIDEO" ? (
+                <video src={bannerMobileUrl} muted className="mb-2 aspect-[4/5] w-full rounded-lg object-cover" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={bannerMobileUrl} alt="" className="mb-2 aspect-[4/5] w-full rounded-lg object-cover" />
+              )
+            )}
+            <label className="block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+              {uploadingMobileBanner ? "Uploading..." : bannerMobileUrl ? "Change mobile banner" : "Upload mobile banner"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                className="hidden"
+                disabled={uploadingMobileBanner}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadBanner(file, setBannerMobileUrl, setBannerMobileType, setUploadingMobileBanner);
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Legacy option — picks one already-uploaded section photo as
+          the banner instead. Kept for anyone who set this up before
+          the two dedicated uploads above existed; the two above take
+          priority whenever they're set. */}
       {bannerCandidates.length > 0 && (
         <div>
           <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-            Banner
+            Or, pick from your existing photos <span className="normal-case text-white/25">(used only if no banner is uploaded above)</span>
           </label>
           <div className="grid grid-cols-4 gap-2">
             {bannerCandidates.map((b) => (
@@ -194,7 +324,6 @@ export default function PortfolioDetailsForm({
           </div>
         </div>
       )}
-
       <div>
         <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
           Contact email

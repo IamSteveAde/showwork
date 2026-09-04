@@ -85,9 +85,13 @@ export async function PATCH(req: NextRequest) {
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
   const body = await req.json();
-  const allowedFields = [
+    const allowedFields = [
     "heroTagline",
     "heroMediaId",
+        "heroBannerDesktopUrl",
+    "heroBannerDesktopType",
+    "heroBannerMobileUrl",
+    "heroBannerMobileType",
     "logoUrl",
     "primaryColor",
     "bgColor",

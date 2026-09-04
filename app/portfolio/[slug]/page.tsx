@@ -111,7 +111,11 @@ export default async function PortfolioPage({
       logoUrl={portfolio.logoUrl}
       primaryColor={portfolio.primaryColor ?? "#F5C842"}
       bgColor={portfolio.bgColor ?? "#0A0A0A"}
-      heroMedia={heroMedia}
+            heroMedia={heroMedia}
+            heroBannerDesktopUrl={portfolio.heroBannerDesktopUrl}
+      heroBannerDesktopType={portfolio.heroBannerDesktopType}
+      heroBannerMobileUrl={portfolio.heroBannerMobileUrl}
+      heroBannerMobileType={portfolio.heroBannerMobileType}
       heroTagline={portfolio.heroTagline}
       sections={sections}
       ungroupedMedia={ungroupedMedia}

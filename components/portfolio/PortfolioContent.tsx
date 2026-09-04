@@ -891,6 +891,10 @@ export default function PortfolioContent({
   primaryColor,
   bgColor,
   heroMedia,
+    heroBannerDesktopUrl,
+  heroBannerDesktopType,
+  heroBannerMobileUrl,
+  heroBannerMobileType,
   heroTagline,
   sections,
   ungroupedMedia,
@@ -913,7 +917,11 @@ export default function PortfolioContent({
   logoUrl: string | null;
   primaryColor: string;
   bgColor: string;
-  heroMedia: PortfolioMediaItem | null;
+    heroMedia: PortfolioMediaItem | null;
+    heroBannerDesktopUrl: string | null;
+  heroBannerDesktopType: string | null;
+  heroBannerMobileUrl: string | null;
+  heroBannerMobileType: string | null;
   heroTagline: string | null;
   sections: PortfolioSectionData[];
   ungroupedMedia: PortfolioMediaItem[];
@@ -1026,14 +1034,58 @@ export default function PortfolioContent({
 
       {/* ── MAIN BANNER — only on the landing state. Once a category is
            picked, its own image takes over as the banner instead. ── */}
-      {selectedSectionId === null && heroMedia && (
+           {selectedSectionId === null && (heroBannerDesktopUrl || heroBannerMobileUrl || heroMedia) && (
         <>
           <section className="fixed inset-0 z-0 h-screen w-full overflow-hidden bg-black">
-            {heroMedia.type === "VIDEO" ? (
-              <video src={heroMedia.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+                     {heroBannerDesktopUrl || heroBannerMobileUrl ? (
+              <>
+                {/* Two dedicated banners, switched purely by CSS media
+                    query — whichever one wasn't uploaded falls back to
+                    the other, so setting only one still works fine.
+                    Each independently renders as a video or image
+                    based on its own recorded type. */}
+                {(heroBannerMobileUrl || heroBannerDesktopUrl) && (
+                  (heroBannerMobileUrl ? heroBannerMobileType : heroBannerDesktopType) === "VIDEO" ? (
+                    <video
+                      src={heroBannerMobileUrl || heroBannerDesktopUrl || ""}
+                      autoPlay muted loop playsInline
+                      className="block h-full w-full object-cover md:hidden"
+                      style={{ opacity: 0.85 }}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroBannerMobileUrl || heroBannerDesktopUrl || ""}
+                      alt=""
+                      className="block h-full w-full object-cover md:hidden"
+                      style={{ opacity: 0.85 }}
+                    />
+                  )
+                )}
+                {(heroBannerDesktopUrl || heroBannerMobileUrl) && (
+                  (heroBannerDesktopUrl ? heroBannerDesktopType : heroBannerMobileType) === "VIDEO" ? (
+                    <video
+                      src={heroBannerDesktopUrl || heroBannerMobileUrl || ""}
+                      autoPlay muted loop playsInline
+                      className="hidden h-full w-full object-cover md:block"
+                      style={{ opacity: 0.85 }}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroBannerDesktopUrl || heroBannerMobileUrl || ""}
+                      alt=""
+                      className="hidden h-full w-full object-cover md:block"
+                      style={{ opacity: 0.85 }}
+                    />
+                  )
+                )}
+              </>
+            ) : heroMedia!.type === "VIDEO" ? (
+              <video src={heroMedia!.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={heroMedia.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+              <img src={heroMedia!.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
             )}
             <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.92) 100%)" }} />
             <motion.div
