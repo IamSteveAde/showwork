@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sendWebinarRsvpConfirmationEmail } from "@/lib/resend";
+import { sendWebinarRsvpConfirmationEmail, sendWebinarRsvpNotificationEmail } from "@/lib/resend";
 
 // Kept broad and general on purpose — this describes someone's
 // professional discipline for the webinar's own context, not the
@@ -51,7 +51,7 @@ export async function POST(
   });
 
   // Best-effort — the RSVP itself is already safely saved by this
-  // point regardless of whether the email actually goes out.
+  // point regardless of whether either email actually goes out.
   try {
     await sendWebinarRsvpConfirmationEmail({
       to: rsvp.email,
@@ -63,6 +63,17 @@ export async function POST(
     });
   } catch (err) {
     console.error("Failed to send webinar RSVP confirmation email:", err);
+  }
+
+  try {
+    await sendWebinarRsvpNotificationEmail({
+      webinarTopic: webinar.topic,
+      name: rsvp.name,
+      email: rsvp.email,
+      whatsappNumber: rsvp.whatsappNumber,
+    });
+  } catch (err) {
+    console.error("Failed to send webinar RSVP team notification email:", err);
   }
 
   return NextResponse.json({ ok: true });
