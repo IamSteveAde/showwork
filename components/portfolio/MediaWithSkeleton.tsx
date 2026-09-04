@@ -45,7 +45,13 @@ export default function MediaWithSkeleton({
           src={src}
           onLoadedData={() => setLoaded(true)}
           className={className}
-          style={{ opacity: loaded ? undefined : 0, transition: "opacity 0.4s ease-out" }}
+          // No opacity transition here — the moment the video is
+          // ready, it should show immediately at full opacity. The
+          // earlier version faded this in over 0.4s too, which meant
+          // even fully-loaded content sat there fading in instead of
+          // just appearing — a real, self-inflicted delay, not just
+          // a perception issue.
+          style={{ opacity: loaded ? 1 : 0 }}
           {...videoProps}
         />
       ) : (
@@ -55,7 +61,7 @@ export default function MediaWithSkeleton({
           alt={alt}
           onLoad={() => setLoaded(true)}
           className={className}
-          style={{ opacity: loaded ? undefined : 0, transition: "opacity 0.4s ease-out" }}
+          style={{ opacity: loaded ? 1 : 0 }}
         />
       )}
     </>
