@@ -825,7 +825,10 @@ function JustifiedGallery({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+  // Only ever populated for items with no stored aspectRatio — a
+  // legacy upload predating this system, or a video not yet covered
+  // by the one-time backfill. Everything else skips this entirely.
+  const [detectedRatios, setDetectedRatios] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const el = containerRef.current;
@@ -837,12 +840,19 @@ function JustifiedGallery({
     return () => observer.disconnect();
   }, []);
 
+  // Runs detection only for the items that actually need it — most
+  // items already have a real, stored ratio and never touch this at
+  // all. Never blocks anything: the gallery below renders immediately
+  // using a reasonable guess for whichever items are still pending,
+  // then quietly corrects just those specific tiles as their real
+  // shape comes in.
   useEffect(() => {
     let cancelled = false;
     items.forEach((item) => {
-      if (aspectRatios[item.id] !== undefined) return;
+      if (item.aspectRatio !== null) return;
+      if (detectedRatios[item.id] !== undefined) return;
       detectAspectRatio(item).then((ratio) => {
-        if (!cancelled) setAspectRatios((prev) => ({ ...prev, [item.id]: ratio }));
+        if (!cancelled) setDetectedRatios((prev) => ({ ...prev, [item.id]: ratio }));
       });
     });
     return () => {
@@ -851,15 +861,26 @@ function JustifiedGallery({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
-  const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
+  // Every item gets a usable ratio immediately: its real stored
+  // value, a value already detected for it, or — while detection for
+  // that one specific item is still pending — a plain 1:1 guess. This
+  // is what lets rows compute the moment the container has a width,
+  // rather than waiting on every single item in the section first.
+  const effectiveRatios = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of items) {
+      map[item.id] = item.aspectRatio ?? detectedRatios[item.id] ?? 1;
+    }
+    return map;
+  }, [items, detectedRatios]);
+
   const gap = 3;
   const targetRowHeight = 340;
 
   const rows = useMemo(() => {
-    if (!allKnown || containerWidth === 0) return [];
-    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap);
-  }, [allKnown, containerWidth, items, aspectRatios]);
-
+    if (containerWidth === 0) return [];
+    return computeJustifiedRows(items, effectiveRatios, containerWidth, targetRowHeight, gap);
+  }, [containerWidth, items, effectiveRatios]);
   let runningIndex = 0;
 
   return (
@@ -1244,54 +1265,183 @@ export default function PortfolioContent({
                  first. Only shown once you've actually stepped inside
                  a section. ── */}
             {renderSections.length > 1 && (
-              <section className="relative border-t border-white/5 bg-black px-6 py-10 md:px-14">
-                <div className="mx-auto max-w-[1400px]">
-                  <p className="mb-5 text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.2em" }}>
-                    More from this portfolio
-                  </p>
-                  <div className="relative">
-                    <div
-                      ref={stripRef}
-                      className="scrollbar-hide flex justify-center gap-3 overflow-x-auto pb-2"
-                      style={{ scrollSnapType: "x proximity", scrollbarWidth: "none" }}
-                    >
-                      {renderSections.map((section) => (
-                        <MiniSectionCard
-                          key={section.id}
-                          section={section}
-                          isActive={section.id === selectedSectionId}
-                          onSelect={() => handleSelectCategory(section.id)}
-                        />
-                      ))}
-                    </div>
-                    <style jsx>{`
-                      .scrollbar-hide::-webkit-scrollbar {
-                        display: none;
-                      }
-                    `}</style>
+  <section className="relative overflow-hidden border-t border-white/[0.07] bg-[#050505] px-4 py-16 sm:px-6 md:px-10 lg:px-14 lg:py-20">
+    {/* Ambient background */}
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0"
+      style={{
+        background:
+          "radial-gradient(circle at 50% 0%, rgba(255,255,255,0.045), transparent 42%)",
+      }}
+    />
 
-                    <button
-                      onClick={() => scrollStrip("left")}
-                      aria-label="Scroll left"
-                      className="absolute -left-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 sm:flex"
-                      style={{ background: "rgba(10,10,10,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}
-                    >
-                      <IconArrowLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => scrollStrip("right")}
-                      aria-label="Scroll right"
-                      className="absolute -right-2 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 sm:flex"
-                      style={{ background: "rgba(10,10,10,0.7)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)" }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M5 12H19M13 6L19 12L13 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </section>
-            )}
+    <div className="relative mx-auto max-w-[1500px]">
+      {/* Header */}
+      <div className="mb-8 flex items-end justify-between gap-6 md:mb-10">
+        <div>
+          <div className="mb-4 flex items-center gap-3">
+            <span className="h-px w-7 bg-white/30" />
+            <span
+              className="text-[10px] font-medium uppercase text-white/40"
+              style={{ letterSpacing: "0.24em" }}
+            >
+              Portfolio
+            </span>
+          </div>
+
+          <h2 className="text-2xl font-medium tracking-[-0.035em] text-white sm:text-3xl md:text-[34px]">
+            More from this portfolio
+          </h2>
+
+          <p className="mt-2 max-w-md text-sm leading-6 text-white/40">
+            Explore more work and projects from this collection.
+          </p>
+        </div>
+
+        {/* Desktop navigation */}
+        <div className="hidden items-center gap-2 sm:flex">
+          <button
+            onClick={() => scrollStrip("left")}
+            aria-label="Previous projects"
+            className="group flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/55 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+          >
+            <IconArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
+          </button>
+
+          <button
+            onClick={() => scrollStrip("right")}
+            aria-label="Next projects"
+            className="group flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] text-white/55 backdrop-blur-xl transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08] hover:text-white active:scale-95"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="transition-transform duration-300 group-hover:translate-x-0.5"
+            >
+              <path
+                d="M5 12H19M13 6L19 12L13 18"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Portfolio strip */}
+      <div className="relative">
+        {/* Left fade */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 left-0 top-0 z-[5] w-16 bg-gradient-to-r from-[#050505] to-transparent sm:w-24"
+        />
+
+        {/* Right fade */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 right-0 top-0 z-[5] w-16 bg-gradient-to-l from-[#050505] to-transparent sm:w-24"
+        />
+
+        <div
+          ref={stripRef}
+          className="scrollbar-hide flex snap-x snap-mandatory justify-start gap-4 overflow-x-auto pb-3 pr-12 pl-1 sm:gap-5 sm:pr-20"
+          style={{
+            scrollSnapType: "x proximity",
+            scrollbarWidth: "none",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          {renderSections.map((section, index) => (
+            <div
+              key={section.id}
+              className="group shrink-0 snap-start"
+              style={{
+                animationDelay: `${index * 40}ms`,
+              }}
+            >
+              <div
+                className={`
+                  relative overflow-hidden rounded-2xl
+                  transition-all duration-500 ease-out
+                  ${
+                    section.id === selectedSectionId
+                      ? "scale-[1.01]"
+                      : "hover:-translate-y-1"
+                  }
+                `}
+              >
+                {/* Active glow */}
+                {section.id === selectedSectionId && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -inset-px z-20 rounded-2xl"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(255,255,255,0.32), rgba(255,255,255,0.06), transparent)",
+                    }}
+                  />
+                )}
+
+                <MiniSectionCard
+                  section={section}
+                  isActive={section.id === selectedSectionId}
+                  onSelect={() => handleSelectCategory(section.id)}
+                />
+
+                {/* Active indicator */}
+                {section.id === selectedSectionId && (
+                  <div className="absolute bottom-2 left-1/2 z-30 h-0.5 w-8 -translate-x-1/2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.7)]" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <style jsx>{`
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+
+          @keyframes portfolioCardIn {
+            from {
+              opacity: 0;
+              transform: translateY(8px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+      </div>
+
+      {/* Mobile scroll hint */}
+      <div className="mt-5 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/25 sm:hidden">
+        <span>Swipe to explore</span>
+        <span className="h-px w-5 bg-white/15" />
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <path
+            d="M5 12H19M13 6L19 12L13 18"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </section>
+)}
           </>
         )}
 

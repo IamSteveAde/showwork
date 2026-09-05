@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
+import { detectLocalFileAspectRatio } from "@/lib/detectLocalFileAspectRatio";
 
 type MediaType = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 type Step = "closed" | "type" | "details";
@@ -186,14 +187,19 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
 
-        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+               await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
           onProgress(Math.round((loaded / total) * 100));
         });
+
+        // Read from the local file, not the network — this already
+        // finished (or resolved to null) well before the upload
+        // above even completed, so it adds no real wait here.
+        const aspectRatio = await detectLocalFileAspectRatio(file);
 
         const completeRes = await fetch("/api/portfolio/upload/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileKey: presignData.fileKey, type: mediaType, sectionId }),
+          body: JSON.stringify({ fileKey: presignData.fileKey, type: mediaType, sectionId, aspectRatio }),
         });
         if (!completeRes.ok) throw new Error("Failed to save file");
 
@@ -290,6 +296,8 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
 
     if (firstError) return { ok: false, error: firstError };
 
+       const aspectRatio = await detectLocalFileAspectRatio(file);
+
     const completeRes = await fetch("/api/portfolio/upload/multipart-complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -299,6 +307,7 @@ export default function PortfolioAddSection({ hasSections }: { hasSections: bool
         parts: progress.completedParts,
         type: mediaType,
         sectionId,
+        aspectRatio,
       }),
     });
     const completeData = await completeRes.json();

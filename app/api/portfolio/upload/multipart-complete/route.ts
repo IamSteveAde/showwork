@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { fileKey, uploadId, parts, type, caption, sectionId, displayOrder } = await req.json();
+  const { fileKey, uploadId, parts, type, caption, sectionId, displayOrder, aspectRatio } = await req.json();
   if (!fileKey || !uploadId || !Array.isArray(parts) || parts.length === 0 || !type) {
     return NextResponse.json({ error: "fileKey, uploadId, parts, and type are required" }, { status: 400 });
   }
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       portfolioId: portfolio.id,
       fileKey,
       type,
+      aspectRatio: typeof aspectRatio === "number" ? aspectRatio : null,
       caption: caption ?? null,
       sectionId: sectionId ?? null,
       displayOrder: displayOrder ?? 0,

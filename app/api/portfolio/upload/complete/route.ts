@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { fileKey, type, caption, sectionId, displayOrder } = await req.json();
+    const { fileKey, type, caption, sectionId, displayOrder, aspectRatio } = await req.json();
   if (!fileKey || !type) {
     return NextResponse.json({ error: "fileKey and type are required" }, { status: 400 });
   }
@@ -24,11 +24,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const media = await db.portfolioMedia.create({
+   const media = await db.portfolioMedia.create({
     data: {
       portfolioId: portfolio.id,
       fileKey,
       type,
+      // Computed client-side from the local file before it was ever
+      // uploaded — nearly instant since it reads from disk, not the
+      // network. Optional: null just leaves the gallery to detect
+      // this specific item's shape itself, without blocking anything
+      // else in the section.
+      aspectRatio: typeof aspectRatio === "number" ? aspectRatio : null,
       caption: caption ?? null,
       sectionId: sectionId ?? null,
       displayOrder: displayOrder ?? 0,
