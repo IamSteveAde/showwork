@@ -61,115 +61,264 @@ function IntroSection({
   bioPhotoUrl?: string | null;
 }) {
   const skills = bioSkills ?? [];
-  const hasContent = Boolean(bioText || bioPhotoUrl || bioStat || skills.length > 0);
+  const hasContent = Boolean(
+    bioText || bioPhotoUrl || bioStat || skills.length > 0
+  );
+
   if (!hasContent) return null;
 
   return (
-        <section className="relative overflow-hidden px-6 py-24 md:px-14 md:py-32" style={{ background: "#F7F4EC" }}>
-      <div className="absolute inset-0 overflow-hidden">
-        <FloatingOrb color={primaryColor} size={420} initialX="-10%" initialY="-15%" duration={18} delay={0} />
-        <FloatingOrb color={primaryColor} size={320} initialX="70%" initialY="40%" duration={22} delay={2} />
-        <FloatingOrb color={primaryColor} size={260} initialX="20%" initialY="70%" duration={16} delay={4} />
-      </div>
+    <section className="relative overflow-hidden bg-white px-6 py-24 md:px-14 md:py-32">
+      {/* Very subtle creative background */}
       <div
-        className="absolute inset-0 opacity-[0.07]"
-        style={{ backgroundImage: `radial-gradient(${primaryColor} 1px, transparent 1px)`, backgroundSize: "28px 28px" }}
+        className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full opacity-[0.055] blur-3xl"
+        style={{ backgroundColor: primaryColor }}
       />
 
-      <motion.div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12 md:flex-row md:items-start md:gap-16">
-        {bioPhotoUrl && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex-shrink-0"
-          >
-            <div className="absolute -inset-3 rounded-full opacity-40 blur-2xl" style={{ background: primaryColor }} aria-hidden />
-            <div className="relative h-40 w-40 overflow-hidden rounded-full md:h-52 md:w-52" style={{ border: `2px solid ${primaryColor}55` }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={bioPhotoUrl} alt={companyName} className="h-full w-full object-cover" />
+      <div
+        className="pointer-events-none absolute -bottom-48 -left-40 h-[420px] w-[420px] rounded-full opacity-[0.04] blur-3xl"
+        style={{ backgroundColor: primaryColor }}
+      />
+
+      {/* Fine editorial grid */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.025]">
+        <div
+          className="h-full w-full"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, #111 1px, transparent 1px),
+              linear-gradient(to bottom, #111 1px, transparent 1px)
+            `,
+            backgroundSize: "80px 80px",
+          }}
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{
+          duration: 0.8,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        className="relative mx-auto max-w-[1280px]"
+      >
+        {/* Section label */}
+        <div className="mb-14 flex items-center justify-between md:mb-20">
+          <div className="flex items-center gap-3">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: primaryColor }}
+            />
+
+            <span
+              className="text-[11px] font-bold uppercase text-black/45"
+              style={{ letterSpacing: "0.25em" }}
+            >
+              About
+            </span>
+          </div>
+
+          <span className="hidden text-[10px] font-medium uppercase tracking-[0.2em] text-black/25 md:block">
+            01 — Introduction
+          </span>
+        </div>
+
+        {/* Main composition */}
+        <div className="grid items-center gap-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24">
+          {/* Photo */}
+          {bioPhotoUrl && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, rotate: -2 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{
+                duration: 0.9,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="relative mx-auto w-full max-w-[420px] lg:mx-0"
+            >
+              {/* Decorative offset shape */}
+              <div
+                className="absolute -bottom-4 -left-4 h-full w-full border"
+                style={{
+                  borderColor: `${primaryColor}35`,
+                  transform: "rotate(-3deg)",
+                }}
+              />
+
+              {/* Small accent */}
+              <div
+                className="absolute -right-3 -top-3 z-20 flex h-12 w-12 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: primaryColor,
+                }}
+              >
+                <span className="text-lg font-light text-white">↗</span>
+              </div>
+
+              {/* Image frame */}
+              <div className="relative aspect-[4/5] overflow-hidden bg-black/[0.035]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bioPhotoUrl}
+                  alt={companyName}
+                  className="h-full w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
+                />
+
+                {/* Image overlay */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${primaryColor}12, transparent 45%, rgba(0,0,0,0.08))`,
+                  }}
+                />
+              </div>
+
+              {/* Image caption */}
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-black/30">
+                  The creator
+                </span>
+
+                <span className="text-[9px] uppercase tracking-[0.15em] text-black/25">
+                  01
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Content */}
+          <div className="relative">
+            {/* Oversized decorative number */}
+            <div
+              className="pointer-events-none absolute -right-2 -top-16 select-none text-[130px] font-black leading-none tracking-[-0.08em] text-black/[0.025] md:-right-8 md:-top-24 md:text-[200px]"
+              aria-hidden="true"
+            >
+              01
             </div>
-          </motion.div>
-        )}
 
-        <div className="flex-1 text-center md:text-left">
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mb-3 text-xs font-medium uppercase"
-            style={{ color: primaryColor, letterSpacing: "0.3em" }}
-          >
-            About
-          </motion.p>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                        className="text-3xl font-light leading-tight text-black md:text-4xl"
-          >
-            {companyName}
-          </motion.h2>
-
-          {bioText && (
             <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="relative mb-5 text-xs font-medium uppercase text-black/35"
+              style={{ letterSpacing: "0.2em" }}
+            >
+              Meet {companyName}
+            </motion.p>
+
+            <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-                            className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-black/55 md:mx-0"
+              transition={{
+                duration: 0.7,
+                delay: 0.15,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="relative max-w-[700px] text-[clamp(2.5rem,5vw,5.5rem)] font-semibold leading-[0.92] tracking-[-0.055em] text-black"
             >
-              {bioText}
-            </motion.p>
-          )}
+              {companyName}
+              <span
+                className="ml-1"
+                style={{ color: primaryColor }}
+              >
+                .
+              </span>
+            </motion.h2>
 
-          {skills.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-7 flex flex-wrap justify-center gap-2 md:justify-start"
-            >
-              {skills.map((skill, i) => (
-                <motion.span
-                  key={skill}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.4, delay: 0.45 + i * 0.05 }}
-                  className="rounded-full px-4 py-1.5 text-xs font-medium"
-                  style={{ background: `${primaryColor}1a`, color: primaryColor, border: `1px solid ${primaryColor}33` }}
+            {bioText && (
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, delay: 0.25 }}
+                className="relative mt-7 max-w-[620px] text-[15px] leading-7 text-black/55 md:mt-9 md:text-base md:leading-8"
+              >
+                {bioText}
+              </motion.p>
+            )}
+
+            {/* Skills */}
+            {skills.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: 0.35 }}
+                className="relative mt-8"
+              >
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-black/30">
+                  Expertise
+                </p>
+
+                <div className="flex max-w-[650px] flex-wrap gap-2">
+                  {skills.map((skill, i) => (
+                    <motion.span
+                      key={`${skill}-${i}`}
+                      initial={{ opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{
+                        duration: 0.35,
+                        delay: 0.4 + i * 0.05,
+                      }}
+                      className="border px-3.5 py-2 text-[11px] font-medium text-black/65 transition-all duration-300 hover:text-black"
+                      style={{
+                        borderColor: `${primaryColor}35`,
+                        backgroundColor: `${primaryColor}08`,
+                      }}
+                    >
+                      {skill}
+                    </motion.span>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Stat */}
+            {bioStat && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: 0.45 }}
+                className="relative mt-10 flex items-center gap-5"
+              >
+                <div
+                  className="h-px w-12"
+                  style={{ backgroundColor: primaryColor }}
+                />
+
+                <p
+                  className="text-xl font-medium tracking-[-0.02em] md:text-2xl"
+                  style={{ color: primaryColor }}
                 >
-                  {skill}
-                </motion.span>
-              ))}
-            </motion.div>
-          )}
+                  {bioStat}
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </div>
 
-          {bioStat && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.6, delay: 0.55 }}
-              className="mt-8 inline-block"
-            >
-              <p className="text-2xl font-light text-white md:text-3xl" style={{ color: primaryColor }}>
-                {bioStat}
-              </p>
-            </motion.div>
-          )}
+        {/* Bottom editorial line */}
+        <div className="mt-20 flex items-center gap-5 md:mt-28">
+          <div className="h-px flex-1 bg-black/10" />
+
+          <div
+            className="h-2 w-2 rotate-45"
+            style={{ backgroundColor: primaryColor }}
+          />
+
+          <div className="h-px w-16 bg-black/10 md:w-32" />
         </div>
       </motion.div>
     </section>
   );
 }
-
 interface PortfolioSectionData {
   id: string;
   name: string;
@@ -1150,40 +1299,168 @@ export default function PortfolioContent({
           />
         )}
         {selectedSectionId === null ? (
-          // ── CATEGORY GRID — the "different segments" the creator has
-          // built (Weddings, Logo Designs, Events, Corporate, etc), each
-          // with a real cover image. Picking one is how you get to the
-          // actual gallery. ──
-          <section className="px-6 py-24 md:px-14 md:py-32" style={{ background: "#000000" }}>
-            <div className="mx-auto max-w-[1400px]">
-              <motion.div
-                initial={{ opacity: 0, y: 24, filter: "blur(4px)" }}
-                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
-                className="mb-16"
-              >
-                <p className="mb-3 text-xs font-semibold uppercase" style={{ color: "rgba(245,200,66,0.6)", letterSpacing: "0.25em" }}>
-                  Explore the work
-                </p>
-                <h2 className="text-3xl font-light tracking-tight text-white md:text-5xl">
-                  Pick a category to step inside.
-                </h2>
-              </motion.div>
+  // ── CATEGORY GRID — the "different segments" the creator has
+  // built (Weddings, Logo Designs, Events, Corporate, etc), each
+  // with a real cover image. Picking one is how you get to the
+  // actual gallery. ──
+  <section
+    className="relative overflow-hidden bg-black px-6 py-24 md:px-14 md:py-32"
+  >
+    {/* Subtle ambient glow */}
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full opacity-[0.08] blur-[120px]"
+      style={{ backgroundColor: primaryColor }}
+    />
 
-              <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-                {renderSections.map((section, i) => (
-                  <CategoryCard
-                    key={section.id}
-                    section={section}
-                    index={i}
-                    onSelect={() => handleSelectCategory(section.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute -bottom-48 -right-40 h-[450px] w-[450px] rounded-full opacity-[0.06] blur-[120px]"
+      style={{ backgroundColor: primaryColor }}
+    />
+
+    {/* Very subtle grid */}
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 opacity-[0.025]"
+      style={{
+        backgroundImage: `
+          linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)
+        `,
+        backgroundSize: "80px 80px",
+      }}
+    />
+
+    <div className="relative mx-auto max-w-[1400px]">
+      {/* ───────────────── HEADER ───────────────── */}
+      <motion.div
+        initial={{
+          opacity: 0,
+          y: 24,
+          filter: "blur(4px)",
+        }}
+        whileInView={{
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+        }}
+        viewport={{
+          once: true,
+          margin: "-80px",
+        }}
+        transition={{
+          duration: 1,
+          ease: [0.19, 1, 0.22, 1],
+        }}
+        className="mb-16"
+      >
+        {/* Eyebrow */}
+        <div className="mb-5 flex items-center gap-3">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{
+              backgroundColor: primaryColor,
+              boxShadow: `0 0 16px ${primaryColor}99`,
+            }}
+          />
+
+          <p
+            className="text-xs font-semibold uppercase"
+            style={{
+              color: primaryColor,
+              letterSpacing: "0.25em",
+            }}
+          >
+            Explore the work
+          </p>
+        </div>
+
+        {/* Heading */}
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <h2 className="max-w-[850px] text-3xl font-light leading-tight tracking-[-0.03em] text-white md:text-5xl lg:text-6xl">
+              Pick a category to step inside
+              <span
+                className="ml-1"
+                style={{ color: primaryColor }}
+              >
+                .
+              </span>
+            </h2>
+
+            <p className="mt-5 max-w-[560px] text-sm leading-7 text-white/40 md:text-base">
+              Explore different collections of work, each with its own
+              projects, stories and creative direction.
+            </p>
+          </div>
+
+          {/* Category count */}
+          <div className="hidden shrink-0 items-center gap-3 pb-1 md:flex">
+            <span className="h-px w-8 bg-white/15" />
+
+            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/30">
+              {renderSections.length}{" "}
+              {renderSections.length === 1 ? "category" : "categories"}
+            </span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ───────────────── EXISTING CATEGORY GRID ───────────────── */}
+      <div className="relative">
+        {/*
+          IMPORTANT:
+          The original CategoryCard structure is intentionally preserved.
+          Each card still receives the complete `section` object, meaning
+          its cover image, title, media and all existing content remain.
+        */}
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6">
+          {renderSections.map((section, i) => (
+            <CategoryCard
+              key={section.id}
+              section={section}
+              index={i}
+              onSelect={() => handleSelectCategory(section.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ───────────────── BOTTOM DETAIL ───────────────── */}
+      <motion.div
+        initial={{
+          opacity: 0,
+        }}
+        whileInView={{
+          opacity: 1,
+        }}
+        viewport={{
+          once: true,
+        }}
+        transition={{
+          duration: 0.8,
+          delay: 0.25,
+        }}
+        className="mt-16 md:mt-20"
+      >
+        <div className="flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/[0.08]" />
+
+          <div
+            className="h-1.5 w-1.5 rotate-45"
+            style={{
+              backgroundColor: primaryColor,
+              boxShadow: `0 0 12px ${primaryColor}80`,
+            }}
+          />
+
+          <div className="h-px w-12 bg-white/[0.08] md:w-20" />
+        </div>
+      </motion.div>
+    </div>
+  </section>
+) : (
           <>
             {/* ── SECTION BANNER — the chosen category's own cover image,
                  now standing in as the banner for this view. ── */}
@@ -1448,137 +1725,418 @@ export default function PortfolioContent({
         {/* ── GET IN TOUCH — after the work, before the footer, on
              every view. ── */}
         {(whatsappNumber || contactEmail) && (
-          <section className="relative overflow-hidden px-6 py-28 text-center md:px-14 md:py-40" style={{ background: "#F3F0EA" }}>
-            <div
-              className="pointer-events-none absolute inset-0 opacity-25"
-              style={{ background: `radial-gradient(ellipse at center, ${primaryColor}44 0%, transparent 65%)` }}
-              aria-hidden
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="relative mx-auto max-w-2xl"
-            >
-              <p className="mb-4 text-xs font-semibold uppercase" style={{ color: primaryColor, letterSpacing: "0.25em" }}>
-                Get in touch
-              </p>
-              <h2 className="mb-10 text-2xl font-light leading-snug md:text-4xl" style={{ color: "#111111" }}>
-                {ctaText || DEFAULT_CTA_TEXT}
-              </h2>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {whatsappNumber && (
-                  <a
-                    href={whatsappHref(whatsappNumber, companyName)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 rounded-full px-8 py-4 text-sm font-semibold transition-transform hover:scale-[1.03]"
-                    style={{ background: primaryColor, color: "#080808" }}
+  <section
+    className="relative overflow-hidden bg-white px-6 py-24 md:px-12 md:py-32"
+    style={{ color: "#111111" }}
+  >
+    {/* Ambient accent glow */}
+    <div
+      className="pointer-events-none absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full opacity-[0.09] blur-3xl"
+      style={{ backgroundColor: primaryColor }}
+    />
+
+    <div
+      className="pointer-events-none absolute -bottom-40 -left-40 h-[380px] w-[380px] rounded-full opacity-[0.05] blur-3xl"
+      style={{ backgroundColor: primaryColor }}
+    />
+
+    {/* Subtle editorial grid */}
+    <div className="pointer-events-none absolute inset-0 opacity-[0.025]">
+      <div
+        className="h-full w-full"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, #111 1px, transparent 1px),
+            linear-gradient(to bottom, #111 1px, transparent 1px)
+          `,
+          backgroundSize: "80px 80px",
+        }}
+      />
+    </div>
+
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{
+        duration: 0.7,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      className="relative mx-auto max-w-[1400px]"
+    >
+      {/* Header / metadata */}
+      <div className="mb-16 flex items-center justify-between md:mb-20">
+        <div className="flex items-center gap-3">
+          <span
+            className="h-2.5 w-2.5 rounded-full"
+            style={{
+              backgroundColor: primaryColor,
+            }}
+          />
+
+          <span className="text-[11px] font-bold uppercase tracking-[0.24em] text-black/50">
+            Get in touch
+          </span>
+        </div>
+
+        <span className="hidden text-[11px] font-medium uppercase tracking-[0.2em] text-black/30 md:block">
+          Available for new projects
+        </span>
+      </div>
+
+      {/* Main editorial composition */}
+      <div className="grid items-end gap-14 lg:grid-cols-[1.25fr_0.75fr] lg:gap-20">
+        {/* Left content */}
+        <div className="relative">
+          {/* Oversized decorative number */}
+          <div
+            className="pointer-events-none absolute -left-5 -top-16 select-none text-[150px] font-black leading-none tracking-[-0.08em] text-black/[0.035] md:-left-8 md:-top-24 md:text-[220px]"
+            aria-hidden="true"
+          >
+            01
+          </div>
+
+          <p className="relative mb-7 max-w-xl text-sm leading-7 text-black/55 md:text-base">
+            Have a project in mind, an idea worth exploring, or simply want to
+            start a conversation?
+          </p>
+
+          <h2 className="relative max-w-[620px] text-[clamp(2rem,2.5vw,3rem)] font-semibold leading-[0.95] tracking-[-0.045em] text-black">
+  {ctaText || DEFAULT_CTA_TEXT}
+
+  <span
+    className="ml-1 inline-block align-[0.08em] text-[0.7em]"
+    style={{
+      color: primaryColor,
+    }}
+  >
+    .
+  </span>
+</h2>
+        </div>
+
+        {/* Contact links */}
+        <div className="relative lg:pb-2">
+          <div className="mb-8 h-px w-full bg-black/10" />
+
+          <div className="space-y-0">
+            {/* WhatsApp */}
+            {whatsappNumber && (
+              <a
+               href={whatsappHref(whatsappNumber, companyName)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex min-h-[76px] items-center justify-between border-b border-black/10 py-4 transition-all duration-300 hover:pl-2"
+              >
+                <div className="flex min-w-0 items-center gap-4">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
+                    style={{
+                      backgroundColor: `${primaryColor}12`,
+                      color: primaryColor,
+                    }}
                   >
-                    <IconWhatsApp />
-                    Message on WhatsApp
-                  </a>
-                )}
-                {contactEmail && (
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="flex items-center gap-2.5 rounded-full border px-8 py-4 text-sm font-semibold transition-colors hover:bg-black/[0.03]"
-                    style={{ borderColor: "rgba(0,0,0,0.15)", color: "#111111" }}
-                  >
-                    <IconEmail />
-                    Email us
-                  </a>
-                )}
-              </div>
-            </motion.div>
-          </section>
-        )}
+                    <span className="flex h-5 w-5 items-center justify-center">
+                      <IconWhatsApp />
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">
+                      WhatsApp
+                    </span>
+
+                    <span className="mt-1 block text-sm font-semibold text-black">
+                      Message me
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  className="ml-4 shrink-0 text-2xl font-light transition-transform duration-300 group-hover:translate-x-1"
+                  style={{
+                    color: primaryColor,
+                  }}
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </a>
+            )}
+
+            {/* Email */}
+            {contactEmail && (
+              <a
+                href={`mailto:${contactEmail}`}
+                className="group flex min-h-[76px] items-center justify-between border-b border-black/10 py-4 transition-all duration-300 hover:pl-2"
+              >
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black/[0.04] text-black transition-transform duration-300 group-hover:scale-110">
+                    <span className="flex h-5 w-5 items-center justify-center">
+                      <IconEmail />
+                    </span>
+                  </div>
+
+                  <div className="min-w-0">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-black/35">
+                      Email
+                    </span>
+
+                    <span className="mt-1 block truncate text-sm font-semibold text-black">
+                      {contactEmail}
+                    </span>
+                  </div>
+                </div>
+
+                <span
+                  className="ml-4 shrink-0 text-2xl font-light text-black/35 transition-all duration-300 group-hover:translate-x-1 group-hover:text-black"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+              </a>
+            )}
+          </div>
+
+          {/* Availability */}
+          <div className="mt-8 flex items-center gap-3">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-30"
+                style={{
+                  backgroundColor: primaryColor,
+                }}
+              />
+
+              <span
+                className="relative inline-flex h-2.5 w-2.5 rounded-full"
+                style={{
+                  backgroundColor: primaryColor,
+                }}
+              />
+            </span>
+
+            <span className="text-xs font-medium text-black/45">
+              Let&apos;s make something memorable.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom creative divider */}
+      <div className="relative mt-20 flex items-center gap-5 md:mt-28">
+        <div className="h-px flex-1 bg-black/10" />
+
+        <div
+          className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/10"
+          style={{
+            transform: "rotate(-12deg)",
+          }}
+        >
+          <div
+            className="h-2 w-2 rounded-full"
+            style={{
+              backgroundColor: primaryColor,
+            }}
+          />
+        </div>
+
+        <div className="h-px w-16 bg-black/10 md:w-32" />
+      </div>
+    </motion.div>
+  </section>
+)}
 
              <TestimonialsCarousel testimonials={testimonials.filter((t) => t.isApproved)} primaryColor={primaryColor} />
 
-        <footer className="border-t border-white/5 bg-black px-6 py-14 md:px-14">
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
-            <p className="text-sm font-light text-white/40">{companyName}</p>
+        <footer className="relative overflow-hidden border-t border-white/[0.06] bg-black px-6 py-16 md:px-14 md:py-20">
+  {/* Ambient accent */}
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute -bottom-40 left-1/2 h-[360px] w-[520px] -translate-x-1/2 rounded-full opacity-[0.08] blur-[120px]"
+    style={{ backgroundColor: primaryColor }}
+  />
 
-            {(contactEmail || whatsappNumber) && (
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                {contactEmail && (
-                  <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white">
+  <div className="relative mx-auto max-w-[1200px]">
+    <div className="flex flex-col gap-12">
+      {/* Top row */}
+      <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+        {/* Brand */}
+        <div>
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/30">
+            Portfolio
+          </p>
+
+          <h3 className="max-w-[520px] text-2xl font-light tracking-[-0.03em] text-white md:text-3xl">
+            {companyName}
+          </h3>
+        </div>
+
+        {/* Contact */}
+        {(contactEmail || whatsappNumber) && (
+          <div className="flex flex-col gap-3 md:items-end">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">
+              Get in touch
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              {contactEmail && (
+                <a
+                  href={`mailto:${contactEmail}`}
+                  className="group flex items-center gap-2 text-xs text-white/45 transition-colors hover:text-white"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] transition-all group-hover:border-white/20 group-hover:bg-white/[0.06]">
                     <IconEmail />
-                    {contactEmail}
-                  </a>
-                )}
-                {whatsappNumber && (
-                  <a
-                    href={whatsappHref(whatsappNumber, companyName)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white"
-                  >
+                  </span>
+                  {contactEmail}
+                </a>
+              )}
+
+              {whatsappNumber && (
+                <a
+                  href={whatsappHref(whatsappNumber, companyName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-2 text-xs text-white/45 transition-colors hover:text-white"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] transition-all group-hover:border-white/20 group-hover:bg-white/[0.06]">
                     <IconWhatsApp />
-                    WhatsApp
-                  </a>
-                )}
-              </div>
-            )}
-
-            {(instagramUrl || twitterUrl || linkedinUrl || tiktokUrl || facebookUrl || youtubeUrl) && (
-              <div className="flex items-center gap-4 text-white/40">
-                {instagramUrl && (
-                  <a href={instagramUrl} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="transition-colors hover:text-white">
-                    <IconInstagram />
-                  </a>
-                )}
-                {twitterUrl && (
-                  <a href={twitterUrl} target="_blank" rel="noopener noreferrer" aria-label="X / Twitter" className="transition-colors hover:text-white">
-                    <IconTwitter />
-                  </a>
-                )}
-                {linkedinUrl && (
-                  <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="transition-colors hover:text-white">
-                    <IconLinkedIn />
-                  </a>
-                )}
-                {tiktokUrl && (
-                  <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="transition-colors hover:text-white">
-                    <IconTikTok />
-                  </a>
-                )}
-                {facebookUrl && (
-                  <a href={facebookUrl} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="transition-colors hover:text-white">
-                    <IconFacebook />
-                  </a>
-                )}
-                {youtubeUrl && (
-                  <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="transition-colors hover:text-white">
-                    <IconYouTube />
-                  </a>
-                )}
-              </div>
-            )}
-
-            <div className="mt-2 flex flex-col items-center gap-3">
-              <a
-                href="https://useshowwork.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-white/30 transition-colors hover:text-white/50"
-              >
-                Portfolio powered by Showwork
-              </a>
-              <a
-                href="https://useshowwork.com/signup?next=/dashboard/portfolio"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full border px-5 py-2 text-xs font-semibold transition-colors hover:bg-white/5"
-                style={{ borderColor: "rgba(255,255,255,0.15)", color: primaryColor }}
-              >
-                Create your own portfolio — free →
-              </a>
+                  </span>
+                  WhatsApp
+                </a>
+              )}
             </div>
           </div>
-        </footer>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="h-px w-full bg-white/[0.07]" />
+
+      {/* Social + Showwork */}
+      <div className="flex flex-col gap-10 md:flex-row md:items-center md:justify-between">
+        {/* Socials */}
+        {(instagramUrl ||
+          twitterUrl ||
+          linkedinUrl ||
+          tiktokUrl ||
+          facebookUrl ||
+          youtubeUrl) && (
+          <div className="flex items-center gap-3">
+            {instagramUrl && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconInstagram />
+              </a>
+            )}
+
+            {twitterUrl && (
+              <a
+                href={twitterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X / Twitter"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconTwitter />
+              </a>
+            )}
+
+            {linkedinUrl && (
+              <a
+                href={linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconLinkedIn />
+              </a>
+            )}
+
+            {tiktokUrl && (
+              <a
+                href={tiktokUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconTikTok />
+              </a>
+            )}
+
+            {facebookUrl && (
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconFacebook />
+              </a>
+            )}
+
+            {youtubeUrl && (
+              <a
+                href={youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 text-white/35 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.05] hover:text-white"
+              >
+                <IconYouTube />
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Showwork credit */}
+        <div className="flex flex-col gap-3 md:items-end">
+          <a
+            href="https://useshowwork.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-medium uppercase tracking-[0.16em] text-white/25 transition-colors hover:text-white/45"
+          >
+            Portfolio powered by Showwork
+          </a>
+
+          <a
+            href="https://useshowwork.com/signup?next=/dashboard/portfolio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-2 text-xs font-semibold transition-all duration-300"
+            style={{ color: primaryColor }}
+          >
+            Create your own portfolio — free
+            <span className="transition-transform duration-300 group-hover:translate-x-1">
+              ↗
+            </span>
+          </a>
+        </div>
+      </div>
+
+      {/* Bottom line */}
+      <div className="flex items-center gap-4 pt-2">
+        <div className="h-px flex-1 bg-white/[0.06]" />
+
+        <div
+          className="h-1.5 w-1.5 rotate-45"
+          style={{ backgroundColor: primaryColor }}
+        />
+
+        <div className="h-px w-12 bg-white/[0.06] md:w-20" />
+      </div>
+    </div>
+  </div>
+</footer>
       </div>
 
       <AnimatePresence>
