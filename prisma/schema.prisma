@@ -1150,6 +1150,15 @@ model PortfolioMedia {
   sectionId    String?
   type         MediaType
   fileKey      String
+  // Computed once, client-side, at upload time from the local file
+  // (width ÷ height) — never re-computed at view time. This is what
+  // lets the gallery lay itself out instantly instead of needing to
+  // download every full-resolution original first just to learn its
+  // shape. Null for anything uploaded before this existed; backfilled
+  // for existing photos via a one-time script, left null for existing
+  // videos (the gallery falls back to detecting those specific items
+  // without blocking the rest).
+  aspectRatio  Float?
   caption      String?
   displayOrder Int      @default(0)
   createdAt    DateTime @default(now())

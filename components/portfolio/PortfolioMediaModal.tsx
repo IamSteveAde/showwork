@@ -8,6 +8,12 @@ export interface PortfolioMediaItem {
   type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   url: string;
   caption: string | null;
+  // Stored at upload time (width ÷ height) — null for anything
+  // uploaded before this existed, or a video that hasn't been
+  // through the one-time backfill. The gallery uses this directly
+  // when present, and only falls back to detecting a specific item's
+  // shape itself when it's missing.
+  aspectRatio: number | null;
 }
 
 function officeViewerUrl(url: string) {
