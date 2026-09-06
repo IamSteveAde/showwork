@@ -384,6 +384,14 @@ function IconArrowLeft({ className }: { className?: string }) {
   );
 }
 
+function IconArrowUpRight({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M7 17L17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconInstagram() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -1852,14 +1860,14 @@ export default function PortfolioContent({
                   </div>
                 </div>
 
-                <span
-                  className="ml-4 shrink-0 text-2xl font-light transition-transform duration-300 group-hover:translate-x-1"
+                            <span
+                  className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center transition-transform duration-300 group-hover:translate-x-1"
                   style={{
                     color: primaryColor,
                   }}
                   aria-hidden="true"
                 >
-                  ↗
+                  <IconArrowUpRight className="h-5 w-5" />
                 </span>
               </a>
             )}
@@ -1888,11 +1896,11 @@ export default function PortfolioContent({
                   </div>
                 </div>
 
-                <span
-                  className="ml-4 shrink-0 text-2xl font-light text-black/35 transition-all duration-300 group-hover:translate-x-1 group-hover:text-black"
+                              <span
+                  className="ml-4 flex h-6 w-6 shrink-0 items-center justify-center text-black/35 transition-all duration-300 group-hover:translate-x-1 group-hover:text-black"
                   aria-hidden="true"
                 >
-                  ↗
+                  <IconArrowUpRight className="h-5 w-5" />
                 </span>
               </a>
             )}
@@ -2108,7 +2116,7 @@ export default function PortfolioContent({
             Portfolio powered by Showwork
           </a>
 
-          <a
+          <a         
             href="https://useshowwork.com/signup?next=/dashboard/portfolio"
             target="_blank"
             rel="noopener noreferrer"
@@ -2116,9 +2124,7 @@ export default function PortfolioContent({
             style={{ color: primaryColor }}
           >
             Create your own portfolio — free
-            <span className="transition-transform duration-300 group-hover:translate-x-1">
-              ↗
-            </span>
+            <IconArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
           </a>
         </div>
       </div>
