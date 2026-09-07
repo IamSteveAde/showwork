@@ -98,6 +98,9 @@ export default async function AdminPage({
             <Link href="/admin/activity" className="text-sm text-white/40 underline hover:text-white">
               Activity
             </Link>
+            <Link href="/admin/social-calendars" className="text-sm text-white/40 underline hover:text-white">
+              Social Calendars
+            </Link>
             <Link href="/admin/creativo" className="text-sm text-white/40 underline hover:text-white">
               Creativo
             </Link>
