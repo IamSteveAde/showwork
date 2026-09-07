@@ -473,10 +473,14 @@ function PostTile({
   post,
   index,
   onClick,
+  canDelete,
+  onDelete,
 }: {
   post: CalendarPostData;
   index: number;
   onClick: () => void;
+  canDelete: boolean;
+  onDelete: () => void;
 }) {
   const meta = PLATFORMS.find(
     (p) => p.value === post.platform
@@ -488,6 +492,9 @@ function PostTile({
     APPROVAL_META[post.approvalStatus];
 
   const tiltDeg = index % 2 === 0 ? -2 : 2;
+
+  const [confirmingDelete, setConfirmingDelete] =
+    useState(false);
 
   const timeLabel = new Date(
     post.postDate
@@ -706,6 +713,98 @@ function PostTile({
           </span>
         )}
       </button>
+
+      {/* Quick delete — a sibling of the tile's own button, since a
+          button can't be nested inside another one. Confirms inline
+          on the tile itself first, rather than deleting on the very
+          first tap, which would be too easy to trigger by accident
+          on a tile this small. */}
+      {canDelete && !confirmingDelete && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setConfirmingDelete(true);
+          }}
+          aria-label="Delete this post"
+          className="
+            absolute right-1 top-1
+            z-20
+            flex h-5 w-5
+            items-center justify-center
+            rounded-full
+            text-xs
+            font-bold
+            text-white
+            transition-all
+            active:scale-90
+          "
+          style={{
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          ×
+        </button>
+      )}
+
+      {canDelete && confirmingDelete && (
+        <div
+          className="
+            absolute inset-x-0 top-2 bottom-0
+            z-20
+            flex flex-col
+            items-center justify-center
+            gap-1.5
+            rounded-lg
+            p-2
+            text-center
+          "
+          style={{ background: "rgba(0,0,0,0.85)" }}
+        >
+          <p className="text-[10px] font-semibold text-white">
+            Delete this post?
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="
+                rounded-full
+                bg-red-500
+                px-2.5 py-1
+                text-[10px]
+                font-semibold
+                text-white
+                transition-colors
+                hover:bg-red-600
+              "
+            >
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmingDelete(false);
+              }}
+              className="
+                rounded-full
+                bg-white/15
+                px-2.5 py-1
+                text-[10px]
+                font-semibold
+                text-white
+              "
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -725,12 +824,21 @@ function AddPostPanel({
   date: Date;
   theme: Theme;
   onClose: () => void;
-  onCreated: (post: CalendarPostData) => void;
+  onCreated: (posts: CalendarPostData[]) => void;
 }) {
   const t = THEMES[theme];
 
-  const [platform, setPlatform] =
-    useState<Platform | null>(null);
+  // Multiple platforms can be selected at once — if it's the exact
+  // same content going out everywhere, one post gets created per
+  // platform chosen here, instead of repeating this whole form once
+  // per platform.
+  const [platforms, setPlatforms] =
+    useState<Platform[]>([]);
+
+  // Time of day this post is scheduled for — combined with the
+  // clicked calendar day before sending to the server, since the day
+  // alone would otherwise default to midnight.
+  const [postTime, setPostTime] = useState("09:00");
 
   const [postType, setPostType] = useState("");
   const [category, setCategory] = useState("");
@@ -758,9 +866,24 @@ function AddPostPanel({
       { label: string; value: string }[]
     >([]);
 
+  // Optional — if the content is already ready, it can be attached
+  // right here at creation time instead of only afterward from the
+  // post's own tile.
+  const [pendingFiles, setPendingFiles] =
+    useState<{ file: File; previewUrl: string }[]>([]);
+
   const [saving, setSaving] = useState(false);
+  const [uploadingStage, setUploadingStage] =
+    useState<string | null>(null);
   const [error, setError] =
     useState<string | null>(null);
+
+  const togglePlatform = (p: Platform) =>
+    setPlatforms((prev) =>
+      prev.includes(p)
+        ? prev.filter((x) => x !== p)
+        : [...prev, p]
+    );
 
   const addCustomField = () =>
     setCustomFields((prev) => [
@@ -786,14 +909,138 @@ function AddPostPanel({
       prev.filter((_, i) => i !== index)
     );
 
+  // Mirrors pendingFiles at all times. Async functions below read
+  // from this ref instead of the state variable directly — refs
+  // always hold the current value no matter when the enclosing
+  // function was created, which rules out any possibility of an
+  // upload silently running against an outdated, stale list of
+  // files depending on what order things were clicked in.
+  const pendingFilesRef = useRef<
+    { file: File; previewUrl: string }[]
+  >([]);
+  useEffect(() => {
+    pendingFilesRef.current = pendingFiles;
+  }, [pendingFiles]);
+
+  // The preview URL is created exactly once per file, right here —
+  // not during render — so the browser gets a stable src that
+  // actually finishes loading, instead of a brand new blob URL every
+  // time the form re-renders (which happens on every keystroke
+  // elsewhere in the form).
+  const addFiles = (files: FileList) => {
+    // Converted to real, independent objects right here, synchronously,
+    // the instant this runs — not deferred into the setState updater
+    // below. React doesn't guarantee that updater function runs
+    // immediately; if it runs after the input's value gets cleared,
+    // reading the browser's live FileList at that point could see it
+    // already emptied out.
+    const newEntries = Array.from(files).map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+    }));
+    setPendingFiles((prev) => [...prev, ...newEntries]);
+  };
+
+  const removePendingFile = (index: number) =>
+    setPendingFiles((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+
+  // Clean up every remaining object URL when the panel closes. Reads
+  // from the ref (not the pendingFiles variable) so this always sees
+  // whatever was actually selected most recently, not just whatever
+  // existed the one time this effect was first set up.
+  useEffect(() => {
+    return () => {
+      pendingFilesRef.current.forEach((pf) =>
+        URL.revokeObjectURL(pf.previewUrl)
+      );
+    };
+  }, []);
+
+  // Uploads every pending file onto one already-created post — same
+  // presign → PUT → complete flow used from the post's own detail
+  // panel.
+  const uploadFilesToPost = async (
+    postId: string
+  ): Promise<CalendarPostData | null> => {
+    let latestPost: CalendarPostData | null = null;
+
+    for (const { file } of pendingFilesRef.current) {
+      const presignRes = await fetch(
+        `/api/calendars/${calendarId}/posts/${postId}/upload-presign`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+          }),
+        }
+      );
+      const presignData = await presignRes.json();
+      if (!presignRes.ok) {
+        throw new Error(
+          presignData.error ?? "Failed to start upload"
+        );
+      }
+
+      const uploadRes = await fetch(presignData.uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      const mediaType = file.type.startsWith("video/")
+        ? "VIDEO"
+        : "PHOTO";
+
+      const completeRes = await fetch(
+        `/api/calendars/${calendarId}/posts/${postId}/upload-complete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileKey: presignData.fileKey,
+            mediaType,
+          }),
+        }
+      );
+      const completeData = await completeRes.json();
+      if (!completeRes.ok) {
+        throw new Error(
+          completeData.error ?? "Failed to save content"
+        );
+      }
+
+      // Each successive upload's response already includes every
+      // asset attached so far — capturing it here is what actually
+      // lets the calendar show the real image immediately, instead
+      // of discarding the result of every upload.
+      latestPost = completeData.post;
+    }
+
+    return latestPost;
+  };
+
   const submit = async () => {
-    if (!platform) {
-      setError("Pick a platform first");
+    if (platforms.length === 0) {
+      setError("Pick at least one platform");
       return;
     }
 
     setSaving(true);
     setError(null);
+    setUploadingStage(null);
 
     const finalCategory = addingCustomCategory
       ? customCategory.trim()
@@ -802,6 +1049,13 @@ function AddPostPanel({
     const finalCta = addingCustomCta
       ? customCta.trim()
       : cta;
+
+    // Combine the day that was clicked with the chosen time of day —
+    // without this, every post would default to midnight regardless
+    // of when it's actually meant to go out.
+    const [hours, minutes] = postTime.split(":").map(Number);
+    const fullDate = new Date(date);
+    fullDate.setHours(hours || 0, minutes || 0, 0, 0);
 
     try {
       const res = await fetch(
@@ -812,8 +1066,8 @@ function AddPostPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            postDate: date.toISOString(),
-            platform,
+            postDate: fullDate.toISOString(),
+            platforms,
             postType,
             category: finalCategory,
             caption,
@@ -835,15 +1089,37 @@ function AddPostPanel({
         );
       }
 
-      onCreated({
-        ...data.post,
-        assets: data.post.assets ?? [],
-        videoComments:
-          data.post.videoComments ?? [],
-        customFields:
-          data.post.customFields ?? [],
-      });
+      const createdPosts: CalendarPostData[] = (
+        data.posts ?? [data.post]
+      ).map((p: CalendarPostData) => ({
+        ...p,
+        assets: p.assets ?? [],
+        videoComments: p.videoComments ?? [],
+        customFields: p.customFields ?? [],
+      }));
 
+      // Uploading is entirely optional — if files were attached,
+      // every platform's post gets the same content; if not, the
+      // posts are simply created empty, ready to have content added
+      // later from their own tile, exactly as before.
+      if (pendingFilesRef.current.length > 0) {
+        for (let i = 0; i < createdPosts.length; i++) {
+          setUploadingStage(
+            `Uploading content (${i + 1}/${createdPosts.length})...`
+          );
+          const updated = await uploadFilesToPost(createdPosts[i].id);
+          if (updated) {
+            createdPosts[i] = {
+              ...updated,
+              assets: updated.assets ?? [],
+              videoComments: updated.videoComments ?? [],
+              customFields: updated.customFields ?? [],
+            };
+          }
+        }
+      }
+
+      onCreated(createdPosts);
       onClose();
     } catch (err) {
       setError(
@@ -853,6 +1129,7 @@ function AddPostPanel({
       );
     } finally {
       setSaving(false);
+      setUploadingStage(null);
     }
   };
 
@@ -1035,7 +1312,7 @@ function AddPostPanel({
               sm:px-7 sm:py-6
             "
           >
-            {/* DATE */}
+            {/* DATE & TIME */}
             <section>
               <div className="mb-3">
                 <h3
@@ -1049,58 +1326,109 @@ function AddPostPanel({
                   className="mt-1 text-[11px]"
                   style={{ color: t.textFaint }}
                 >
-                  The selected calendar date is already set.
+                  The calendar date is already set — pick the time
+                  of day this post is scheduled for.
                 </p>
               </div>
 
-              <div
-                className="
-                  flex items-center gap-3
-                  rounded-xl
-                  border
-                  px-4 py-3
-                "
-                style={{
-                  background: t.inputBg,
-                  borderColor: t.inputBorder,
-                }}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4 flex-shrink-0"
-                  fill="none"
-                  stroke={t.textFaint}
-                  strokeWidth="1.8"
-                >
-                  <rect
-                    x="3"
-                    y="4"
-                    width="18"
-                    height="17"
-                    rx="3"
-                  />
-                  <path
-                    d="M8 2.5v4M16 2.5v4M3 9h18"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
-                <span
-                  className="text-xs font-medium"
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div
+                  className="
+                    flex items-center gap-3
+                    rounded-xl
+                    border
+                    px-4 py-3
+                  "
                   style={{
-                    color: t.textMuted,
+                    background: t.inputBg,
+                    borderColor: t.inputBorder,
                   }}
                 >
-                  {date.toLocaleDateString(
-                    "en-US",
-                    {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 flex-shrink-0"
+                    fill="none"
+                    stroke={t.textFaint}
+                    strokeWidth="1.8"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="17"
+                      rx="3"
+                    />
+                    <path
+                      d="M8 2.5v4M16 2.5v4M3 9h18"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
+                  <span
+                    className="truncate text-xs font-medium"
+                    style={{
+                      color: t.textMuted,
+                    }}
+                  >
+                    {date.toLocaleDateString(
+                      "en-US",
+                      {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}
+                  </span>
+                </div>
+
+                <div
+                  className="
+                    flex items-center gap-3
+                    rounded-xl
+                    border
+                    px-4 py-2.5
+                  "
+                  style={{
+                    background: t.inputBg,
+                    borderColor: t.inputBorder,
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 flex-shrink-0"
+                    fill="none"
+                    stroke={t.textFaint}
+                    strokeWidth="1.8"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path
+                      d="M12 7v5l3 2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                  <input
+                    type="time"
+                    value={postTime}
+                    onChange={(e) =>
+                      setPostTime(e.target.value)
                     }
-                  )}
-                </span>
+                    style={{
+                      fontSize: "16px",
+                      color: t.text,
+                    }}
+                    className="
+                      w-full
+                      min-w-0
+                      bg-transparent
+                      text-xs
+                      font-medium
+                      outline-none
+                    "
+                  />
+                </div>
               </div>
             </section>
 
@@ -1118,21 +1446,23 @@ function AddPostPanel({
                   className="mt-1 text-[11px] leading-relaxed"
                   style={{ color: t.textFaint }}
                 >
-                  Select the platform for this post.
+                  Select every platform this exact same content is
+                  going to — one post gets created per platform you
+                  pick, all sharing everything below.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {PLATFORMS.map((p) => {
                   const selected =
-                    platform === p.value;
+                    platforms.includes(p.value);
 
                   return (
                     <button
                       key={p.value}
                       type="button"
                       onClick={() =>
-                        setPlatform(p.value)
+                        togglePlatform(p.value)
                       }
                       className="
                         group
@@ -1236,6 +1566,32 @@ function AddPostPanel({
                   );
                 })}
               </div>
+
+              {platforms.length > 1 && (
+                <div
+                  className="
+                    mt-3
+                    rounded-xl
+                    border
+                    p-3
+                  "
+                  style={{
+                    background:
+                      "rgba(36,120,255,0.05)",
+                    borderColor:
+                      "rgba(36,120,255,0.1)",
+                  }}
+                >
+                  <p
+                    className="text-[11px] leading-relaxed"
+                    style={{ color: t.textMuted }}
+                  >
+                    This will create {platforms.length} separate
+                    posts — one for each platform selected — all
+                    with the same content below.
+                  </p>
+                </div>
+              )}
             </section>
 
             {/* POST TYPE */}
@@ -1826,6 +2182,172 @@ function AddPostPanel({
               </div>
             </section>
 
+            {/* CONTENT FILES (OPTIONAL, UPLOAD NOW) */}
+            <section>
+              <div className="mb-3">
+                <h3
+                  className="text-sm font-semibold"
+                  style={{ color: t.text }}
+                >
+                  Content files
+                </h3>
+
+                <p
+                  className="mt-1 text-[11px] leading-relaxed"
+                  style={{ color: t.textFaint }}
+                >
+                  Optional — if you already have the image or video
+                  ready, attach it now. If not, that&apos;s fine too:
+                  you can come back and upload it later from this
+                  post&apos;s own tile.
+                </p>
+              </div>
+
+              {pendingFiles.length > 0 && (
+                <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {pendingFiles.map(({ file, previewUrl }, i) => {
+                    const isVideo = file.type.startsWith("video/");
+                    return (
+                      <div
+                        key={i}
+                        className="
+                          relative
+                          aspect-square
+                          overflow-hidden
+                          rounded-xl
+                          border
+                        "
+                        style={{
+                          background: t.inputBg,
+                          borderColor: t.inputBorder,
+                        }}
+                      >
+                        {isVideo ? (
+                          <video
+                            src={previewUrl}
+                            muted
+                            playsInline
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={previewUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+
+                        {isVideo && (
+                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-[10px] text-white">
+                              ▶
+                            </span>
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removePendingFile(i)
+                          }
+                          className="
+                            absolute right-1 top-1
+                            flex h-6 w-6
+                            items-center justify-center
+                            rounded-full
+                            bg-black/65
+                            text-xs
+                            text-white
+                            backdrop-blur-md
+                            transition-all
+                            hover:bg-red-500
+                            active:scale-95
+                          "
+                          aria-label="Remove file"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <label
+                className="
+                  group
+                  flex
+                  min-h-[60px]
+                  cursor-pointer
+                  items-center
+                  justify-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  border-dashed
+                  px-4 py-3
+                  text-center
+                  transition-all
+                  hover:border-blue-500/40
+                  active:scale-[0.99]
+                "
+                style={{
+                  borderColor: t.inputBorder,
+                  background: t.inputBg,
+                }}
+              >
+                <span
+                  className="
+                    flex h-9 w-9
+                    flex-shrink-0
+                    items-center justify-center
+                    rounded-xl
+                  "
+                  style={{
+                    background: "rgba(36,120,255,0.1)",
+                    color: "#2478FF",
+                  }}
+                >
+                  +
+                </span>
+
+                <span className="min-w-0 text-left">
+                  <span
+                    className="block text-xs font-semibold"
+                    style={{ color: "#2478FF" }}
+                  >
+                    {pendingFiles.length > 0
+                      ? "Add another file"
+                      : "Attach content now"}
+                  </span>
+
+                  <span
+                    className="mt-0.5 block text-[9px]"
+                    style={{ color: t.textFaint }}
+                  >
+                    JPG, PNG, WebP, MP4, MOV or WebM — optional
+                  </span>
+                </span>
+
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (
+                      e.target.files &&
+                      e.target.files.length > 0
+                    ) {
+                      addFiles(e.target.files);
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+              </label>
+            </section>
+
             {/* CUSTOM FIELDS */}
             <section>
               <div className="mb-3 flex items-start justify-between gap-3">
@@ -2115,7 +2637,7 @@ function AddPostPanel({
             type="button"
             onClick={submit}
             disabled={
-              saving || !platform
+              saving || platforms.length === 0
             }
             className="
               flex
@@ -2139,7 +2661,7 @@ function AddPostPanel({
             style={{
               background:
                 "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
-              boxShadow: platform
+              boxShadow: platforms.length > 0
                 ? "0 8px 24px rgba(36,120,255,0.22)"
                 : "none",
             }}
@@ -2154,7 +2676,7 @@ function AddPostPanel({
                   border-white/30
                   border-t-white
                 " />
-                Adding...
+                {uploadingStage ?? "Adding..."}
               </>
             ) : (
               <>
@@ -2674,7 +3196,7 @@ function PostDetailPanel({
                           color: t.textMuted,
                         }}
                       >
-                        “{post.approvalNote}”
+                        &ldquo;{post.approvalNote}&rdquo;
                       </p>
                     </div>
                   )}
@@ -3078,14 +3600,7 @@ function PostDetailPanel({
                     post.postType ===
                     "Carousel"
                   }
-                  accept="
-                    image/jpeg,
-                    image/png,
-                    image/webp,
-                    video/mp4,
-                    video/quicktime,
-                    video/webm
-                  "
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
                   className="hidden"
                   disabled={uploading}
                   onChange={(e) => {
@@ -3760,6 +4275,23 @@ export default function CalendarGrid({
       null
     );
 
+  // Same delete route the full detail panel already uses — this just
+  // gives a second, faster way to trigger it, right from the tile
+  // itself.
+  const handleDeletePost = async (
+    postId: string
+  ) => {
+    const res = await fetch(
+      `/api/calendars/${calendarId}/posts/${postId}`,
+      { method: "DELETE" }
+    );
+    if (res.ok) {
+      setPosts((prev) =>
+        prev.filter((p) => p.id !== postId)
+      );
+    }
+  };
+
   const year =
     currentMonth.getFullYear();
 
@@ -4126,10 +4658,6 @@ export default function CalendarGrid({
                 >
                   {date.getDate()}
                 </span>
-
-                {userRolePlaceholder(
-                  undefined
-                )}
               </div>
 
               {/* POSTS */}
@@ -4158,6 +4686,15 @@ export default function CalendarGrid({
                       onClick={() =>
                         setSelectedPost(
                           post
+                        )
+                      }
+                      canDelete={
+                        userRole ===
+                        "EDIT_CALENDAR"
+                      }
+                      onDelete={() =>
+                        handleDeletePost(
+                          post.id
                         )
                       }
                     />
@@ -4427,6 +4964,15 @@ export default function CalendarGrid({
                             post
                           )
                         }
+                        canDelete={
+                          userRole ===
+                          "EDIT_CALENDAR"
+                        }
+                        onDelete={() =>
+                          handleDeletePost(
+                            post.id
+                          )
+                        }
                       />
                     )
                   )
@@ -4540,10 +5086,10 @@ export default function CalendarGrid({
           onClose={() =>
             setAddingDate(null)
           }
-          onCreated={(post) =>
+          onCreated={(newPosts) =>
             setPosts((prev) => [
               ...prev,
-              normalize(post),
+              ...newPosts.map(normalize),
             ])
           }
         />
@@ -4579,16 +5125,4 @@ export default function CalendarGrid({
       )}
     </div>
   );
-}
-
-/*
-  This tiny helper intentionally returns null.
-
-  It keeps the desktop day header clean while allowing
-  the user-role conditional below to remain in one place.
-*/
-function userRolePlaceholder(
-  _value: undefined
-) {
-  return null;
 }
