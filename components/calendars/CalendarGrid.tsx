@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import CalendarVideoComments, {
   type CalendarVideoCommentData,
 } from "@/components/calendars/CalendarVideoComments";
+import InstagramPreview from "@/components/calendars/InstagramPreview";
+import TikTokPreview from "@/components/calendars/TikTokPreview";
 
 type Platform =
   | "INSTAGRAM"
@@ -480,7 +482,7 @@ function PostTile({
   index: number;
   onClick: () => void;
   canDelete: boolean;
-  onDelete: () => void;
+  onDelete: () => Promise<void>;
 }) {
   const meta = PLATFORMS.find(
     (p) => p.value === post.platform
@@ -495,6 +497,7 @@ function PostTile({
 
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const timeLabel = new Date(
     post.postDate
@@ -762,47 +765,74 @@ function PostTile({
           "
           style={{ background: "rgba(0,0,0,0.85)" }}
         >
-          <p className="text-[10px] font-semibold text-white">
-            Delete this post?
-          </p>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="
-                rounded-full
-                bg-red-500
-                px-2.5 py-1
-                text-[10px]
-                font-semibold
-                text-white
-                transition-colors
-                hover:bg-red-600
-              "
-            >
-              Delete
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmingDelete(false);
-              }}
-              className="
-                rounded-full
-                bg-white/15
-                px-2.5 py-1
-                text-[10px]
-                font-semibold
-                text-white
-              "
-            >
-              Cancel
-            </button>
-          </div>
+          {deleting ? (
+            <>
+              <span
+                className="
+                  h-4 w-4
+                  animate-spin
+                  rounded-full
+                  border-2
+                  border-white/30
+                  border-t-white
+                "
+              />
+              <p className="text-[10px] font-semibold text-white/70">
+                Deleting...
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[10px] font-semibold text-white">
+                Delete this post?
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    setDeleting(true);
+                    await onDelete();
+                    // No need to reset deleting/confirmingDelete on
+                    // success — the tile itself is removed from the
+                    // calendar the moment the parent's state updates.
+                    // Only reset here if something went wrong and
+                    // this tile is still around to show it.
+                    setDeleting(false);
+                  }}
+                  className="
+                    rounded-full
+                    bg-red-500
+                    px-2.5 py-1
+                    text-[10px]
+                    font-semibold
+                    text-white
+                    transition-colors
+                    hover:bg-red-600
+                  "
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmingDelete(false);
+                  }}
+                  className="
+                    rounded-full
+                    bg-white/15
+                    px-2.5 py-1
+                    text-[10px]
+                    font-semibold
+                    text-white
+                  "
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -4200,11 +4230,13 @@ export default function CalendarGrid({
   planStatus,
   initialPosts,
   userRole,
+  clientName,
 }: {
   calendarId: string;
   planStatus: string;
   initialPosts: CalendarPostData[];
   userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
+  clientName: string;
 }) {
   const [theme, setTheme] =
     useState<Theme>("dark");
@@ -4239,6 +4271,13 @@ export default function CalendarGrid({
   };
 
   const t = THEMES[theme];
+
+  // Which of the three tabs is showing — the existing calendar grid
+  // stays completely untouched when this is "calendar"; the other
+  // two swap in an entirely different, phone-mockup view instead.
+  const [viewMode, setViewMode] = useState<
+    "calendar" | "instagram" | "tiktok"
+  >("calendar");
 
   const [currentMonth, setCurrentMonth] =
     useState(() => {
@@ -4457,13 +4496,17 @@ export default function CalendarGrid({
               color: t.text,
             }}
           >
-            {currentMonth.toLocaleDateString(
-              "en-US",
-              {
-                month: "long",
-                year: "numeric",
-              }
-            )}
+            {viewMode === "calendar"
+              ? currentMonth.toLocaleDateString(
+                  "en-US",
+                  {
+                    month: "long",
+                    year: "numeric",
+                  }
+                )
+              : viewMode === "instagram"
+              ? "Instagram Preview"
+              : "TikTok Preview"}
           </h2>
         </div>
 
@@ -4479,54 +4522,145 @@ export default function CalendarGrid({
             onToggle={toggleTheme}
           />
 
-          <button
-            type="button"
-            onClick={() =>
-              goToMonth(-1)
-            }
-            aria-label="Previous month"
-            className="
-              flex h-9 w-9
-              items-center
-              justify-center
-              rounded-full
-              transition-all
-              active:scale-95
-              sm:h-10 sm:w-10
-            "
-            style={{
-              background: t.pillBg,
-              color: t.textMuted,
-            }}
-          >
-            ←
-          </button>
+          {viewMode === "calendar" && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  goToMonth(-1)
+                }
+                aria-label="Previous month"
+                className="
+                  flex h-9 w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  transition-all
+                  active:scale-95
+                  sm:h-10 sm:w-10
+                "
+                style={{
+                  background: t.pillBg,
+                  color: t.textMuted,
+                }}
+              >
+                ←
+              </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              goToMonth(1)
-            }
-            aria-label="Next month"
-            className="
-              flex h-9 w-9
-              items-center
-              justify-center
-              rounded-full
-              transition-all
-              active:scale-95
-              sm:h-10 sm:w-10
-            "
-            style={{
-              background: t.pillBg,
-              color: t.textMuted,
-            }}
-          >
-            →
-          </button>
+              <button
+                type="button"
+                onClick={() =>
+                  goToMonth(1)
+                }
+                aria-label="Next month"
+                className="
+                  flex h-9 w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  transition-all
+                  active:scale-95
+                  sm:h-10 sm:w-10
+                "
+                style={{
+                  background: t.pillBg,
+                  color: t.textMuted,
+                }}
+              >
+                →
+              </button>
+            </>
+          )}
         </div>
       </div>
 
+      {/* =====================================================
+          VIEW MODE TABS — Calendar | Instagram | TikTok
+          ===================================================== */}
+
+      <div
+        className="
+          mb-5
+          flex
+          gap-1.5
+          rounded-2xl
+          p-1.5
+          sm:mb-6
+        "
+        style={{
+          background:
+            theme === "dark"
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(0,0,0,0.035)",
+        }}
+      >
+        {(
+          [
+            { key: "calendar", label: "Calendar" },
+            { key: "instagram", label: "Instagram" },
+            { key: "tiktok", label: "TikTok" },
+          ] as const
+        ).map((tab) => {
+          const active = viewMode === tab.key;
+          const accentColor =
+            tab.key === "instagram"
+              ? "#D62976"
+              : tab.key === "tiktok"
+              ? "#FE2C55"
+              : "#2478FF";
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() =>
+                setViewMode(tab.key)
+              }
+              className="
+                flex-1
+                rounded-xl
+                px-3 py-2
+                text-xs
+                font-semibold
+                transition-all
+                active:scale-[0.98]
+              "
+              style={{
+                background: active
+                  ? t.modalBg
+                  : "transparent",
+                color: active
+                  ? accentColor
+                  : t.textMuted,
+                boxShadow: active
+                  ? theme === "dark"
+                    ? "0 4px 14px rgba(0,0,0,0.35)"
+                    : "0 4px 14px rgba(0,0,0,0.08)"
+                  : "none",
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {viewMode === "instagram" && (
+        <InstagramPreview
+          posts={posts}
+          clientName={clientName}
+        />
+      )}
+
+      {viewMode === "tiktok" && (
+        <TikTokPreview
+          posts={posts}
+          clientName={clientName}
+        />
+      )}
+
+      {viewMode === "calendar" && (
+        <>
       {/* =====================================================
           DESKTOP / TABLET CALENDAR
           ===================================================== */}
@@ -5073,6 +5207,8 @@ export default function CalendarGrid({
           );
         })}
       </div>
+        </>
+      )}
 
       {/* =====================================================
           ADD POST

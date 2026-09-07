@@ -108,6 +108,7 @@ export default async function CalendarDetailPage({
           calendarId={calendar.id}
           planStatus={calendar.planStatus}
           userRole={userRole}
+          clientName={calendar.clientName}
           initialPosts={calendar.posts.map((p) => ({
             id: p.id,
             postDate: p.postDate.toISOString(),
