@@ -37,6 +37,17 @@ function IconPortfolio({ className }: { className?: string }) {
     </svg>
   );
 }
+function IconCalendar({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M3 9.5h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="8" cy="14" r="1.1" fill="currentColor" />
+      <circle cx="12" cy="14" r="1.1" fill="currentColor" />
+      <circle cx="16" cy="14" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
 function IconTarget({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} style={style}>
@@ -379,7 +390,7 @@ export default async function DashboardPage() {
                 <span className="text-base leading-none">+</span>
                 New project
               </Link>
-                            <Link
+                                                        <Link
                 href="/dashboard/portfolio"
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                 style={{ border: "1px solid rgba(255,255,255,0.15)" }}
@@ -387,8 +398,16 @@ export default async function DashboardPage() {
                 <IconPortfolio className="h-4 w-4" />
                 {existingPortfolio ? "View portfolio" : "Create your portfolio"}
               </Link>
-              <a
-                href={COMMUNITY_URL}
+              <Link
+                href="/dashboard/calendars"
+                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+              >
+                <IconCalendar className="h-4 w-4" />
+                Create calendar
+              </Link>
+              
+                <a href={COMMUNITY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"

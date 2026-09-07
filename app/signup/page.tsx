@@ -51,7 +51,7 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
     const [step, setStep] = useState<"details" | "verify">("details");
-  const [accountType, setAccountType] = useState<"CREATOR" | "AGENCY">("CREATOR");
+    const [accountType, setAccountType] = useState<"CREATOR" | "AGENCY" | "SOCIAL_MEDIA_MANAGER">("CREATOR");
 
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -168,14 +168,21 @@ function SignupForm() {
                 <label className="mb-2 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
                   I'm signing up as a
                 </label>
-                <div
-                  className="relative inline-flex w-full rounded-full p-1"
+                                <div
+                  className="relative flex rounded-full p-1"
                   style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
                 >
                   <motion.div
-                    className="absolute inset-y-1 w-[calc(50%-4px)] rounded-full"
+                    className="absolute inset-y-1 w-[calc(33.33%-4px)] rounded-full"
                     style={{ background: COLOR.gradient }}
-                    animate={{ left: accountType === "CREATOR" ? 4 : "calc(50% + 0px)" }}
+                    animate={{
+                      left:
+                        accountType === "CREATOR"
+                          ? 4
+                          : accountType === "AGENCY"
+                          ? "calc(33.33% + 1.5px)"
+                          : "calc(66.66% - 1px)",
+                    }}
                     transition={{ type: "spring", stiffness: 350, damping: 32 }}
                   />
                   <button
@@ -194,11 +201,21 @@ function SignupForm() {
                   >
                     Agency
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("SOCIAL_MEDIA_MANAGER")}
+                    className="relative z-10 flex-1 rounded-full py-2.5 text-xs font-semibold transition-colors duration-200"
+                    style={{ color: accountType === "SOCIAL_MEDIA_MANAGER" ? "#FFFFFF" : "rgba(255,255,255,0.5)" }}
+                  >
+                    Social Media Manager
+                  </button>
                 </div>
                 <p className="mt-2 text-xs text-white/40">
                   {accountType === "CREATOR"
                     ? "One free portfolio, for your own work."
-                    : "Manage branded portfolios for multiple clients, billed per portfolio."}
+                    : accountType === "AGENCY"
+                    ? "Manage branded portfolios for multiple clients, billed per portfolio."
+                    : "Content calendars for your clients, billed ₦5,000/month per client."}
                 </p>
               </div>
 
