@@ -299,199 +299,588 @@ function PostDetailPanel({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="flex max-h-[90vh] w-full max-w-md flex-col gap-3 overflow-y-auto rounded-2xl p-6" style={{ background: "#1A1A1A" }}>
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: `${meta.color}22`, color: meta.color }}>
-            <PlatformIcon platform={post.platform} className="h-4 w-4" />
-          </span>
-          <span className="text-sm font-semibold text-white">{meta.label}</span>
-          {post.postType && <span className="text-xs text-white/40">· {post.postType}</span>}
-          {post.category && (
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)" }}>
-              {post.category}
-            </span>
-          )}
+  <div
+    className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-2 backdrop-blur-md sm:items-center sm:p-4 lg:p-6"
+    onClick={onClose}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="relative flex max-h-[96dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#111111] shadow-[0_30px_100px_rgba(0,0,0,0.55)] sm:max-h-[94dvh] sm:rounded-[28px]"
+    >
+      {/* Ambient glow */}
+      <div
+        className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
+        style={{ background: meta.color }}
+      />
+
+      {/* ─────────────────────────────────────────────
+          HEADER
+      ───────────────────────────────────────────── */}
+      <div className="relative flex shrink-0 items-start justify-between gap-4 border-b border-white/[0.07] px-4 py-4 sm:px-6 sm:py-5">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Platform */}
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+            style={{
+              color: meta.color,
+              background: `${meta.color}12`,
+              borderColor: `${meta.color}28`,
+            }}
+          >
+            <PlatformIcon platform={post.platform} className="h-5 w-5" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-sm font-semibold text-white sm:text-[15px]">
+                {meta.label}
+              </span>
+
+              {post.postType && (
+                <>
+                  <span className="text-white/20">•</span>
+                  <span className="text-xs text-white/40">
+                    {post.postType}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-white/35">
+                {new Date(post.postDate).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+
+              <span className="text-white/15">•</span>
+
+              <span className="text-[11px] text-white/35">
+                {new Date(post.postDate).toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
+
+              {post.category && (
+                <span
+                  className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                  style={{
+                    background: "rgba(255,255,255,0.035)",
+                    borderColor: "rgba(255,255,255,0.08)",
+                    color: "rgba(255,255,255,0.5)",
+                  }}
+                >
+                  {post.category}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-white/70">
-          {new Date(post.postDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-          {" · "}
-          {new Date(post.postDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-        </p>
 
-        {post.caption && (
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Caption</p>
-            <p className="rounded-lg p-3 text-sm text-white/60" style={{ background: "rgba(255,255,255,0.04)" }}>
-              {post.caption}
-            </p>
-          </div>
-        )}
+        {/* Close */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.035] text-white/45 transition-all hover:border-white/15 hover:bg-white/[0.07] hover:text-white active:scale-95"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="h-4 w-4"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
 
-        {post.contentIdea && (
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Content idea</p>
-            <p className="rounded-lg p-3 text-sm text-white/60" style={{ background: "rgba(255,255,255,0.04)" }}>
-              {post.contentIdea}
-            </p>
-          </div>
-        )}
+      {/* ─────────────────────────────────────────────
+          SCROLLABLE CONTENT
+      ───────────────────────────────────────────── */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-6">
 
-        {post.cta && (
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Call to action</p>
-            <p className="rounded-lg p-3 text-sm text-white/60" style={{ background: "rgba(255,255,255,0.04)" }}>
-              {post.cta}
-            </p>
-          </div>
-        )}
+          {/* ─────────────────────────────────────────
+              CONTENT PREVIEW
+          ───────────────────────────────────────── */}
+          {post.assets.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                    Content preview
+                  </p>
+                  <p className="mt-0.5 text-xs text-white/25">
+                    Review the final creative before approval
+                  </p>
+                </div>
 
-        {post.hashtags && (
-          <div>
-            <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Hashtags</p>
-            <p className="rounded-lg p-3 text-sm" style={{ background: "rgba(255,255,255,0.04)", color: "#68B2FF" }}>
-              {post.hashtags}
-            </p>
-          </div>
-        )}
-
-        {(post.taggedAccounts || post.linkUrl) && (
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {post.taggedAccounts && (
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Tagged</p>
-                <p className="truncate text-xs text-white/60">{post.taggedAccounts}</p>
+                <span className="rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 py-1 text-[10px] text-white/40">
+                  {post.assets.length}{" "}
+                  {post.assets.length === 1 ? "asset" : "assets"}
+                </span>
               </div>
-            )}
-            {post.linkUrl && (
-              <div>
-                <p className="mb-1 text-[10px] font-semibold uppercase text-white/30">Link</p>
-                <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-xs underline" style={{ color: "#68B2FF" }}>
-                  {post.linkUrl}
-                </a>
-              </div>
-            )}
-          </div>
-        )}
 
-        {post.customFields.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            {post.customFields.map((f) => (
-              <div key={f.id} className="flex items-start gap-2 text-xs">
-                <span className="font-semibold text-white/40">{f.label}:</span>
-                <span className="text-white/60">{f.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {post.assets.length > 0 ? (
-          <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-            <span className="w-fit rounded-full px-3 py-1 text-xs font-semibold" style={{ color: approvalMeta.color, background: approvalMeta.bg }}>
-              {approvalMeta.text}
-            </span>
-
-            {activeAsset && (
-              activeAsset.mediaType === "VIDEO" ? (
-                <video ref={videoRef} src={activeAsset.contentUrl} controls className="w-full rounded-lg" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={activeAsset.contentUrl} alt="" className="w-full rounded-lg object-cover" />
-              )
-            )}
-
-            {post.assets.length > 1 && (
-              <div className="flex gap-1.5 overflow-x-auto">
-                {post.assets.map((asset, i) => (
-                  <button
-                    key={asset.id}
-                    onClick={() => setActiveAssetIdx(i)}
-                    className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg"
-                    style={{ border: i === activeAssetIdx ? "2px solid #2478FF" : "2px solid transparent" }}
-                  >
-                    {asset.mediaType === "VIDEO" ? (
-                      <video src={asset.contentUrl} muted className="h-full w-full object-cover" />
+              <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-black/30">
+                {activeAsset && (
+                  <div className="relative flex min-h-[220px] items-center justify-center bg-black sm:min-h-[340px]">
+                    {activeAsset.mediaType === "VIDEO" ? (
+                      <video
+                        ref={videoRef}
+                        src={activeAsset.contentUrl}
+                        controls
+                        playsInline
+                        className="max-h-[48vh] w-full object-contain"
+                      />
                     ) : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={asset.contentUrl} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={activeAsset.contentUrl}
+                        alt=""
+                        className="max-h-[48vh] w-full object-contain"
+                      />
                     )}
-                  </button>
+
+                    {/* Asset number */}
+                    {post.assets.length > 1 && (
+                      <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white/70 backdrop-blur-md">
+                        {activeAssetIdx + 1} / {post.assets.length}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Asset thumbnails */}
+                {post.assets.length > 1 && (
+                  <div className="border-t border-white/[0.07] bg-white/[0.02] p-2.5">
+                    <div className="flex gap-2 overflow-x-auto pb-0.5">
+                      {post.assets.map((asset, i) => {
+                        const isActive = i === activeAssetIdx;
+
+                        return (
+                          <button
+                            key={asset.id}
+                            onClick={() => setActiveAssetIdx(i)}
+                            aria-label={`View asset ${i + 1}`}
+                            className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-xl transition-all active:scale-95 sm:h-[72px] sm:w-[72px]"
+                            style={{
+                              border: isActive
+                                ? "2px solid #2478FF"
+                                : "1px solid rgba(255,255,255,0.08)",
+                              boxShadow: isActive
+                                ? "0 0 0 2px rgba(36,120,255,0.18)"
+                                : "none",
+                            }}
+                          >
+                            {asset.mediaType === "VIDEO" ? (
+                              <video
+                                src={asset.contentUrl}
+                                muted
+                                playsInline
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={asset.contentUrl}
+                                alt=""
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                            )}
+
+                            {asset.mediaType === "VIDEO" && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+                                  <IconPlay className="h-3.5 w-3.5 text-white" />
+                                </div>
+                              </div>
+                            )}
+
+                            {isActive && (
+                              <div className="absolute inset-0 rounded-[10px] ring-1 ring-inset ring-white/30" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Approval status */}
+              <div
+                className="mt-3 flex items-center gap-3 rounded-xl border px-3.5 py-3"
+                style={{
+                  background: approvalMeta.bg,
+                  borderColor: `${approvalMeta.color}25`,
+                }}
+              >
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    background: `${approvalMeta.color}18`,
+                    color: approvalMeta.color,
+                  }}
+                >
+                  {post.approvalStatus === "APPROVED" ? (
+                    <IconCheck className="h-4 w-4" />
+                  ) : (
+                    <span className="h-2 w-2 rounded-full bg-current" />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p
+                    className="text-xs font-semibold"
+                    style={{ color: approvalMeta.color }}
+                  >
+                    {approvalMeta.text}
+                  </p>
+
+                  <p className="mt-0.5 text-[10px] text-white/35">
+                    {post.approvalStatus === "APPROVED"
+                      ? "This content has been approved."
+                      : post.approvalStatus === "NEEDS_REVISION"
+                        ? "Feedback is required before approval."
+                        : "Please review the content and approve or request changes."}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────
+              COPY / CONTENT
+          ───────────────────────────────────────── */}
+          {(post.caption || post.contentIdea || post.cta || post.hashtags) && (
+            <section className="space-y-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                  Post details
+                </p>
+              </div>
+
+              {post.caption && (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-white/30">
+                      Caption
+                    </p>
+                  </div>
+
+                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-white/70">
+                    {post.caption}
+                  </p>
+                </div>
+              )}
+
+              {post.contentIdea && (
+                <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/30">
+                    Content idea
+                  </p>
+
+                  <p className="whitespace-pre-wrap break-words text-sm leading-6 text-white/65">
+                    {post.contentIdea}
+                  </p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {post.cta && (
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/30">
+                      Call to action
+                    </p>
+
+                    <p className="break-words text-sm leading-5 text-white/65">
+                      {post.cta}
+                    </p>
+                  </div>
+                )}
+
+                {post.hashtags && (
+                  <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-white/30">
+                      Hashtags
+                    </p>
+
+                    <p className="break-words text-sm leading-5 text-[#68B2FF]">
+                      {post.hashtags}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────
+              DISCOVERY
+          ───────────────────────────────────────── */}
+          {(post.taggedAccounts || post.linkUrl) && (
+            <section>
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                Discovery
+              </p>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {post.taggedAccounts && (
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
+                    <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wide text-white/25">
+                      Tagged accounts
+                    </p>
+
+                    <p className="break-words text-xs leading-5 text-white/60">
+                      {post.taggedAccounts}
+                    </p>
+                  </div>
+                )}
+
+                {post.linkUrl && (
+                  <div className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-3.5">
+                    <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wide text-white/25">
+                      Destination link
+                    </p>
+
+                    <a
+                      href={post.linkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block break-all text-xs leading-5 text-[#68B2FF] underline decoration-[#68B2FF]/30 underline-offset-2 transition-colors hover:text-white"
+                    >
+                      {post.linkUrl}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ─────────────────────────────────────────
+              CUSTOM FIELDS
+          ───────────────────────────────────────── */}
+          {post.customFields.length > 0 && (
+            <section>
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                Additional information
+              </p>
+
+              <div className="overflow-hidden rounded-2xl border border-white/[0.07]">
+                {post.customFields.map((field, index) => (
+                  <div
+                    key={field.id}
+                    className={`grid grid-cols-1 gap-1 px-4 py-3.5 sm:grid-cols-[130px_minmax(0,1fr)] sm:gap-4 ${
+                      index !== 0 ? "border-t border-white/[0.06]" : ""
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-white/30">
+                      {field.label}
+                    </span>
+
+                    <span className="break-words text-xs leading-5 text-white/60">
+                      {field.value}
+                    </span>
+                  </div>
                 ))}
               </div>
-            )}
+            </section>
+          )}
 
-            {activeAsset?.mediaType === "VIDEO" && (
+          {/* ─────────────────────────────────────────
+              VIDEO COMMENTS
+          ───────────────────────────────────────── */}
+          {activeAsset?.mediaType === "VIDEO" && (
+            <section>
               <CalendarVideoComments
                 comments={comments}
                 readOnly={false}
-                getCurrentTime={() => videoRef.current?.currentTime ?? 0}
+                getCurrentTime={() =>
+                  videoRef.current?.currentTime ?? 0
+                }
                 onSeekTo={(seconds) => {
                   const vid = videoRef.current;
                   if (!vid) return;
+
                   vid.currentTime = seconds;
                   vid.play().catch(() => {});
                 }}
                 onAddComment={addComment}
               />
-            )}
+            </section>
+          )}
 
-            {requestingRevision ? (
-              <div className="flex flex-col gap-2">
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  placeholder="What would you like changed?"
-                  style={{ fontSize: "16px" }}
-                  className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-white/25"
-                />
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => respond("request_revision")}
-                    disabled={submitting || !note.trim()}
-                    className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                    style={{ background: "#F97316" }}
-                  >
-                    {submitting ? "Sending..." : "Send feedback"}
-                  </button>
-                  <button onClick={() => setRequestingRevision(false)} className="text-xs text-white/40 underline">
-                    Cancel
-                  </button>
+          {/* ─────────────────────────────────────────
+              APPROVAL ACTIONS
+          ───────────────────────────────────────── */}
+          {post.assets.length > 0 && (
+            <section className="border-t border-white/[0.07] pt-5">
+              {requestingRevision ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">
+                      Request changes
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-white/35">
+                      Tell the creator exactly what needs to be changed.
+                    </p>
+                  </div>
+
+                  <textarea
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={4}
+                    placeholder="e.g. Please update the headline, replace the second image and shorten the caption..."
+                    style={{ fontSize: "16px" }}
+                    className="w-full resize-none rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3.5 text-sm leading-6 text-white outline-none transition-all placeholder:text-white/20 focus:border-[#F97316]/50 focus:bg-white/[0.055] focus:ring-4 focus:ring-[#F97316]/[0.08]"
+                  />
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <button
+                      onClick={() => respond("request_revision")}
+                      disabled={submitting || !note.trim()}
+                      className="flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
+                        boxShadow: "0 8px 24px rgba(249,115,22,0.18)",
+                      }}
+                    >
+                      {submitting ? "Sending feedback..." : "Send feedback"}
+                    </button>
+
+                    <button
+                      onClick={() => setRequestingRevision(false)}
+                      className="min-h-11 rounded-xl border border-white/[0.08] px-5 py-3 text-sm font-medium text-white/50 transition-all hover:bg-white/[0.05] hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => respond("approve")}
-                  disabled={submitting}
-                  className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
-                >
-                  {submitting ? "Approving..." : "Approve"}
-                </button>
-                <button
-                  onClick={() => setRequestingRevision(true)}
-                  className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white/70"
-                  style={{ background: "rgba(255,255,255,0.06)" }}
-                >
-                  Request changes
-                </button>
-              </div>
-            )}
-            {error && <p className="text-xs text-red-400">{error}</p>}
-          </div>
-        ) : (
-          <p className="text-xs text-white/30">Nothing has been uploaded for this post yet.</p>
-        )}
+              ) : (
+                <div>
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-white">
+                      Ready to review?
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-white/35">
+                      Approve the content or send feedback to the creator.
+                    </p>
+                  </div>
 
-        <button onClick={onClose} className="mt-1 self-start text-xs text-white/40 underline">
-          Close
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    <button
+                      onClick={() => respond("approve")}
+                      disabled={submitting}
+                      className="group relative flex min-h-12 items-center justify-center overflow-hidden rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(36,120,255,0.22)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+                      }}
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <IconCheck className="h-4 w-4" />
+                        {submitting ? "Approving..." : "Approve content"}
+                      </span>
+
+                      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                    </button>
+
+                    <button
+                      onClick={() => setRequestingRevision(true)}
+                      className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white/65 transition-all hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-[0.98]"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="h-4 w-4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      >
+                        <path
+                          d="M12 20h9"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      Request changes
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.07] px-3.5 py-3">
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+                  <p className="text-xs leading-5 text-red-300">
+                    {error}
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Empty state */}
+          {post.assets.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.09] bg-white/[0.02] px-6 py-12 text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.035]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5 text-white/25"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <rect
+                    x="3"
+                    y="3"
+                    width="18"
+                    height="18"
+                    rx="2"
+                  />
+                  <path d="M8 15l2.5-3 2 2 2.5-3 3 4" />
+                </svg>
+              </div>
+
+              <p className="text-sm font-medium text-white/55">
+                No content uploaded yet
+              </p>
+
+              <p className="mt-1 max-w-xs text-xs leading-5 text-white/25">
+                The creative assets for this post will appear here once they
+                have been uploaded.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────
+          FOOTER
+      ───────────────────────────────────────────── */}
+      <div className="flex shrink-0 items-center justify-between border-t border-white/[0.07] bg-[#111111]/95 px-4 py-3 backdrop-blur-xl sm:px-6">
+        <div className="hidden text-[10px] text-white/20 sm:block">
+          Click outside to close
+        </div>
+
+        <button
+          onClick={onClose}
+          className="ml-auto flex min-h-10 items-center justify-center rounded-xl px-4 text-xs font-medium text-white/40 transition-colors hover:bg-white/[0.04] hover:text-white/70"
+        >
+          Close review
         </button>
       </div>
     </div>
-  );
+  </div>
+);
 }
-
 export default function ClientCalendarView({
   slug,
   planStatus,
