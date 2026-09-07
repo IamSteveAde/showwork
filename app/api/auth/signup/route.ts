@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
   // else (missing, malformed, tampered with) safely falls back to the
   // default, ordinary account type rather than accidentally granting
   // agency behavior.
-  const resolvedAccountType = accountType === "AGENCY" ? "AGENCY" : "CREATOR";
+    const resolvedAccountType =
+    accountType === "AGENCY" ? "AGENCY" : accountType === "SOCIAL_MEDIA_MANAGER" ? "SOCIAL_MEDIA_MANAGER" : "CREATOR";
 
   await db.pendingSignup.upsert({
     where: { email },

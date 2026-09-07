@@ -156,6 +156,10 @@ model Creator {
   // added to as a collaborator.
   managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
   managedProjectInvitesSent    ManagedProjectInvite[]       @relation("ManagedProjectInvitesSent")
+    
+  ownedCalendars         SocialCalendar[]       @relation("OwnedCalendars")
+  calendarCollaborations CalendarCollaborator[] @relation("CalendarMemberships")
+  calendarInvitesSent    CalendarInvite[]       @relation("CalendarInvitesSent")
   // Every task assigned to this specific creator, across any managed
   // project they're on — what lets "my tasks" be queried directly
   // without joining through every project they collaborate on.
@@ -842,6 +846,7 @@ model PendingSignup {
 enum AccountType {
   CREATOR
   AGENCY
+  SOCIAL_MEDIA_MANAGER
 }
 
 enum PortfolioBillingStatus {
@@ -860,6 +865,8 @@ enum PaymentType {
   SUBSCRIPTION_RENEWAL
   PORTFOLIO_SUBSCRIPTION_INITIAL
   PORTFOLIO_SUBSCRIPTION_RENEWAL
+  CALENDAR_SUBSCRIPTION_INITIAL
+  CALENDAR_SUBSCRIPTION_RENEWAL
 }
 
 model PaymentRecord {
@@ -870,9 +877,12 @@ model PaymentRecord {
   type              PaymentType
   tier              SubscriptionTier?
   cycle             BillingCycle?
-  // Only set for PORTFOLIO_* payment types — which specific portfolio
+   // Only set for PORTFOLIO_* payment types — which specific portfolio
   // this charge was for, needed since one agency account can have many.
   portfolioId       String?
+  // Only set for CALENDAR_* payment types — which specific calendar
+  // this charge was for, since one manager can have several clients.
+  calendarId        String?
   paystackReference String?
   createdAt         DateTime          @default(now())
 
@@ -1284,4 +1294,240 @@ model SpotlightSubmission {
 
   @@index([cycleId])
   @@index([cycleId, rank])
+}
+// ─────────────────────────────────────────────
+// SOCIAL CALENDAR — a social media manager's content calendar for one
+// client. Billed separately, per calendar, at a flat ₦5,000/month —
+// same structural idea as an agency's extra portfolios, just monthly
+// instead of annual.
+// ─────────────────────────────────────────────
+enum CalendarPlanStatus {
+  BUILDING           // manager laying out the skeleton — client can't see it yet
+  AWAITING_APPROVAL  // manager marked the plan done — client reviewing the plan itself
+  PLAN_APPROVED      // client approved the plan — real content creation can now begin
+  PLAN_NEEDS_CHANGES // client asked for changes to the plan
+}
+
+enum CalendarBillingStatus {
+  PENDING_SETUP
+  ACTIVE
+  OFFLINE
+}
+
+model SocialCalendar {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  clientName   String
+  logoUrl      String?
+  primaryColor String?
+
+    planStatus       CalendarPlanStatus @default(BUILDING)
+  planSubmittedAt  DateTime?
+  planApprovedAt   DateTime?
+  planApprovalNote String?
+
+  // Shown as the hero section on the client-facing page once set —
+  // entirely optional, editable anytime, not just at publish time.
+  // Desktop expects a landscape image, mobile a portrait one — same
+  // split already used for portfolio banners, since a single image
+  // rarely looks right cropped both ways.
+  headerBannerDesktopUrl String?
+  headerBannerMobileUrl  String?
+  headerTitle            String?
+  headerDescription      String? @db.Text
+
+  passwordHash String
+  accessCode   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  manager   Creator @relation("OwnedCalendars", fields: [managerId], references: [id], onDelete: Cascade)
+  managerId String
+
+  billingStatus             CalendarBillingStatus @default(PENDING_SETUP)
+  paystackSubscriptionCode  String?
+  paystackEmailToken        String?
+  paystackCustomerCode      String?
+  subscriptionRenewsAt      DateTime?
+  pendingSubscriptionRef    String? @unique
+  wentOfflineAt             DateTime?
+  lastPaymentReminderSentAt DateTime?
+
+  posts         CalendarPost[]
+  collaborators CalendarCollaborator[]
+  invites       CalendarInvite[]
+  viewerEmails  CalendarViewerEmail[]
+
+  @@index([managerId])
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  X
+  LINKEDIN
+}
+
+enum PostApprovalStatus {
+  PENDING
+  APPROVED
+  NEEDS_REVISION
+}
+
+model CalendarPost {
+  id         String         @id @default(uuid())
+  calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId String
+
+  postDate    DateTime
+  platform    SocialPlatform
+    postType    String?  @db.Text
+  // Free text — a preset list of common categories (Educational,
+  // Lifestyle, Promotional, etc.) shown in the UI, but a manager can
+  // always type their own instead. Kept separate from postType,
+  // which is about format (Reel, Carousel); this is about the
+  // content's actual purpose or theme.
+  category    String?  @db.Text
+  caption     String?  @db.Text
+  contentIdea String?  @db.Text
+  // What the post is actually asking the viewer to do — "Link in
+  // bio," "Comment below," etc. Free text with presets in the UI.
+  cta         String?  @db.Text
+  hashtags    String?  @db.Text
+  // Accounts to @-mention/tag in the post, free text (comma or
+  // space-separated, manager's own convention).
+  taggedAccounts String? @db.Text
+  // A destination URL for platforms that support a clickable link on
+  // the post itself.
+  linkUrl     String?  @db.Text
+
+  approvalStatus PostApprovalStatus @default(PENDING)
+  approvalNote   String?
+  reviewedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A post can hold more than one file — a carousel is simply a post
+  // with several assets instead of one, the same way Instagram itself
+  // treats it (every post is 1-10 items; "carousel" just describes
+  // having more than one). Ordered so the carousel plays back in the
+  // sequence the manager actually intended.
+  assets        CalendarPostAsset[]
+  comments      CalendarPostComment[]
+  videoComments CalendarPostVideoComment[]
+  customFields  CalendarPostCustomField[]
+
+  @@index([calendarId])
+  @@index([calendarId, postDate])
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR POST CUSTOM FIELD — a manager-defined label/value pair on
+// one post, for anything not already covered by a dedicated field —
+// "Music track," "Filter used," a client-specific detail, whatever
+// they need. Fully open-ended, since there's no way to anticipate
+// every field a given manager or client might actually want tracked.
+// ─────────────────────────────────────────────
+model CalendarPostCustomField {
+  id     String       @id @default(uuid())
+  post   CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  label  String
+  value  String       @db.Text
+
+  @@index([postId])
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR POST ASSET — one real uploaded file belonging to a post.
+// Most posts will only ever have one; a carousel is exactly the same
+// structure with more than one, in a deliberate order.
+// ─────────────────────────────────────────────
+model CalendarPostAsset {
+  id           String       @id @default(uuid())
+  post         CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId       String
+  fileKey      String
+  mediaType    MediaType
+  displayOrder Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  @@index([postId])
+}
+model CalendarPostComment {
+  id          String       @id @default(uuid())
+  post        CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+  authorName  String?
+  authorEmail String
+  note        String
+  createdAt   DateTime     @default(now())
+
+  @@index([postId])
+}
+
+model CalendarPostVideoComment {
+  id                    String       @id @default(uuid())
+  post                  CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId                String
+  authorName            String?
+  authorEmail           String
+  note                  String
+  videoTimestampSeconds Float
+  createdAt             DateTime     @default(now())
+
+  @@index([postId])
+}
+
+enum CalendarRole {
+  VIEW_ONLY     // can see the calendar, nothing else
+  ADD_CONTENT   // can also upload/add content to existing posts — the default for most collaborators
+  EDIT_CALENDAR // can also create, edit, and delete posts, and edit the calendar's own details — a trusted, higher-risk role
+}
+
+model CalendarCollaborator {
+  id         String         @id @default(uuid())
+  calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId String
+  creator    Creator        @relation("CalendarMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId  String
+  role       CalendarRole   @default(ADD_CONTENT)
+  addedAt    DateTime       @default(now())
+
+  @@unique([calendarId, creatorId])
+  @@index([calendarId])
+  @@index([creatorId])
+}
+
+model CalendarInvite {
+  id                 String         @id @default(uuid())
+  calendar           SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId         String
+  invitedByCreator   Creator        @relation("CalendarInvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
+  invitedByCreatorId String
+   email              String
+  role               CalendarRole   @default(ADD_CONTENT)
+  tokenHash          String         @unique
+  status             InviteStatus   @default(PENDING)
+  expiresAt          DateTime
+  createdAt          DateTime       @default(now())
+  respondedAt        DateTime?
+
+  @@index([calendarId])
+  @@index([email])
+}
+
+model CalendarViewerEmail {
+  id         String         @id @default(uuid())
+  calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId String
+  name       String?
+  email      String
+  viewedAt   DateTime       @default(now())
+
+  @@index([calendarId])
 }

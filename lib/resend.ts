@@ -1012,3 +1012,116 @@ export async function sendWebinarRsvpNotificationEmail({
     `,
   });
 }
+// ─────────────────────────────────────────────
+// CALENDAR COLLABORATOR INVITE — sent when a manager invites someone
+// (a designer or content creator) onto one of their client calendars.
+// Same two-path acceptance as every other invite in this app: works
+// whether or not the invitee already has a Showwork account.
+// ─────────────────────────────────────────────
+export async function sendCalendarInviteEmail({
+  to,
+  invitedByName,
+  clientName,
+  token,
+}: {
+  to: string;
+  invitedByName: string;
+  clientName: string;
+  token: string;
+}) {
+  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/calendars/invites/${token}`;
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `${invitedByName} invited you to a content calendar`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 24px;">
+          Calendar invite
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          ${invitedByName} invited you to help create content for <strong style="color: #F8F7F4;">${clientName}</strong>'s content calendar on Showwork.
+        </p>
+        <a href="${acceptUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          View invite
+        </a>
+      </div>
+    `,
+  });
+}
+// ─────────────────────────────────────────────
+// CALENDAR POST REVIEWED — sent to everyone involved (the manager and
+// every collaborator on the calendar) the moment a client approves or
+// requests changes on one specific post's uploaded content. Fires
+// again on the same post if it gets reuploaded and reviewed a second
+// time — nothing here tracks "already notified," since a genuinely
+// new review is always worth a fresh email.
+// ─────────────────────────────────────────────
+export async function sendCalendarPostReviewedEmail({
+  to,
+  clientName,
+  approved,
+  note,
+  calendarUrl,
+}: {
+  to: string;
+  clientName: string;
+  approved: boolean;
+  note: string | null;
+  calendarUrl: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: approved
+      ? `${clientName} approved a post`
+      : `${clientName} requested changes on a post`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: ${approved ? "#4ADE80" : "#F97316"}; margin-bottom: 24px;">
+          ${approved ? "Post approved" : "Changes requested"}
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          ${clientName} ${approved ? "approved" : "requested changes on"} a post on their content calendar.
+        </p>
+        ${note ? `<p style="font-size: 15px; line-height: 1.7; color: #D8D6D2; background: rgba(249,115,22,0.08); padding: 14px; border-radius: 8px;">"${note}"</p>` : ""}
+        <a href="${calendarUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          View calendar
+        </a>
+      </div>
+    `,
+  });
+}
+// ─────────────────────────────────────────────
+// CALENDAR PAYMENT FAILED — sent to the manager when a calendar's
+// recurring ₦5,000/month charge fails, mirroring the portfolio
+// equivalent exactly.
+// ─────────────────────────────────────────────
+export async function sendCalendarPaymentFailedEmail({
+  to,
+  name,
+  clientName,
+}: {
+  to: string;
+  name: string | null;
+  clientName: string;
+}) {
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Payment failed for ${clientName}'s content calendar`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F97316; margin-bottom: 24px;">
+          Payment failed
+        </p>
+        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
+          Hi${name ? ` ${name}` : ""}, the monthly charge for <strong style="color: #F8F7F4;">${clientName}</strong>'s content calendar didn't go through. The calendar is now offline until this is resolved.
+        </p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/calendars" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
+          Go to your calendars
+        </a>
+      </div>
+    `,
+  });
+}
