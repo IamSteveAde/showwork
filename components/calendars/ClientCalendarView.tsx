@@ -3,6 +3,8 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, { type CalendarVideoCommentData } from "@/components/calendars/CalendarVideoComments";
+import InstagramPreview from "@/components/calendars/InstagramPreview";
+import TikTokPreview from "@/components/calendars/TikTokPreview";
 
 type Platform = "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "FACEBOOK" | "X" | "LINKEDIN";
 type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -885,12 +887,15 @@ export default function ClientCalendarView({
   slug,
   planStatus,
   posts: initialPosts,
+  clientName = "Your brand",
 }: {
   slug: string;
   planStatus: string;
   posts: CalendarPostData[];
+  clientName?: string;
 }) {
   const router = useRouter();
+  const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok">("calendar");
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -947,6 +952,86 @@ export default function ClientCalendarView({
 
   return (
     <div>
+      {/* SOCIAL VIEW SWITCHER */}
+      <div className="mb-8 overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+        <div className="grid grid-cols-3 gap-1">
+          {[
+            { key: "calendar" as const, label: "Calendar", icon: "calendar" },
+            { key: "instagram" as const, label: "Instagram Preview", icon: "instagram" },
+            { key: "tiktok" as const, label: "TikTok", icon: "tiktok" },
+          ].map((tab) => {
+            const active = viewMode === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setViewMode(tab.key)}
+                className="relative flex min-h-11 items-center justify-center gap-2 rounded-[16px] px-3 py-2.5 text-xs font-semibold transition-all duration-300 active:scale-[0.98] sm:text-sm"
+                style={{
+                  background: active
+                    ? "linear-gradient(135deg, rgba(255,255,255,0.11), rgba(255,255,255,0.045))"
+                    : "transparent",
+                  color: active ? "#fff" : "rgba(255,255,255,0.38)",
+                  boxShadow: active ? "0 8px 28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" : "none",
+                }}
+              >
+                {tab.icon === "calendar" && (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                    <rect x="3" y="4" width="18" height="17" rx="3" />
+                    <path d="M8 2.5v4M16 2.5v4M3 9h18" strokeLinecap="round" />
+                  </svg>
+                )}
+                {tab.icon === "instagram" && (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <rect x="3" y="3" width="18" height="18" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+                  </svg>
+                )}
+                {tab.icon === "tiktok" && (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                    <path d="M16.6 2h-3.3v13.8c0 1.5-1.2 2.7-2.7 2.7a2.7 2.7 0 1 1 0-5.4c.3 0 .5 0 .8.1V9.8a6.1 6.1 0 0 0-.8 0A6.1 6.1 0 1 0 16.6 15.9V8.5a8 8 0 0 0 4.6 1.5V6.7a4.8 4.8 0 0 1-4.6-4.7Z" />
+                  </svg>
+                )}
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {viewMode === "instagram" && (
+        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#080808] px-3 py-8 shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:px-6 sm:py-10">
+          <div className="pointer-events-none absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#E1306C]/10 blur-[100px]" />
+          <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-[100px]" />
+          <div className="relative z-10">
+            <div className="mb-8 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">Social preview</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Instagram Preview</h3>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-white/35 sm:text-sm">Present your brand the right way — see how your Instagram content comes together before it goes live.</p>
+            </div>
+            <InstagramPreview posts={posts} clientName={clientName} />
+          </div>
+        </section>
+      )}
+
+      {viewMode === "tiktok" && (
+        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#050505] px-3 py-8 shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:px-6 sm:py-10">
+          <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-[#25F4EE]/10 blur-[100px]" />
+          <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#FE2C55]/10 blur-[100px]" />
+          <div className="relative z-10">
+            <div className="mb-8 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">Social preview</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">TikTok experience</h3>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-white/35 sm:text-sm">Experience the complete vertical sequence exactly as a viewer would scroll through it.</p>
+            </div>
+            <TikTokPreview posts={posts} clientName={clientName} />
+          </div>
+        </section>
+      )}
+
+      {viewMode === "calendar" && (
+        <>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">
           {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
@@ -1013,6 +1098,9 @@ export default function ClientCalendarView({
             );
           })}
         </div>
+      )}
+
+        </>
       )}
 
       {selectedPost && (
