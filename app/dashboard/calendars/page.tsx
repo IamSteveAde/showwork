@@ -6,6 +6,80 @@ import { db } from "@/lib/db";
 import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 
+function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M19 12H5" />
+      <path d="M11 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function ArrowUpRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M7 17L17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  );
+}
+
+function PlusIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
 const COLOR = {
   black: "#080808",
   blue: "#2478FF",
@@ -109,17 +183,18 @@ function Pagination({
       </p>
 
       <div className="flex items-center gap-1.5">
-        <Link
-          href={buildPageHref(Math.max(1, currentPage - 1))}
-          aria-disabled={currentPage === 1}
-          className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-xs transition-all ${
-            currentPage === 1
-              ? "pointer-events-none border-white/[0.04] text-white/15"
-              : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
-          }`}
-        >
-          ←
-        </Link>
+       <Link
+  href={buildPageHref(Math.max(1, currentPage - 1))}
+  aria-label="Previous page"
+  aria-disabled={currentPage === 1}
+  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 transition-all ${
+    currentPage === 1
+      ? "pointer-events-none border-white/[0.04] text-white/15"
+      : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+  }`}
+>
+  <ArrowLeftIcon className="h-3.5 w-3.5" />
+</Link>
 
         {pages.map((page, index) =>
           page === "ellipsis" ? (
@@ -146,16 +221,17 @@ function Pagination({
         )}
 
         <Link
-          href={buildPageHref(Math.min(totalPages, currentPage + 1))}
-          aria-disabled={currentPage === totalPages}
-          className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-xs transition-all ${
-            currentPage === totalPages
-              ? "pointer-events-none border-white/[0.04] text-white/15"
-              : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
-          }`}
-        >
-          →
-        </Link>
+  href={buildPageHref(Math.min(totalPages, currentPage + 1))}
+  aria-label="Next page"
+  aria-disabled={currentPage === totalPages}
+  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 transition-all ${
+    currentPage === totalPages
+      ? "pointer-events-none border-white/[0.04] text-white/15"
+      : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
+  }`}
+>
+  <ArrowRightIcon className="h-3.5 w-3.5" />
+</Link>
       </div>
     </nav>
   );
@@ -228,9 +304,9 @@ export default async function CalendarsPage({
             href="/dashboard"
             className="group inline-flex items-center gap-2 text-xs font-medium text-white/35 transition-colors hover:text-white"
           >
-            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
-              ←
-            </span>
+           <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
+  <ArrowLeftIcon className="h-3.5 w-3.5" />
+</span>
             Dashboard
           </Link>
 
@@ -311,7 +387,7 @@ export default async function CalendarsPage({
             <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2478FF]/10 text-[#2478FF]">
-                  <span className="text-lg leading-none">+</span>
+                  <PlusIcon className="h-4 w-4" />
                 </div>
 
                 <div>
@@ -428,10 +504,10 @@ export default async function CalendarsPage({
 
                       {/* Arrow */}
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/20 transition-all duration-300 group-hover:border-[#2478FF]/25 group-hover:bg-[#2478FF]/10 group-hover:text-[#68B2FF]">
-                        <span className="text-sm transition-transform duration-300 group-hover:translate-x-0.5">
-                          ↗
-                        </span>
-                      </div>
+  <ArrowUpRightIcon
+    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+  />
+</div>
                     </div>
 
                     {/* Main content */}
@@ -483,9 +559,9 @@ export default async function CalendarsPage({
                           Open calendar
                         </span>
 
-                        <span className="text-[10px] text-white/15 transition-all group-hover:translate-x-1 group-hover:text-[#68B2FF]">
-                          →
-                        </span>
+                        <span className="text-white/15 transition-all group-hover:translate-x-1 group-hover:text-[#68B2FF]">
+  <ArrowRightIcon className="h-3.5 w-3.5" />
+</span>
                       </div>
                     </div>
                   </Link>
@@ -523,9 +599,9 @@ export default async function CalendarsPage({
               </p>
 
               <div className="mt-7 inline-flex items-center gap-2 rounded-xl border border-[#2478FF]/20 bg-[#2478FF]/[0.07] px-4 py-2.5 text-xs font-medium text-[#68B2FF]">
-                <span className="text-base leading-none">+</span>
-                Create your first calendar above
-              </div>
+  <PlusIcon className="h-3.5 w-3.5" />
+  Create your first calendar above
+</div>
             </div>
           </section>
         )}
