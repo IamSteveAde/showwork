@@ -194,19 +194,19 @@ export default function PortfolioDetailsForm({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           Company / brand name
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           Tagline
         </label>
         <input
@@ -214,7 +214,7 @@ export default function PortfolioDetailsForm({
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
           placeholder="e.g. Director & Cinematographer"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
         />
       </div>
 
@@ -225,19 +225,19 @@ export default function PortfolioDetailsForm({
           with empty space above and below it. Two purpose-shot
           images, each matching the screen it's actually for, is what
           lets the banner genuinely fill the screen properly on both. ── */}
-      <div className="rounded-xl p-5" style={{ background: "rgba(36,120,255,0.05)", border: "1px solid rgba(36,120,255,0.2)" }}>
-        <h3 className="mb-1 text-sm font-semibold text-white">Your portfolio's banner</h3>
-        <p className="mb-4 text-xs leading-relaxed text-white/45">
+      <div className="rounded-xl p-5" style={{ background: "linear-gradient(135deg, rgba(36,120,255,0.06), rgba(36,120,255,0.02))", border: "1px solid rgba(36,120,255,0.18)" }}>
+        <h3 className="mb-1 text-sm font-semibold text-slate-950">Your portfolio's banner</h3>
+        <p className="mb-4 text-xs leading-relaxed text-slate-500">
           Upload two versions of your banner — one shaped for wide desktop screens, one shaped for tall phone screens.
           Visitors automatically see whichever one actually fits their screen.
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
               Desktop banner
             </label>
-            <p className="mb-2 text-[11px] text-white/35">
+            <p className="mb-2 text-[11px] text-slate-400">
               Landscape — wider than it is tall. Recommended around 1920×1080px. Image or video.
             </p>
             {bannerDesktopUrl && (
@@ -248,7 +248,7 @@ export default function PortfolioDetailsForm({
                 <img src={bannerDesktopUrl} alt="" className="mb-2 aspect-video w-full rounded-lg object-cover" />
               )
             )}
-            <label className="block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+            <label className="block cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-300">
               {uploadingDesktopBanner ? "Uploading..." : bannerDesktopUrl ? "Change desktop banner" : "Upload desktop banner"}
               <input
                 type="file"
@@ -264,10 +264,10 @@ export default function PortfolioDetailsForm({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+            <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
               Mobile banner
             </label>
-            <p className="mb-2 text-[11px] text-white/35">
+            <p className="mb-2 text-[11px] text-slate-400">
               Portrait — taller than it is wide. Recommended around 1080×1350px. Image or video.
             </p>
             {bannerMobileUrl && (
@@ -278,7 +278,7 @@ export default function PortfolioDetailsForm({
                 <img src={bannerMobileUrl} alt="" className="mb-2 aspect-[4/5] w-full rounded-lg object-cover" />
               )
             )}
-            <label className="block cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+            <label className="block cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-300">
               {uploadingMobileBanner ? "Uploading..." : bannerMobileUrl ? "Change mobile banner" : "Upload mobile banner"}
               <input
                 type="file"
@@ -301,8 +301,8 @@ export default function PortfolioDetailsForm({
           priority whenever they're set. */}
       {bannerCandidates.length > 0 && (
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-            Or, pick from your existing photos <span className="normal-case text-white/25">(used only if no banner is uploaded above)</span>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
+            Or, pick from your existing photos <span className="normal-case text-slate-400">(used only if no banner is uploaded above)</span>
           </label>
           <div className="grid grid-cols-4 gap-2">
             {bannerCandidates.map((b) => (
@@ -325,31 +325,31 @@ export default function PortfolioDetailsForm({
         </div>
       )}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           Contact email
         </label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           WhatsApp number
         </label>
         <input
           type="text"
           value={whatsapp}
           onChange={(e) => setWhatsapp(e.target.value)}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
         />
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+        <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           Call-to-action text
         </label>
         <input
@@ -357,75 +357,75 @@ export default function PortfolioDetailsForm({
           value={cta}
           onChange={(e) => setCta(e.target.value)}
           placeholder="e.g. Let's work together"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+          className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Instagram
           </label>
           <input
             type="text"
             value={instagram}
             onChange={(e) => setInstagram(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Twitter / X
           </label>
           <input
             type="text"
             value={twitter}
             onChange={(e) => setTwitter(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             LinkedIn
           </label>
           <input
             type="text"
             value={linkedin}
             onChange={(e) => setLinkedin(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             TikTok
           </label>
           <input
             type="text"
             value={tiktok}
             onChange={(e) => setTiktok(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Facebook
           </label>
           <input
             type="text"
             value={facebook}
             onChange={(e) => setFacebook(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             YouTube
           </label>
           <input
             type="text"
             value={youtube}
             onChange={(e) => setYoutube(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
       </div>
@@ -434,11 +434,11 @@ export default function PortfolioDetailsForm({
           sections on the public page. Its own visually distinct block
           so it reads as a deliberate addition, not just another field
           in the list above. ── */}
-      <div className="mt-2 rounded-xl p-5" style={{ background: "rgba(245,200,66,0.05)", border: "1px solid rgba(245,200,66,0.2)" }}>
-        <h3 className="mb-4 text-sm font-semibold text-white">Introduce yourself</h3>
+      <div className="mt-2 rounded-xl p-5" style={{ background: "linear-gradient(135deg, rgba(245,200,66,0.08), rgba(255,255,255,0.7))", border: "1px solid rgba(245,200,66,0.2)" }}>
+        <h3 className="mb-4 text-sm font-semibold text-slate-950">Introduce yourself</h3>
 
         <div className="mb-4">
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Photo
           </label>
           <div className="flex items-center gap-3">
@@ -447,7 +447,7 @@ export default function PortfolioDetailsForm({
               <img src={bioPhotoUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
             )}
             <label
-              className="cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2 text-xs text-white/50 hover:border-white/25"
+              className="cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500 hover:border-slate-300"
             >
               {uploadingPhoto ? "Uploading..." : bioPhotoUrl ? "Change photo" : "Upload photo"}
               <input
@@ -465,7 +465,7 @@ export default function PortfolioDetailsForm({
         </div>
 
         <div className="mb-4">
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             About you
           </label>
           <textarea
@@ -473,12 +473,12 @@ export default function PortfolioDetailsForm({
             onChange={(e) => setBioText(e.target.value)}
             rows={4}
             placeholder="A short introduction — who you are, what you do, what you care about in your work."
-            className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full resize-none rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
 
         <div className="mb-4">
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Skills / specialties
           </label>
           <div className="mb-2 flex flex-wrap gap-1.5">
@@ -486,10 +486,10 @@ export default function PortfolioDetailsForm({
               <span
                 key={skill}
                 className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
-                style={{ background: "rgba(245,200,66,0.15)", color: "#F5C842" }}
+                style={{ background: "rgba(36,120,255,0.10)", color: "#2478FF" }}
               >
                 {skill}
-                <button type="button" onClick={() => removeSkill(skill)} className="text-white/40 hover:text-white">
+                <button type="button" onClick={() => removeSkill(skill)} className="text-slate-500 hover:text-slate-950">
                   ×
                 </button>
               </span>
@@ -506,20 +506,20 @@ export default function PortfolioDetailsForm({
               }
             }}
             placeholder="Type a skill and press Enter"
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
-            Stat <span className="normal-case text-white/25">(optional)</span>
+          <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
+            Stat <span className="normal-case text-slate-400">(optional)</span>
           </label>
           <input
             type="text"
             value={bioStat}
             onChange={(e) => setBioStat(e.target.value)}
             placeholder="e.g. 50+ projects delivered"
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none focus:border-slate-300"
           />
         </div>
       </div>
@@ -528,7 +528,7 @@ export default function PortfolioDetailsForm({
         onClick={save}
         disabled={saving}
         className="mt-2 w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
-        style={{ background: "#F5C842", color: "#0A0A0A" }}
+        style={{ background: "#0A0A0A", color: "#FFFFFF" }}
       >
         {saving ? "Saving..." : saved ? "✓ Saved" : "Save changes"}
       </button>
