@@ -5,56 +5,103 @@ import { db } from "@/lib/db";
 
 async function requireAdmin() {
   const creator = await getCurrentCreator();
-  if (!creator || !isAdminEmail(creator.email)) return null;
+
+  if (!creator || !isAdminEmail(creator.email)) {
+    return null;
+  }
+
   return creator;
 }
 
-// PATCH — grant one free month, or fully reset billing back to a
-// clean slate. Billing lives on the manager's account now, not the
-// calendar itself — one subscription (or one trial) covers every
-// calendar that account owns — so both actions here update the
-// manager's Creator row, found via calendar.managerId, rather than
-// the calendar directly.
+// PATCH — admin billing controls for the account that owns a
+// client workspace. Calendar billing is account-level: one
+// calendar subscription covers every workspace owned by the creator.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
   const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
-  if (!calendar) return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
+
+  // Find the client workspace and its owner.
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      managerId: true,
+    },
+  });
+
+  if (!calendar) {
+    return NextResponse.json(
+      { error: "Client workspace not found" },
+      { status: 404 }
+    );
+  }
 
   const { action } = await req.json();
 
+  // ─────────────────────────────────────────────
+  // GRANT FREE MONTH
+  // ─────────────────────────────────────────────
+  //
+  // Calendar billing lives on Creator, not SocialCalendar.
+  // Granting a free month therefore gives the entire account
+  // one month of calendar access across all of its workspaces.
+  //
   if (action === "grant_free_month") {
     const now = new Date();
+
     const oneMonthFromNow = new Date(now);
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
     const updated = await db.creator.update({
-      where: { id: calendar.managerId },
+      where: {
+        id: calendar.managerId,
+      },
       data: {
         calendarBillingStatus: "ACTIVE",
         calendarSubscriptionRenewsAt: oneMonthFromNow,
         calendarWentOfflineAt: null,
         calendarLastPaymentReminderSentAt: null,
-        calendarLastFreeMonthGrantedAt: now,
+        calendarTrialEndsAt: null,
+      },
+      select: {
+        id: true,
+        calendarAccountType: true,
+        calendarBillingStatus: true,
+        calendarSubscriptionRenewsAt: true,
+        calendarTrialEndsAt: true,
       },
     });
-    return NextResponse.json({ creator: updated });
+
+    return NextResponse.json({
+      creator: updated,
+      message: "One free month granted for the account's calendar access.",
+    });
   }
 
-  // Full reset — for an account stuck in an inconsistent billing
-  // state (leftover Paystack fields with nothing real behind them
-  // anymore). Doesn't touch posts, collaborators, or anything else —
-  // only the billing fields, and affects every calendar this manager
-  // owns, not just the one this route happened to be reached
-  // through, since billing is account-wide.
+  // ─────────────────────────────────────────────
+  // RESET BILLING
+  // ─────────────────────────────────────────────
+  //
+  // Completely resets the account's calendar billing state.
+  // This does NOT delete or modify any client workspaces,
+  // posts, collaborators, or other calendar data.
+  //
   if (action === "reset_billing") {
     const updated = await db.creator.update({
-      where: { id: calendar.managerId },
+      where: {
+        id: calendar.managerId,
+      },
       data: {
         calendarBillingStatus: "PENDING_SETUP",
         calendarPaystackCustomerCode: null,
@@ -64,10 +111,25 @@ export async function PATCH(
         calendarPendingSubscriptionRef: null,
         calendarWentOfflineAt: null,
         calendarLastPaymentReminderSentAt: null,
+        calendarTrialEndsAt: null,
+      },
+      select: {
+        id: true,
+        calendarAccountType: true,
+        calendarBillingStatus: true,
+        calendarSubscriptionRenewsAt: true,
+        calendarTrialEndsAt: true,
       },
     });
-    return NextResponse.json({ creator: updated });
+
+    return NextResponse.json({
+      creator: updated,
+      message: "Calendar billing has been reset for the account.",
+    });
   }
 
-  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  return NextResponse.json(
+    { error: "Unknown action" },
+    { status: 400 }
+  );
 }
