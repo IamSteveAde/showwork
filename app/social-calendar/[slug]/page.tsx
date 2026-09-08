@@ -103,6 +103,7 @@ export default async function SocialCalendarPage({
         <ClientCalendarView
           slug={slug}
           planStatus={calendar.planStatus}
+          clientName={calendar.clientName}
           posts={calendar.posts.map((p) => ({
             id: p.id,
             postDate: p.postDate.toISOString(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, { type CalendarVideoCommentData } from "@/components/calendars/CalendarVideoComments";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
@@ -8,6 +8,7 @@ import TikTokPreview from "@/components/calendars/TikTokPreview";
 
 type Platform = "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "FACEBOOK" | "X" | "LINKEDIN";
 type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
+type Theme = "dark" | "light";
 
 interface CalendarPostAssetData {
   id: string;
@@ -38,6 +39,85 @@ interface CalendarPostData {
   assets: CalendarPostAssetData[];
   videoComments: CalendarVideoCommentData[];
   customFields: CalendarPostCustomFieldData[];
+}
+
+const THEME_STORAGE_KEY = "showwork-calendar-theme";
+
+const THEMES: Record<
+  Theme,
+  {
+    pageBg: string;
+    cardBg: string;
+    cardBorder: string;
+    modalBg: string;
+    text: string;
+    textMuted: string;
+    textFaint: string;
+    inputBg: string;
+    inputBorder: string;
+    pillBg: string;
+  }
+> = {
+  dark: {
+    pageBg: "#0A0A0A",
+    cardBg: "rgba(255,255,255,0.025)",
+    cardBorder: "rgba(255,255,255,0.06)",
+    modalBg: "#1A1A1A",
+    text: "#FFFFFF",
+    textMuted: "rgba(255,255,255,0.5)",
+    textFaint: "rgba(255,255,255,0.3)",
+    inputBg: "rgba(255,255,255,0.05)",
+    inputBorder: "rgba(255,255,255,0.1)",
+    pillBg: "rgba(255,255,255,0.06)",
+  },
+  light: {
+    pageBg: "#FFFFFF",
+    cardBg: "rgba(0,0,0,0.025)",
+    cardBorder: "rgba(0,0,0,0.09)",
+    modalBg: "#FFFFFF",
+    text: "#0A0A0A",
+    textMuted: "rgba(0,0,0,0.5)",
+    textFaint: "rgba(0,0,0,0.35)",
+    inputBg: "rgba(0,0,0,0.03)",
+    inputBorder: "rgba(0,0,0,0.14)",
+    pillBg: "rgba(0,0,0,0.05)",
+  },
+};
+
+function IconMoon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M20.2 15.1A8.7 8.7 0 0 1 8.9 3.8 8.8 8.8 0 1 0 20.2 15.1Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconSun({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-all duration-300 active:scale-95"
+      style={{
+        background: theme === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+        borderColor: theme === "dark" ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)",
+        color: theme === "dark" ? "#F5C842" : "#F59E0B",
+      }}
+    >
+      {theme === "dark" ? <IconMoon className="h-4 w-4" /> : <IconSun className="h-4 w-4" />}
+    </button>
+  );
 }
 
 const PLATFORM_META: Record<Platform, { label: string; color: string }> = {
@@ -887,15 +967,33 @@ export default function ClientCalendarView({
   slug,
   planStatus,
   posts: initialPosts,
-  clientName = "Your brand",
+  clientName,
 }: {
   slug: string;
   planStatus: string;
   posts: CalendarPostData[];
-  clientName?: string;
+  clientName: string;
 }) {
   const router = useRouter();
+  const [theme, setTheme] = useState<Theme>("dark");
   const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok">("calendar");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === "dark" || saved === "light") {
+      setTheme(saved);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      localStorage.setItem(THEME_STORAGE_KEY, next);
+      return next;
+    });
+  };
+
+  const t = THEMES[theme];
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -951,9 +1049,38 @@ export default function ClientCalendarView({
   };
 
   return (
-    <div>
+    <div
+      className="min-w-0 transition-colors duration-300"
+      style={{
+        background: t.pageBg,
+        color: t.text,
+      }}
+    >
       {/* SOCIAL VIEW SWITCHER */}
-      <div className="mb-8 overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+      <div
+        className="mb-8 overflow-hidden rounded-[22px] border p-1.5 transition-colors duration-300"
+        style={{
+          background: t.cardBg,
+          borderColor: t.cardBorder,
+          boxShadow: theme === "dark"
+            ? "0 18px 60px rgba(0,0,0,0.18)"
+            : "0 18px 60px rgba(0,0,0,0.07)",
+        }}
+      >
+        <div className="flex items-center justify-between gap-3 px-1 pb-1.5">
+          <div className="hidden min-w-0 items-center gap-2 pl-2 sm:flex">
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: "#2478FF", boxShadow: "0 0 10px rgba(36,120,255,0.55)" }}
+            />
+            <span className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: t.textFaint }}>
+              Preview workspace
+            </span>
+          </div>
+          <div className="ml-auto">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
+          </div>
+        </div>
         <div className="grid grid-cols-3 gap-1">
           {[
             { key: "calendar" as const, label: "Calendar", icon: "calendar" },
@@ -968,11 +1095,13 @@ export default function ClientCalendarView({
                 onClick={() => setViewMode(tab.key)}
                 className="relative flex min-h-11 items-center justify-center gap-2 rounded-[16px] px-3 py-2.5 text-xs font-semibold transition-all duration-300 active:scale-[0.98] sm:text-sm"
                 style={{
-                  background: active
-                    ? "linear-gradient(135deg, rgba(255,255,255,0.11), rgba(255,255,255,0.045))"
-                    : "transparent",
-                  color: active ? "#fff" : "rgba(255,255,255,0.38)",
-                  boxShadow: active ? "0 8px 28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)" : "none",
+                  background: active ? t.modalBg : "transparent",
+                  color: active ? (theme === "dark" ? "#fff" : "#0A0A0A") : t.textMuted,
+                  boxShadow: active
+                    ? theme === "dark"
+                      ? "0 8px 28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08)"
+                      : "0 8px 28px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.8)"
+                    : "none",
                 }}
               >
                 {tab.icon === "calendar" && (
@@ -1001,31 +1130,41 @@ export default function ClientCalendarView({
       </div>
 
       {viewMode === "instagram" && (
-        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#080808] px-3 py-8 shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:px-6 sm:py-10">
+        <section className="relative overflow-hidden rounded-[28px] border px-3 py-8 transition-colors duration-300 sm:px-6 sm:py-10"
+          style={{
+            background: theme === "dark" ? "#080808" : "#F7F7F8",
+            borderColor: t.cardBorder,
+            boxShadow: theme === "dark" ? "0 30px 100px rgba(0,0,0,0.28)" : "0 30px 100px rgba(0,0,0,0.08)",
+          }}>
           <div className="pointer-events-none absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#E1306C]/10 blur-[100px]" />
           <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#7C3AED]/10 blur-[100px]" />
           <div className="relative z-10">
             <div className="mb-8 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">Social preview</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">Instagram Preview</h3>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-white/35 sm:text-sm">Present your brand the right way — see how your Instagram content comes together before it goes live.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: t.textFaint }}>Social preview</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: t.text }}>Instagram Preview</h3>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 sm:text-sm" style={{ color: t.textMuted }}>Present your brand the right way — see how your Instagram content comes together before it goes live.</p>
             </div>
-            <InstagramPreview posts={posts} clientName={clientName} />
+            <InstagramPreview posts={posts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
       )}
 
       {viewMode === "tiktok" && (
-        <section className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#050505] px-3 py-8 shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:px-6 sm:py-10">
+        <section className="relative overflow-hidden rounded-[28px] border px-3 py-8 transition-colors duration-300 sm:px-6 sm:py-10"
+          style={{
+            background: theme === "dark" ? "#050505" : "#F7F7F8",
+            borderColor: t.cardBorder,
+            boxShadow: theme === "dark" ? "0 30px 100px rgba(0,0,0,0.28)" : "0 30px 100px rgba(0,0,0,0.08)",
+          }}>
           <div className="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-[#25F4EE]/10 blur-[100px]" />
           <div className="pointer-events-none absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-[#FE2C55]/10 blur-[100px]" />
           <div className="relative z-10">
             <div className="mb-8 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/25">Social preview</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">TikTok experience</h3>
-              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-white/35 sm:text-sm">Experience the complete vertical sequence exactly as a viewer would scroll through it.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: t.textFaint }}>Social preview</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: t.text }}>TikTok experience</h3>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 sm:text-sm" style={{ color: t.textMuted }}>Experience the complete vertical sequence exactly as a viewer would scroll through it.</p>
             </div>
-            <TikTokPreview posts={posts} clientName={clientName} />
+            <TikTokPreview posts={posts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
       )}
@@ -1033,23 +1172,21 @@ export default function ClientCalendarView({
       {viewMode === "calendar" && (
         <>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold" style={{ color: t.text }}>
           {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
             aria-label="Previous month"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors" style={{ background: t.pillBg, color: t.textMuted }}
           >
             ←
           </button>
           <button
             onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
             aria-label="Next month"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            style={{ background: "rgba(255,255,255,0.05)" }}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors" style={{ background: t.pillBg, color: t.textMuted }}
           >
             →
           </button>
@@ -1057,15 +1194,15 @@ export default function ClientCalendarView({
       </div>
 
       {activeDates.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed py-16 text-center" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed py-16 text-center" style={{ borderColor: t.cardBorder }}>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: t.pillBg }}>
             <svg viewBox="0 0 24 24" className="h-5 w-5 text-white/30" fill="none" stroke="currentColor" strokeWidth="1.6">
               <rect x="3" y="4" width="18" height="17" rx="3" />
               <path d="M8 2.5v4M16 2.5v4M3 9h18" strokeLinecap="round" />
             </svg>
           </span>
-          <p className="text-sm font-semibold text-white/50">Nothing planned for this month yet</p>
-          <p className="max-w-xs text-xs text-white/30">Try a different month, or check back once your manager adds something here.</p>
+          <p className="text-sm font-semibold" style={{ color: t.textMuted }}>Nothing planned for this month yet</p>
+          <p className="max-w-xs text-xs" style={{ color: t.textFaint }}>Try a different month, or check back once your manager adds something here.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-8">
@@ -1086,7 +1223,7 @@ export default function ClientCalendarView({
                       {date.toLocaleDateString("en-US", { weekday: "short" })}
                     </span>
                   </div>
-                  <div className="mt-2 w-px flex-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  <div className="mt-2 w-px flex-1" style={{ background: t.cardBorder }} />
                 </div>
 
                 <div className="grid flex-1 grid-cols-2 gap-3 pb-2 sm:grid-cols-3 md:grid-cols-4">
@@ -1117,19 +1254,25 @@ export default function ClientCalendarView({
       )}
 
       {planStatus === "AWAITING_APPROVAL" && (
-        <div className="mt-8 rounded-xl p-6" style={{ background: "#1A1A1A" }}>
-          <p className="mb-4 text-sm font-semibold text-white">Does this plan work for you?</p>
+        <div className="mt-8 rounded-xl border p-6 transition-colors duration-300"
+          style={{ background: t.cardBg, borderColor: t.cardBorder }}>
+          <p className="mb-4 text-sm font-semibold" style={{ color: t.text }}>Does this plan work for you?</p>
 
           {requestingChanges ? (
             <div className="flex flex-col gap-3">
               <textarea
-                value={planNote}
-                onChange={(e) => setPlanNote(e.target.value)}
-                rows={3}
-                placeholder="What would you like changed?"
-                style={{ fontSize: "16px" }}
-                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-white/25"
-              />
+  value={planNote}
+  onChange={(e) => setPlanNote(e.target.value)}
+  rows={3}
+  placeholder="What would you like changed?"
+  style={{
+    fontSize: "16px",
+    background: t.inputBg,
+    borderColor: t.inputBorder,
+    color: t.text,
+  }}
+  className="w-full resize-none rounded-lg border px-3 py-2.5 text-sm outline-none"
+/>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => respondToPlan("request_changes")}
@@ -1139,7 +1282,7 @@ export default function ClientCalendarView({
                 >
                   {submitting ? "Sending..." : "Send feedback"}
                 </button>
-                <button onClick={() => setRequestingChanges(false)} className="text-xs text-white/40 underline">
+                <button onClick={() => setRequestingChanges(false)} className="text-xs underline" style={{ color: t.textFaint }}>
                   Cancel
                 </button>
               </div>
@@ -1168,7 +1311,8 @@ export default function ClientCalendarView({
       )}
 
       {planStatus === "PLAN_APPROVED" && (
-        <div className="mt-8 rounded-xl p-5 text-sm" style={{ background: "rgba(74,222,128,0.1)", color: "#4ade80" }}>
+        <div className="mt-8 rounded-xl border p-5 text-sm"
+          style={{ background: "rgba(74,222,128,0.1)", borderColor: "rgba(74,222,128,0.18)", color: "#4ade80" }}>
           You&apos;ve approved this plan — click any post below to review its actual content as it gets uploaded.
         </div>
       )}
