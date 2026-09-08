@@ -270,10 +270,9 @@ export default async function AdminSocialCalendarsPage({
                       </td>
                       <td className="px-4 py-3">
                         <CalendarRowActions
-                          calendarId={cal.id}
-                          billingStatus={cal.billingStatus}
-                          lastFreeMonthGrantedAt={cal.lastFreeMonthGrantedAt?.toISOString() ?? null}
-                        />
+  calendarId={cal.id}
+  billingStatus={cal.manager.calendarBillingStatus}
+/>
                       </td>
                     </tr>
                   );
