@@ -31,3 +31,21 @@ export async function hasCalendarPermission(
   if (!role) return false;
   return ROLE_RANK[role] >= ROLE_RANK[required];
 }
+
+// The single source of truth for "is this calendar actually usable
+// right now" — active billing, or a trial that hasn't run out yet.
+// PENDING_SETUP (payment never completed) and OFFLINE (payment
+// failed) are never accessible. Every page that shows calendar
+// content — manager or client — must check this before rendering
+// anything real, not just rely on the create flow having redirected
+// somewhere.
+export function canAccessCalendar(calendar: {
+  billingStatus: string;
+  trialEndsAt: Date | null;
+}): boolean {
+  if (calendar.billingStatus === "ACTIVE") return true;
+  if (calendar.billingStatus === "TRIAL") {
+    return !!calendar.trialEndsAt && calendar.trialEndsAt.getTime() > Date.now();
+  }
+  return false;
+}

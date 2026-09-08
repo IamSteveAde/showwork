@@ -1310,6 +1310,7 @@ enum CalendarPlanStatus {
 
 enum CalendarBillingStatus {
   PENDING_SETUP
+  TRIAL
   ACTIVE
   OFFLINE
 }
@@ -1345,7 +1346,11 @@ model SocialCalendar {
   manager   Creator @relation("OwnedCalendars", fields: [managerId], references: [id], onDelete: Cascade)
   managerId String
 
-    billingStatus             CalendarBillingStatus @default(PENDING_SETUP)
+     billingStatus             CalendarBillingStatus @default(PENDING_SETUP)
+  // Only ever set for a manager's very first calendar — a one-time,
+  // 3-day free trial. Every calendar after that goes straight to
+  // PENDING_SETUP and requires payment before it's usable at all.
+  trialEndsAt               DateTime?
   paystackSubscriptionCode  String?
   paystackEmailToken        String?
   paystackCustomerCode      String?

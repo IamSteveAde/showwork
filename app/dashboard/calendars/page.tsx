@@ -172,7 +172,7 @@ function Pagination({
 
   return (
     <nav
-      aria-label="Calendar pagination"
+      aria-label="Client workspace pagination"
       className="mt-10 flex flex-col gap-4 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <p className="text-xs text-white/30">
@@ -280,6 +280,22 @@ export default async function CalendarsPage({
     },
   });
 
+  // Calendars this person was invited to and accepted — not owned,
+  // but they should always be able to find their way back in from
+  // their own dashboard, not just from the original invite email.
+  const collaboratorMemberships = await db.calendarCollaborator.findMany({
+    where: { creatorId: creator.id },
+    orderBy: { addedAt: "desc" },
+    include: {
+      calendar: {
+        include: {
+          manager: { select: { name: true, email: true } },
+          _count: { select: { posts: true } },
+        },
+      },
+    },
+  });
+
   return (
     <main
       className="min-h-screen overflow-hidden px-4 py-6 text-white sm:px-6 sm:py-10 lg:px-10 xl:px-16"
@@ -334,13 +350,13 @@ export default async function CalendarsPage({
                   className="text-[10px] font-semibold uppercase tracking-[0.18em]"
                   style={{ color: COLOR.blue }}
                 >
-                  Social calendars
+                  Client workspaces
                 </p>
               </div>
 
               <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl lg:text-[46px] lg:leading-[1.05]">
                 Your client
-                <br className="hidden sm:block" /> calendars.
+                <br className="hidden sm:block" /> workspaces.
               </h1>
 
               <p className="mt-4 max-w-xl text-sm leading-6 text-white/35 sm:text-[15px]">
@@ -353,7 +369,7 @@ export default async function CalendarsPage({
             <div className="flex shrink-0 items-center gap-3">
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
-                  Total calendars
+                  Total workspaces
                 </p>
 
                 <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
@@ -392,10 +408,10 @@ export default async function CalendarsPage({
 
                 <div>
                   <p className="text-sm font-semibold text-white">
-                    Create a calendar
+                    Create a client workspace
                   </p>
                   <p className="mt-0.5 text-[11px] text-white/30">
-                    Start a new content plan for a client.
+                    Create an ongoing content workspace for a client.
                   </p>
                 </div>
               </div>
@@ -414,13 +430,12 @@ export default async function CalendarsPage({
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-white">
-                All calendars
+                All client workspaces
               </p>
 
               <p className="mt-1 text-xs text-white/25">
                 {totalCalendars}{" "}
-                {totalCalendars === 1 ? "calendar" : "calendars"} in your
-                workspace
+                {totalCalendars === 1 ? "client workspace" : "client workspaces"}
               </p>
             </div>
 
@@ -448,6 +463,16 @@ export default async function CalendarsPage({
                 const hasPaymentIssue =
                   cal.billingStatus === "PENDING_SETUP" ||
                   cal.billingStatus === "OFFLINE";
+
+                const trialMsLeft =
+                  cal.billingStatus === "TRIAL"
+                    ? (cal.trialEndsAt?.getTime() ?? 0) - Date.now()
+                    : null;
+                const trialDaysLeft =
+                  trialMsLeft !== null
+                    ? Math.ceil(trialMsLeft / (1000 * 60 * 60 * 24))
+                    : null;
+                const trialExpired = trialMsLeft !== null && trialMsLeft <= 0;
 
                 return (
                   <Link
@@ -484,6 +509,21 @@ export default async function CalendarsPage({
                               ? "Payment failed"
                               : "Payment incomplete"}
                           </span>
+                        ) : cal.billingStatus === "TRIAL" ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${
+                              trialExpired
+                                ? "border-red-500/10 bg-red-500/[0.07] text-red-400"
+                                : "border-[#4ADE80]/15 bg-[#4ADE80]/[0.08] text-[#4ADE80]"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${trialExpired ? "bg-red-400" : "bg-[#4ADE80]"}`}
+                            />
+                            {trialExpired
+                              ? "Trial ended"
+                              : `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left`}
+                          </span>
                         ) : (
                           <span
                             className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold"
@@ -517,7 +557,7 @@ export default async function CalendarsPage({
                       </h2>
 
                       <p className="mt-1.5 line-clamp-1 text-xs text-white/25">
-                        Social content calendar
+                        Client content workspace
                       </p>
 
                       {/* Metrics */}
@@ -556,7 +596,7 @@ export default async function CalendarsPage({
                       {/* Bottom action hint */}
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-[10px] font-medium text-white/20 transition-colors group-hover:text-white/35">
-                          Open calendar
+                          Open workspace
                         </span>
 
                         <span className="text-white/15 transition-all group-hover:translate-x-1 group-hover:text-[#68B2FF]">
@@ -590,18 +630,80 @@ export default async function CalendarsPage({
               </div>
 
               <p className="text-lg font-semibold tracking-[-0.02em] text-white">
-                No calendars yet
+                No client workspaces yet
               </p>
 
               <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/30">
-                Your client content calendars will appear here once you create
+                Your client workspaces will appear here once you create
                 your first one.
               </p>
 
               <div className="mt-7 inline-flex items-center gap-2 rounded-xl border border-[#2478FF]/20 bg-[#2478FF]/[0.07] px-4 py-2.5 text-xs font-medium text-[#68B2FF]">
   <PlusIcon className="h-3.5 w-3.5" />
-  Create your first calendar above
+  Create your first client workspace above
 </div>
+            </div>
+          </section>
+        )}
+
+        {/* ─────────────────────────────────────────
+            CALENDARS YOU COLLABORATE ON — invited by
+            someone else, not owned. Kept separate from the
+            paginated owned list above.
+        ───────────────────────────────────────── */}
+        {collaboratorMemberships.length > 0 && (
+          <section className="mt-12">
+            <div className="mb-5">
+              <p className="text-sm font-semibold text-white">
+                Calendars you collaborate on
+              </p>
+              <p className="mt-1 text-xs text-white/25">
+                Client workspaces someone else invited you to.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {collaboratorMemberships.map((membership) => {
+                const cal = membership.calendar;
+                const roleLabel =
+                  membership.role === "EDIT_CALENDAR"
+                    ? "Edit calendar"
+                    : membership.role === "ADD_CONTENT"
+                    ? "Add content"
+                    : "View only";
+                const roleColor =
+                  membership.role === "EDIT_CALENDAR"
+                    ? "#F97316"
+                    : membership.role === "ADD_CONTENT"
+                    ? "#2478FF"
+                    : "#A1A1AA";
+
+                return (
+                  <Link
+                    key={cal.id}
+                    href={`/dashboard/calendars/${cal.id}`}
+                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.13] hover:bg-[#141414]"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                        style={{ background: `${roleColor}18`, color: roleColor }}
+                      >
+                        {roleLabel}
+                      </span>
+                      <ArrowUpRightIcon className="h-3.5 w-3.5 text-white/20 transition-all group-hover:text-[#68B2FF]" />
+                    </div>
+
+                    <h3 className="line-clamp-1 text-base font-semibold text-white">{cal.clientName}</h3>
+                    <p className="mt-1 text-xs text-white/30">
+                      Managed by {cal.manager.name || cal.manager.email}
+                    </p>
+                    <p className="mt-3 text-xs text-white/40">
+                      {cal._count.posts} {cal._count.posts === 1 ? "post" : "posts"}
+                    </p>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
