@@ -260,7 +260,7 @@ export async function GET(
   const calendar = await db.socialCalendar.findUnique({
     where: { id },
     include: {
-      manager: { select: { name: true, email: true } },
+      manager: { select: { name: true, email: true, calendarBillingStatus: true, calendarTrialEndsAt: true } },
       posts: { orderBy: { postDate: "asc" } },
     },
   });
@@ -273,7 +273,7 @@ export async function GET(
   // generated from it either — same billing gate the pages themselves
   // already enforce, checked again here since this URL could
   // otherwise be hit directly.
-  if (!canAccessCalendar(calendar)) {
+  if (!canAccessCalendar(calendar.manager)) {
     return NextResponse.json({ error: "This calendar isn't active" }, { status: 403 });
   }
 

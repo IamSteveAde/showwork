@@ -29,6 +29,7 @@ export default async function CalendarDetailPage({
   const calendar = await db.socialCalendar.findUnique({
     where: { id },
     include: {
+      manager: { select: { calendarBillingStatus: true, calendarTrialEndsAt: true } },
       posts: {
         orderBy: { postDate: "asc" },
         include: {
@@ -56,8 +57,8 @@ export default async function CalendarDetailPage({
   // back from Paystack mid-checkout, reselect the still-pending
   // calendar from the list, and get in anyway. Now nothing past this
   // point renders unless billing genuinely allows it.
-  if (!canAccessCalendar(calendar)) {
-    const trialExpired = calendar.billingStatus === "TRIAL";
+  if (!canAccessCalendar(calendar.manager)) {
+    const trialExpired = calendar.manager.calendarBillingStatus === "TRIAL";
     return (
       <main className="flex min-h-screen items-center justify-center px-6" style={{ background: COLOR.black }}>
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 text-center">
