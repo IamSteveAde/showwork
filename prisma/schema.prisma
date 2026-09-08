@@ -157,6 +157,46 @@ model Creator {
   managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
   managedProjectInvitesSent    ManagedProjectInvite[]       @relation("ManagedProjectInvitesSent")
     
+   // ── Calendar feature billing — account-level, not per-calendar.
+  // One subscription (or one trial) covers every calendar this
+  // account owns, regardless of how many exist. Prefixed "calendar"
+  // throughout since this account already has its own separate
+  // subscriptionActive/paystackSubscriptionCode etc. above, for the
+  // main Showwork platform subscription — these are a distinct
+  // billing relationship, not the same one.
+  //
+  // Null until the very first calendar is created — that's the
+  // moment this choice gets made, and it applies to the whole
+  // account from then on. INDIVIDUAL can never add a collaborator;
+  // switching to COMPANY (and subscribing at the Company price) is
+  // the only way to unlock that.
+  calendarAccountType             CalendarAccountType?
+  calendarBillingStatus           CalendarBillingStatus @default(PENDING_SETUP)
+  // Set once, the first time this account is EVER granted a calendar
+  // trial, and never cleared again — including if every calendar is
+  // later deleted. This is what actually closes the trial-abuse
+  // loophole: eligibility is checked against this permanent marker,
+  // never against how many calendars currently exist.
+  calendarTrialUsedAt             DateTime?
+  calendarTrialEndsAt             DateTime?
+  calendarPaystackSubscriptionCode String?
+  calendarPaystackEmailToken       String?
+  calendarPaystackCustomerCode     String?
+  calendarSubscriptionRenewsAt     DateTime?
+  calendarPendingSubscriptionRef   String?   @unique
+  calendarWentOfflineAt            DateTime?
+  calendarLastPaymentReminderSentAt DateTime?
+  // Admin-granted free month, same reasoning as before — now applies
+  // to the whole account's calendar access, not one specific calendar.
+  calendarLastFreeMonthGrantedAt   DateTime?
+
+  // ── Trial email drip — each step tracked so the daily job never
+  // sends the same step twice, regardless of how many times it runs.
+  calendarTrial2DaysLeftEmailSentAt DateTime?
+  calendarTrialFollowUpEmailSentAt  DateTime?
+  calendarTrialEndsTodayEmailSentAt DateTime?
+  calendarTrialEndedEmailSentAt     DateTime?
+
   ownedCalendars         SocialCalendar[]       @relation("OwnedCalendars")
   calendarCollaborations CalendarCollaborator[] @relation("CalendarMemberships")
   calendarInvitesSent    CalendarInvite[]       @relation("CalendarInvitesSent")
@@ -1297,15 +1337,22 @@ model SpotlightSubmission {
 }
 // ─────────────────────────────────────────────
 // SOCIAL CALENDAR — a social media manager's content calendar for one
-// client. Billed separately, per calendar, at a flat ₦5,000/month —
-// same structural idea as an agency's extra portfolios, just monthly
-// instead of annual.
+// client. Billing itself lives entirely on Creator now (see
+// calendarAccountType/calendarBillingStatus etc. above) — an account
+// on the Company tier can own several of these under one
+// subscription, so nothing billing-related belongs on this model
+// anymore.
 // ─────────────────────────────────────────────
 enum CalendarPlanStatus {
   BUILDING           // manager laying out the skeleton — client can't see it yet
   AWAITING_APPROVAL  // manager marked the plan done — client reviewing the plan itself
   PLAN_APPROVED      // client approved the plan — real content creation can now begin
   PLAN_NEEDS_CHANGES // client asked for changes to the plan
+}
+
+enum CalendarAccountType {
+  INDIVIDUAL
+  COMPANY
 }
 
 enum CalendarBillingStatus {
@@ -1345,24 +1392,6 @@ model SocialCalendar {
 
   manager   Creator @relation("OwnedCalendars", fields: [managerId], references: [id], onDelete: Cascade)
   managerId String
-
-     billingStatus             CalendarBillingStatus @default(PENDING_SETUP)
-  // Only ever set for a manager's very first calendar — a one-time,
-  // 3-day free trial. Every calendar after that goes straight to
-  // PENDING_SETUP and requires payment before it's usable at all.
-  trialEndsAt               DateTime?
-  paystackSubscriptionCode  String?
-  paystackEmailToken        String?
-  paystackCustomerCode      String?
-  subscriptionRenewsAt      DateTime?
-  pendingSubscriptionRef    String? @unique
-  wentOfflineAt             DateTime?
-  lastPaymentReminderSentAt DateTime?
-  // Tracked for admin visibility only — not a hard limit. An admin
-  // can grant another free month anytime; this just shows when the
-  // last one was given, matching how comp/discount tools elsewhere
-  // in the app stay flexible rather than rules-enforced.
-  lastFreeMonthGrantedAt    DateTime?
 
   posts         CalendarPost[]
   collaborators CalendarCollaborator[]

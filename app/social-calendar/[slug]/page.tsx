@@ -26,6 +26,7 @@ export default async function SocialCalendarPage({
   const calendar = await db.socialCalendar.findUnique({
     where: { slug },
     include: {
+      manager: { select: { calendarBillingStatus: true, calendarTrialEndsAt: true } },
       posts: {
         orderBy: { postDate: "asc" },
         include: {
@@ -51,7 +52,7 @@ export default async function SocialCalendarPage({
   // paid for, or whose trial has run out, isn't viewable by the
   // client either. No retry button here since the client can't pay;
   // this is just a waiting message.
-  if (!canAccessCalendar(calendar)) {
+  if (!canAccessCalendar(calendar.manager)) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6" style={{ background: COLOR.black }}>
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 text-center">

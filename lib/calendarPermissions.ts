@@ -32,20 +32,34 @@ export async function hasCalendarPermission(
   return ROLE_RANK[role] >= ROLE_RANK[required];
 }
 
-// The single source of truth for "is this calendar actually usable
-// right now" — active billing, or a trial that hasn't run out yet.
-// PENDING_SETUP (payment never completed) and OFFLINE (payment
-// failed) are never accessible. Every page that shows calendar
-// content — manager or client — must check this before rendering
-// anything real, not just rely on the create flow having redirected
-// somewhere.
-export function canAccessCalendar(calendar: {
-  billingStatus: string;
-  trialEndsAt: Date | null;
+// The single source of truth for "is this account's calendar feature
+// actually usable right now" — active billing, or a trial that hasn't
+// run out yet. PENDING_SETUP (never paid) and OFFLINE (payment
+// failed) are never accessible. Billing now lives on the manager's
+// Creator row, not on the calendar itself — one subscription covers
+// every calendar an account owns, so this checks the account, not
+// any single calendar.
+export function canAccessCalendar(manager: {
+  calendarBillingStatus: string;
+  calendarTrialEndsAt: Date | null;
 }): boolean {
-  if (calendar.billingStatus === "ACTIVE") return true;
-  if (calendar.billingStatus === "TRIAL") {
-    return !!calendar.trialEndsAt && calendar.trialEndsAt.getTime() > Date.now();
+  if (manager.calendarBillingStatus === "ACTIVE") return true;
+  if (manager.calendarBillingStatus === "TRIAL") {
+    return !!manager.calendarTrialEndsAt && manager.calendarTrialEndsAt.getTime() > Date.now();
   }
   return false;
+}
+
+// Convenience wrapper for the common case of only having a
+// calendarId on hand (an API route, say) — looks up the owning
+// manager's billing state and checks it in one call, rather than
+// every caller needing to remember to include manager in their own
+// query first.
+export async function canAccessCalendarById(calendarId: string): Promise<boolean> {
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id: calendarId },
+    select: { manager: { select: { calendarBillingStatus: true, calendarTrialEndsAt: true } } },
+  });
+  if (!calendar) return false;
+  return canAccessCalendar(calendar.manager);
 }

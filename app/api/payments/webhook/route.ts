@@ -9,8 +9,15 @@ import { sendPortfolioPaymentFailedEmail, sendCalendarPaymentFailedEmail } from 
 // the tier plan codes in subscriptionTiers.ts, just for one plan
 // rather than several.
 const PORTFOLIO_PLAN_CODE = process.env.PAYSTACK_PORTFOLIO_PLAN_CODE;
-// Same idea, for the ₦5,000/month social calendar recurring charge.
-const CALENDAR_PLAN_CODE = process.env.PAYSTACK_CALENDAR_PLAN_CODE;
+// Calendar billing is account-level now — one of these two plans
+// covers every calendar a Creator owns, rather than one plan per
+// calendar the way it used to work.
+const CALENDAR_INDIVIDUAL_PLAN_CODE = process.env.PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE;
+const CALENDAR_COMPANY_PLAN_CODE = process.env.PAYSTACK_CALENDAR_COMPANY_PLAN_CODE;
+
+function isCalendarPlanCode(planCode: string | null): boolean {
+  return !!planCode && (planCode === CALENDAR_INDIVIDUAL_PLAN_CODE || planCode === CALENDAR_COMPANY_PLAN_CODE);
+}
 
 function extractPlanCode(data: any): string | null {
   if (!data?.plan) return null;
@@ -90,7 +97,7 @@ export async function POST(req: NextRequest) {
     const customerEmail = normalizeEmail(data?.customer?.email);
     const planCode = extractPlanCode(data);
 
-       if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
+    if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
       const portfolioId = data?.metadata?.portfolioId ?? null;
       const portfolio = portfolioId
         ? await db.portfolio.findUnique({ where: { id: portfolioId } })
@@ -124,38 +131,65 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: failed to create PaymentRecord for portfolio subscription.create (portfolio ${portfolio.id})`, err);
         }
       }
-    } else if (CALENDAR_PLAN_CODE && planCode === CALENDAR_PLAN_CODE) {
-      const calendarId = data?.metadata?.calendarId ?? null;
-      const calendar = calendarId
-        ? await db.socialCalendar.findUnique({ where: { id: calendarId } })
+    } else if (isCalendarPlanCode(planCode)) {
+      // Account-level: metadata.creatorId is set by both the create
+      // route and retry-payment, so this should always be present —
+      // customerEmail is kept only as a defensive fallback in case a
+      // checkout was somehow started without it.
+      const creatorId = data?.metadata?.creatorId ?? null;
+      const creator = creatorId
+        ? await db.creator.findUnique({ where: { id: creatorId } })
+        : customerEmail
+        ? await db.creator.findFirst({ where: { email: { equals: customerEmail, mode: "insensitive" } } })
         : null;
 
-      if (!calendar) {
-        console.error(`Paystack webhook: calendar subscription.create with no matching calendar (metadata.calendarId: ${calendarId})`);
+      if (!creator) {
+        console.error(`Paystack webhook: calendar subscription.create with no matching creator (metadata.creatorId: ${creatorId}, email: ${customerEmail})`);
       } else {
-        await db.socialCalendar.update({
-          where: { id: calendar.id },
+        // Safety net for the Individual→Company upgrade path — the
+        // upgrade route already tries to cancel the old subscription
+        // itself before starting this new one, but if that call
+        // failed for any reason, this catches it here too rather
+        // than leaving two live subscriptions charging the same
+        // account.
+        if (
+          creator.calendarPaystackSubscriptionCode &&
+          creator.calendarPaystackEmailToken &&
+          data.subscription_code &&
+          creator.calendarPaystackSubscriptionCode !== data.subscription_code
+        ) {
+          try {
+            await cancelSubscription(creator.calendarPaystackSubscriptionCode, creator.calendarPaystackEmailToken);
+          } catch (err) {
+            console.error("Failed to cancel previous calendar subscription during switch:", err);
+          }
+        }
+
+        await db.creator.update({
+          where: { id: creator.id },
           data: {
-            billingStatus: "ACTIVE",
-            paystackCustomerCode: data.customer?.customer_code ?? null,
-            paystackSubscriptionCode: data.subscription_code ?? null,
-            paystackEmailToken: data.email_token ?? null,
-            subscriptionRenewsAt: data.next_payment_date ? new Date(data.next_payment_date) : null,
+            calendarBillingStatus: "ACTIVE",
+            calendarPaystackCustomerCode: data.customer?.customer_code ?? null,
+            calendarPaystackSubscriptionCode: data.subscription_code ?? null,
+            calendarPaystackEmailToken: data.email_token ?? null,
+            calendarSubscriptionRenewsAt: data.next_payment_date ? new Date(data.next_payment_date) : null,
+            calendarWentOfflineAt: null,
+            calendarLastPaymentReminderSentAt: null,
           },
         });
 
         try {
           await db.paymentRecord.create({
             data: {
-              creatorId: calendar.managerId,
+              creatorId: creator.id,
               amountNgn: Math.round((data.amount ?? 0) / 100),
               type: "CALENDAR_SUBSCRIPTION_INITIAL",
-              calendarId: calendar.id,
+              calendarId: data?.metadata?.calendarId ?? null,
               paystackReference: data.reference ?? null,
             },
           });
         } catch (err) {
-          console.error(`Paystack webhook: failed to create PaymentRecord for calendar subscription.create (calendar ${calendar.id})`, err);
+          console.error(`Paystack webhook: failed to create PaymentRecord for calendar subscription.create (creator ${creator.id})`, err);
         }
       }
     } else {
@@ -227,7 +261,7 @@ export async function POST(req: NextRequest) {
   if (event.event === "charge.success" && extractPlanCode(event.data)) {
     const planCode = extractPlanCode(event.data);
 
-        if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
+    if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
       const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
       const portfolio = subscriptionCode
         ? await db.portfolio.findFirst({ where: { paystackSubscriptionCode: subscriptionCode } })
@@ -255,32 +289,31 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: failed to create PaymentRecord for portfolio renewal (portfolio ${portfolio.id})`, err);
         }
       }
-    } else if (CALENDAR_PLAN_CODE && planCode === CALENDAR_PLAN_CODE) {
+    } else if (isCalendarPlanCode(planCode)) {
       const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
-      const calendar = subscriptionCode
-        ? await db.socialCalendar.findFirst({ where: { paystackSubscriptionCode: subscriptionCode } })
+      const creator = subscriptionCode
+        ? await db.creator.findFirst({ where: { calendarPaystackSubscriptionCode: subscriptionCode } })
         : null;
 
-      if (!calendar) {
-        console.error(`Paystack webhook: calendar renewal charge.success with no matching calendar (subscription_code: ${subscriptionCode})`);
+      if (!creator) {
+        console.error(`Paystack webhook: calendar renewal charge.success with no matching account (subscription_code: ${subscriptionCode})`);
       } else {
-        await db.socialCalendar.update({
-          where: { id: calendar.id },
-          data: { billingStatus: "ACTIVE", wentOfflineAt: null, lastPaymentReminderSentAt: null },
+        await db.creator.update({
+          where: { id: creator.id },
+          data: { calendarBillingStatus: "ACTIVE", calendarWentOfflineAt: null, calendarLastPaymentReminderSentAt: null },
         });
 
         try {
           await db.paymentRecord.create({
             data: {
-              creatorId: calendar.managerId,
+              creatorId: creator.id,
               amountNgn: Math.round((event.data.amount ?? 0) / 100),
               type: "CALENDAR_SUBSCRIPTION_RENEWAL",
-              calendarId: calendar.id,
               paystackReference: event.data.reference ?? null,
             },
           });
         } catch (err) {
-          console.error(`Paystack webhook: failed to create PaymentRecord for calendar renewal (calendar ${calendar.id})`, err);
+          console.error(`Paystack webhook: failed to create PaymentRecord for calendar renewal (creator ${creator.id})`, err);
         }
       }
     } else {
@@ -331,7 +364,7 @@ export async function POST(req: NextRequest) {
   if (event.event === "invoice.payment_failed") {
     const planCode = extractPlanCode(event.data) ?? extractPlanCode(event.data?.subscription);
 
-        if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
+    if (PORTFOLIO_PLAN_CODE && planCode === PORTFOLIO_PLAN_CODE) {
       const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
       if (subscriptionCode) {
         const portfolio = await db.portfolio.findFirst({ where: { paystackSubscriptionCode: subscriptionCode } });
@@ -349,22 +382,19 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: portfolio invoice.payment_failed with no matching portfolio (subscription_code: ${subscriptionCode})`);
         }
       }
-    } else if (CALENDAR_PLAN_CODE && planCode === CALENDAR_PLAN_CODE) {
+    } else if (isCalendarPlanCode(planCode)) {
       const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
       if (subscriptionCode) {
-        const calendar = await db.socialCalendar.findFirst({ where: { paystackSubscriptionCode: subscriptionCode } });
-        if (calendar) {
-          await db.socialCalendar.update({ where: { id: calendar.id }, data: { billingStatus: "OFFLINE", wentOfflineAt: new Date() } });
+        const creator = await db.creator.findFirst({ where: { calendarPaystackSubscriptionCode: subscriptionCode } });
+        if (creator) {
+          await db.creator.update({ where: { id: creator.id }, data: { calendarBillingStatus: "OFFLINE", calendarWentOfflineAt: new Date() } });
           try {
-            const manager = await db.creator.findUnique({ where: { id: calendar.managerId } });
-            if (manager) {
-              await sendCalendarPaymentFailedEmail({ to: manager.email, name: manager.name, clientName: calendar.clientName });
-            }
+            await sendCalendarPaymentFailedEmail({ to: creator.email, name: creator.name });
           } catch (err) {
-            console.error(`Failed to send calendar payment-failed email (calendar ${calendar.id})`, err);
+            console.error(`Failed to send calendar payment-failed email (creator ${creator.id})`, err);
           }
         } else {
-          console.error(`Paystack webhook: calendar invoice.payment_failed with no matching calendar (subscription_code: ${subscriptionCode})`);
+          console.error(`Paystack webhook: calendar invoice.payment_failed with no matching account (subscription_code: ${subscriptionCode})`);
         }
       }
     } else {
@@ -379,18 +409,18 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Subscription cancelled ──
-    if (event.event === "subscription.disable") {
+  if (event.event === "subscription.disable") {
     const data = event.data;
     if (data?.subscription_code) {
       const portfolio = await db.portfolio.findFirst({ where: { paystackSubscriptionCode: data.subscription_code } });
-      const calendar = !portfolio
-        ? await db.socialCalendar.findFirst({ where: { paystackSubscriptionCode: data.subscription_code } })
+      const calendarAccount = !portfolio
+        ? await db.creator.findFirst({ where: { calendarPaystackSubscriptionCode: data.subscription_code } })
         : null;
 
       if (portfolio) {
         await db.portfolio.update({ where: { id: portfolio.id }, data: { billingStatus: "OFFLINE", wentOfflineAt: new Date() } });
-      } else if (calendar) {
-        await db.socialCalendar.update({ where: { id: calendar.id }, data: { billingStatus: "OFFLINE", wentOfflineAt: new Date() } });
+      } else if (calendarAccount) {
+        await db.creator.update({ where: { id: calendarAccount.id }, data: { calendarBillingStatus: "OFFLINE", calendarWentOfflineAt: new Date() } });
       } else {
         await db.creator.updateMany({
           where: { paystackSubscriptionCode: data.subscription_code },
