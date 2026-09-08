@@ -54,6 +54,11 @@ export async function GET(
   });
 }
 
+// POST — sends a new collaborator invite. Blocked entirely for
+// Individual accounts (collaboration is a Company-only feature), and
+// capped at 10 people per calendar for Company accounts, counting
+// both already-accepted collaborators and anyone still sitting on an
+// unopened invite.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -65,6 +70,39 @@ export async function POST(
   const calendar = await db.socialCalendar.findUnique({ where: { id } });
   if (!calendar || calendar.managerId !== creator.id) {
     return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
+  }
+
+  const account = await db.creator.findUnique({
+    where: { id: creator.id },
+    select: { calendarAccountType: true },
+  });
+
+  // An Individual account can never collaborate at all, on any
+  // calendar — the frontend uses this exact response shape to show
+  // an upgrade prompt instead of a plain error message.
+  if (account?.calendarAccountType === "INDIVIDUAL") {
+    return NextResponse.json(
+      { error: "Collaborators require a Company account", requiresUpgrade: true },
+      { status: 403 }
+    );
+  }
+
+  // Company is capped at 10 people per calendar — counting both
+  // already-accepted collaborators and anyone still sitting on an
+  // unaccepted invite, since otherwise someone could send far more
+  // than 10 invites and have them all land at once.
+  const [collaboratorCount, pendingInviteCount] = await Promise.all([
+    db.calendarCollaborator.count({ where: { calendarId: id } }),
+    db.calendarInvite.count({ where: { calendarId: id, status: "PENDING" } }),
+  ]);
+  if (collaboratorCount + pendingInviteCount >= 10) {
+    return NextResponse.json(
+      {
+        error: "This calendar already has 10 people on it. For more, contact hello@useshowwork.com.",
+        capReached: true,
+      },
+      { status: 403 }
+    );
   }
 
   const { email, role } = await req.json();

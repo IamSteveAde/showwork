@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
+import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
 
 function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -251,7 +252,12 @@ export default async function CalendarsPage({
 
   const calendarBilling = await db.creator.findUnique({
     where: { id: creator.id },
-    select: { calendarAccountType: true, calendarBillingStatus: true, calendarTrialEndsAt: true },
+    select: {
+      calendarAccountType: true,
+      calendarBillingStatus: true,
+      calendarTrialEndsAt: true,
+      calendarSubscriptionRenewsAt: true,
+    },
   });
 
   const params = await searchParams;
@@ -400,6 +406,17 @@ export default async function CalendarsPage({
           <TrialCountdownBanner
             trialEndsAt={calendarBilling.calendarTrialEndsAt.toISOString()}
             accountType={calendarBilling.calendarAccountType}
+          />
+        )}
+
+        {/* Billing settings — only shows once an account type has
+            actually been chosen, i.e. once at least one calendar has
+            ever been created. */}
+        {calendarBilling?.calendarAccountType && (
+          <CalendarBillingSettings
+            accountType={calendarBilling.calendarAccountType}
+            billingStatus={calendarBilling.calendarBillingStatus}
+            subscriptionRenewsAt={calendarBilling.calendarSubscriptionRenewsAt?.toISOString() ?? null}
           />
         )}
 
