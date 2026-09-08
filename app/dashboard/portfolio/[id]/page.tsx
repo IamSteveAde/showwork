@@ -169,22 +169,16 @@ export default async function PortfolioDetailPage({
       <header className="sticky top-0 z-50 border-b border-[#E2E6EB] bg-white/90 backdrop-blur-2xl">
         <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between gap-5 px-5 sm:px-7 lg:px-10">
           <div className="flex min-w-0 items-center gap-4">
-            <Link
-              href="/dashboard/portfolio"
-              className="group inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[#747982] transition hover:text-[#0A0A0A]"
-            >
-              <span className="transition-transform duration-300 group-hover:-translate-x-0.5">
-                ←
-              </span>
+         <Link
+  href="/dashboard"
+  className="group inline-flex shrink-0 items-center gap-2 text-xs font-semibold text-[#747982] transition hover:text-[#0A0A0A]"
+>
+  <span className="transition-transform duration-300 group-hover:-translate-x-0.5">
+    ←
+  </span>
 
-              <span className="hidden sm:inline">
-                {creator.accountType === "AGENCY"
-                  ? "All portfolios"
-                  : "Portfolio"}
-              </span>
-
-              <span className="sm:hidden">Back</span>
-            </Link>
+  <span>All apps</span>
+</Link>
 
             <span className="h-5 w-px bg-[#E1E4E9]" />
 

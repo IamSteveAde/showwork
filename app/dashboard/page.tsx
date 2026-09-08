@@ -324,202 +324,442 @@ export default async function DashboardPage() {
       {/* =========================================================
           NAV
       ========================================================== */}
-      <header className="sticky top-0 z-50 border-b border-[#E5E8ED]/90 bg-white/85 backdrop-blur-2xl">
-        <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-5 sm:px-7 lg:px-10">
-          <Link
-            href="/dashboard"
-            aria-label="Showwork home"
-            className="group flex items-center"
-          >
-            <div
-              role="img"
-              aria-label="Showwork"
-              className="transition-transform duration-300 group-hover:scale-[1.02]"
-              style={{
-                height: 22,
-                width: 88,
-                backgroundColor: COLOR.ink,
-                WebkitMaskImage: "url(/images/logo/sw.svg)",
-                maskImage: "url(/images/logo/sw.svg)",
-                WebkitMaskRepeat: "no-repeat",
-                maskRepeat: "no-repeat",
-                WebkitMaskPosition: "left center",
-                maskPosition: "left center",
-                WebkitMaskSize: "contain",
-                maskSize: "contain",
-              }}
+      <header className="sticky top-0 z-50 border-b border-[#E5E8ED]/90 bg-white/90 backdrop-blur-2xl">
+  <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-4 sm:h-[72px] sm:px-7 lg:px-10">
+    {/* ─────────────────────────────────────────────────────
+        LOGO
+    ────────────────────────────────────────────────────── */}
+    <Link
+      href="/dashboard"
+      aria-label="Showwork home"
+      className="group flex shrink-0 items-center"
+    >
+      <div
+        role="img"
+        aria-label="Showwork"
+        className="transition-transform duration-300 group-hover:scale-[1.02]"
+        style={{
+          height: 21,
+          width: 84,
+          backgroundColor: COLOR.ink,
+          WebkitMaskImage: "url(/images/logo/sw.svg)",
+          maskImage: "url(/images/logo/sw.svg)",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskPosition: "left center",
+          maskPosition: "left center",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
+      />
+    </Link>
+
+    {/* ─────────────────────────────────────────────────────
+        DESKTOP NAV
+    ────────────────────────────────────────────────────── */}
+    <div className="hidden items-center gap-1.5 sm:flex sm:gap-2">
+      {isAdminEmail(creator.email) && (
+        <Link
+          href="/admin"
+          className="rounded-full px-3 py-2 text-xs font-semibold text-[#747982] transition hover:bg-[#F4F5F7] hover:text-[#0A0A0A]"
+        >
+          Admin
+        </Link>
+      )}
+
+      <a
+        href="mailto:hello@useshowwork.com?subject=Showwork%20support"
+        className="hidden rounded-full px-3 py-2 text-xs font-medium text-[#747982] transition hover:bg-[#F4F5F7] hover:text-[#0A0A0A] md:block"
+      >
+        Support
+      </a>
+
+      <Link
+        href="/dashboard/billing"
+        className="flex items-center gap-2 rounded-full border border-[#E0E4EA] bg-white px-3.5 py-2 text-xs font-semibold text-[#4C515A] shadow-[0_2px_5px_rgba(0,0,0,0.025)] transition hover:border-[#CBD1DA] hover:shadow-sm"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
+        <span>
+          Delivery · {planName}
+        </span>
+      </Link>
+
+      <Link
+        href="/dashboard/profile"
+        className="group ml-1 flex items-center gap-2 rounded-full p-1 pr-2 transition hover:bg-[#F3F4F6]"
+        aria-label="View profile"
+      >
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-semibold"
+          style={{
+            background: creator.avatarUrl ? undefined : "#EDF3FF",
+            color: COLOR.blue,
+            boxShadow: "0 0 0 1px rgba(36,120,255,0.16)",
+          }}
+        >
+          {creator.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={creator.avatarUrl}
+              alt=""
+              className="h-full w-full object-cover"
             />
+          ) : (
+            initials(creator.name, creator.email)
+          )}
+        </div>
+
+        <span className="hidden max-w-[130px] truncate text-sm font-medium text-[#454951] lg:block">
+          {creator.name || creator.email}
+        </span>
+      </Link>
+
+      <LogoutButton />
+    </div>
+
+    {/* ─────────────────────────────────────────────────────
+        MOBILE NAV
+    ────────────────────────────────────────────────────── */}
+    <div className="flex items-center gap-2 sm:hidden">
+      {/* Profile avatar */}
+      <Link
+        href="/dashboard/profile"
+        aria-label="View profile"
+        className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full"
+        style={{
+          background: creator.avatarUrl ? undefined : "#EDF3FF",
+          color: COLOR.blue,
+          boxShadow: "0 0 0 1px rgba(36,120,255,0.16)",
+        }}
+      >
+        {creator.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={creator.avatarUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-[11px] font-semibold">
+            {initials(creator.name, creator.email)}
+          </span>
+        )}
+      </Link>
+
+      {/* CSS-only mobile menu */}
+      <details className="relative">
+        <summary
+          aria-label="Open navigation menu"
+          className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full border border-[#E1E4E9] bg-white text-[#3F444C] shadow-[0_2px_6px_rgba(0,0,0,0.03)] transition hover:border-[#CBD1DA] hover:bg-[#F8F9FB]"
+        >
+          <span className="sr-only">Open navigation</span>
+
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="h-[18px] w-[18px]"
+            aria-hidden="true"
+          >
+            <path
+              d="M5 7h14M5 12h14M5 17h14"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+        </summary>
+
+        {/* Mobile dropdown */}
+        <div className="absolute right-0 top-[calc(100%+10px)] w-[calc(100vw-32px)] max-w-[320px] overflow-hidden rounded-2xl border border-[#E1E4E9] bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
+          {/* Account identity */}
+          <div className="mb-1 border-b border-[#EEF0F3] px-3 pb-3 pt-2">
+            <p className="truncate text-sm font-semibold text-[#15171A]">
+              {creator.name || "Your account"}
+            </p>
+
+            <p className="mt-0.5 truncate text-[11px] text-[#9297A0]">
+              {creator.email}
+            </p>
+          </div>
+
+          {/* Admin */}
+          {isAdminEmail(creator.email) && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-[#454951] transition hover:bg-[#F5F7FA] hover:text-[#090A0C]"
+            >
+              <span>Admin</span>
+
+              <ArrowUpRightIcon className="h-4 w-4 text-[#A2A7AF]" />
+            </Link>
+          )}
+
+          {/* Support */}
+          <a
+            href="mailto:hello@useshowwork.com?subject=Showwork%20support"
+            className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-[#454951] transition hover:bg-[#F5F7FA] hover:text-[#090A0C]"
+          >
+            <span>Support</span>
+
+            <ArrowUpRightIcon className="h-4 w-4 text-[#A2A7AF]" />
+          </a>
+
+          {/* Billing */}
+          <Link
+            href="/dashboard/billing"
+            className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-[#454951] transition hover:bg-[#F5F7FA] hover:text-[#090A0C]"
+          >
+            <span className="flex items-center gap-2.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
+
+              <span>Delivery · {planName}</span>
+            </span>
+
+            <ArrowUpRightIcon className="h-4 w-4 text-[#A2A7AF]" />
           </Link>
 
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            {isAdminEmail(creator.email) && (
-              <Link
-                href="/admin"
-                className="hidden rounded-full px-3 py-2 text-xs font-semibold text-[#747982] transition hover:bg-[#F4F5F7] hover:text-[#0A0A0A] sm:block"
-              >
-                Admin
-              </Link>
-            )}
+          {/* Profile */}
+          <Link
+            href="/dashboard/profile"
+            className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-[#454951] transition hover:bg-[#F5F7FA] hover:text-[#090A0C]"
+          >
+            <span>Account settings</span>
 
-            <a
-              href="mailto:hello@useshowwork.com?subject=Showwork%20support"
-              className="hidden rounded-full px-3 py-2 text-xs font-medium text-[#747982] transition hover:bg-[#F4F5F7] hover:text-[#0A0A0A] md:block"
-            >
-              Support
-            </a>
+            <ArrowUpRightIcon className="h-4 w-4 text-[#A2A7AF]" />
+          </Link>
 
-            <Link
-              href="/dashboard/billing"
-              className="hidden items-center gap-2 rounded-full border border-[#E0E4EA] bg-white px-3.5 py-2 text-xs font-semibold text-[#4C515A] shadow-[0_2px_5px_rgba(0,0,0,0.025)] transition hover:border-[#CBD1DA] hover:shadow-sm sm:flex"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
-              Delivery · {planName}
-            </Link>
-
-            <Link
-              href="/dashboard/profile"
-              className="group flex items-center gap-2 rounded-full p-1 pr-2 transition hover:bg-[#F3F4F6]"
-              aria-label="View profile"
-            >
-              <div
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-[11px] font-semibold"
-                style={{
-                  background: creator.avatarUrl ? undefined : "#EDF3FF",
-                  color: COLOR.blue,
-                  boxShadow: "0 0 0 1px rgba(36,120,255,0.16)",
-                }}
-              >
-                {creator.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={creator.avatarUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  initials(creator.name, creator.email)
-                )}
-              </div>
-
-              <span className="hidden max-w-[130px] truncate text-sm font-medium text-[#454951] lg:block">
-                {creator.name || creator.email}
-              </span>
-            </Link>
-
-            <LogoutButton />
+          {/* Logout */}
+          <div className="mt-1 border-t border-[#EEF0F3] px-2 pt-2">
+            <div className="rounded-xl px-1 py-1">
+              <LogoutButton />
+            </div>
           </div>
         </div>
-      </header>
-
+      </details>
+    </div>
+  </div>
+</header>
       {/* =========================================================
           HERO — ART DIRECTED
       ========================================================== */}
-      <section className="relative overflow-hidden bg-white">
-        {/* oversized glow */}
-        <div
-          className="pointer-events-none absolute -right-[180px] -top-[260px] h-[720px] w-[720px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(36,120,255,0.17) 0%, rgba(36,120,255,0.06) 35%, transparent 68%)",
-          }}
+      <section className="relative isolate overflow-hidden bg-[#EEF4FF]">
+  {/* =========================================================
+      ATMOSPHERE
+  ========================================================== */}
+
+  {/* Main blue atmospheric glow */}
+  <div
+    className="pointer-events-none absolute -right-[260px] -top-[300px] h-[820px] w-[820px] rounded-full"
+    aria-hidden
+    style={{
+      background:
+        "radial-gradient(circle, rgba(36,120,255,0.26) 0%, rgba(36,120,255,0.12) 28%, rgba(36,120,255,0.035) 52%, transparent 72%)",
+    }}
+  />
+
+  {/* Secondary violet atmosphere */}
+  <div
+    className="pointer-events-none absolute -left-[300px] -top-[100px] h-[680px] w-[680px] rounded-full"
+    aria-hidden
+    style={{
+      background:
+        "radial-gradient(circle, rgba(91,77,255,0.11) 0%, rgba(91,77,255,0.04) 42%, transparent 70%)",
+    }}
+  />
+
+  {/* Bottom horizon light */}
+  <div
+    className="pointer-events-none absolute bottom-[-300px] left-[20%] h-[600px] w-[900px] rounded-full"
+    aria-hidden
+    style={{
+      background:
+        "radial-gradient(ellipse, rgba(36,120,255,0.09) 0%, transparent 68%)",
+    }}
+  />
+
+  {/* =========================================================
+      ARCHITECTURAL GRID
+  ========================================================== */}
+
+  <div
+    className="pointer-events-none absolute inset-0"
+    aria-hidden
+    style={{
+      backgroundImage:
+        "linear-gradient(rgba(36,120,255,0.065) 1px, transparent 1px), linear-gradient(90deg, rgba(36,120,255,0.065) 1px, transparent 1px)",
+      backgroundSize: "44px 44px",
+      maskImage:
+        "linear-gradient(to bottom right, black 0%, black 42%, transparent 82%)",
+      WebkitMaskImage:
+        "linear-gradient(to bottom right, black 0%, black 42%, transparent 82%)",
+    }}
+  />
+
+  {/* Fine secondary grid */}
+  <div
+    className="pointer-events-none absolute inset-0 opacity-50"
+    aria-hidden
+    style={{
+      backgroundImage:
+        "linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)",
+      backgroundSize: "11px 11px",
+      maskImage:
+        "radial-gradient(circle at 75% 20%, black 0%, transparent 45%)",
+      WebkitMaskImage:
+        "radial-gradient(circle at 75% 20%, black 0%, transparent 45%)",
+    }}
+  />
+
+  {/* =========================================================
+      LARGE GEOMETRIC ORBIT
+  ========================================================== */}
+
+  <div
+    className="pointer-events-none absolute -right-[110px] top-[40px] hidden h-[560px] w-[560px] rounded-full border border-[#2478FF]/10 lg:block"
+    aria-hidden
+  >
+    <div className="absolute inset-[42px] rounded-full border border-[#2478FF]/[0.08]" />
+    <div className="absolute inset-[88px] rounded-full border border-[#2478FF]/[0.06]" />
+    <div className="absolute inset-[138px] rounded-full border border-[#2478FF]/[0.05]" />
+
+    {/* Orbit point */}
+    <div className="absolute left-[16%] top-[9%] h-2 w-2 rounded-full bg-[#2478FF] shadow-[0_0_20px_rgba(36,120,255,0.5)]" />
+
+    {/* Orbit point */}
+    <div className="absolute bottom-[18%] right-[7%] h-1.5 w-1.5 rounded-full bg-[#2478FF]/50" />
+  </div>
+
+  {/* =========================================================
+      ABSTRACT CORNER STRUCTURE
+  ========================================================== */}
+
+  <div
+    className="pointer-events-none absolute right-[9%] top-[18%] hidden h-[190px] w-[190px] rotate-12 rounded-[42px] border border-white/70 bg-white/20 backdrop-blur-[2px] lg:block"
+    aria-hidden
+  >
+    <div className="absolute inset-[18px] rounded-[30px] border border-[#2478FF]/10" />
+
+    <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-[#2478FF]/[0.06]" />
+
+    <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-[#2478FF]/[0.06]" />
+  </div>
+
+  {/* =========================================================
+      CONTENT
+  ========================================================== */}
+
+  <div className="relative mx-auto max-w-[1440px] px-5 pb-12 pt-14 sm:px-7 md:pb-16 md:pt-20 lg:px-10 lg:pb-20 lg:pt-24">
+    <div className="max-w-[1050px]">
+      {/* Eyebrow */}
+      <div className="mb-7 flex items-center gap-3">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#CFE0FF] bg-white/75 text-[#2478FF] shadow-[0_5px_20px_rgba(36,120,255,0.08)] backdrop-blur-xl">
+          <SparkIcon className="h-4 w-4" />
+        </span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
+            Showwork / Workspace
+          </span>
+
+          <span className="h-1 w-1 rounded-full bg-[#9DBDF5]" />
+
+          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#8799B7]">
+            Your creative command center
+          </span>
+        </div>
+      </div>
+
+      {/* Main headline */}
+      <h1 className="relative text-[47px] font-semibold leading-[0.93] tracking-[-0.065em] text-[#08090A] sm:text-[61px] md:text-[76px] lg:text-[92px]">
+        Make the work.
+        <br />
+
+        <span className="relative inline-block">
+          Move the work.
+
+          <span
+            className="absolute -bottom-2 left-0 h-[3px] w-[58%] rounded-full bg-[#2478FF] shadow-[0_0_14px_rgba(36,120,255,0.25)] lg:-bottom-3"
+          />
+        </span>
+      </h1>
+
+      {/* Description + plan */}
+      <div className="mt-8 flex flex-col justify-between gap-8 md:flex-row md:items-end">
+        <p className="max-w-[620px] text-[15px] leading-7 text-[#626D7E] sm:text-[17px]">
+          {firstName ? `Good to have you back, ${firstName}. ` : ""}
+          Your creative business has different moving parts. Showwork
+          gives each one a place to live, so you can spend less time
+          managing the process and more time doing the work.
+        </p>
+
+        {/* Plan card */}
+        <div className="hidden shrink-0 md:block">
+          <div className="rounded-2xl border border-white/80 bg-white/55 px-5 py-3.5 shadow-[0_10px_35px_rgba(30,70,130,0.06)] backdrop-blur-xl">
+            <p className="text-right text-[9px] font-bold uppercase tracking-[0.14em] text-[#8995A8]">
+              Current plan
+            </p>
+
+            <div className="mt-2 flex items-center justify-end gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.4)]" />
+
+              <span className="text-sm font-semibold text-[#252B35]">
+                {planName}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* =======================================================
+        STATS / COMMAND RAIL
+    ======================================================== */}
+
+    <div className="mt-14 rounded-2xl border border-white/80 bg-white/45 p-1 shadow-[0_10px_40px_rgba(30,60,110,0.045)] backdrop-blur-xl">
+      <div className="flex flex-wrap items-center gap-x-7 gap-y-4 rounded-xl border border-white/60 bg-white/30 px-4 py-4 sm:px-5">
+        <MiniStat
+          number={String(projectCount)}
+          label={projectCount === 1 ? "project" : "projects"}
         />
 
-        <div
-          className="pointer-events-none absolute -left-[220px] top-[170px] h-[500px] w-[500px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(102,76,255,0.065) 0%, transparent 68%)",
-          }}
+        <span className="h-1 w-1 rounded-full bg-[#B9C8DD]" />
+
+        <MiniStat
+          number={portfolio ? "01" : "—"}
+          label="portfolio"
         />
 
-        <GridPattern opacity={0.75} />
-        <DotPattern />
+        <span className="h-1 w-1 rounded-full bg-[#B9C8DD]" />
 
-        {/* giant decorative ring */}
-        <div
-          className="pointer-events-none absolute right-[7%] top-[18%] hidden h-[310px] w-[310px] rounded-full border border-[#2478FF]/10 lg:block"
-          aria-hidden
+        <MiniStat
+          number={calendar ? "01" : "—"}
+          label="content workspace"
+        />
+
+        <Link
+          href="/dashboard/profile"
+          className="ml-auto hidden items-center gap-2 rounded-full border border-white/70 bg-white/50 px-3.5 py-2 text-xs font-semibold text-[#687487] shadow-sm transition-all hover:border-[#C7D9F7] hover:bg-white hover:text-[#2478FF] sm:flex"
         >
-          <div className="absolute inset-[30px] rounded-full border border-[#2478FF]/[0.07]" />
-          <div className="absolute inset-[62px] rounded-full border border-[#2478FF]/[0.05]" />
-        </div>
+          Account settings
+          <ArrowUpRightIcon className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  </div>
 
-        <div className="relative mx-auto max-w-[1440px] px-5 pb-12 pt-14 sm:px-7 md:pb-16 md:pt-20 lg:px-10 lg:pb-20 lg:pt-24">
-          <div className="max-w-[1050px]">
-            <div className="mb-7 flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#DCE7FC] bg-white text-[#2478FF] shadow-sm">
-                <SparkIcon className="h-4 w-4" />
-              </span>
+  {/* =========================================================
+      BOTTOM TRANSITION
+  ========================================================== */}
 
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
-                Showwork / Workspace
-              </span>
-            </div>
-
-            <h1 className="text-[47px] font-semibold leading-[0.95] tracking-[-0.065em] text-[#08090A] sm:text-[61px] md:text-[76px] lg:text-[92px]">
-              Make the work.
-              <br />
-              <span className="relative inline-block">
-                Move the work.
-                <span className="absolute -bottom-2 left-0 h-[3px] w-[58%] rounded-full bg-[#2478FF] opacity-70 lg:-bottom-3" />
-              </span>
-            </h1>
-
-            <div className="mt-8 flex flex-col justify-between gap-8 md:flex-row md:items-end">
-              <p className="max-w-[620px] text-[15px] leading-7 text-[#6E737C] sm:text-[17px]">
-                {firstName ? `Good to have you back, ${firstName}. ` : ""}
-                Your creative business has different moving parts. Showwork
-                gives each one a place to live, so you can spend less time
-                managing the process and more time doing the work.
-              </p>
-
-              <div className="hidden shrink-0 md:block">
-                <p className="text-right text-[10px] font-semibold uppercase tracking-[0.13em] text-[#A0A5AC]">
-                  Current plan
-                </p>
-
-                <div className="mt-2 flex items-center justify-end gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
-                  <span className="text-sm font-semibold text-[#25272B]">
-                    {planName}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* stats rail */}
-          <div className="mt-14 flex flex-wrap items-center gap-x-7 gap-y-4 border-t border-[#E6E8EC] pt-5">
-            <MiniStat
-              number={String(projectCount)}
-              label={projectCount === 1 ? "project" : "projects"}
-            />
-
-            <span className="h-1 w-1 rounded-full bg-[#CDD1D7]" />
-
-            <MiniStat
-              number={portfolio ? "01" : "—"}
-              label="portfolio"
-            />
-
-            <span className="h-1 w-1 rounded-full bg-[#CDD1D7]" />
-
-            <MiniStat
-              number={calendar ? "01" : "—"}
-              label="content workspace"
-            />
-
-            <Link
-              href="/dashboard/profile"
-              className="ml-auto hidden items-center gap-2 text-xs font-semibold text-[#737780] transition hover:text-[#2478FF] sm:flex"
-            >
-              Account settings
-              <ArrowUpRightIcon className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
+  <div
+    className="pointer-events-none absolute bottom-0 left-0 right-0 h-24"
+    aria-hidden
+    style={{
+      background:
+        "linear-gradient(to bottom, transparent, rgba(247,248,250,0.8))",
+    }}
+  />
+</section>
       {/* =========================================================
           APPS
       ========================================================== */}
@@ -759,7 +999,7 @@ export default async function DashboardPage() {
                     <WorkspaceIcon className="h-6 w-6" />
                   </div>
 
-                  <AppPill>For teams</AppPill>
+                  <AppPill>For Social media managers</AppPill>
                 </div>
 
                 <div>

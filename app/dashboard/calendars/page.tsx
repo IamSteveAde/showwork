@@ -335,7 +335,7 @@ export default async function CalendarsPage({
            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
   <ArrowLeftIcon className="h-3.5 w-3.5" />
 </span>
-            Dashboard
+            All apps
           </Link>
 
           <div className="hidden items-center gap-2 sm:flex">
