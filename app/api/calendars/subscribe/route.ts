@@ -10,25 +10,16 @@ const COMPANY_PLAN_CODE = process.env.PAYSTACK_CALENDAR_COMPANY_PLAN_CODE;
 const INDIVIDUAL_MONTHLY_NGN = 2800;
 const COMPANY_MONTHLY_NGN = 15000;
 
-// POST — restarts checkout for an account whose calendar billing
-// isn't active (never paid, trial expired, or a past renewal
-// failed). Billing is account-level now, so this activates the whole
-// account, not just the one calendar the manager happened to click
-// through from — but it's still reached from a specific calendar's
-// locked screen, hence the [id] in the URL.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// POST — starts (or restarts) the account-level calendar
+// subscription. Unlike app/api/calendars/[id]/retry-payment, this
+// doesn't need any specific calendar in scope at all — it's what the
+// dashboard's trial countdown banner calls, where there's no single
+// "current calendar" to anchor the request to. Both routes end up
+// doing the same underlying thing, just reached from different
+// places in the product.
+export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
-  if (!calendar) return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  if (calendar.managerId !== session.id) {
-    return NextResponse.json({ error: "Only the calendar's manager can complete payment" }, { status: 403 });
-  }
 
   const creator = await db.creator.findUnique({
     where: { id: session.id },
@@ -57,10 +48,10 @@ export async function POST(
     const result = await initializeSubscription({
       email: creator.email,
       reference,
-      callbackUrl: `${appUrl()}/dashboard/calendars?subscriptionPayment=callback&calendarId=${calendar.id}`,
+      callbackUrl: `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
       planCode,
       amount: amountNgn * 100,
-      metadata: { creatorId: creator.id, calendarId: calendar.id },
+      metadata: { creatorId: creator.id },
     });
 
     await db.creator.update({
@@ -70,7 +61,7 @@ export async function POST(
 
     return NextResponse.json({ authorizationUrl: result.data.authorization_url });
   } catch (err) {
-    console.error("Calendar retry-payment initialize error:", err);
+    console.error("Calendar subscribe initialize error:", err);
     return NextResponse.json({ error: "Failed to start payment — try again" }, { status: 500 });
   }
 }

@@ -1,40 +1,133 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
+import { randomUUID, createHash } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sendCalendarInviteEmail } from "@/lib/resend";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function POST(
+const VALID_ROLES = ["VIEW_ONLY", "ADD_CONTENT", "EDIT_CALENDAR"];
+
+// GET — everyone currently on this calendar (accepted collaborators)
+// plus anyone still waiting on an invite. Manager-only, since this is
+// the list behind "who have I added" on the invite panel.
+export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "You need to be logged in to accept this" }, { status: 401 });
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { token } = await params;
-  const invite = await db.calendarInvite.findUnique({ where: { tokenHash: hashToken(token) } });
-
-  if (!invite) return NextResponse.json({ error: "This invite is invalid" }, { status: 404 });
-  if (invite.status !== "PENDING") return NextResponse.json({ error: "This invite has already been used" }, { status: 400 });
-  if (invite.expiresAt < new Date()) return NextResponse.json({ error: "This invite has expired" }, { status: 400 });
-  if (invite.email.toLowerCase() !== creator.email.toLowerCase()) {
-    return NextResponse.json({ error: "This invite was sent to a different email address" }, { status: 403 });
+  const { id } = await params;
+  const calendar = await db.socialCalendar.findUnique({ where: { id } });
+  if (!calendar || calendar.managerId !== creator.id) {
+    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
   }
 
-  await db.$transaction([
-    db.calendarCollaborator.upsert({
-      where: { calendarId_creatorId: { calendarId: invite.calendarId, creatorId: creator.id } },
-      create: { calendarId: invite.calendarId, creatorId: creator.id, role: invite.role },
-      update: { role: invite.role },
+  const [collaborators, pendingInvites] = await Promise.all([
+    db.calendarCollaborator.findMany({
+      where: { calendarId: id },
+      orderBy: { addedAt: "desc" },
+      include: { creator: { select: { name: true, email: true } } },
     }),
-    db.calendarInvite.update({
-      where: { id: invite.id },
-      data: { status: "ACCEPTED", respondedAt: new Date() },
+    db.calendarInvite.findMany({
+      where: { calendarId: id, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
-  return NextResponse.json({ calendarId: invite.calendarId });
+  return NextResponse.json({
+    collaborators: collaborators.map((c) => ({
+      id: c.id,
+      name: c.creator.name,
+      email: c.creator.email,
+      role: c.role,
+    })),
+    pendingInvites: pendingInvites.map((i) => ({
+      id: i.id,
+      email: i.email,
+      role: i.role,
+      expiresAt: i.expiresAt,
+    })),
+  });
+}
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const calendar = await db.socialCalendar.findUnique({ where: { id } });
+  if (!calendar || calendar.managerId !== creator.id) {
+    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
+  }
+
+  const account = await db.creator.findUnique({
+    where: { id: creator.id },
+    select: { calendarAccountType: true },
+  });
+
+  // An Individual account can never collaborate at all, on any
+  // calendar — the frontend uses this exact response shape to show
+  // an upgrade prompt instead of a plain error message.
+  if (account?.calendarAccountType === "INDIVIDUAL") {
+    return NextResponse.json(
+      { error: "Collaborators require a Company account", requiresUpgrade: true },
+      { status: 403 }
+    );
+  }
+
+  // Company is capped at 10 people per calendar — counting both
+  // already-accepted collaborators and anyone still sitting on an
+  // unaccepted invite, since otherwise someone could send far more
+  // than 10 invites and have them all land at once.
+  const [collaboratorCount, pendingInviteCount] = await Promise.all([
+    db.calendarCollaborator.count({ where: { calendarId: id } }),
+    db.calendarInvite.count({ where: { calendarId: id, status: "PENDING" } }),
+  ]);
+  if (collaboratorCount + pendingInviteCount >= 10) {
+    return NextResponse.json(
+      {
+        error: "This calendar already has 10 people on it. For more, contact hello@useshowwork.com.",
+        capReached: true,
+      },
+      { status: 403 }
+    );
+  }
+
+  const { email, role } = await req.json();
+  if (!email || !email.trim()) {
+    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  }
+  const finalRole = VALID_ROLES.includes(role) ? role : "ADD_CONTENT";
+
+  const token = randomUUID() + randomUUID();
+  const invite = await db.calendarInvite.create({
+    data: {
+      calendarId: calendar.id,
+      invitedByCreatorId: creator.id,
+      email: email.trim().toLowerCase(),
+      role: finalRole,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    },
+  });
+
+  try {
+    await sendCalendarInviteEmail({
+      to: invite.email,
+      invitedByName: creator.name || creator.email,
+      clientName: calendar.clientName,
+      token,
+    });
+  } catch (err) {
+    console.error("Failed to send calendar invite email:", err);
+  }
+
+  return NextResponse.json({ ok: true, role: finalRole });
 }

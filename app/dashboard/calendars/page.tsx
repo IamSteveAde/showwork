@@ -5,6 +5,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
+import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
 
 function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -248,6 +249,11 @@ export default async function CalendarsPage({
     redirect("/login");
   }
 
+  const calendarBilling = await db.creator.findUnique({
+    where: { id: creator.id },
+    select: { calendarAccountType: true, calendarBillingStatus: true, calendarTrialEndsAt: true },
+  });
+
   const params = await searchParams;
   const currentPage = getPageNumber(params?.page);
 
@@ -390,6 +396,13 @@ export default async function CalendarsPage({
           </div>
         </header>
 
+        {calendarBilling?.calendarBillingStatus === "TRIAL" && calendarBilling.calendarTrialEndsAt && calendarBilling.calendarAccountType && (
+          <TrialCountdownBanner
+            trialEndsAt={calendarBilling.calendarTrialEndsAt.toISOString()}
+            accountType={calendarBilling.calendarAccountType}
+          />
+        )}
+
         {/* Payment callback */}
         <Suspense fallback={null}>
           <CalendarPaymentCallbackHandler />
@@ -418,7 +431,7 @@ export default async function CalendarsPage({
             </div>
 
             <div className="p-4 sm:p-5">
-              <CreateCalendarForm />
+              <CreateCalendarForm calendarAccountType={calendarBilling?.calendarAccountType ?? null} />
             </div>
           </div>
         </section>
@@ -460,20 +473,6 @@ export default async function CalendarsPage({
 
                 const globalIndex = skip + index + 1;
 
-                const hasPaymentIssue =
-                  cal.billingStatus === "PENDING_SETUP" ||
-                  cal.billingStatus === "OFFLINE";
-
-                const trialMsLeft =
-                  cal.billingStatus === "TRIAL"
-                    ? (cal.trialEndsAt?.getTime() ?? 0) - Date.now()
-                    : null;
-                const trialDaysLeft =
-                  trialMsLeft !== null
-                    ? Math.ceil(trialMsLeft / (1000 * 60 * 60 * 24))
-                    : null;
-                const trialExpired = trialMsLeft !== null && trialMsLeft <= 0;
-
                 return (
                   <Link
                     key={cal.id}
@@ -501,45 +500,25 @@ export default async function CalendarsPage({
                           />
                         </div>
 
-                        {/* Status */}
-                        {hasPaymentIssue ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/10 bg-red-500/[0.07] px-2.5 py-1.5 text-[10px] font-semibold text-red-400">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                            {cal.billingStatus === "OFFLINE"
-                              ? "Payment failed"
-                              : "Payment incomplete"}
-                          </span>
-                        ) : cal.billingStatus === "TRIAL" ? (
+                        {/* Status — plan status only now, since billing
+                            is account-level and already shown once, at
+                            the top of the page, by TrialCountdownBanner
+                            rather than repeated identically on every
+                            single card. */}
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold"
+                          style={{
+                            color: status.color,
+                            background: status.bg,
+                            borderColor: `${status.color}18`,
+                          }}
+                        >
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold ${
-                              trialExpired
-                                ? "border-red-500/10 bg-red-500/[0.07] text-red-400"
-                                : "border-[#4ADE80]/15 bg-[#4ADE80]/[0.08] text-[#4ADE80]"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${trialExpired ? "bg-red-400" : "bg-[#4ADE80]"}`}
-                            />
-                            {trialExpired
-                              ? "Trial ended"
-                              : `Trial · ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left`}
-                          </span>
-                        ) : (
-                          <span
-                            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold"
-                            style={{
-                              color: status.color,
-                              background: status.bg,
-                              borderColor: `${status.color}18`,
-                            }}
-                          >
-                            <span
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{ background: status.dot }}
-                            />
-                            {status.text}
-                          </span>
-                        )}
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{ background: status.dot }}
+                          />
+                          {status.text}
+                        </span>
                       </div>
 
                       {/* Arrow */}

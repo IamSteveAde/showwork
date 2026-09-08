@@ -1093,34 +1093,181 @@ export async function sendCalendarPostReviewedEmail({
   });
 }
 // ─────────────────────────────────────────────
-// CALENDAR PAYMENT FAILED — sent to the manager when a calendar's
-// recurring ₦5,000/month charge fails, mirroring the portfolio
-// equivalent exactly.
+// CALENDAR PAYMENT FAILED — sent to the manager the moment their
+// account-level calendar subscription's recurring charge fails.
+// Billing is account-level now (one subscription covers every
+// calendar the account owns), so this notifies about the whole
+// account going offline, not one specific client's calendar the way
+// the original version of this function was written.
 // ─────────────────────────────────────────────
 export async function sendCalendarPaymentFailedEmail({
   to,
   name,
-  clientName,
 }: {
   to: string;
   name: string | null;
-  clientName: string;
 }) {
   await resend.emails.send({
     from: FROM,
     to,
-    subject: `Payment failed for ${clientName}'s content calendar`,
+    subject: "Payment failed — your calendars are now offline",
     html: `
       <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
         <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F97316; margin-bottom: 24px;">
           Payment failed
         </p>
         <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          Hi${name ? ` ${name}` : ""}, the monthly charge for <strong style="color: #F8F7F4;">${clientName}</strong>'s content calendar didn't go through. The calendar is now offline until this is resolved.
+          Hi${name ? ` ${name}` : ""}, your monthly calendar payment didn't go through, so every client calendar on your account is now offline until it's resolved.
         </p>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/calendars" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
           Go to your calendars
         </a>
+      </div>
+    `,
+  });
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR TRIAL EMAIL DRIP — four stages, sent by a daily scheduled
+// job (see lib/calendarTrialEmails.ts) rather than any of these being
+// called directly from application code. Each stage is tracked by
+// its own "sent at" timestamp on Creator, so the daily job can run
+// as often as it wants without ever double-sending a given stage.
+// ─────────────────────────────────────────────
+
+function calendarSubscribeButton(price: string) {
+  return `
+    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/calendars" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #2478FF; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+      Subscribe — ${price}/month
+    </a>
+  `;
+}
+
+export async function sendCalendarTrial2DaysLeftEmail({
+  to,
+  name,
+  accountType,
+}: {
+  to: string;
+  name: string | null;
+  accountType: "INDIVIDUAL" | "COMPANY";
+}) {
+  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "2 days left on your Showwork calendar trial",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          You've got <strong style="color: #F8F7F4;">2 days left</strong> on your free content calendar trial.
+          Once it ends, your calendars will be locked until you subscribe.
+        </p>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Subscribe now so nothing interrupts your client's calendar.
+        </p>
+        ${calendarSubscribeButton(price)}
+      </div>
+    `,
+  });
+}
+
+export async function sendCalendarTrialFollowUpEmail({
+  to,
+  name,
+  accountType,
+}: {
+  to: string;
+  name: string | null;
+  accountType: "INDIVIDUAL" | "COMPANY";
+}) {
+  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Still haven't subscribed?",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          We noticed you haven't subscribed yet, and your trial ends tomorrow.
+          If something's holding you back, just reply to this email and let us know —
+          we're happy to help.
+        </p>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Otherwise, here's a quick link to get set up before your calendars lock.
+        </p>
+        ${calendarSubscribeButton(price)}
+      </div>
+    `,
+  });
+}
+
+export async function sendCalendarTrialEndsTodayEmail({
+  to,
+  name,
+  accountType,
+}: {
+  to: string;
+  name: string | null;
+  accountType: "INDIVIDUAL" | "COMPANY";
+}) {
+  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Your Showwork calendar trial ends today",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F97316; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Your free trial <strong style="color: #F8F7F4;">ends today</strong>. Subscribe now to keep your
+          calendars accessible for you and your client, with no interruption.
+        </p>
+        ${calendarSubscribeButton(price)}
+      </div>
+    `,
+  });
+}
+
+export async function sendCalendarTrialEndedEmail({
+  to,
+  name,
+  accountType,
+}: {
+  to: string;
+  name: string | null;
+  accountType: "INDIVIDUAL" | "COMPANY";
+}) {
+  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Your Showwork calendar trial has ended",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F87171; margin-bottom: 20px;">
+          Showwork
+        </p>
+        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Your free trial has ended, and your calendars are now locked until you subscribe —
+          your client won't be able to view them either until then.
+        </p>
+        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
+          Subscribing takes a minute, and everything picks up right where you left off.
+        </p>
+        ${calendarSubscribeButton(price)}
       </div>
     `,
   });

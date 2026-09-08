@@ -62,6 +62,11 @@ export default function InviteCollaboratorForm({ calendarId }: { calendarId: str
   // was actually selected.
   const [sentRole, setSentRole] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Set when the server rejects an invite specifically because this
+  // is an Individual account — shown as an actionable upgrade prompt
+  // instead of a plain error message.
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const [collaborators, setCollaborators] = useState<CollaboratorRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInviteRow[]>([]);
@@ -90,6 +95,7 @@ export default function InviteCollaboratorForm({ calendarId }: { calendarId: str
     setLoading(true);
     setError(null);
     setSentRole(null);
+    setRequiresUpgrade(false);
     const res = await fetch(`/api/calendars/${calendarId}/invites`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -107,8 +113,28 @@ export default function InviteCollaboratorForm({ calendarId }: { calendarId: str
     } else {
       const data = await res.json();
       setError(data.error ?? "Failed to send invite");
+      setRequiresUpgrade(!!data.requiresUpgrade);
     }
     setLoading(false);
+  };
+
+  const upgradeToCompany = async () => {
+    setUpgrading(true);
+    setError(null);
+    const res = await fetch("/api/calendars/upgrade-to-company", { method: "POST" });
+    const data = await res.json();
+    if (res.ok) {
+      if (data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+      } else {
+        // Trial, or nothing currently owed — the switch already
+        // happened, so a refresh is enough to unlock inviting.
+        window.location.reload();
+      }
+    } else {
+      setError(data.error ?? "Failed to upgrade — try again");
+      setUpgrading(false);
+    }
   };
 
   const revokeInvite = async (inviteId: string) => {
@@ -216,7 +242,26 @@ export default function InviteCollaboratorForm({ calendarId }: { calendarId: str
             Invite sent as {roleLabel(sentRole)}.
           </p>
         )}
-        {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+        {requiresUpgrade ? (
+          <div className="mt-3 flex flex-col gap-3 rounded-lg border p-4" style={{ background: "rgba(36,120,255,0.06)", borderColor: "rgba(36,120,255,0.2)" }}>
+            <div>
+              <p className="text-sm font-semibold text-white">Collaborators need a Company account</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/50">
+                Your account is on Individual, which is just for solo work. Switch to Company (₦15,000/month) to invite up to 10 people, with the same permission controls above.
+              </p>
+            </div>
+            <button
+              onClick={upgradeToCompany}
+              disabled={upgrading}
+              className="self-start rounded-lg px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
+            >
+              {upgrading ? "Switching..." : "Switch to Company"}
+            </button>
+          </div>
+        ) : (
+          error && <p className="mt-3 text-xs text-red-400">{error}</p>
+        )}
 
         <div className="mt-4 flex items-center gap-3">
           <button
