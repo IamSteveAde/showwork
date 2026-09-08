@@ -47,7 +47,11 @@ export default async function AdminSocialCalendarsPage({
   const [totalManagers, totalCalendars, activeCalendars, totalPosts] = await Promise.all([
     db.creator.count({ where: { accountType: "SOCIAL_MEDIA_MANAGER" } }),
     db.socialCalendar.count(),
-    db.socialCalendar.count({ where: { billingStatus: "ACTIVE" } }),
+    db.creator.count({
+  where: {
+    calendarBillingStatus: "ACTIVE",
+  },
+}),
     db.calendarPost.count(),
   ]);
 
@@ -92,9 +96,16 @@ export default async function AdminSocialCalendarsPage({
     skip: (currentPage - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
     include: {
-      manager: { select: { name: true, email: true } },
-      _count: { select: { posts: true } },
+  manager: {
+    select: {
+      name: true,
+      email: true,
+      calendarBillingStatus: true,
+      calendarSubscriptionRenewsAt: true,
     },
+  },
+  _count: { select: { posts: true } },
+},
   });
 
   return (
@@ -233,7 +244,9 @@ export default async function AdminSocialCalendarsPage({
               ) : (
                 calendars.map((cal) => {
                   const planMeta = PLAN_STATUS_LABEL[cal.planStatus] ?? PLAN_STATUS_LABEL.BUILDING;
-                  const billingMeta = BILLING_STATUS_LABEL[cal.billingStatus] ?? BILLING_STATUS_LABEL.PENDING_SETUP;
+                  const billingMeta =
+  BILLING_STATUS_LABEL[cal.manager.calendarBillingStatus] ??
+  BILLING_STATUS_LABEL.PENDING_SETUP;
                   return (
                     <tr key={cal.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                       <td className="px-4 py-3 font-medium text-white">{cal.clientName}</td>

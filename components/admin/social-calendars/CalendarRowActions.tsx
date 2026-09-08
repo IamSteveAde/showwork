@@ -6,13 +6,12 @@ import { useRouter } from "next/navigation";
 export default function CalendarRowActions({
   calendarId,
   billingStatus,
-  lastFreeMonthGrantedAt,
 }: {
   calendarId: string;
   billingStatus: string;
-  lastFreeMonthGrantedAt: string | null;
 }) {
   const router = useRouter();
+
   const [loading, setLoading] = useState<string | null>(null);
   const [confirmingReset, setConfirmingReset] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,18 +19,29 @@ export default function CalendarRowActions({
   const patch = async (action: string, label: string) => {
     setLoading(label);
     setError(null);
-    const res = await fetch(`/api/admin/social-calendars/${calendarId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    if (res.ok) {
-      router.refresh();
-    } else {
+
+    try {
+      const res = await fetch(`/api/admin/social-calendars/${calendarId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+
       const data = await res.json().catch(() => ({}));
+
       setError(data.error ?? `Request failed (${res.status})`);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(null);
     }
-    setLoading(null);
   };
 
   const handleReset = async () => {
@@ -44,9 +54,12 @@ export default function CalendarRowActions({
       <div className="flex items-center gap-2">
         <button
           onClick={() => patch("grant_free_month", "grant")}
-          disabled={loading === "grant"}
+          disabled={loading !== null}
           className="rounded-md px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
-          style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}
+          style={{
+            background: "rgba(34,197,94,0.15)",
+            color: "#4ade80",
+          }}
         >
           {loading === "grant" ? "..." : "Grant free month"}
         </button>
@@ -55,30 +68,42 @@ export default function CalendarRowActions({
           <div className="flex items-center gap-2">
             <button
               onClick={handleReset}
-              disabled={loading === "reset"}
+              disabled={loading !== null}
               className="rounded-md bg-red-500 px-2.5 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
             >
               {loading === "reset" ? "..." : "Confirm"}
             </button>
-            <button onClick={() => setConfirmingReset(false)} className="text-xs text-white/40 underline">
+
+            <button
+              onClick={() => setConfirmingReset(false)}
+              disabled={loading !== null}
+              className="text-xs text-white/40 underline disabled:opacity-50"
+            >
               Cancel
             </button>
           </div>
         ) : (
           <button
             onClick={() => setConfirmingReset(true)}
-            className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10"
+            disabled={loading !== null}
+            className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
           >
             Reset billing
           </button>
         )}
       </div>
-      {lastFreeMonthGrantedAt && (
+
+      {billingStatus === "ACTIVE" && (
         <p className="text-[10px] text-white/30">
-          Last free month: {new Date(lastFreeMonthGrantedAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
+          Calendar access is active for this manager's account.
         </p>
       )}
-      {error && <p className="text-[10px] text-red-400">{error}</p>}
+
+      {error && (
+        <p className="text-[10px] text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
