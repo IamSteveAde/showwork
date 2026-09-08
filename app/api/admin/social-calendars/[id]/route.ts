@@ -9,9 +9,12 @@ async function requireAdmin() {
   return creator;
 }
 
-// PATCH — grant one free month, or fully reset a calendar's billing
-// state back to a clean slate (mirrors the creator-level tools
-// exactly, just scoped to one calendar instead of one account).
+// PATCH — grant one free month, or fully reset billing back to a
+// clean slate. Billing lives on the manager's account now, not the
+// calendar itself — one subscription (or one trial) covers every
+// calendar that account owns — so both actions here update the
+// manager's Creator row, found via calendar.managerId, rather than
+// the calendar directly.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,38 +33,40 @@ export async function PATCH(
     const oneMonthFromNow = new Date(now);
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
-    const updated = await db.socialCalendar.update({
-      where: { id },
+    const updated = await db.creator.update({
+      where: { id: calendar.managerId },
       data: {
-        billingStatus: "ACTIVE",
-        subscriptionRenewsAt: oneMonthFromNow,
-        wentOfflineAt: null,
-        lastPaymentReminderSentAt: null,
-        lastFreeMonthGrantedAt: now,
+        calendarBillingStatus: "ACTIVE",
+        calendarSubscriptionRenewsAt: oneMonthFromNow,
+        calendarWentOfflineAt: null,
+        calendarLastPaymentReminderSentAt: null,
+        calendarLastFreeMonthGrantedAt: now,
       },
     });
-    return NextResponse.json({ calendar: updated });
+    return NextResponse.json({ creator: updated });
   }
 
-  // Full reset — for a calendar stuck in an inconsistent billing
+  // Full reset — for an account stuck in an inconsistent billing
   // state (leftover Paystack fields with nothing real behind them
   // anymore). Doesn't touch posts, collaborators, or anything else —
-  // only the billing fields, same scope as the creator-level reset.
+  // only the billing fields, and affects every calendar this manager
+  // owns, not just the one this route happened to be reached
+  // through, since billing is account-wide.
   if (action === "reset_billing") {
-    const updated = await db.socialCalendar.update({
-      where: { id },
+    const updated = await db.creator.update({
+      where: { id: calendar.managerId },
       data: {
-        billingStatus: "PENDING_SETUP",
-        paystackCustomerCode: null,
-        paystackSubscriptionCode: null,
-        paystackEmailToken: null,
-        subscriptionRenewsAt: null,
-        pendingSubscriptionRef: null,
-        wentOfflineAt: null,
-        lastPaymentReminderSentAt: null,
+        calendarBillingStatus: "PENDING_SETUP",
+        calendarPaystackCustomerCode: null,
+        calendarPaystackSubscriptionCode: null,
+        calendarPaystackEmailToken: null,
+        calendarSubscriptionRenewsAt: null,
+        calendarPendingSubscriptionRef: null,
+        calendarWentOfflineAt: null,
+        calendarLastPaymentReminderSentAt: null,
       },
     });
-    return NextResponse.json({ calendar: updated });
+    return NextResponse.json({ creator: updated });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
