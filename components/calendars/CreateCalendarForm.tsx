@@ -29,7 +29,11 @@ export default function CreateCalendarForm() {
       const data = await res.json();
 
       if (res.ok) {
-        window.location.href = data.authorizationUrl;
+        if (data.trial) {
+          window.location.href = `/dashboard/calendars/${data.calendarId}`;
+        } else {
+          window.location.href = data.authorizationUrl;
+        }
       } else {
         setError(data.error ?? "Failed to create calendar");
         setLoading(false);
@@ -100,7 +104,7 @@ export default function CreateCalendarForm() {
                 color: "#68A4FF",
               }}
             >
-              ₦5,000 / month
+              ₦2,800 / month
             </span>
 
             <span
@@ -212,9 +216,30 @@ export default function CreateCalendarForm() {
           </div>
 
           <div className="text-right">
-            <p className="text-sm font-semibold text-white">₦5,000</p>
+            <p className="text-sm font-semibold text-white">₦2,800</p>
             <p className="text-[10px] text-white/30">per month</p>
           </div>
+        </div>
+
+        {/* Trial note */}
+        <div
+          className="mb-6 flex items-start gap-3 rounded-xl border px-4 py-3.5"
+          style={{
+            background: "rgba(74,222,128,0.06)",
+            borderColor: "rgba(74,222,128,0.16)",
+          }}
+        >
+          <span
+            className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
+            style={{ background: "rgba(74,222,128,0.14)", color: "#4ade80" }}
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className="text-[11px] leading-relaxed text-white/60">
+            Your very first calendar comes with a free <span className="font-semibold text-white">3-day trial</span> — no payment needed to get started. After that, this one and every calendar after it require an active subscription.
+          </p>
         </div>
 
         <div className="flex flex-col gap-5">
@@ -336,7 +361,7 @@ export default function CreateCalendarForm() {
         </div>
 
         <p className="mt-4 text-center text-[10px] text-white/20">
-          You’ll be taken to secure payment after creating the calendar.
+          If this isn’t your first calendar, you’ll be taken to secure payment right after creating it.
         </p>
       </div>
     </div>

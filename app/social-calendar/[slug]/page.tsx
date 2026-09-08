@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { verifyViewerToken } from "@/lib/auth";
+import { canAccessCalendar } from "@/lib/calendarPermissions";
 import CalendarPasswordGate from "@/components/calendars/CalendarPasswordGate";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
 import CalendarStatsSummary from "@/components/calendars/CalendarStatsSummary";
@@ -44,6 +45,27 @@ export default async function SocialCalendarPage({
 
   if (!viewer) {
     return <CalendarPasswordGate slug={slug} clientName={calendar.clientName} />;
+  }
+
+  // Same gate as the manager's page — a calendar that's never been
+  // paid for, or whose trial has run out, isn't viewable by the
+  // client either. No retry button here since the client can't pay;
+  // this is just a waiting message.
+  if (!canAccessCalendar(calendar)) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6" style={{ background: COLOR.black }}>
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "rgba(239,68,68,0.12)" }}>
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#F87171" strokeWidth="1.8">
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+            </svg>
+          </span>
+          <h1 className="text-xl font-bold text-white">This calendar isn&apos;t active right now</h1>
+          <p className="text-sm text-white/50">Check back once your manager has completed payment for this calendar.</p>
+        </div>
+      </main>
+    );
   }
 
   const desktopBannerUrl = calendar.headerBannerDesktopUrl ? publicUrlFor(calendar.headerBannerDesktopUrl) : null;

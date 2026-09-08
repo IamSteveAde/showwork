@@ -7,9 +7,13 @@ import { appUrl } from "@/lib/url";
 
 const CALENDAR_PLAN_CODE = process.env.PAYSTACK_CALENDAR_PLAN_CODE;
 // Paystack requires a non-zero amount on the request even though the
-// plan's own configured price (₦5,000/month) is what actually gets
+// plan's own configured price (₦2,800/month) is what actually gets
 // charged — same reasoning as the portfolio subscription checkout.
-const CALENDAR_MONTHLY_NGN = 5000;
+const CALENDAR_MONTHLY_NGN = 2800;
+// A manager's very first calendar ever gets this many days of free,
+// full access before payment is required — every calendar after
+// that skips straight to PENDING_SETUP.
+const TRIAL_DAYS = 3;
 
 function slugify(input: string): string {
   return input
@@ -57,21 +61,17 @@ export async function GET() {
   return NextResponse.json({ calendars });
 }
 
-// POST — creates a new calendar for one client, then immediately
-// starts a ₦5,000/month subscription checkout for it. The calendar
-// stays in PENDING_SETUP — invisible to the client link, uneditable
-// in any way that matters — until that first charge is actually
-// confirmed, either by the webhook or the verify-subscription
-// fallback (needed for local development, since webhooks can't reach
-// localhost).
+// POST — creates a new calendar for one client. A manager's first
+// calendar ever gets a free 3-day trial with immediate access; every
+// calendar after that starts a ₦2,800/month subscription checkout
+// and stays in PENDING_SETUP — invisible to the client link,
+// uneditable in any way that matters — until that first charge is
+// actually confirmed, either by the webhook or the
+// verify-subscription fallback (needed for local development, since
+// webhooks can't reach localhost).
 export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  if (!CALENDAR_PLAN_CODE) {
-    console.error("PAYSTACK_CALENDAR_PLAN_CODE is not set — cannot start calendar subscription checkout.");
-    return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });
-  }
 
   const { clientName } = await req.json();
   if (!clientName || !clientName.trim()) {
@@ -81,6 +81,39 @@ export async function POST(req: NextRequest) {
   const slug = await uniqueSlugFor(slugify(clientName.trim()));
   const accessCode = generateAccessCode();
   const passwordHash = await hashPassword(accessCode);
+
+  // Counted before creating the new row — if this manager has never
+  // created a calendar before, this one qualifies for the one-time
+  // free trial. Every calendar after this first one always requires
+  // payment up front, with no exceptions.
+  const existingCalendarCount = await db.socialCalendar.count({ where: { managerId: creator.id } });
+  const isFirstCalendarEver = existingCalendarCount === 0;
+
+  if (isFirstCalendarEver) {
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
+
+    const calendar = await db.socialCalendar.create({
+      data: {
+        slug,
+        clientName: clientName.trim(),
+        passwordHash,
+        accessCode,
+        managerId: creator.id,
+        billingStatus: "TRIAL",
+        trialEndsAt,
+      },
+    });
+
+    // No Paystack step at all for a trial — the manager goes
+    // straight into a fully usable calendar.
+    return NextResponse.json({ calendarId: calendar.id, trial: true });
+  }
+
+  if (!CALENDAR_PLAN_CODE) {
+    console.error("PAYSTACK_CALENDAR_PLAN_CODE is not set — cannot start calendar subscription checkout.");
+    return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });
+  }
 
   const calendar = await db.socialCalendar.create({
     data: {

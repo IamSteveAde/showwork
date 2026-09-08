@@ -127,6 +127,10 @@ export default async function DashboardPage() {
   const creator = await getCurrentCreator();
   if (!creator) redirect("/login");
   const existingPortfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id }, select: { id: true } });
+  // Same "already has one" pattern as the portfolio check above —
+  // this is what lets the button below switch from an invitation to
+  // create, into a shortcut back into calendars that already exist.
+  const existingCalendar = await db.socialCalendar.findFirst({ where: { managerId: creator.id }, select: { id: true } });
 
   // Initial data for the very first paint only — computed exactly the
   // same way /api/dashboard/projects computes it, so there's no
@@ -398,14 +402,17 @@ export default async function DashboardPage() {
                 <IconPortfolio className="h-4 w-4" />
                 {existingPortfolio ? "View portfolio" : "Create your portfolio"}
               </Link>
-              <Link
-                href="/dashboard/calendars"
-                className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
-                style={{ border: "1px solid rgba(255,255,255,0.15)" }}
-              >
-                <IconCalendar className="h-4 w-4" />
-                Create calendar
-              </Link>
+              <div className="flex flex-col gap-1 sm:items-end">
+                <Link
+                  href="/dashboard/calendars"
+                  className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
+                  style={{ border: "1px solid rgba(255,255,255,0.15)" }}
+                >
+                  <IconCalendar className="h-4 w-4" />
+                  {existingCalendar ? "View your calendars" : "Create content calendars"}
+                </Link>
+                <p className="pr-1 text-[10px] text-white/30">Best for social media managers</p>
+              </div>
               
                 <a href={COMMUNITY_URL}
                 target="_blank"

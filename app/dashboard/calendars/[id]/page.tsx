@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
-import { getCalendarRole } from "@/lib/calendarPermissions";
+import { getCalendarRole, canAccessCalendar } from "@/lib/calendarPermissions";
 import CalendarGrid from "@/components/calendars/CalendarGrid";
 import CalendarPlanStatus from "@/components/calendars/CalendarPlanStatus";
 import CalendarReport from "@/components/calendars/CalendarReport";
@@ -11,6 +11,7 @@ import InviteCollaboratorForm from "@/components/calendars/InviteCollaboratorFor
 import CalendarSettingsMenu from "@/components/calendars/CalendarSettingsMenu";
 import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisplay";
 import CalendarStatsSummary from "@/components/calendars/CalendarStatsSummary";
+import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaymentButton";
 import CopyLinkButton from "@/components/CopyLinkButton";
 
 const COLOR = { black: "#0A0A0A", blue: "#2478FF" };
@@ -50,6 +51,41 @@ export default async function CalendarDetailPage({
   if (!userRole) notFound();
   const isManager = calendar.managerId === creator.id;
 
+  // The actual fix for a real bug: this page used to show the full
+  // calendar regardless of billing status, so a manager could hit
+  // back from Paystack mid-checkout, reselect the still-pending
+  // calendar from the list, and get in anyway. Now nothing past this
+  // point renders unless billing genuinely allows it.
+  if (!canAccessCalendar(calendar)) {
+    const trialExpired = calendar.billingStatus === "TRIAL";
+    return (
+      <main className="flex min-h-screen items-center justify-center px-6" style={{ background: COLOR.black }}>
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "rgba(239,68,68,0.12)" }}>
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="#F87171" strokeWidth="1.8">
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" strokeLinecap="round" />
+            </svg>
+          </span>
+          <h1 className="text-xl font-bold text-white">
+            {trialExpired ? "Your free trial has ended" : "Payment required"}
+          </h1>
+          <p className="text-sm text-white/50">
+            {isManager
+              ? trialExpired
+                ? "Your 3-day trial for this calendar is over. Subscribe to keep using it."
+                : "This calendar's first payment was never completed, so it isn't active yet."
+              : "This calendar isn't active right now — check back once the manager has completed payment."}
+          </p>
+          {isManager && <RetryCalendarPaymentButton calendarId={calendar.id} />}
+          <Link href="/dashboard/calendars" className="mt-2 text-xs text-white/40 underline hover:text-white">
+            ← Back to your calendars
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen px-6 py-12 md:px-20" style={{ background: COLOR.black }}>
       <div className="mx-auto max-w-5xl">
@@ -57,14 +93,27 @@ export default async function CalendarDetailPage({
           ← All calendars
         </Link>
 
-        <div className="mb-8 flex items-start justify-between">
+        <div className="mb-8 flex items-start justify-between gap-3">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
               Social calendar
             </p>
             <h1 className="text-3xl font-bold text-white">{calendar.clientName}</h1>
           </div>
-          <CalendarSettingsMenu calendarId={calendar.id} clientName={calendar.clientName} userRole={userRole} isManager={isManager} />
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <a
+              href={`/api/calendars/${calendar.id}/report`}
+              download
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
+              style={{ background: "rgba(255,255,255,0.08)", color: "white" }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M6 1v6.5M6 7.5L3 4.5M6 7.5L9 4.5M1.5 9.5H10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Download report
+            </a>
+            <CalendarSettingsMenu calendarId={calendar.id} clientName={calendar.clientName} userRole={userRole} isManager={isManager} />
+          </div>
         </div>
 
         <div className="mb-6 rounded-2xl p-6" style={{ background: "#1A1A1A" }}>
