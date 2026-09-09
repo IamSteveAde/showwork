@@ -7,6 +7,7 @@ import { canAccessCalendar } from "@/lib/calendarPermissions";
 import CalendarPasswordGate from "@/components/calendars/CalendarPasswordGate";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
 import CalendarStatsSummary from "@/components/calendars/CalendarStatsSummary";
+import Image from "next/image";
 
 const COLOR = {
   black: "#08090B",
@@ -354,27 +355,17 @@ export default async function SocialCalendarPage({
       >
         <div className="mx-auto flex h-[68px] max-w-7xl items-center px-5 sm:px-7 lg:px-10">
           {/* Brand */}
-          <a
-            href="#top"
-            className="flex shrink-0 items-center gap-3"
-            aria-label="Back to top"
-          >
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] text-xs font-bold text-white"
-              style={{
-                background:
-                  "linear-gradient(135deg, #2478FF 0%, #1557C9 100%)",
-                boxShadow:
-                  "0 8px 24px rgba(36,120,255,0.28)",
-              }}
-            >
-              S
-            </span>
-
-            <span className="hidden text-sm font-semibold tracking-[-0.02em] text-white sm:block">
-              Showwork
-            </span>
-          </a>
+          
+          <a href="/#top" className="flex items-center">
+  <Image
+    src="/images/logo/swwhite.svg"
+    alt="Showwork"
+    width={80}
+    height={20}
+    className="h-6 w-auto object-contain"
+    priority
+  />
+</a>
 
           {/* Desktop navigation */}
           <nav
