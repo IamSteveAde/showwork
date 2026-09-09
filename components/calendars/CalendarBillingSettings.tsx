@@ -22,6 +22,32 @@ export default function CalendarBillingSettings({
   const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
   const isActive = billingStatus === "ACTIVE";
 
+  // Same underlying route the "invite a collaborator" upgrade prompt
+  // already uses elsewhere in the app — surfaced here too, so
+  // upgrading doesn't require first stumbling into it by trying to
+  // invite someone.
+  const upgrade = async () => {
+    setLoading("upgrade");
+    setError(null);
+    try {
+      const res = await fetch("/api/calendars/upgrade-to-company", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.authorizationUrl) {
+          window.location.href = data.authorizationUrl;
+        } else {
+          window.location.reload();
+        }
+      } else {
+        setError(data.error ?? "Failed to switch — try again");
+        setLoading(null);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setLoading(null);
+    }
+  };
+
   const downgrade = async () => {
     setLoading("downgrade");
     setError(null);
@@ -117,6 +143,25 @@ export default function CalendarBillingSettings({
       {error && <p className="mb-4 text-xs text-red-400">{error}</p>}
 
       <div className="flex flex-col gap-3">
+        {accountType === "INDIVIDUAL" && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#2478FF]/20 bg-[#2478FF]/[0.05] p-4">
+            <div>
+              <p className="text-sm font-medium text-white">Switch to Company</p>
+              <p className="mt-0.5 text-xs text-white/40">
+                ₦15,000/month — unlocks inviting up to 10 designers or content creators to collaborate.
+              </p>
+            </div>
+            <button
+              onClick={upgrade}
+              disabled={loading === "upgrade"}
+              className="flex-shrink-0 rounded-lg px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
+            >
+              {loading === "upgrade" ? "Switching..." : "Upgrade"}
+            </button>
+          </div>
+        )}
+
         {accountType === "COMPANY" && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] p-4">
             <div>
