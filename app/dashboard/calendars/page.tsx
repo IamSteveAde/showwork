@@ -360,6 +360,28 @@ export default async function CalendarsPage({
                 </p>
               </div>
 
+              {calendarBilling?.calendarAccountType && (
+                <div
+                  className="rounded-2xl border px-4 py-3.5"
+                  style={
+                    calendarBilling.calendarAccountType === "COMPANY"
+                      ? { borderColor: "rgba(36,120,255,0.25)", background: "rgba(36,120,255,0.06)" }
+                      : { borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)" }
+                  }
+                >
+                  <p
+                    className="text-[9px] font-semibold uppercase tracking-[0.14em]"
+                    style={{ color: calendarBilling.calendarAccountType === "COMPANY" ? "#68A4FF" : "rgba(255,255,255,0.25)" }}
+                  >
+                    Plan
+                  </p>
+
+                  <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
+                    {calendarBilling.calendarAccountType === "COMPANY" ? "Company" : "Individual"}
+                  </p>
+                </div>
+              )}
+
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
                 <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
                   Showing
