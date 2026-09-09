@@ -1,16 +1,18 @@
-// ─────────────────────────────────────────────
-// INSTAGRAM GRAPH API — connection (OAuth via Facebook Login for
-// Business) and publishing helpers. Every Instagram Business account
-// must be linked to a Facebook Page — that Page is the
-// authentication anchor Meta requires, even though nothing here ever
-// posts to Facebook itself.
+// ─────────────────────────────────────────────────────────────
+// INSTAGRAM GRAPH API
 //
-// INSTAGRAM_APP_ID is public by design (it appears directly in the
-// OAuth redirect URL a browser is sent to) and can be referenced
-// freely. INSTAGRAM_APP_SECRET must never appear in any response,
-// log, or client-facing code — it's used only in the two
-// server-to-server token-exchange calls below.
-// ─────────────────────────────────────────────
+// Facebook Login → Facebook Pages → Instagram Professional
+// Accounts → Instagram Graph API publishing.
+//
+// SERVER-SIDE ONLY.
+//
+// Never expose:
+// - INSTAGRAM_APP_SECRET
+// - user access tokens
+// - Facebook Page access tokens
+// - Instagram access tokens
+// to the browser.
+// ─────────────────────────────────────────────────────────────
 
 const GRAPH_API_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
@@ -18,73 +20,228 @@ const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 const APP_ID = process.env.INSTAGRAM_APP_ID;
 const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 
-function requireAppCredentials() {
-  if (!APP_ID || !APP_SECRET) {
-    throw new Error("INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET are not set — Instagram publishing isn't configured yet.");
-  }
-  return { APP_ID, APP_SECRET };
+// ─────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────
+
+interface GraphApiError {
+  error?: {
+    message?: string;
+    type?: string;
+    code?: number;
+    error_subcode?: number;
+  };
 }
 
-// Matches Meta's own official Facebook Login for Business
-// documentation for this exact flow. Note: the app dashboard's own
-// "Permissions and features" bullet list displays this specific
-// permission as "instagram_content_publishing" — that's a display
-// label, not the real scope string. The actual OAuth scope Meta's
-// API reference confirms is "instagram_content_publish" (no "ing")
-// — using the dashboard's displayed text directly caused an "Invalid
-// Scope" rejection. pages_read_engagement and business_management
-// are kept since the dashboard specifically listed both as required
-// for this app's "Manage content on Instagram" permission group.
-export const INSTAGRAM_OAUTH_SCOPES =
-  "instagram_basic,instagram_content_publish,pages_read_engagement,business_management,pages_show_list";
+interface FacebookPage {
+  id: string;
+  name: string;
+  access_token: string;
+  instagram_business_account?: {
+    id: string;
+  };
+}
 
-/** Builds the Facebook OAuth dialog URL the manager is redirected to. */
-export function buildInstagramAuthUrl({ redirectUri, state }: { redirectUri: string; state: string }): string {
+export interface InstagramAccountConnection {
+  instagramUserId: string;
+  username: string;
+  facebookPageId: string;
+  facebookPageName: string;
+  pageAccessToken: string;
+}
+
+interface MediaContainerResponse {
+  id: string;
+}
+
+interface ContainerStatusResponse {
+  status_code: string;
+  status?: string;
+}
+
+export type InstagramVideoMediaType = "VIDEO" | "REELS";
+
+// ─────────────────────────────────────────────────────────────
+// APP CREDENTIALS
+// ─────────────────────────────────────────────────────────────
+
+function requireAppCredentials(): {
+  APP_ID: string;
+  APP_SECRET: string;
+} {
+  if (!APP_ID || !APP_SECRET) {
+    throw new Error(
+      "INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET are not set. Instagram publishing is not configured."
+    );
+  }
+
+  return {
+    APP_ID,
+    APP_SECRET,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// OAUTH SCOPES
+// ─────────────────────────────────────────────────────────────
+
+export const INSTAGRAM_OAUTH_SCOPES =
+  "instagram_basic,instagram_content_publish,pages_read_engagement,pages_show_list";
+
+// ─────────────────────────────────────────────────────────────
+// OAUTH URL
+// ─────────────────────────────────────────────────────────────
+
+export function buildInstagramAuthUrl({
+  redirectUri,
+  state,
+}: {
+  redirectUri: string;
+  state: string;
+}): string {
   const { APP_ID } = requireAppCredentials();
+
   const params = new URLSearchParams({
     client_id: APP_ID,
     redirect_uri: redirectUri,
     scope: INSTAGRAM_OAUTH_SCOPES,
     state,
     response_type: "code",
-    // Intentionally NOT using display=page + extras=IG_API_ONBOARDING
-    // here. That combination triggers Meta's guided "Business Login
-    // for Instagram" onboarding wizard, meant for accounts that
-    // haven't yet connected Instagram to a Facebook Page — in
-    // practice it got stuck looping back to this same dialog
-    // indefinitely rather than completing. This plain dialog assumes
-    // the manager's Instagram-to-Page connection is already set up
-    // manually, which just shows the standard permission-grant screen
-    // instead of walking through that setup itself.
   });
+
   return `https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth?${params.toString()}`;
 }
 
-async function graphGet<T>(path: string, params: Record<string, string>): Promise<T> {
-  const url = `${GRAPH_BASE}${path}?${new URLSearchParams(params).toString()}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok || data.error) {
-    throw new Error(data.error?.message ?? `Instagram Graph API request failed (${res.status})`);
+// ─────────────────────────────────────────────────────────────
+// GRAPH API GET
+// ─────────────────────────────────────────────────────────────
+
+async function graphGet<T>(
+  path: string,
+  params: Record<string, string>
+): Promise<T> {
+  const query = new URLSearchParams(params).toString();
+  const url = `${GRAPH_BASE}${path}?${query}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  const data = (await response.json()) as T & GraphApiError;
+
+  if (!response.ok || data.error) {
+    const message =
+      data.error?.message ??
+      `Instagram Graph API request failed (${response.status}).`;
+
+    const details: string[] = [];
+
+    if (data.error?.type) {
+      details.push(`type=${data.error.type}`);
+    }
+
+    if (typeof data.error?.code === "number") {
+      details.push(`code=${data.error.code}`);
+    }
+
+    if (typeof data.error?.error_subcode === "number") {
+      details.push(`subcode=${data.error.error_subcode}`);
+    }
+
+    throw new Error(
+      details.length > 0
+        ? `${message} [${details.join(", ")}]`
+        : message
+    );
   }
+
   return data as T;
 }
 
-/** Step 1 of token exchange — the OAuth `code` for a short-lived user token. */
-export async function exchangeCodeForToken(code: string, redirectUri: string): Promise<{ access_token: string }> {
-  const { APP_ID, APP_SECRET } = requireAppCredentials();
-  return graphGet("/oauth/access_token", {
-    client_id: APP_ID,
-    client_secret: APP_SECRET,
-    redirect_uri: redirectUri,
-    code,
+// ─────────────────────────────────────────────────────────────
+// GRAPH API POST
+// ─────────────────────────────────────────────────────────────
+
+async function graphPost<T>(
+  path: string,
+  params: Record<string, string>
+): Promise<T> {
+  const url = `${GRAPH_BASE}${path}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params).toString(),
   });
+
+  const data = (await response.json()) as T & GraphApiError;
+
+  if (!response.ok || data.error) {
+    const message =
+      data.error?.message ??
+      `Instagram Graph API request failed (${response.status}).`;
+
+    const details: string[] = [];
+
+    if (data.error?.type) {
+      details.push(`type=${data.error.type}`);
+    }
+
+    if (typeof data.error?.code === "number") {
+      details.push(`code=${data.error.code}`);
+    }
+
+    if (typeof data.error?.error_subcode === "number") {
+      details.push(`subcode=${data.error.error_subcode}`);
+    }
+
+    throw new Error(
+      details.length > 0
+        ? `${message} [${details.join(", ")}]`
+        : message
+    );
+  }
+
+  return data as T;
 }
 
-/** Step 2 — exchanges a short-lived token for a long-lived one (~60 days). */
-export async function exchangeForLongLivedToken(shortLivedToken: string): Promise<{ access_token: string; expires_in: number }> {
+// ─────────────────────────────────────────────────────────────
+// TOKEN EXCHANGE
+// ─────────────────────────────────────────────────────────────
+
+export async function exchangeCodeForToken(
+  code: string,
+  redirectUri: string
+): Promise<{ access_token: string }> {
   const { APP_ID, APP_SECRET } = requireAppCredentials();
-  return graphGet("/oauth/access_token", {
+
+  return graphGet<{ access_token: string }>(
+    "/oauth/access_token",
+    {
+      client_id: APP_ID,
+      client_secret: APP_SECRET,
+      redirect_uri: redirectUri,
+      code,
+    }
+  );
+}
+
+export async function exchangeForLongLivedToken(
+  shortLivedToken: string
+): Promise<{
+  access_token: string;
+  expires_in: number;
+}> {
+  const { APP_ID, APP_SECRET } = requireAppCredentials();
+
+  return graphGet<{
+    access_token: string;
+    expires_in: number;
+  }>("/oauth/access_token", {
     grant_type: "fb_exchange_token",
     client_id: APP_ID,
     client_secret: APP_SECRET,
@@ -92,49 +249,105 @@ export async function exchangeForLongLivedToken(shortLivedToken: string): Promis
   });
 }
 
-interface FacebookPage {
-  id: string;
-  name: string;
-  access_token: string;
-  instagram_business_account?: { id: string };
+// ─────────────────────────────────────────────────────────────
+// FACEBOOK PAGES
+// ─────────────────────────────────────────────────────────────
+
+export async function listManagedPages(
+  userAccessToken: string
+): Promise<FacebookPage[]> {
+  const result = await graphGet<{ data: FacebookPage[] }>(
+    "/me/accounts",
+    {
+      access_token: userAccessToken,
+      fields:
+        "id,name,access_token,instagram_business_account",
+    }
+  );
+
+  return result.data ?? [];
 }
 
-/** Every Facebook Page this user manages, each with its own page access token. */
-export async function listManagedPages(userAccessToken: string): Promise<FacebookPage[]> {
-  const result = await graphGet<{ data: FacebookPage[] }>("/me/accounts", {
-    access_token: userAccessToken,
-    fields: "id,name,access_token,instagram_business_account",
-  });
-  return result.data;
-}
+// ─────────────────────────────────────────────────────────────
+// INSTAGRAM ACCOUNT
+// ─────────────────────────────────────────────────────────────
 
-/** The @username for a connected Instagram Business account. */
-export async function getInstagramUsername(igUserId: string, pageAccessToken: string): Promise<string> {
-  const result = await graphGet<{ username: string }>(`/${igUserId}`, {
-    fields: "username",
-    access_token: pageAccessToken,
-  });
+export async function getInstagramUsername(
+  igUserId: string,
+  pageAccessToken: string
+): Promise<string> {
+  const result = await graphGet<{ username: string }>(
+    `/${igUserId}`,
+    {
+      fields: "username",
+      access_token: pageAccessToken,
+    }
+  );
+
+  if (!result.username) {
+    throw new Error(
+      "Instagram account was found, but Meta did not return its username."
+    );
+  }
+
   return result.username;
 }
 
-interface MediaContainerResponse {
-  id: string;
+// ─────────────────────────────────────────────────────────────
+// FIND ALL CONNECTED INSTAGRAM ACCOUNTS
+// ─────────────────────────────────────────────────────────────
+
+export async function listConnectedInstagramAccounts(
+  userAccessToken: string
+): Promise<InstagramAccountConnection[]> {
+  const pages = await listManagedPages(userAccessToken);
+
+  const accounts: InstagramAccountConnection[] = [];
+
+  for (const page of pages) {
+    const instagramUserId =
+      page.instagram_business_account?.id;
+
+    if (!instagramUserId) {
+      continue;
+    }
+
+    try {
+      const username = await getInstagramUsername(
+        instagramUserId,
+        page.access_token
+      );
+
+      accounts.push({
+        instagramUserId,
+        username,
+        facebookPageId: page.id,
+        facebookPageName: page.name,
+        pageAccessToken: page.access_token,
+      });
+    } catch (error) {
+      console.error(
+        `Unable to retrieve Instagram account for Facebook Page ${page.id}:`,
+        error
+      );
+    }
+  }
+
+  return accounts;
 }
 
-/**
- * Creates a media container for a single image or video — step 1 of
- * the two-step publish sequence. `isCarouselItem` marks this as one
- * piece of a multi-item carousel rather than a standalone post; the
- * caption only ever goes on the parent carousel container, never on
- * individual items, per Instagram's own rule.
- */
+// ─────────────────────────────────────────────────────────────
+// CREATE MEDIA CONTAINER
+// ─────────────────────────────────────────────────────────────
+
 export async function createMediaContainer({
   igUserId,
   pageAccessToken,
   imageUrl,
   videoUrl,
   caption,
-  isCarouselItem,
+  isCarouselItem = false,
+  mediaType,
 }: {
   igUserId: string;
   pageAccessToken: string;
@@ -142,26 +355,62 @@ export async function createMediaContainer({
   videoUrl?: string;
   caption?: string;
   isCarouselItem?: boolean;
+  mediaType?: InstagramVideoMediaType;
 }): Promise<string> {
-  const params: Record<string, string> = { access_token: pageAccessToken };
-  if (imageUrl) params.image_url = imageUrl;
+  if (!imageUrl && !videoUrl) {
+    throw new Error(
+      "Instagram media requires either an image URL or video URL."
+    );
+  }
+
+  if (imageUrl && videoUrl) {
+    throw new Error(
+      "Instagram media cannot contain both an image URL and video URL."
+    );
+  }
+
+  const params: Record<string, string> = {
+    access_token: pageAccessToken,
+  };
+
+  if (imageUrl) {
+    params.image_url = imageUrl;
+  }
+
   if (videoUrl) {
     params.video_url = videoUrl;
-    params.media_type = "REELS";
-  }
-  if (caption && !isCarouselItem) params.caption = caption;
-  if (isCarouselItem) params.is_carousel_item = "true";
 
-  const url = `${GRAPH_BASE}/${igUserId}/media?${new URLSearchParams(params).toString()}`;
-  const res = await fetch(url, { method: "POST" });
-  const data = (await res.json()) as MediaContainerResponse & { error?: { message: string } };
-  if (!res.ok || (data as any).error) {
-    throw new Error((data as any).error?.message ?? "Failed to create Instagram media container");
+    params.media_type = isCarouselItem
+      ? "VIDEO"
+      : mediaType ?? "REELS";
   }
-  return data.id;
+
+  if (caption && !isCarouselItem) {
+    params.caption = caption;
+  }
+
+  if (isCarouselItem) {
+    params.is_carousel_item = "true";
+  }
+
+  const result = await graphPost<MediaContainerResponse>(
+    `/${igUserId}/media`,
+    params
+  );
+
+  if (!result.id) {
+    throw new Error(
+      "Instagram did not return a media container ID."
+    );
+  }
+
+  return result.id;
 }
 
-/** Creates the parent container that groups several item containers into one carousel post. */
+// ─────────────────────────────────────────────────────────────
+// CREATE CAROUSEL CONTAINER
+// ─────────────────────────────────────────────────────────────
+
 export async function createCarouselContainer({
   igUserId,
   pageAccessToken,
@@ -173,61 +422,138 @@ export async function createCarouselContainer({
   childContainerIds: string[];
   caption?: string;
 }): Promise<string> {
+  if (childContainerIds.length < 2) {
+    throw new Error(
+      "An Instagram carousel requires at least two media items."
+    );
+  }
+
+  if (childContainerIds.length > 10) {
+    throw new Error(
+      "An Instagram carousel cannot contain more than ten media items."
+    );
+  }
+
   const params: Record<string, string> = {
     access_token: pageAccessToken,
     media_type: "CAROUSEL",
     children: childContainerIds.join(","),
   };
-  if (caption) params.caption = caption;
 
-  const url = `${GRAPH_BASE}/${igUserId}/media?${new URLSearchParams(params).toString()}`;
-  const res = await fetch(url, { method: "POST" });
-  const data = (await res.json()) as MediaContainerResponse & { error?: { message: string } };
-  if (!res.ok || (data as any).error) {
-    throw new Error((data as any).error?.message ?? "Failed to create Instagram carousel container");
+  if (caption) {
+    params.caption = caption;
   }
-  return data.id;
+
+  const result = await graphPost<MediaContainerResponse>(
+    `/${igUserId}/media`,
+    params
+  );
+
+  if (!result.id) {
+    throw new Error(
+      "Instagram did not return a carousel container ID."
+    );
+  }
+
+  return result.id;
 }
 
-/**
- * Video containers process asynchronously on Meta's side — this
- * polls status_code until it reports FINISHED (or ERROR) before the
- * container can actually be published. Not needed for plain images,
- * which are ready immediately.
- */
-export async function waitForContainerReady(containerId: string, pageAccessToken: string, maxAttempts = 20): Promise<void> {
+// ─────────────────────────────────────────────────────────────
+// WAIT FOR MEDIA PROCESSING
+// ─────────────────────────────────────────────────────────────
+
+export async function waitForContainerReady(
+  containerId: string,
+  pageAccessToken: string,
+  maxAttempts = 5
+): Promise<void> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const result = await graphGet<{ status_code: string }>(`/${containerId}`, {
-      fields: "status_code",
+    const result =
+      await graphGet<ContainerStatusResponse>(
+        `/${containerId}`,
+        {
+          fields: "status_code,status",
+          access_token: pageAccessToken,
+        }
+      );
+
+    const status = result.status_code;
+
+    if (
+      status === "FINISHED" ||
+      status === "PUBLISHED"
+    ) {
+      return;
+    }
+
+    if (status === "ERROR") {
+      throw new Error(
+        result.status ||
+          "Instagram failed to process the media."
+      );
+    }
+
+    if (status === "EXPIRED") {
+      throw new Error(
+        "The Instagram media container expired before publishing."
+      );
+    }
+
+    if (attempt < maxAttempts - 1) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 60_000);
+      });
+    }
+  }
+
+  throw new Error(
+    "Timed out waiting for Instagram to finish processing the media."
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PUBLISH CONTAINER
+// ─────────────────────────────────────────────────────────────
+
+export async function publishContainer(
+  igUserId: string,
+  containerId: string,
+  pageAccessToken: string
+): Promise<string> {
+  const result = await graphPost<{ id: string }>(
+    `/${igUserId}/media_publish`,
+    {
+      creation_id: containerId,
       access_token: pageAccessToken,
-    });
-    if (result.status_code === "FINISHED") return;
-    if (result.status_code === "ERROR") throw new Error("Instagram failed to process the uploaded media");
-    await new Promise((r) => setTimeout(r, 3000));
+    }
+  );
+
+  if (!result.id) {
+    throw new Error(
+      "Instagram did not return the published media ID."
+    );
   }
-  throw new Error("Timed out waiting for Instagram to process the uploaded media");
+
+  return result.id;
 }
 
-/** Step 2 of publishing — actually makes the container go live. Returns the real Instagram media id. */
-export async function publishContainer(igUserId: string, containerId: string, pageAccessToken: string): Promise<string> {
-  const params = { creation_id: containerId, access_token: pageAccessToken };
-  const url = `${GRAPH_BASE}/${igUserId}/media_publish?${new URLSearchParams(params).toString()}`;
-  const res = await fetch(url, { method: "POST" });
-  const data = (await res.json()) as { id: string; error?: { message: string } };
-  if (!res.ok || data.error) {
-    throw new Error(data.error?.message ?? "Failed to publish to Instagram");
-  }
-  return data.id;
-}
+// ─────────────────────────────────────────────────────────────
+// GET PUBLISHED MEDIA PERMALINK
+// ─────────────────────────────────────────────────────────────
 
-/** The permalink (public URL) for an already-published post, fetched once right after publishing. */
-export async function getMediaPermalink(mediaId: string, pageAccessToken: string): Promise<string | null> {
+export async function getMediaPermalink(
+  mediaId: string,
+  pageAccessToken: string
+): Promise<string | null> {
   try {
-    const result = await graphGet<{ permalink: string }>(`/${mediaId}`, {
+    const result = await graphGet<{
+      permalink?: string;
+    }>(`/${mediaId}`, {
       fields: "permalink",
       access_token: pageAccessToken,
     });
-    return result.permalink;
+
+    return result.permalink ?? null;
   } catch {
     return null;
   }
