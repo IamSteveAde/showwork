@@ -349,50 +349,97 @@ export default async function CalendarsPage({
             </div>
 
             {/* Summary */}
-            <div className="flex shrink-0 items-center gap-3">
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
-                  Total workspaces
-                </p>
+            <div className="relative flex shrink-0 items-stretch overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.035] shadow-[0_18px_55px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+  {/* Ambient accent */}
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full blur-[55px]"
+    style={{ background: "rgba(36,120,255,0.16)" }}
+  />
 
-                <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                  {totalCalendars}
-                </p>
-              </div>
+  {/* Total workspaces */}
+  <div className="relative min-w-[116px] px-5 py-4">
+    <div className="flex items-center gap-2">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]" />
 
-              {calendarBilling?.calendarAccountType && (
-                <div
-                  className="rounded-2xl border px-4 py-3.5"
-                  style={
-                    calendarBilling.calendarAccountType === "COMPANY"
-                      ? { borderColor: "rgba(36,120,255,0.25)", background: "rgba(36,120,255,0.06)" }
-                      : { borderColor: "rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)" }
-                  }
-                >
-                  <p
-                    className="text-[9px] font-semibold uppercase tracking-[0.14em]"
-                    style={{ color: calendarBilling.calendarAccountType === "COMPANY" ? "#68A4FF" : "rgba(255,255,255,0.25)" }}
-                  >
-                    Plan
-                  </p>
+      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
+        Workspaces
+      </p>
+    </div>
 
-                  <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                    {calendarBilling.calendarAccountType === "COMPANY" ? "Company" : "Individual"}
-                  </p>
-                </div>
-              )}
+    <p className="mt-2 text-[27px] font-semibold leading-none tracking-[-0.045em] text-white">
+      {totalCalendars}
+    </p>
 
-              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/25">
-                  Showing
-                </p>
+    <p className="mt-1.5 text-[10px] text-white/25">
+      {totalCalendars === 1 ? "client space" : "client spaces"}
+    </p>
+  </div>
 
-                <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
-                  {calendars.length}
-                </p>
-              </div>
-            </div>
-          </div>
+  {/* Divider */}
+  {calendarBilling?.calendarAccountType && (
+    <>
+      <div className="my-4 w-px bg-white/[0.08]" />
+
+      {/* Account plan */}
+      <div className="relative min-w-[126px] px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              calendarBilling.calendarAccountType === "COMPANY"
+                ? "bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]"
+                : "bg-white/40"
+            }`}
+          />
+
+          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
+            Account
+          </p>
+        </div>
+
+        <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.025em] text-white">
+          {calendarBilling.calendarAccountType === "COMPANY"
+            ? "Company"
+            : "Individual"}
+        </p>
+
+        <p
+          className="mt-1.5 text-[10px] font-medium"
+          style={{
+            color:
+              calendarBilling.calendarAccountType === "COMPANY"
+                ? "#68A4FF"
+                : "rgba(255,255,255,0.30)",
+          }}
+        >
+          Account plan
+        </p>
+      </div>
+    </>
+  )}
+
+  {/* Divider */}
+  <div className="my-4 w-px bg-white/[0.08]" />
+
+  {/* Showing */}
+  <div className="relative min-w-[104px] px-5 py-4">
+    <div className="flex items-center gap-2">
+      <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
+
+      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
+        Showing
+      </p>
+    </div>
+
+    <p className="mt-2 text-[27px] font-semibold leading-none tracking-[-0.045em] text-white">
+      {calendars.length}
+    </p>
+
+    <p className="mt-1.5 text-[10px] text-white/25">
+      on this page
+    </p>
+  </div>
+</div></div>
         </header>
 
         {calendarBilling?.calendarBillingStatus === "TRIAL" && calendarBilling.calendarTrialEndsAt && calendarBilling.calendarAccountType && (
