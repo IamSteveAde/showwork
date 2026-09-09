@@ -297,6 +297,14 @@ export default function NewProjectPage() {
   const [tagline, setTagline] = useState("");
   const [heroLocalId, setHeroLocalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // True specifically when project creation itself was rejected
+  // because the creator is at their tier's cap (a 403 from
+  // /api/projects) — distinct from any other error, since only this
+  // case should show an actual "Upgrade" link rather than just the
+  // plain error text. The proactive usage banner above the form
+  // already catches most people before they ever get here; this is
+  // the fallback for whenever that banner was stale or missed it.
+  const [isCapError, setIsCapError] = useState(false);
 
   // The list of sections the creator has built up so far — each with
   // its own name, type, and files. Replaces the old single flat dropzone.
@@ -567,6 +575,7 @@ export default function NewProjectPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsCapError(false);
 
     if (!clientName || !password) {
       setError("Client name and an access code are required");
@@ -585,6 +594,7 @@ export default function NewProjectPage() {
       });
       if (!createRes.ok) {
         const data = await createRes.json();
+        setIsCapError(createRes.status === 403);
         throw new Error(data.error ?? "Failed to create project");
       }
       const { project } = await createRes.json();
@@ -1420,7 +1430,19 @@ export default function NewProjectPage() {
             </div>
           )}
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && (
+            <div className="flex flex-col gap-3 rounded-xl bg-red-500/[0.08] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-red-400">{error}</p>
+              {isCapError && (
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex w-fit flex-shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25"
+                >
+                  Upgrade now →
+                </Link>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"

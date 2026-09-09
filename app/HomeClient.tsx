@@ -793,14 +793,14 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
               MAIN HEADLINE
           =================================================== */}
 
-          <h1 className="font-[var(--font-fraunces)] text-[clamp(3.4rem,8.4vw,7.8rem)] font-normal leading-[0.87] tracking-[-0.055em] text-[#07080A]">
-            <span className="block">Make the work.</span>
+          <h1 className="font-[var(--font-fraunces)] text-[clamp(2.0rem,6.0vw,6.0rem)] font-normal leading-[0.87] tracking-[-0.055em] text-[#07080A]">
+            <span className="block">Your work deserves</span>
 
             <span className="relative mt-1 block">
               <span className="relative z-10">
-                Move the{" "}
+                better than a{" "}
                 <em className="relative font-normal not-italic text-[#2478FF]">
-                  work.
+                  random link
                 </em>
               </span>
 
@@ -842,9 +842,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
             }}
             className="mx-auto mt-10 max-w-[600px] text-[15px] leading-7 text-black/55 sm:text-[17px] sm:leading-8"
           >
-            Create your portfolio, deliver projects, collaborate with
-            clients and keep your creative business moving — all in one
-            considered space built for people who make things.
+            Deliver client work through a premium, password-protected showcase. Build your portfolio, manage projects, collaborate with client and hand off work the way a top creative should
           </motion.p>
 
           {/* ==================================================

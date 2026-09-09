@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentCreator, hashPassword } from "@/lib/auth";
+import { getCreatorUsage } from "@/lib/subscriptionUsage";
 
 // Standard URL-safe slugify — same approach used when renaming a
 // delivery project elsewhere in the app.
@@ -40,13 +41,32 @@ function generateAccessCode(): string {
 // the same link switches to showing finished files. There's no
 // separate "link to an existing delivery" step anymore — every
 // managed project owns exactly one delivery, created here.
+//
+// Since this always creates a real delivery Project row alongside
+// the managed project, it's blocked by the exact same tier-limit
+// check as app/api/projects/route.ts — without this, a managed
+// project was a second, uncounted way to create deliveries, letting
+// someone already at their cap keep creating unlimited more through
+// this path alone.
 export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const usage = await getCreatorUsage(creator);
+  if (usage.atCap) {
+    return NextResponse.json(
+      {
+        error:
+          usage.tier === "FREE"
+            ? "You've used your free project this month. Upgrade to create more."
+            : `You've reached your ${usage.limit}-project limit for this billing cycle. Upgrade to create more.`,
+      },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const { name } = body;
-
   if (typeof name !== "string" || !name.trim()) {
     return NextResponse.json({ error: "Give this project a name" }, { status: 400 });
   }
@@ -84,7 +104,6 @@ export async function POST(req: NextRequest) {
   const slug = await findAvailableSlug(trimmedName);
   const accessCode = generateAccessCode();
   const passwordHash = await hashPassword(accessCode);
-
   const deliveryProject = await db.project.create({
     data: {
       slug,
@@ -94,7 +113,6 @@ export async function POST(req: NextRequest) {
       creatorId: creator.id,
     },
   });
-
   const managedProject = await db.managedProject.create({
     data: { ...briefData, deliveryProjectId: deliveryProject.id },
   });
