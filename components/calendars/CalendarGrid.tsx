@@ -32,6 +32,8 @@ interface CalendarPostCustomFieldData {
   value: string;
 }
 
+type InstagramPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+
 interface CalendarPostData {
   id: string;
   postDate: string;
@@ -46,6 +48,9 @@ interface CalendarPostData {
   linkUrl: string | null;
   approvalStatus: ApprovalStatus;
   approvalNote: string | null;
+  instagramPublishStatus: InstagramPublishStatus;
+  instagramPermalink: string | null;
+  instagramPublishError: string | null;
   assets: CalendarPostAssetData[];
   videoComments: CalendarVideoCommentData[];
   customFields: CalendarPostCustomFieldData[];
@@ -495,6 +500,21 @@ function PostTile({
 
   const tiltDeg = index % 2 === 0 ? -2 : 2;
 
+  // Once an Instagram post has actually been scheduled, published,
+  // or failed, that's more actionable information than the plain
+  // approval status underneath it — this overrides the bottom badge
+  // text/color in that case, rather than showing both at once on a
+  // tile this small.
+  const instagramStatusMeta =
+    post.platform === "INSTAGRAM" && post.instagramPublishStatus !== "NOT_SCHEDULED"
+      ? post.instagramPublishStatus === "PUBLISHED"
+        ? { text: "Live on Instagram", color: "#E1306C" }
+        : post.instagramPublishStatus === "SCHEDULED"
+        ? { text: "Scheduled to publish", color: "#2478FF" }
+        : { text: "Publish failed", color: "#EF4444" }
+      : null;
+  const bottomStatusMeta = instagramStatusMeta ?? approvalMeta;
+
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -694,7 +714,8 @@ function PostTile({
             </span>
           )}
 
-        {/* Status */}
+           {/* Status — Instagram publish status when relevant, plain
+            approval status otherwise. */}
         {cover && (
           <span
             className="
@@ -708,11 +729,11 @@ function PostTile({
               font-semibold
             "
             style={{
-              color: approvalMeta.color,
+              color: bottomStatusMeta.color,
               background: "rgba(0,0,0,0.55)",
             }}
           >
-            {approvalMeta.text}
+            {bottomStatusMeta.text}
           </span>
         )}
       </button>
@@ -3184,7 +3205,7 @@ function PostDetailPanel({
                   </div>
                 </div>
 
-                {post.approvalStatus ===
+                                {post.approvalStatus ===
                   "NEEDS_REVISION" &&
                   post.approvalNote && (
                     <div
@@ -3232,6 +3253,80 @@ function PostDetailPanel({
                   )}
               </section>
             )}
+
+            {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
+                post has actually been scheduled, published, or
+                failed; a post that's never been through that at all
+                shows nothing here. */}
+            {post.platform === "INSTAGRAM" &&
+              post.instagramPublishStatus !== "NOT_SCHEDULED" && (
+                <section>
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{
+                      background:
+                        post.instagramPublishStatus === "PUBLISHED"
+                          ? "rgba(225,48,108,0.06)"
+                          : post.instagramPublishStatus === "FAILED"
+                          ? "rgba(239,68,68,0.06)"
+                          : "rgba(36,120,255,0.06)",
+                      borderColor:
+                        post.instagramPublishStatus === "PUBLISHED"
+                          ? "rgba(225,48,108,0.16)"
+                          : post.instagramPublishStatus === "FAILED"
+                          ? "rgba(239,68,68,0.16)"
+                          : "rgba(36,120,255,0.16)",
+                    }}
+                  >
+                    <p
+                      className="mb-1.5 text-[10px] font-bold uppercase"
+                      style={{
+                        letterSpacing: "0.08em",
+                        color:
+                          post.instagramPublishStatus === "PUBLISHED"
+                            ? "#E1306C"
+                            : post.instagramPublishStatus === "FAILED"
+                            ? "#EF4444"
+                            : "#2478FF",
+                      }}
+                    >
+                      Instagram
+                    </p>
+
+                    {post.instagramPublishStatus === "SCHEDULED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        This will publish to Instagram automatically once its scheduled time arrives — no manual posting needed.
+                      </p>
+                    )}
+
+                    {post.instagramPublishStatus === "PUBLISHED" && (
+                      <>
+                        <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                          This post is live on Instagram.
+                        </p>
+                        {post.instagramPermalink && (
+                          
+                          <a href={post.instagramPermalink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
+                            style={{ color: "#E1306C" }}
+                          >
+                            View on Instagram
+                            <span aria-hidden>↗</span>
+                          </a>
+                        )}
+                      </>
+                    )}
+
+                    {post.instagramPublishStatus === "FAILED" && (
+                      <p className="text-sm leading-relaxed text-red-400">
+                        {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
 
             {/* MEDIA */}
             <section>
