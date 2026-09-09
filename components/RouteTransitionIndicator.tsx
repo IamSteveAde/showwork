@@ -1,111 +1,321 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-/**
- * Next.js's built-in loading.tsx only appears once the target page
- * actually starts fetching data — there's a real gap between "user
- * clicked" and "navigation started" where nothing shows at all, which
- * is exactly what reads as unresponsive. This shows the same gold
- * roller the instant any internal link is clicked, then hides it once
- * the URL actually changes (confirming the navigation went through).
- *
- * Safety net: if a click is detected but the URL never actually
- * changes (e.g. a link-wrapped button that calls preventDefault to do
- * something other than navigate, like a delete action), this would
- * otherwise get stuck showing forever, since its only normal "hide"
- * condition is a URL change. A timeout forces it off after a few
- * seconds regardless, so it can never be permanently stuck.
- */
+const BLUE = "#2478FF";
+
 export default function RouteTransitionIndicator() {
   const [active, setActive] = useState(false);
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /*
+   * Hide the loader once the destination URL changes.
+   */
   useEffect(() => {
+    if (!active) return;
+
     setActive(false);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   }, [pathname, searchParams]);
 
+  /*
+   * Detect internal navigation immediately.
+   */
   useEffect(() => {
-    if (active) {
-      timeoutRef.current = setTimeout(() => setActive(false), 4000);
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [active]);
+    const handleClick = (event: MouseEvent) => {
+      if (
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
 
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const anchor = (e.target as HTMLElement)?.closest("a");
-      if (!anchor) return;
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const anchor = target.closest("a");
+
+      if (!anchor) {
+        return;
+      }
 
       const href = anchor.getAttribute("href");
-      if (!href || !href.startsWith("/")) return; // only internal links
-      if (anchor.target === "_blank") return; // opens a new tab, not a real navigation here
-      if (e.metaKey || e.ctrlKey || e.shiftKey) return; // opening in new tab/window
 
-      // Same destination — nothing will actually navigate.
-      if (href === pathname) return;
+      if (!href) {
+        return;
+      }
 
+      /*
+       * Only internal navigation.
+       */
+      if (!href.startsWith("/")) {
+        return;
+      }
+
+      /*
+       * Ignore hash links.
+       */
+      if (href.startsWith("#")) {
+        return;
+      }
+
+      /*
+       * Ignore downloads.
+       */
+      if (anchor.hasAttribute("download")) {
+        return;
+      }
+
+      /*
+       * Ignore links opening a new tab.
+       */
+      if (anchor.target === "_blank") {
+        return;
+      }
+
+      /*
+       * Ignore API and Next.js internal URLs.
+       */
+      if (
+        href.startsWith("/api/") ||
+        href.startsWith("/_next/")
+      ) {
+        return;
+      }
+
+      const currentUrl =
+        pathname +
+        (searchParams?.toString()
+          ? `?${searchParams.toString()}`
+          : "");
+
+      const normalize = (value: string) => {
+        if (value === "/") return "/";
+        return value.replace(/\/+$/, "");
+      };
+
+      if (normalize(href) === normalize(currentUrl)) {
+        return;
+      }
+
+      /*
+       * Already showing.
+       */
+      if (active) {
+        return;
+      }
+
+      /*
+       * Show immediately.
+       */
       setActive(true);
+
+      /*
+       * Safety timeout.
+       */
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setActive(false);
+        timeoutRef.current = null;
+      }, 4000);
     };
 
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [pathname]);
+    document.addEventListener("click", handleClick, true);
 
-  if (!active) return null;
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+    };
+  }, [pathname, searchParams, active]);
+
+  /*
+   * Cleanup.
+   */
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (!active) {
+    return null;
+  }
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading"
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 200,
+        zIndex: 99999,
+
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 20,
-        background: "rgba(10,10,10,0.45)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+
+        background: "rgba(7, 7, 8, 0.72)",
+
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+
+        pointerEvents: "none",
       }}
     >
       <style>{`
-        @keyframes showwork-spin { to { transform: rotate(360deg); } }
-        @keyframes showwork-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+        @keyframes showwork-dot-bounce {
+          0%,
+          60%,
+          100% {
+            transform: translateY(0) scale(1);
+          }
+
+          30% {
+            transform: translateY(-12px) scale(1.04);
+          }
+        }
+
+        @keyframes showwork-loader-in {
+          from {
+            opacity: 0;
+          }
+
+          to {
+            opacity: 1;
+          }
+        }
+
+        .showwork-loader {
+          animation: showwork-loader-in 160ms ease-out both;
+        }
+
+        .showwork-dot {
+          animation:
+            showwork-dot-bounce
+            900ms
+            cubic-bezier(0.34, 1.56, 0.64, 1)
+            infinite;
+        }
+
+        .showwork-dot-1 {
+          animation-delay: 0ms;
+        }
+
+        .showwork-dot-2 {
+          animation-delay: 120ms;
+        }
+
+        .showwork-dot-3 {
+          animation-delay: 240ms;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .showwork-dot {
+            animation: none;
+          }
+        }
       `}</style>
-      <div style={{ position: "relative", width: 56, height: 56 }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: "9999px", border: "3px solid rgba(245,200,66,0.15)" }} />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "9999px",
-            border: "3px solid transparent",
-            borderTopColor: "#F5C842",
-            borderRightColor: "#F5C842",
-            animation: "showwork-spin 0.9s linear infinite",
-          }}
-        />
-      </div>
-      <p
+
+      <div
+        className="showwork-loader"
         style={{
-          fontFamily: "sans-serif",
-          fontSize: 13,
-          fontWeight: 600,
-          letterSpacing: "0.15em",
-          textTransform: "uppercase",
-          color: "rgba(255,255,255,0.4)",
-          animation: "showwork-pulse 1.6s ease-in-out infinite",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        Show<span style={{ color: "#F5C842" }}>work</span>
-      </p>
+        {/* Bouncing dots */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap: 8,
+            height: 32,
+          }}
+        >
+          {/* Dot 1 */}
+          <span
+            className="showwork-dot showwork-dot-1"
+            style={{
+              display: "block",
+
+              width: 9,
+              height: 9,
+
+              borderRadius: "50%",
+
+              background: BLUE,
+
+              boxShadow:
+                "0 3px 12px rgba(36, 120, 255, 0.38)",
+
+              willChange: "transform",
+            }}
+          />
+
+          {/* Dot 2 */}
+          <span
+            className="showwork-dot showwork-dot-2"
+            style={{
+              display: "block",
+
+              width: 11,
+              height: 11,
+
+              borderRadius: "50%",
+
+              background: BLUE,
+
+              boxShadow:
+                "0 3px 14px rgba(36, 120, 255, 0.42)",
+
+              willChange: "transform",
+            }}
+          />
+
+          {/* Dot 3 */}
+          <span
+            className="showwork-dot showwork-dot-3"
+            style={{
+              display: "block",
+
+              width: 9,
+              height: 9,
+
+              borderRadius: "50%",
+
+              background: BLUE,
+
+              boxShadow:
+                "0 3px 12px rgba(36, 120, 255, 0.38)",
+
+              willChange: "transform",
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }

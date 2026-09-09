@@ -117,6 +117,12 @@ export default function NewManagedProjectPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // True specifically when the server rejected the request because
+  // the creator is at their tier's project cap — distinct from any
+  // other error (a validation failure, network issue, etc.), since
+  // only this case should show an actual "Upgrade" link rather than
+  // just the plain error text.
+  const [isCapError, setIsCapError] = useState(false);
 
   const update =
     (field: keyof typeof brief) =>
@@ -134,6 +140,7 @@ export default function NewManagedProjectPage() {
 
     setLoading(true);
     setError(null);
+    setIsCapError(false);
 
     try {
       const res = await fetch("/api/managed-projects", {
@@ -150,6 +157,7 @@ export default function NewManagedProjectPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        setIsCapError(res.status === 403);
         throw new Error(data.error ?? "Failed to create project");
       }
 
@@ -462,8 +470,17 @@ export default function NewManagedProjectPage() {
               </section>
 
               {error && (
-                <div className="mt-7 rounded-[20px] bg-red-500/[0.08] px-5 py-4">
+                <div className="mt-7 flex flex-col gap-3 rounded-[20px] bg-red-500/[0.08] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-red-300">{error}</p>
+                  {isCapError && (
+                    <Link
+                      href="/dashboard/billing"
+                      className="inline-flex w-fit flex-shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25"
+                    >
+                      Upgrade now
+                      <IconArrowUpRight className="h-3 w-3" />
+                    </Link>
+                  )}
                 </div>
               )}
 
