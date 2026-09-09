@@ -47,14 +47,15 @@ export function buildInstagramAuthUrl({ redirectUri, state }: { redirectUri: str
     scope: INSTAGRAM_OAUTH_SCOPES,
     state,
     response_type: "code",
-    // Both required by Meta's "Business Login for Instagram" flow —
-    // without `extras` specifically marking this as an Instagram API
-    // onboarding request, the Instagram-namespaced scopes above
-    // (instagram_basic, instagram_content_publish) get rejected as
-    // invalid, even though they're the exact permission names Meta's
-    // own docs list for this same flow.
-    display: "page",
-    extras: JSON.stringify({ setup: { channel: "IG_API_ONBOARDING" } }),
+    // Intentionally NOT using display=page + extras=IG_API_ONBOARDING
+    // here. That combination triggers Meta's guided "Business Login
+    // for Instagram" onboarding wizard, meant for accounts that
+    // haven't yet connected Instagram to a Facebook Page — in
+    // practice it got stuck looping back to this same dialog
+    // indefinitely rather than completing. This plain dialog assumes
+    // the manager's Instagram-to-Page connection is already set up
+    // manually, which just shows the standard permission-grant screen
+    // instead of walking through that setup itself.
   });
   return `https://www.facebook.com/${GRAPH_API_VERSION}/dialog/oauth?${params.toString()}`;
 }
