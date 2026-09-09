@@ -10,13 +10,23 @@ const INDIVIDUAL_MONTHLY_NGN = 2800;
 
 // POST — switches a Company account back to Individual. Blocked
 // entirely if any collaborator or pending invite still exists on any
-// calendar this account owns — an Individual account can't
-// collaborate at all, so downgrading with people still attached
-// would leave them with access that shouldn't be possible under that
-// tier. The manager has to remove everyone first.
+// calendar this account owns.
+//
+// What happens next mirrors the upgrade route's logic exactly, just
+// in the other direction:
+//   - ACTIVE: always straight to checkout (cancel old, start new).
+//   - TRIAL, already expired: also straight to checkout automatically
+//     — already locked out either way.
+//   - TRIAL, still valid: only case with a real choice — `payNow`
+//     (set by the frontend after prompting the person) decides
+//     whether to check out now or just apply the switch and leave
+//     them on the remainder of their trial.
+//   - PENDING_SETUP / OFFLINE: straight to checkout, same as expired.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { payNow } = await req.json().catch(() => ({ payNow: false }));
 
   const creator = await db.creator.findUnique({
     where: { id: session.id },
@@ -25,6 +35,7 @@ export async function POST(req: NextRequest) {
       email: true,
       calendarAccountType: true,
       calendarBillingStatus: true,
+      calendarTrialEndsAt: true,
       calendarPaystackSubscriptionCode: true,
       calendarPaystackEmailToken: true,
     },
@@ -51,15 +62,15 @@ export async function POST(req: NextRequest) {
     data: { calendarAccountType: "INDIVIDUAL" },
   });
 
-  // Not currently an active paying subscription — trial, offline, or
-  // never-paid all land here. The type switch above is all that's
-  // needed; nothing further to charge or cancel.
-  if (creator.calendarBillingStatus !== "ACTIVE") {
-    return NextResponse.json({ ok: true, requiresPayment: false });
+  const trialStillValid =
+    creator.calendarBillingStatus === "TRIAL" &&
+    !!creator.calendarTrialEndsAt &&
+    creator.calendarTrialEndsAt.getTime() > Date.now();
+
+  if (trialStillValid && !payNow) {
+    return NextResponse.json({ ok: true, requiresPayment: false, stillInTrial: true });
   }
 
-  // Currently paying as Company — cancel that subscription and start
-  // a fresh, cheaper Individual one in its place.
   if (!INDIVIDUAL_PLAN_CODE) {
     console.error("PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE is not set — cannot start Individual checkout.");
     return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });

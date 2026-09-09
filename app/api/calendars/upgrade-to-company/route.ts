@@ -10,16 +10,29 @@ const COMPANY_MONTHLY_NGN = 15000;
 
 // POST — switches an Individual account to Company, the only way to
 // unlock collaboration. The account type itself changes immediately
-// regardless of billing state (an account still inside its free
-// trial gets to invite people right away, same trial window, no
-// payment required yet). A real Paystack checkout is only ever
-// started here if the account is currently ACTIVE and paying — in
-// that case, the existing Individual subscription is cancelled and a
-// new Company one takes its place, same "switch" pattern already
-// used for the main platform's own subscription tiers.
+// regardless of billing state.
+//
+// What happens next depends on where billing actually stands:
+//   - ACTIVE (already paying): always goes straight to checkout —
+//     cancels the old Individual subscription and starts a new
+//     Company one, since there's no valid reason to delay this once
+//     real money is already involved.
+//   - TRIAL, but that trial has already run out: also goes straight
+//     to checkout automatically — the account is already locked out
+//     either way, so there's nothing to "stay on" by waiting.
+//   - TRIAL, and still genuinely valid: this is the one case with a
+//     real choice. `payNow` (sent by the frontend after showing the
+//     person a prompt recommending they pay now) decides whether to
+//     start checkout immediately or just apply the type switch and
+//     leave them on the remainder of their trial.
+//   - PENDING_SETUP / OFFLINE (never paid, or a past renewal failed):
+//     same as an expired trial — already locked out, so straight to
+//     checkout.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { payNow } = await req.json().catch(() => ({ payNow: false }));
 
   const creator = await db.creator.findUnique({
     where: { id: session.id },
@@ -28,6 +41,7 @@ export async function POST(req: NextRequest) {
       email: true,
       calendarAccountType: true,
       calendarBillingStatus: true,
+      calendarTrialEndsAt: true,
       calendarPaystackSubscriptionCode: true,
       calendarPaystackEmailToken: true,
     },
@@ -43,18 +57,20 @@ export async function POST(req: NextRequest) {
     data: { calendarAccountType: "COMPANY" },
   });
 
-  // Not currently an active paying subscription — trial, offline, or
-  // never-paid all land here. The type switch above is all that's
-  // needed; billing (if any is ever owed) is handled the normal way,
-  // through the existing trial-expiry or retry-payment flow, which
-  // already reads calendarAccountType fresh and will charge the
-  // Company price once it actually runs.
-  if (creator.calendarBillingStatus !== "ACTIVE") {
-    return NextResponse.json({ ok: true, requiresPayment: false });
+  const trialStillValid =
+    creator.calendarBillingStatus === "TRIAL" &&
+    !!creator.calendarTrialEndsAt &&
+    creator.calendarTrialEndsAt.getTime() > Date.now();
+
+  // Only case where checkout is genuinely optional: a trial that
+  // hasn't run out yet, and the frontend hasn't confirmed the person
+  // wants to pay right now.
+  if (trialStillValid && !payNow) {
+    return NextResponse.json({ ok: true, requiresPayment: false, stillInTrial: true });
   }
 
-  // Currently paying as Individual — cancel that subscription and
-  // start a fresh Company one in its place.
+  // Every other case — already active, trial expired, or never paid
+  // at all — needs a real checkout now.
   if (!COMPANY_PLAN_CODE) {
     console.error("PAYSTACK_CALENDAR_COMPANY_PLAN_CODE is not set — cannot start Company checkout.");
     return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });

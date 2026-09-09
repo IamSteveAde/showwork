@@ -410,6 +410,7 @@ export default async function CalendarsPage({
             accountType={calendarBilling.calendarAccountType}
             billingStatus={calendarBilling.calendarBillingStatus}
             subscriptionRenewsAt={calendarBilling.calendarSubscriptionRenewsAt?.toISOString() ?? null}
+            trialEndsAt={calendarBilling.calendarTrialEndsAt?.toISOString() ?? null}
           />
         )}
 
