@@ -7,6 +7,7 @@ import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
 import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
+import CalendarCard from "@/components/calendars/CalendarCard";
 
 function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -86,36 +87,6 @@ const COLOR = {
   black: "#080808",
   blue: "#2478FF",
   charcoal: "#111111",
-};
-
-const PLAN_STATUS_LABEL: Record<
-  string,
-  { text: string; color: string; bg: string; dot: string }
-> = {
-  BUILDING: {
-    text: "Building",
-    color: "#A1A1AA",
-    bg: "rgba(161,161,170,0.10)",
-    dot: "#A1A1AA",
-  },
-  AWAITING_APPROVAL: {
-    text: "Awaiting approval",
-    color: "#FFCC00",
-    bg: "rgba(255,204,0,0.10)",
-    dot: "#FFCC00",
-  },
-  PLAN_APPROVED: {
-    text: "Plan approved",
-    color: "#4ADE80",
-    bg: "rgba(74,222,128,0.10)",
-    dot: "#4ADE80",
-  },
-  PLAN_NEEDS_CHANGES: {
-    text: "Needs changes",
-    color: "#F97316",
-    bg: "rgba(249,115,22,0.10)",
-    dot: "#F97316",
-  },
 };
 
 const PAGE_SIZE = 9;
@@ -483,126 +454,17 @@ export default async function CalendarsPage({
         {calendars.length > 0 ? (
           <>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {calendars.map((cal, index) => {
-                const status =
-                  PLAN_STATUS_LABEL[cal.planStatus] ??
-                  PLAN_STATUS_LABEL.BUILDING;
-
-                const globalIndex = skip + index + 1;
-
-                return (
-                  <Link
-                    key={cal.id}
-                    href={`/dashboard/calendars/${cal.id}`}
-                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.13] hover:bg-[#141414] hover:shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
-                  >
-                    {/* Hover glow */}
-                    <div
-                      className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-20"
-                      style={{ background: COLOR.blue }}
-                    />
-
-                    {/* Card top */}
-                    <div className="relative flex items-start justify-between px-5 pb-3 pt-5 sm:px-6 sm:pt-6">
-                      <div className="flex items-center gap-3">
-                        {/* Number */}
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025]">
-                          <span className="text-xs font-semibold tabular-nums text-white/55">
-                            {String(globalIndex).padStart(2, "0")}
-                          </span>
-
-                          <span
-                            className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-300 group-hover:w-full"
-                            style={{ background: COLOR.blue }}
-                          />
-                        </div>
-
-                        {/* Status — plan status only now, since billing
-                            is account-level and already shown once, at
-                            the top of the page, by TrialCountdownBanner
-                            rather than repeated identically on every
-                            single card. */}
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold"
-                          style={{
-                            color: status.color,
-                            background: status.bg,
-                            borderColor: `${status.color}18`,
-                          }}
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ background: status.dot }}
-                          />
-                          {status.text}
-                        </span>
-                      </div>
-
-                      {/* Arrow */}
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/20 transition-all duration-300 group-hover:border-[#2478FF]/25 group-hover:bg-[#2478FF]/10 group-hover:text-[#68B2FF]">
-  <ArrowUpRightIcon
-    className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-  />
-</div>
-                    </div>
-
-                    {/* Main content */}
-                    <div className="relative px-5 pb-5 sm:px-6 sm:pb-6">
-                      <h2 className="line-clamp-1 text-[17px] font-semibold tracking-[-0.02em] text-white transition-colors group-hover:text-white">
-                        {cal.clientName}
-                      </h2>
-
-                      <p className="mt-1.5 line-clamp-1 text-xs text-white/25">
-                        Client content workspace
-                      </p>
-
-                      {/* Metrics */}
-                      <div className="mt-5 grid grid-cols-2 overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                        <div className="px-3.5 py-3">
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/20">
-                            Content
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold text-white/65">
-                            {cal._count.posts}
-                            <span className="ml-1 text-[10px] font-normal text-white/25">
-                              {cal._count.posts === 1 ? "post" : "posts"}
-                            </span>
-                          </p>
-                        </div>
-
-                        <div className="border-l border-white/[0.06] px-3.5 py-3">
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/20">
-                            Created
-                          </p>
-
-                          <p className="mt-1 text-xs font-medium text-white/50">
-                            {new Date(cal.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Bottom action hint */}
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-[10px] font-medium text-white/20 transition-colors group-hover:text-white/35">
-                          Open workspace
-                        </span>
-
-                        <span className="text-white/15 transition-all group-hover:translate-x-1 group-hover:text-[#68B2FF]">
-  <ArrowRightIcon className="h-3.5 w-3.5" />
-</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {calendars.map((cal, index) => (
+                <CalendarCard
+                  key={cal.id}
+                  id={cal.id}
+                  clientName={cal.clientName}
+                  planStatus={cal.planStatus}
+                  postCount={cal._count.posts}
+                  createdAt={cal.createdAt.toISOString()}
+                  globalIndex={skip + index + 1}
+                />
+              ))}
             </div>
 
             <Pagination
