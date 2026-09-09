@@ -4314,6 +4314,96 @@ export default function CalendarGrid({
       null
     );
 
+  // =========================================================
+  // SMART FILTERS
+  // =========================================================
+  // Filters live inside CalendarGrid so they stay in sync with the
+  // calendar, Instagram preview and TikTok preview without creating
+  // a second control layer in the parent page.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<Platform | "ALL">("ALL");
+  const [statusFilter, setStatusFilter] = useState<ApprovalStatus | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [contentFilter, setContentFilter] = useState<"ALL" | "ATTACHED" | "EMPTY">("ALL");
+
+  const availableTypes = Array.from(
+    new Set(
+      posts
+        .map((post) => post.postType)
+        .filter((value): value is string => Boolean(value))
+    )
+  ).sort();
+
+  const availableCategories = Array.from(
+    new Set(
+      posts
+        .map((post) => post.category)
+        .filter((value): value is string => Boolean(value))
+    )
+  ).sort();
+
+  const filteredPosts = posts.filter((post) => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const searchable = [
+      post.caption,
+      post.contentIdea,
+      post.category,
+      post.postType,
+      post.cta,
+      post.hashtags,
+      post.taggedAccounts,
+      ...post.customFields.map((field) => `${field.label} ${field.value}`),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    if (query && !searchable.includes(query)) return false;
+    if (platformFilter !== "ALL" && post.platform !== platformFilter) return false;
+    if (statusFilter !== "ALL" && post.approvalStatus !== statusFilter) return false;
+    if (typeFilter !== "ALL" && post.postType !== typeFilter) return false;
+    if (categoryFilter !== "ALL" && post.category !== categoryFilter) return false;
+    if (contentFilter === "ATTACHED" && post.assets.length === 0) return false;
+    if (contentFilter === "EMPTY" && post.assets.length > 0) return false;
+
+    return true;
+  });
+
+  const activeFilterCount = [
+    platformFilter !== "ALL",
+    statusFilter !== "ALL",
+    typeFilter !== "ALL",
+    categoryFilter !== "ALL",
+    contentFilter !== "ALL",
+    Boolean(searchQuery.trim()),
+  ].filter(Boolean).length;
+
+  const filtersActive = activeFilterCount > 0;
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPlatformFilter("ALL");
+    setStatusFilter("ALL");
+    setTypeFilter("ALL");
+    setCategoryFilter("ALL");
+    setContentFilter("ALL");
+  };
+
+  const jumpToToday = () => {
+    const now = new Date();
+    setCurrentMonth(
+      new Date(now.getFullYear(), now.getMonth(), 1)
+    );
+  };
+
+  const monthInputValue =
+    `${currentMonth.getFullYear()}-${String(
+      currentMonth.getMonth() + 1
+    ).padStart(2, "0")}`;
+
   // Same delete route the full detail panel already uses — this just
   // gives a second, faster way to trigger it, right from the tile
   // itself.
@@ -4381,7 +4471,7 @@ export default function CalendarGrid({
   const postsForDate = (
     date: Date
   ) =>
-    posts
+    filteredPosts
       .filter((p) => {
         const pd = new Date(
           p.postDate
@@ -4575,6 +4665,421 @@ export default function CalendarGrid({
       </div>
 
       {/* =====================================================
+          SMART FILTER / SEARCH BAR
+          ===================================================== */}
+      <div
+        className="
+          mb-4 overflow-hidden rounded-2xl border
+          sm:mb-5
+        "
+        style={{
+          background:
+            theme === "dark"
+              ? "rgba(255,255,255,0.028)"
+              : "rgba(0,0,0,0.018)",
+          borderColor: t.cardBorder,
+          boxShadow:
+            theme === "dark"
+              ? "0 12px 40px rgba(0,0,0,0.12)"
+              : "0 12px 40px rgba(0,0,0,0.045)",
+        }}
+      >
+        <div className="
+          flex flex-col gap-2 p-2
+          sm:flex-row sm:items-center
+        ">
+          <div
+            className="
+              flex min-w-0 flex-1 items-center gap-2.5
+              rounded-xl border px-3.5 py-2.5
+            "
+            style={{
+              background: t.inputBg,
+              borderColor: t.inputBorder,
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4.5 4.5" strokeLinecap="round" />
+            </svg>
+
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search captions, ideas, categories, hashtags..."
+              aria-label="Search content"
+              className="
+                min-w-0 flex-1 bg-transparent text-xs
+                outline-none placeholder:opacity-40
+              "
+              style={{ color: t.text }}
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="
+                  flex h-6 w-6 items-center justify-center
+                  rounded-full text-sm
+                "
+                style={{
+                  background: t.pillBg,
+                  color: t.textMuted,
+                }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {viewMode === "calendar" && (
+            <>
+              <label
+                className="
+                  flex h-11 w-full flex-shrink-0 items-center gap-2.5 rounded-xl border
+                  px-3.5 sm:w-[220px] lg:w-[240px]
+                "
+                style={{
+                  background: t.inputBg,
+                  borderColor: t.inputBorder,
+                }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <rect x="3" y="4" width="18" height="17" rx="3" />
+                  <path d="M8 2.5v4M16 2.5v4M3 9h18" strokeLinecap="round" />
+                </svg>
+                <input
+                  type="month"
+                  value={monthInputValue}
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const [y, m] = e.target.value.split("-").map(Number);
+                    setCurrentMonth(new Date(y, m - 1, 1));
+                  }}
+                  aria-label="Choose month"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none"
+                  style={{ color: t.text }}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={jumpToToday}
+                className="
+                  h-10 rounded-xl border px-3 text-[11px]
+                  font-semibold transition-all active:scale-[0.98]
+                "
+                style={{
+                  background: t.pillBg,
+                  borderColor: t.inputBorder,
+                  color: t.textMuted,
+                }}
+              >
+                Today
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setFilterOpen((open) => !open)}
+            aria-expanded={filterOpen}
+            className="
+              flex h-10 items-center justify-center gap-2
+              rounded-xl border px-3.5 text-xs font-semibold
+              transition-all active:scale-[0.98]
+            "
+            style={{
+              background: filterOpen || filtersActive
+                ? "rgba(36,120,255,0.10)"
+                : t.pillBg,
+              borderColor: filterOpen || filtersActive
+                ? "rgba(36,120,255,0.35)"
+                : t.inputBorder,
+              color: filterOpen || filtersActive
+                ? "#2478FF"
+                : t.textMuted,
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path d="M4 6h16M7 12h10M10 18h4" strokeLinecap="round" />
+            </svg>
+            Filters
+            {activeFilterCount > 0 && (
+              <span
+                className="
+                  flex h-5 min-w-5 items-center justify-center
+                  rounded-full px-1.5 text-[9px] font-bold text-white
+                "
+                style={{ background: "#2478FF" }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {filterOpen && (
+          <div
+            className="border-t px-3 pb-3 pt-3 sm:px-4 sm:pb-4"
+            style={{ borderColor: t.cardBorder }}
+          >
+            <div className="
+              grid grid-cols-1 gap-2
+              sm:grid-cols-2 lg:grid-cols-4
+            ">
+              {[
+                {
+                  label: "Platform",
+                  value: platformFilter,
+                  onChange: (value: string) =>
+                    setPlatformFilter(value as Platform | "ALL"),
+                  options: [
+                    { value: "ALL", label: "All platforms" },
+                    ...PLATFORMS.map((platform) => ({
+                      value: platform.value,
+                      label: platform.label,
+                    })),
+                  ],
+                },
+                {
+                  label: "Approval",
+                  value: statusFilter,
+                  onChange: (value: string) =>
+                    setStatusFilter(value as ApprovalStatus | "ALL"),
+                  options: [
+                    { value: "ALL", label: "All statuses" },
+                    { value: "PENDING", label: "Awaiting review" },
+                    { value: "APPROVED", label: "Approved" },
+                    { value: "NEEDS_REVISION", label: "Needs revision" },
+                  ],
+                },
+                {
+                  label: "Format",
+                  value: typeFilter,
+                  onChange: setTypeFilter,
+                  options: [
+                    { value: "ALL", label: "All formats" },
+                    ...availableTypes.map((type) => ({
+                      value: type,
+                      label: type,
+                    })),
+                  ],
+                },
+                {
+                  label: "Category",
+                  value: categoryFilter,
+                  onChange: setCategoryFilter,
+                  options: [
+                    { value: "ALL", label: "All categories" },
+                    ...availableCategories.map((category) => ({
+                      value: category,
+                      label: category,
+                    })),
+                  ],
+                },
+              ].map((filter) => (
+                <label key={filter.label} className="block">
+                  <span
+                    className="
+                      mb-1.5 block text-[9px] font-bold uppercase
+                      tracking-[0.12em]
+                    "
+                    style={{ color: t.textFaint }}
+                  >
+                    {filter.label}
+                  </span>
+                  <select
+                    value={filter.value}
+                    onChange={(e) => filter.onChange(e.target.value)}
+                    className="
+                      h-10 w-full rounded-xl border px-3 text-xs
+                      font-semibold outline-none
+                    "
+                    style={{
+                      background: t.inputBg,
+                      borderColor: t.inputBorder,
+                      color: t.text,
+                    }}
+                  >
+                    {filter.options.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        style={{
+                          background: theme === "dark" ? "#1A1A1A" : "#FFFFFF",
+                          color: theme === "dark" ? "#FFFFFF" : "#0A0A0A",
+                        }}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+
+            <div className="
+              mt-3 flex flex-col gap-2
+              sm:flex-row sm:items-center sm:justify-between
+            ">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="text-[10px] font-medium"
+                  style={{ color: t.textMuted }}
+                >
+                  Content
+                </span>
+
+                {(
+                  [
+                    { value: "ALL", label: "Everything" },
+                    { value: "ATTACHED", label: "Has files" },
+                    { value: "EMPTY", label: "Needs content" },
+                  ] as const
+                ).map((option) => {
+                  const active = contentFilter === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setContentFilter(option.value)}
+                      className="
+                        rounded-full border px-2.5 py-1.5
+                        text-[10px] font-semibold transition-all
+                      "
+                      style={{
+                        background: active
+                          ? "rgba(36,120,255,0.10)"
+                          : t.pillBg,
+                        borderColor: active
+                          ? "rgba(36,120,255,0.35)"
+                          : t.inputBorder,
+                        color: active ? "#2478FF" : t.textMuted,
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {filtersActive && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="
+                    self-start rounded-full px-3 py-1.5
+                    text-[10px] font-semibold sm:self-auto
+                  "
+                  style={{
+                    background: t.pillBg,
+                    color: t.textMuted,
+                  }}
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {filtersActive && (
+        <div className="
+          mb-4 flex flex-wrap items-center gap-2
+          sm:mb-5
+        ">
+          <span
+            className="text-[10px] font-semibold"
+            style={{ color: t.textFaint }}
+          >
+            Showing {filteredPosts.length} of {posts.length}
+          </span>
+
+          {platformFilter !== "ALL" && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[9px] font-semibold"
+              style={{
+                background: "rgba(36,120,255,0.10)",
+                color: "#2478FF",
+              }}
+            >
+              {PLATFORMS.find((p) => p.value === platformFilter)?.label}
+            </span>
+          )}
+
+          {statusFilter !== "ALL" && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[9px] font-semibold"
+              style={{
+                background: `${APPROVAL_META[statusFilter].color}18`,
+                color: APPROVAL_META[statusFilter].color,
+              }}
+            >
+              {APPROVAL_META[statusFilter].text}
+            </span>
+          )}
+
+          {typeFilter !== "ALL" && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[9px] font-semibold"
+              style={{
+                background: t.pillBg,
+                color: t.textMuted,
+              }}
+            >
+              {typeFilter}
+            </span>
+          )}
+
+          {categoryFilter !== "ALL" && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[9px] font-semibold"
+              style={{
+                background: t.pillBg,
+                color: t.textMuted,
+              }}
+            >
+              {categoryFilter}
+            </span>
+          )}
+
+          {contentFilter !== "ALL" && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[9px] font-semibold"
+              style={{
+                background: t.pillBg,
+                color: t.textMuted,
+              }}
+            >
+              {contentFilter === "ATTACHED" ? "Has files" : "Needs content"}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* =====================================================
           VIEW MODE TABS — Calendar | Instagram | TikTok
           ===================================================== */}
 
@@ -4647,14 +5152,14 @@ export default function CalendarGrid({
 
       {viewMode === "instagram" && (
         <InstagramPreview
-          posts={posts}
+          posts={filteredPosts}
           clientName={clientName}
         />
       )}
 
       {viewMode === "tiktok" && (
         <TikTokPreview
-          posts={posts}
+          posts={filteredPosts}
           clientName={clientName}
         />
       )}
@@ -5140,7 +5645,9 @@ export default function CalendarGrid({
                           t.textFaint,
                       }}
                     >
-                      Nothing scheduled
+                      {filtersActive
+                        ? "No posts match your filters"
+                        : "Nothing scheduled"}
                     </p>
                   </div>
                 )}
