@@ -44,16 +44,14 @@ export default function TrialCountdownBanner({
       className="mb-8 flex flex-col gap-3 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between"
       style={
         expired
-          ? { background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.25)" }
-          : daysLeft <= 1
-          ? { background: "rgba(249,115,22,0.08)", borderColor: "rgba(249,115,22,0.25)" }
-          : { background: "rgba(74,222,128,0.06)", borderColor: "rgba(74,222,128,0.2)" }
+          ? { background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.3)" }
+          : { background: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.2)" }
       }
     >
       <div>
         <p
           className="text-sm font-semibold"
-          style={{ color: expired ? "#F87171" : daysLeft <= 1 ? "#F97316" : "#4ade80" }}
+          style={{ color: expired ? "#F87171" : "#EF4444" }}
         >
           {expired
             ? "Your free trial has ended"
