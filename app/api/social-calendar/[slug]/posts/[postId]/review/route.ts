@@ -38,12 +38,26 @@ export async function POST(
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 
+  // Approving an Instagram post on a calendar with Instagram
+  // connected schedules it for auto-publish — it doesn't post
+  // immediately, since the scheduled job is what actually fires the
+  // real publish once postDate arrives. Guarded to only ever happen
+  // once per post: if it's already SCHEDULED, PUBLISHED, or FAILED,
+  // approving it again (say, after a needs-revision round trip) never
+  // re-schedules it, so a post can't end up posted to Instagram twice.
+  const shouldScheduleInstagram =
+    approved &&
+    post.platform === "INSTAGRAM" &&
+    !!calendar.instagramAccountId &&
+    post.instagramPublishStatus === "NOT_SCHEDULED";
+
   const updated = await db.calendarPost.update({
     where: { id: postId },
     data: {
       approvalStatus: approved ? "APPROVED" : "NEEDS_REVISION",
       approvalNote: approved ? null : note?.trim() || null,
       reviewedAt: new Date(),
+      ...(shouldScheduleInstagram ? { instagramPublishStatus: "SCHEDULED" } : {}),
     },
     include: {
       assets: { orderBy: { displayOrder: "asc" } },

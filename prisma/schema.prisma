@@ -1393,6 +1393,21 @@ model SocialCalendar {
   manager   Creator @relation("OwnedCalendars", fields: [managerId], references: [id], onDelete: Cascade)
   managerId String
 
+  // ── Instagram publishing connection — one Instagram Business
+  // account per calendar, connected via Meta's Graph API through
+  // Facebook Login. Null until the manager actually connects one.
+  instagramAccountId   String?
+  instagramUsername    String?
+  instagramPageId      String?
+  // Long-lived access token, valid roughly 60 days — refreshed by a
+  // scheduled job ahead of instagramTokenExpiresAt, not stored
+  // encrypted at rest, matching how every other third-party token in
+  // this schema (Paystack subscription codes, email tokens) is
+  // already stored as a plain column.
+  instagramAccessToken     String?
+  instagramTokenExpiresAt  DateTime?
+  instagramConnectedAt     DateTime?
+
   posts         CalendarPost[]
   collaborators CalendarCollaborator[]
   invites       CalendarInvite[]
@@ -1408,6 +1423,19 @@ enum SocialPlatform {
   FACEBOOK
   X
   LINKEDIN
+}
+
+// Only ever meaningful when a post's platform is INSTAGRAM and its
+// calendar has a connected Instagram account. Approving a post
+// doesn't publish it immediately — it marks it SCHEDULED, and a
+// recurring job publishes it for real once postDate actually
+// arrives. Instagram's API has no native "publish later" of its
+// own; this is how every scheduling tool fakes it.
+enum InstagramPublishStatus {
+  NOT_SCHEDULED
+  SCHEDULED
+  PUBLISHED
+  FAILED
 }
 
 enum PostApprovalStatus {
@@ -1443,9 +1471,21 @@ model CalendarPost {
   // the post itself.
   linkUrl     String?  @db.Text
 
-  approvalStatus PostApprovalStatus @default(PENDING)
+   approvalStatus PostApprovalStatus @default(PENDING)
   approvalNote   String?
   reviewedAt     DateTime?
+
+  // ── Instagram auto-publishing ──
+  instagramPublishStatus InstagramPublishStatus @default(NOT_SCHEDULED)
+  instagramPublishedAt   DateTime?
+  // The real Instagram media id and permalink, filled in once actually
+  // published — permalink is fetched and stored right at publish
+  // time so linking to the live post never needs a second API call.
+  instagramMediaId       String?
+  instagramPermalink     String?
+  // The most recent failure message, if instagramPublishStatus is
+  // FAILED — cleared on the next successful publish attempt.
+  instagramPublishError  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
