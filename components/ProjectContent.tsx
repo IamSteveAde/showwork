@@ -77,6 +77,7 @@ function DownloadIconButton({
   );
 }
 
+
 function Header({
   clientName,
   logoUrl,
@@ -90,8 +91,8 @@ function Header({
 }) {
   const [scrolled, setScrolled] = useState(false);
 
-   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.8);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 36);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -102,77 +103,78 @@ function Header({
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-30 transition-all duration-500"
+      className="fixed inset-x-0 top-0 z-50 transition-all duration-500"
       style={{
-        background: scrolled ? "rgba(0,0,0,0.7)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+        background: scrolled ? "rgba(8,8,8,0.82)" : "linear-gradient(to bottom, rgba(0,0,0,0.62), transparent)",
+        backdropFilter: scrolled ? "blur(22px) saturate(140%)" : "blur(2px)",
+        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
       }}
     >
-      <div className="flex items-center justify-between px-6 py-6 md:px-14">
-        <div className="flex items-center gap-3">
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={clientName} className="h-7 w-auto" />
-          ) : (
-            <span className="text-sm font-medium uppercase text-white" style={{ letterSpacing: "0.2em" }}>
-              {clientName}
-            </span>
-          )}
+      <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-5 px-5 py-4 md:px-10 md:py-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 backdrop-blur">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="h-full w-full object-contain p-1.5" />
+            ) : (
+              <span className="text-[11px] font-semibold text-white">
+                {clientName.trim().charAt(0).toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium tracking-[-0.02em] text-white">{clientName}</p>
+            <p className="text-[9px] font-medium uppercase tracking-[0.18em] text-white/35">Private project</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: primaryColor }} />
-          <p className="text-xs font-medium uppercase text-white/40" style={{ letterSpacing: "0.25em" }}>
-            Private preview
-          </p>
+
+        <div className="hidden items-center gap-1 rounded-full border border-white/10 bg-black/20 p-1 backdrop-blur-xl md:flex">
+          {sections.slice(0, 6).map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => scrollToSection(s.id)}
+              className={`rounded-full px-4 py-2 text-[10px] font-medium transition-all ${
+                i === 0 ? "bg-white text-black" : "text-white/45 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[9px] font-medium text-white/50 sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: primaryColor }} />
+            Secure preview
+          </span>
+          <button
+            onClick={() => sections[0] && scrollToSection(sections[0].id)}
+            className="rounded-full bg-white px-4 py-2 text-[10px] font-semibold text-black transition-transform hover:scale-[1.03]"
+          >
+            View work
+          </button>
         </div>
       </div>
 
-      {/* Section tabs — horizontally scrollable when there are more
-          than fit on screen, rather than wrapping or shrinking to
-          illegibility. Each tab smooth-scrolls to its matching
-          section's real DOM id below. */}
-            {sections.length > 0 && (
-        <div
-          className="relative"
-          style={{ borderTop: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent" }}
-        >
-          {/* Real breathing room above and below the pills, so they
-              sit clearly clear of the divider line rather than
-              touching it directly. */}
-          <div className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-6 py-3.5 md:px-14">
+      {sections.length > 0 && (
+        <div className="border-t border-white/[0.06] md:hidden">
+          <div className="scrollbar-hide flex gap-1.5 overflow-x-auto px-5 py-2.5">
             {sections.map((s) => (
               <button
                 key={s.id}
                 onClick={() => scrollToSection(s.id)}
-                className="flex-shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-xs font-medium transition-all hover:scale-[1.04] hover:bg-white/[0.14] active:scale-[0.97]"
-                style={{
-                  background: "rgba(255,255,255,0.08)",
-                  borderColor: "rgba(255,255,255,0.14)",
-                  color: "rgba(255,255,255,0.82)",
-                }}
+                className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2 text-[10px] font-medium text-white/65 transition hover:bg-white/10 hover:text-white"
               >
                 {s.name}
               </button>
             ))}
           </div>
-
-          {/* Edge fades — a quiet visual hint that the row scrolls
-              further, rather than the content just cutting off
-              abruptly at the screen edge. */}
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 w-8 md:w-14"
-            style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.55), transparent)" }}
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 w-8 md:w-14"
-            style={{ background: "linear-gradient(270deg, rgba(0,0,0,0.55), transparent)" }}
-          />
         </div>
       )}
     </header>
   );
 }
+
 function Hero({
   heroMedia,
   tagline,
@@ -189,15 +191,15 @@ function Hero({
   const heroRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
 
   useEffect(() => {
     videoRef.current?.play().catch(() => {});
   }, []);
 
   return (
-    <section ref={heroRef} className="relative h-screen w-full overflow-hidden bg-black">
+    <section ref={heroRef} className="relative h-[92svh] min-h-[680px] w-full overflow-hidden bg-[#080808]">
       <motion.div style={{ scale: heroScale }} className="absolute inset-0 origin-center">
         {heroMedia.type === "VIDEO" ? (
           <video
@@ -209,69 +211,66 @@ function Hero({
             playsInline
             preload="auto"
             className="h-full w-full object-cover"
-            style={{ opacity: 0.85 }}
+            style={{ opacity: 0.9 }}
           />
         ) : (
           <motion.div
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.1, 1] }}
+            initial={{ scale: 1.02 }}
+            animate={{ scale: [1.02, 1.08, 1.02] }}
             transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
             className="relative h-full w-full"
-            style={{ opacity: 0.85 }}
           >
-            <Image
-              src={heroMedia.url}
-              alt={heroMedia.caption}
-              fill
-              priority
-              sizes="100vw"
-              quality={90}
-              className="object-cover"
-            />
+            <Image src={heroMedia.url} alt={heroMedia.caption} fill priority sizes="100vw" quality={92} className="object-cover" />
           </motion.div>
         )}
       </motion.div>
 
-      <div
-        className="absolute inset-0"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.92) 100%)" }}
-      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/90" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_35%,rgba(255,255,255,0.12),transparent_26%)]" />
 
-      <motion.div
-        style={{ opacity: heroOpacity }}
-        className="absolute bottom-0 left-0 right-0 z-10 px-6 pb-16 md:px-14 md:pb-20"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <p
-            className="mb-4 text-xs font-medium uppercase"
-            style={{ color: `${primaryColor}b3`, letterSpacing: "0.4em" }}
+      <motion.div style={{ opacity: heroOpacity }} className="absolute inset-x-0 bottom-0 z-10">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-12 px-6 pb-10 md:px-10 md:pb-14 lg:flex-row lg:items-end lg:justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-4xl"
           >
-            {fileCount} file{fileCount === 1 ? "" : "s"} · full quality
-          </p>
-          <h1 className="max-w-3xl text-[clamp(2rem,5.5vw,4rem)] font-light leading-[1.1] tracking-tight text-white">
-            {tagline}
-          </h1>
+            <div className="mb-5 flex flex-wrap items-center gap-2">
+              <span
+                className="rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-white"
+                style={{ borderColor: `${primaryColor}66`, background: `${primaryColor}22` }}
+              >
+                Private presentation
+              </span>
+              <span className="text-[10px] text-white/35">{fileCount} assets</span>
+            </div>
+            <h1 className="max-w-4xl text-[clamp(3rem,7.5vw,7rem)] font-light leading-[0.88] tracking-[-0.085em] text-white">
+              {tagline}
+            </h1>
+          </motion.div>
 
           <motion.button
             onClick={onViewWork}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.5 }}
-            className="mt-8 flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.03]"
-            style={{ background: primaryColor, color: "#080808" }}
+            className="group flex shrink-0 items-center gap-4 self-start rounded-full border border-white/15 bg-white px-5 py-3 text-sm font-semibold text-black shadow-2xl transition hover:-translate-y-0.5 md:self-auto"
           >
-            View the needful
-            <span aria-hidden>↓</span>
+            <span>Explore the work</span>
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-transform group-hover:translate-y-0.5"
+              style={{ background: primaryColor }}
+            >
+              ↓
+            </span>
           </motion.button>
-        </motion.div>
+        </div>
       </motion.div>
     </section>
   );
 }
+
 
 const MAX_CONCURRENT_VIDEOS = 3;
 const playingVideos: HTMLVideoElement[] = [];
@@ -446,6 +445,7 @@ function JustifiedWallGallery({
   );
 }
 
+
 function WallTile({
   item,
   index,
@@ -471,6 +471,7 @@ function WallTile({
   const videoRef = useRef<HTMLVideoElement>(null);
   const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     if (nearView) setShouldLoad(true);
@@ -480,33 +481,36 @@ function WallTile({
     const vid = videoRef.current;
     if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
     requestPlay(vid);
-
-    const retryOnFirstTouch = () => requestPlay(vid);
-    window.addEventListener("touchstart", retryOnFirstTouch, { once: true });
-    window.addEventListener("click", retryOnFirstTouch, { once: true });
+    const retry = () => requestPlay(vid);
+    window.addEventListener("touchstart", retry, { once: true });
+    window.addEventListener("click", retry, { once: true });
     return () => {
-      window.removeEventListener("touchstart", retryOnFirstTouch);
-      window.removeEventListener("click", retryOnFirstTouch);
+      releasePlay(vid);
+      window.removeEventListener("touchstart", retry);
+      window.removeEventListener("click", retry);
     };
   }, [shouldLoad, item.type]);
 
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.7, delay: (index % 12) * 0.03 }}
-      style={{ border: "1px solid #FFFFFF", width }}
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.65, delay: (index % 8) * 0.025 }}
+      className="group relative overflow-hidden rounded-[18px] bg-[#171717] shadow-[0_18px_50px_rgba(0,0,0,0.14)]"
+      style={{ width }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <div
         onClick={onOpen}
         onContextMenu={(e) => e.preventDefault()}
-        className="group relative cursor-pointer"
-        style={{ ["--glow" as string]: primaryColor, width, height }}
+        className="relative cursor-pointer overflow-hidden"
+        style={{ width, height }}
       >
         {item.type === "VIDEO" ? (
-          shouldLoad && (
+          shouldLoad ? (
             <video
               ref={videoRef}
               src={item.url}
@@ -518,8 +522,11 @@ function WallTile({
               controlsList="nodownload noremoteplayback"
               disablePictureInPicture
               draggable={false}
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out"
+              style={{ transform: hovered ? "scale(1.045)" : "scale(1)" }}
             />
+          ) : (
+            <div className="absolute inset-0 bg-white/[0.04]" />
           )
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
@@ -529,48 +536,60 @@ function WallTile({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className="absolute inset-0 h-full w-full select-none object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full select-none object-cover transition-transform duration-700 ease-out"
+            style={{ transform: hovered ? "scale(1.045)" : "scale(1)" }}
           />
         )}
 
         <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
-          style={{ boxShadow: `inset 0 0 0 1.5px ${primaryColor}, 0 0 28px 2px ${primaryColor}66` }}
+          className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+          style={{
+            opacity: hovered ? 1 : 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.72), transparent 55%)",
+          }}
         />
 
         {item.approvalStatus !== "PENDING" && (
           <div
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="absolute left-3 top-3 rounded-full px-3 py-1.5 text-[10px] font-semibold shadow-lg"
             style={
               item.approvalStatus === "APPROVED"
-                ? { background: "#22C55E", color: "#080808" }
-                : { background: "#F97316", color: "#080808" }
+                ? { background: "#22C55E", color: "#07110A" }
+                : { background: "#F97316", color: "#160A02" }
             }
           >
             {item.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
           </div>
         )}
 
+        <div
+          className="absolute right-3 top-3 transition-all duration-300"
+          style={{ opacity: hovered ? 1 : 0, transform: hovered ? "translateY(0)" : "translateY(-5px)" }}
+        >
+          {item.type !== "VIDEO" && <DownloadIconButton onDownload={() => downloadFile(item.id)} />}
+        </div>
+
         {item.type === "VIDEO" && (
-          <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-            <span className="text-[9px] font-medium uppercase tracking-wider text-white/80">Playing</span>
-          </div>
-        )}
-        {item.type !== "VIDEO" && (
-          <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <DownloadIconButton onDownload={() => downloadFile(item.id)} />
+          <div
+            className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/40 px-2.5 py-1.5 text-[9px] font-medium text-white/75 backdrop-blur"
+            style={{ opacity: hovered ? 1 : 0 }}
+          >
+            Motion
           </div>
         )}
 
         {item.caption && (
-          <p className="pointer-events-none absolute bottom-3 left-4 right-4 translate-y-1 truncate text-sm font-medium text-white opacity-0 transition-all duration-400 group-hover:translate-y-0 group-hover:opacity-100">
-            {item.caption}
-          </p>
+          <div
+            className="absolute inset-x-4 bottom-4 transition-all duration-300"
+            style={{ opacity: hovered ? 1 : 0, transform: hovered ? "translateY(0)" : "translateY(8px)" }}
+          >
+            <p className="truncate text-sm font-medium text-white">{item.caption}</p>
+            <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-white/40">Open to review</p>
+          </div>
         )}
       </div>
 
-      <div style={{ background: "#141414" }}>
+      <div className="border-t border-white/[0.06] bg-[#111111]">
         <ReviewControls
           reviews={item.reviews}
           viewerEmail={viewerEmail}
@@ -582,6 +601,8 @@ function WallTile({
     </motion.div>
   );
 }
+
+
 
 function DocTile({
   doc,
@@ -600,54 +621,45 @@ function DocTile({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.04 }}
-      className="overflow-hidden rounded-xl bg-white"
+      transition={{ duration: 0.55, delay: index * 0.035 }}
+      className="group overflow-hidden rounded-[22px] border border-black/[0.06] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.07)]"
     >
-      <div onClick={onOpen} className="group relative aspect-[3/4] cursor-pointer">
+      <div onClick={onOpen} className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-slate-100">
         {doc.type === "PDF" ? (
-          <iframe
-            src={`${doc.url}#toolbar=0&navpanes=0&page=1`}
-            title={doc.caption || "Document"}
-            className="pointer-events-none h-full w-full border-0"
-          />
+          <iframe src={`${doc.url}#toolbar=0&navpanes=0&page=1`} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
         ) : (
-          <iframe
-            src={officeViewerUrl(doc.url)}
-            title={doc.caption || "Document"}
-            className="pointer-events-none h-full w-full border-0"
-          />
+          <iframe src={officeViewerUrl(doc.url)} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
         )}
 
-        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/5" />
+        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/[0.035]" />
 
         {doc.approvalStatus !== "PENDING" && (
           <div
-            className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-xs font-semibold"
+            className="absolute left-3 top-3 rounded-full px-3 py-1.5 text-[10px] font-semibold shadow-lg"
             style={
               doc.approvalStatus === "APPROVED"
-                ? { background: "#22C55E", color: "#080808" }
-                : { background: "#F97316", color: "#080808" }
+                ? { background: "#22C55E", color: "#07110A" }
+                : { background: "#F97316", color: "#160A02" }
             }
           >
             {doc.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
           </div>
         )}
 
-        <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
           <DownloadIconButton onDownload={() => downloadFile(doc.id)} light />
         </div>
-
-        {doc.caption && (
-          <p className="absolute bottom-3 left-3 rounded bg-black/60 px-2 py-1 text-xs font-medium text-white">
-            {doc.caption}
-          </p>
-        )}
       </div>
 
-      <div style={{ background: "#141414" }}>
+      <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+        <p className="truncate text-sm font-medium text-slate-800">{doc.caption || "Untitled document"}</p>
+        <span className="shrink-0 text-[9px] uppercase tracking-[0.14em] text-slate-400">{doc.type}</span>
+      </div>
+
+      <div className="border-t border-slate-100 bg-[#111111]">
         <ReviewControls
           reviews={doc.reviews}
           viewerEmail={viewerEmail}
@@ -659,6 +671,7 @@ function DocTile({
     </motion.div>
   );
 }
+
 
 export default function ProjectContent({
   clientName,
@@ -913,19 +926,21 @@ export default function ProjectContent({
     setZippingSectionId(null);
   };
 
+
   return (
     <motion.main
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="min-h-screen bg-black"
+      transition={{ duration: 0.65 }}
+      className="min-h-screen bg-[#090909] text-white"
     >
-           <Header
+      <Header
         clientName={clientName}
         logoUrl={logoUrl}
         primaryColor={primaryColor}
         sections={renderSections.map((s) => ({ id: s.id, name: s.name }))}
       />
+
       {heroMedia && (
         <Hero
           heroMedia={heroMedia}
@@ -936,36 +951,74 @@ export default function ProjectContent({
         />
       )}
 
-      <div ref={contentStartRef} />
+      <div ref={contentStartRef} className="scroll-mt-28" />
       <DeliveryStatusBanner status={deliveryStatus} />
+
+      <section className="bg-[#090909] px-6 py-14 md:px-10 md:py-20">
+        <div className="mx-auto max-w-[1500px]">
+          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.22em]" style={{ color: primaryColor }}>
+                The project
+              </p>
+              <h2 className="mt-3 text-3xl font-light tracking-[-0.055em] text-white md:text-5xl">
+                Explore everything, at your pace.
+              </h2>
+            </div>
+            <p className="max-w-sm text-sm leading-6 text-white/35">
+              Open any asset to view it in full, leave feedback, request a revision, or approve it.
+            </p>
+          </div>
+
+          <div className="mt-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[
+              ["Assets", items.length],
+              ["Films", videos.length],
+              ["Images", photos.length],
+              ["Documents", docs.length],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5">
+                <p className="text-2xl font-light tracking-[-0.04em] text-white">{value}</p>
+                <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/25">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {renderSections.map((section, sectionIdx) => {
         const isDark = sectionIdx % 2 === 0;
-        const bg = isDark ? "#000000" : "#FAFAF7";
+        const bg = isDark ? "#090909" : "#F6F6F2";
         const textColor = isDark ? "#FFFFFF" : "#111111";
-        const countColor = isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.35)";
-        const dividerColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+        const countColor = isDark ? "rgba(255,255,255,0.32)" : "rgba(0,0,0,0.35)";
         const isZipping = zippingSectionId === section.id;
 
         return (
-                    <section
+          <section
             key={section.id}
             id={section.id}
-            className="scroll-mt-32 px-6 py-16 md:scroll-mt-36 md:px-14 md:py-24"
+            className="scroll-mt-28 px-5 py-20 md:px-10 md:py-28"
             style={{ background: bg }}
           >
-            <div className="mx-auto max-w-6xl">
-              <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-                <h2 className="text-2xl font-light md:text-3xl" style={{ color: textColor }}>
-                  {section.name}
-                </h2>
-                <div className="mx-6 hidden h-px flex-1 sm:block" style={{ background: dividerColor }} />
-                <div className="relative flex items-center gap-4">
-                  <span
-                    className="text-xs font-medium uppercase"
-                    style={{ color: countColor, letterSpacing: "0.2em" }}
-                  >
-                    {section.media.length}
+            <div className="mx-auto max-w-[1500px]">
+              <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex items-start gap-4">
+                  <span className="mt-1 text-[9px] font-semibold tracking-[0.2em]" style={{ color: isDark ? `${primaryColor}` : "rgba(0,0,0,0.28)" }}>
+                    {String(sectionIdx + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: isDark ? `${primaryColor}` : "#2563EB" }}>
+                      {section.mediaType === "VIDEO" ? "Film" : section.mediaType === "PHOTO" ? "Photography" : "Documents"}
+                    </p>
+                    <h2 className="mt-2 text-3xl font-light tracking-[-0.06em] md:text-5xl" style={{ color: textColor }}>
+                      {section.name}
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-medium uppercase tracking-[0.16em]" style={{ color: countColor }}>
+                    {section.media.length} {section.media.length === 1 ? "item" : "items"}
                   </span>
                   <button
                     onClick={() =>
@@ -976,25 +1029,21 @@ export default function ProjectContent({
                       )
                     }
                     disabled={isZipping}
-                    className="rounded-full border px-4 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+                    className="rounded-full border px-4 py-2 text-[10px] font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
                     style={
                       isDark
-                        ? { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)" }
-                        : { borderColor: "rgba(0,0,0,0.15)", color: "rgba(0,0,0,0.7)" }
+                        ? { borderColor: "rgba(255,255,255,0.13)", color: "rgba(255,255,255,0.72)", background: "rgba(255,255,255,0.04)" }
+                        : { borderColor: "rgba(0,0,0,0.12)", color: "rgba(0,0,0,0.7)", background: "rgba(255,255,255,0.75)" }
                     }
                   >
-                    {isZipping ? "Zipping..." : "Download all"}
+                    {isZipping ? "Preparing…" : "Download all"}
                   </button>
-                  {zipError?.sectionId === section.id && (
-                    <div
-                      className="absolute right-0 top-full z-10 mt-1.5 w-max max-w-[220px] rounded-md px-2.5 py-1.5 text-[11px] font-medium text-white"
-                      style={{ background: "rgba(220,38,38,0.95)" }}
-                    >
-                      {zipError.message}
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {zipError?.sectionId === section.id && (
+                <div className="mb-5 rounded-xl bg-red-500 px-4 py-3 text-xs font-medium text-white">{zipError.message}</div>
+              )}
 
               {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
                 <JustifiedWallGallery
@@ -1030,17 +1079,14 @@ export default function ProjectContent({
               )}
 
               {section.folders.map((folder) => (
-                <div
-                  key={folder.id}
-                  className="mb-10 mt-8 pl-6 md:pl-10"
-                  style={{ borderLeft: `2px solid ${isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.1)"}` }}
-                >
-                  <h3
-                    className="mb-5 text-base font-light uppercase"
-                    style={{ color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)", letterSpacing: "0.08em" }}
-                  >
-                    {folder.name}
-                  </h3>
+                <div key={folder.id} className="mt-16">
+                  <div className="mb-6 flex items-center gap-3">
+                    <span className="h-px w-8" style={{ background: isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.16)" }} />
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)" }}>
+                      {folder.name}
+                    </h3>
+                  </div>
+
                   {section.mediaType === "VIDEO" || section.mediaType === "PHOTO" ? (
                     <JustifiedWallGallery
                       items={folder.media.map(withLiveStatus)}
@@ -1080,19 +1126,27 @@ export default function ProjectContent({
         );
       })}
 
-      <footer className="flex flex-col items-center gap-3 border-t border-white/5 bg-black px-6 py-14 text-center">
-        <p className="text-sm font-light text-white/30">Presented to {clientName}</p>
-        {badgeVisible && (
-          <a
-            href="https://useshowwork.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-medium transition-opacity hover:opacity-70"
-            style={{ color: primaryColor }}
-          >
-            Presented with Showwork →
-          </a>
-        )}
+      <footer className="bg-[#090909] px-6 py-20 text-center md:px-10">
+        <div className="mx-auto max-w-3xl">
+          <div className="mx-auto mb-6 h-10 w-10 rounded-full border border-white/10 bg-white/[0.04]" />
+          <p className="text-2xl font-light tracking-[-0.045em] text-white md:text-3xl">
+            That’s the work.
+          </p>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/30">
+            Presented privately to {clientName}. Every asset is available in full quality.
+          </p>
+          {badgeVisible && (
+            <a
+              href="https://useshowwork.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex rounded-full border px-4 py-2 text-[10px] font-semibold transition hover:bg-white/5"
+              style={{ color: primaryColor, borderColor: `${primaryColor}40` }}
+            >
+              Presented with Showwork →
+            </a>
+          )}
+        </div>
       </footer>
 
       <AnimatePresence>
@@ -1113,7 +1167,8 @@ export default function ProjectContent({
           />
         )}
       </AnimatePresence>
-            <AnimatePresence>
+
+      <AnimatePresence>
         {openPhotoIdx !== null && photos[openPhotoIdx] && (
           <Lightbox
             key="lightbox"
@@ -1129,6 +1184,7 @@ export default function ProjectContent({
           />
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {openDocIdx !== null && docs[openDocIdx] && (
           <DocModal

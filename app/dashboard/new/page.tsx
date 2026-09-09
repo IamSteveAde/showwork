@@ -769,7 +769,7 @@ export default function NewProjectPage() {
                 const isError = status === "error";
 
                 return (
-                  <div key={f.localId} className="rounded-lg p-3.5" style={{ background: COLOR.charcoal }}>
+                  <div key={f.localId} className="rounded-2xl p-4" style={{ background: COLOR.charcoal }}>
                     <div className="mb-2 flex items-center justify-between text-xs">
                       <span className="max-w-[220px] truncate text-white/70">{f.file.name}</span>
                       <span className="flex items-center gap-1.5 font-medium">
@@ -830,27 +830,53 @@ export default function NewProjectPage() {
       className={`${jakarta.variable} relative min-h-screen`}
       style={{ background: COLOR.black, fontFamily: "var(--font-jakarta)" }}
     >
-      <div
-        className="pointer-events-none fixed inset-0"
-        style={{ background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,200,66,0.05) 0%, transparent 70%)" }}
-      />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -left-48 -top-48 h-[620px] w-[620px] rounded-full blur-[150px]"
+          style={{ background: "rgba(245,200,66,0.07)" }} />
+        <div className="absolute -right-56 top-[28%] h-[520px] w-[520px] rounded-full blur-[150px]"
+          style={{ background: "rgba(232,136,26,0.055)" }} />
+        <div className="absolute inset-0 opacity-[0.045]"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)",
+            backgroundSize: "80px 80px",
+            maskImage: "linear-gradient(to bottom, black, transparent 78%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent 78%)",
+          }}
+        />
+      </div>
 
-      <div className="relative z-10 mx-auto max-w-2xl px-6 py-12">
-        <Link href="/dashboard" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white">
-          ← Back to dashboard
+      <div className="relative z-10 mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-10 lg:px-12 lg:py-14">
+        <Link href="/dashboard/projects" className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2.5 text-sm text-white/50 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white">
+          ← Back to projects
         </Link>
 
-        <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
-          New delivery
-        </p>
+        <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-end lg:gap-14">
+          <div>
+            <div className="mb-5 flex items-center gap-3">
+              <span className="h-[2px] w-8" style={{ background: COLOR.gold }} />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: COLOR.gold }}>
+                New delivery
+              </p>
+            </div>
+            <h1 className="max-w-3xl font-semibold tracking-[-0.055em] text-white"
+              style={{ fontSize: "clamp(2.8rem, 7vw, 6.5rem)", lineHeight: 0.92 }}>
+              Build the delivery
+              <br />
+              <span className="text-white/30">your client remembers.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl text-sm leading-7 text-white/40 sm:text-base">
+              Give the project a name, protect it with an access code, then shape the delivery into sections your client can actually navigate.
+            </p>
+          </div>
 
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold text-white">Set up this project</h1>
-          <Link
-            href="/dashboard/billing"
-            className="text-xs font-semibold text-white/40 underline transition-colors hover:text-white"
-          >
-            View plan
+          <Link href="/dashboard/billing"
+            className="group hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5 backdrop-blur-xl transition hover:border-white/15 hover:bg-white/[0.055] lg:block">
+            <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">Account</p>
+            <p className="mt-2 text-sm font-semibold text-white/65">View your plan</p>
+            <span className="mt-5 inline-flex items-center gap-2 text-xs font-semibold" style={{ color: COLOR.gold }}>
+              Billing & usage
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </span>
           </Link>
         </div>
 
@@ -891,7 +917,7 @@ export default function NewProjectPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
             <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Client name
@@ -945,7 +971,7 @@ export default function NewProjectPage() {
             </div>
           </div>
 
-          <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
             <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Banner headline <span className="normal-case text-white/25">(optional)</span>
@@ -961,7 +987,7 @@ export default function NewProjectPage() {
           </div>
 
           {/* SECTIONS — replaces the old single flat dropzone */}
-          <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
             <div className="mb-5 flex items-center gap-2">
               <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
               <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
@@ -1002,7 +1028,7 @@ export default function NewProjectPage() {
                 {sections.map((section) => (
                   <div
                     key={section.sectionLocalId}
-                    className="rounded-lg p-3.5"
+                    className="rounded-2xl p-4"
                     style={{ background: "rgba(255,255,255,0.04)" }}
                   >
                     <div className="mb-3 flex items-center justify-between">
@@ -1323,7 +1349,7 @@ export default function NewProjectPage() {
 
           {/* CHOOSE YOUR BANNER — its own dedicated, unmissable card */}
           {bannerEligibleSections.flatMap((s) => s.files).length > 0 && (
-            <div className="rounded-xl p-6" style={{ background: COLOR.charcoal }}>
+            <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
                 <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
@@ -1398,7 +1424,7 @@ export default function NewProjectPage() {
 
           <button
             type="submit"
-            className="rounded-lg py-3.5 text-sm font-semibold transition-transform hover:scale-[1.01]"
+            className="group relative overflow-hidden rounded-2xl py-4 text-sm font-bold transition-all hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0 sm:py-5"
             style={{ background: COLOR.gold, color: COLOR.black }}
           >
             Create project
