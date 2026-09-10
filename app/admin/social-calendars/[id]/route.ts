@@ -14,8 +14,11 @@ async function requireAdmin() {
 }
 
 // PATCH — admin billing controls for the account that owns a
-// client workspace. Calendar billing is account-level: one
-// calendar subscription covers every workspace owned by the creator.
+// client workspace.
+//
+// Calendar billing is account-level:
+// one calendar subscription covers every workspace owned
+// by the creator.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -31,7 +34,6 @@ export async function PATCH(
 
   const { id } = await params;
 
-  // Find the client workspace and its owner.
   const calendar = await db.socialCalendar.findUnique({
     where: { id },
     select: {
@@ -47,15 +49,25 @@ export async function PATCH(
     );
   }
 
-  const { action } = await req.json();
+  let body: { action?: string };
+
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+
+  const { action } = body;
 
   // ─────────────────────────────────────────────
   // GRANT FREE MONTH
   // ─────────────────────────────────────────────
   //
-  // Calendar billing lives on Creator, not SocialCalendar.
-  // Granting a free month therefore gives the entire account
-  // one month of calendar access across all of its workspaces.
+  // Billing belongs to Creator, so this grants one
+  // month of calendar access to the entire account.
   //
   if (action === "grant_free_month") {
     const now = new Date();
@@ -85,45 +97,8 @@ export async function PATCH(
 
     return NextResponse.json({
       creator: updated,
-      message: "One free month granted for the account's calendar access.",
-    });
-  }
-
-  // ─────────────────────────────────────────────
-  // GRANT FREE AI ASSISTANT MONTH
-  // ─────────────────────────────────────────────
-  //
-  // Same mechanics as grant_free_month above, but for the AI content
-  // assistant add-on specifically — a completely separate
-  // subscription from calendar billing. Granting this never touches
-  // calendarBillingStatus or anything else calendar-related; it only
-  // ever sets the account's AI assistant billing fields.
-  //
-  if (action === "grant_free_ai_month") {
-    const now = new Date();
-
-    const oneMonthFromNow = new Date(now);
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
-
-    const updated = await db.creator.update({
-      where: {
-        id: calendar.managerId,
-      },
-      data: {
-        aiAssistantBillingStatus: "ACTIVE",
-        aiAssistantSubscriptionRenewsAt: oneMonthFromNow,
-        aiAssistantWentOfflineAt: null,
-      },
-      select: {
-        id: true,
-        aiAssistantBillingStatus: true,
-        aiAssistantSubscriptionRenewsAt: true,
-      },
-    });
-
-    return NextResponse.json({
-      creator: updated,
-      message: "One free month of the AI content assistant granted for this account.",
+      message:
+        "One free month granted for the account's calendar access.",
     });
   }
 
@@ -131,9 +106,10 @@ export async function PATCH(
   // RESET BILLING
   // ─────────────────────────────────────────────
   //
-  // Completely resets the account's calendar billing state.
-  // This does NOT delete or modify any client workspaces,
-  // posts, collaborators, or other calendar data.
+  // Resets the account-level calendar billing state.
+  //
+  // This does NOT delete workspaces, posts,
+  // collaborators, or any other calendar data.
   //
   if (action === "reset_billing") {
     const updated = await db.creator.update({

@@ -90,6 +90,44 @@ export async function PATCH(
   }
 
   // ─────────────────────────────────────────────
+  // GRANT FREE AI ASSISTANT MONTH
+  // ─────────────────────────────────────────────
+  //
+  // Same mechanics as grant_free_month above, but for the AI content
+  // assistant add-on specifically — a completely separate
+  // subscription from calendar billing. Granting this never touches
+  // calendarBillingStatus or anything else calendar-related; it only
+  // ever sets the account's AI assistant billing fields.
+  //
+  if (action === "grant_free_ai_month") {
+    const now = new Date();
+
+    const oneMonthFromNow = new Date(now);
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+
+    const updated = await db.creator.update({
+      where: {
+        id: calendar.managerId,
+      },
+      data: {
+        aiAssistantBillingStatus: "ACTIVE",
+        aiAssistantSubscriptionRenewsAt: oneMonthFromNow,
+        aiAssistantWentOfflineAt: null,
+      },
+      select: {
+        id: true,
+        aiAssistantBillingStatus: true,
+        aiAssistantSubscriptionRenewsAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      creator: updated,
+      message: "One free month of the AI content assistant granted for this account.",
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // RESET BILLING
   // ─────────────────────────────────────────────
   //
