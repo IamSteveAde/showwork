@@ -200,7 +200,13 @@ export default async function SocialCalendarPage({
           calendarTrialEndsAt: true,
         },
       },
-      posts: {
+        posts: {
+        // CRITICAL: excludes AI-generated drafts the manager hasn't
+        // confirmed yet. A draft must never reach the client-facing
+        // view, since it hasn't been reviewed by anyone on the
+        // agency side — this filter is the one thing standing
+        // between an unconfirmed draft and the client seeing it.
+        where: { isAiDraft: false },
         orderBy: { postDate: "asc" },
         include: {
           assets: {

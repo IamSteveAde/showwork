@@ -14,9 +14,18 @@ const PORTFOLIO_PLAN_CODE = process.env.PAYSTACK_PORTFOLIO_PLAN_CODE;
 // calendar the way it used to work.
 const CALENDAR_INDIVIDUAL_PLAN_CODE = process.env.PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE;
 const CALENDAR_COMPANY_PLAN_CODE = process.env.PAYSTACK_CALENDAR_COMPANY_PLAN_CODE;
+// The AI content assistant — one flat ₦15,000/month account-level
+// add-on, completely independent of calendar billing above. An
+// account can have this active regardless of its calendar tier, and
+// cancelling one never touches the other.
+const AI_ASSISTANT_PLAN_CODE = process.env.PAYSTACK_AI_ASSISTANT_PLAN_CODE;
 
 function isCalendarPlanCode(planCode: string | null): boolean {
   return !!planCode && (planCode === CALENDAR_INDIVIDUAL_PLAN_CODE || planCode === CALENDAR_COMPANY_PLAN_CODE);
+}
+
+function isAiAssistantPlanCode(planCode: string | null): boolean {
+  return !!planCode && planCode === AI_ASSISTANT_PLAN_CODE;
 }
 
 function extractPlanCode(data: any): string | null {
@@ -192,6 +201,44 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: failed to create PaymentRecord for calendar subscription.create (creator ${creator.id})`, err);
         }
       }
+    } else if (isAiAssistantPlanCode(planCode)) {
+      // Account-level, same as calendar billing above — completely
+      // independent subscription, never touches calendar billing.
+      const creatorId = data?.metadata?.creatorId ?? null;
+      const creator = creatorId
+        ? await db.creator.findUnique({ where: { id: creatorId } })
+        : customerEmail
+        ? await db.creator.findFirst({ where: { email: { equals: customerEmail, mode: "insensitive" } } })
+        : null;
+
+      if (!creator) {
+        console.error(`Paystack webhook: AI assistant subscription.create with no matching creator (metadata.creatorId: ${creatorId}, email: ${customerEmail})`);
+      } else {
+        await db.creator.update({
+          where: { id: creator.id },
+          data: {
+            aiAssistantBillingStatus: "ACTIVE",
+            aiAssistantPaystackCustomerCode: data.customer?.customer_code ?? null,
+            aiAssistantPaystackSubscriptionCode: data.subscription_code ?? null,
+            aiAssistantPaystackEmailToken: data.email_token ?? null,
+            aiAssistantSubscriptionRenewsAt: data.next_payment_date ? new Date(data.next_payment_date) : null,
+            aiAssistantWentOfflineAt: null,
+          },
+        });
+
+        try {
+          await db.paymentRecord.create({
+            data: {
+              creatorId: creator.id,
+              amountNgn: Math.round((data.amount ?? 0) / 100),
+              type: "AI_ASSISTANT_SUBSCRIPTION_INITIAL",
+              paystackReference: data.reference ?? null,
+            },
+          });
+        } catch (err) {
+          console.error(`Paystack webhook: failed to create PaymentRecord for AI assistant subscription.create (creator ${creator.id})`, err);
+        }
+      }
     } else {
       const match = planCode ? tierFromPlanCode(planCode) : null;
 
@@ -316,6 +363,33 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: failed to create PaymentRecord for calendar renewal (creator ${creator.id})`, err);
         }
       }
+    } else if (isAiAssistantPlanCode(planCode)) {
+      const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
+      const creator = subscriptionCode
+        ? await db.creator.findFirst({ where: { aiAssistantPaystackSubscriptionCode: subscriptionCode } })
+        : null;
+
+      if (!creator) {
+        console.error(`Paystack webhook: AI assistant renewal charge.success with no matching account (subscription_code: ${subscriptionCode})`);
+      } else {
+        await db.creator.update({
+          where: { id: creator.id },
+          data: { aiAssistantBillingStatus: "ACTIVE", aiAssistantWentOfflineAt: null },
+        });
+
+        try {
+          await db.paymentRecord.create({
+            data: {
+              creatorId: creator.id,
+              amountNgn: Math.round((event.data.amount ?? 0) / 100),
+              type: "AI_ASSISTANT_SUBSCRIPTION_RENEWAL",
+              paystackReference: event.data.reference ?? null,
+            },
+          });
+        } catch (err) {
+          console.error(`Paystack webhook: failed to create PaymentRecord for AI assistant renewal (creator ${creator.id})`, err);
+        }
+      }
     } else {
       const customerEmail = normalizeEmail(event.data?.customer?.email);
       const match = planCode ? tierFromPlanCode(planCode) : null;
@@ -397,6 +471,20 @@ export async function POST(req: NextRequest) {
           console.error(`Paystack webhook: calendar invoice.payment_failed with no matching account (subscription_code: ${subscriptionCode})`);
         }
       }
+    } else if (isAiAssistantPlanCode(planCode)) {
+      const subscriptionCode = event.data?.subscription?.subscription_code ?? event.data?.subscription_code ?? null;
+      if (subscriptionCode) {
+        const creator = await db.creator.findFirst({ where: { aiAssistantPaystackSubscriptionCode: subscriptionCode } });
+        if (creator) {
+          await db.creator.update({ where: { id: creator.id }, data: { aiAssistantBillingStatus: "OFFLINE", aiAssistantWentOfflineAt: new Date() } });
+          // TODO: send an AI-assistant-specific payment-failed email,
+          // mirroring sendCalendarPaymentFailedEmail, once that
+          // function exists in lib/resend.ts.
+          console.warn(`AI assistant payment failed for creator ${creator.id} — no notification email sent yet (not built).`);
+        } else {
+          console.error(`Paystack webhook: AI assistant invoice.payment_failed with no matching account (subscription_code: ${subscriptionCode})`);
+        }
+      }
     } else {
       const customerEmail = normalizeEmail(event.data?.customer?.email);
       if (customerEmail) {
@@ -416,11 +504,16 @@ export async function POST(req: NextRequest) {
       const calendarAccount = !portfolio
         ? await db.creator.findFirst({ where: { calendarPaystackSubscriptionCode: data.subscription_code } })
         : null;
+      const aiAssistantAccount = !portfolio && !calendarAccount
+        ? await db.creator.findFirst({ where: { aiAssistantPaystackSubscriptionCode: data.subscription_code } })
+        : null;
 
       if (portfolio) {
         await db.portfolio.update({ where: { id: portfolio.id }, data: { billingStatus: "OFFLINE", wentOfflineAt: new Date() } });
       } else if (calendarAccount) {
         await db.creator.update({ where: { id: calendarAccount.id }, data: { calendarBillingStatus: "OFFLINE", calendarWentOfflineAt: new Date() } });
+      } else if (aiAssistantAccount) {
+        await db.creator.update({ where: { id: aiAssistantAccount.id }, data: { aiAssistantBillingStatus: "OFFLINE", aiAssistantWentOfflineAt: new Date() } });
       } else {
         await db.creator.updateMany({
           where: { paystackSubscriptionCode: data.subscription_code },
