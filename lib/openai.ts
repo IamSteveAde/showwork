@@ -25,8 +25,34 @@ function requireApiKey(): string {
   return key;
 }
 
+interface ResponsesApiOutputItem {
+  type: string;
+  content?: { type: string; text?: string }[];
+}
+
 interface ResponsesApiResult {
-  output_text: string;
+  output: ResponsesApiOutputItem[];
+}
+
+/**
+ * Extracts the model's text from the real, raw Responses API output
+ * array. `output_text` (used in every OpenAI code example) is
+ * explicitly documented as a convenience property their official
+ * SDKs compute on top of this array — it does not exist on the raw
+ * HTTP JSON response, which is all a plain fetch() call like this
+ * one ever receives. The output array can also contain non-message
+ * items (tool calls, reasoning), so this searches it properly rather
+ * than assuming the text sits at a fixed position.
+ */
+function extractOutputText(data: ResponsesApiResult): string {
+  const textParts: string[] = [];
+  for (const item of data.output ?? []) {
+    if (item.type !== "message" || !item.content) continue;
+    for (const part of item.content) {
+      if (part.type === "output_text" && part.text) textParts.push(part.text);
+    }
+  }
+  return textParts.join("\n").trim();
 }
 
 /**
@@ -71,7 +97,14 @@ async function callOpenAI({
     throw new Error((data as any).error?.message ?? `OpenAI request failed (${res.status})`);
   }
 
-  return data.output_text;
+  const text = extractOutputText(data);
+  if (!text) {
+    // A genuinely empty result — surfaced as a real error rather than
+    // returned as an empty string, which would otherwise look like
+    // success to every caller while silently saving nothing.
+    throw new Error("OpenAI returned no text output for this request.");
+  }
+  return text;
 }
 
 /**
@@ -146,6 +179,7 @@ export async function generateContentCalendar({
   endDate,
   postsPerWeek,
   platforms,
+  customInstructions,
 }: {
   clientName: string;
   businessSummary: string;
@@ -153,10 +187,11 @@ export async function generateContentCalendar({
   endDate: string;
   postsPerWeek: number;
   platforms: string[];
+  customInstructions?: string;
 }): Promise<GeneratedPostIdea[]> {
-  const instructions = `You are a social media content strategist. Given a business's profile and a date range, generate a realistic, varied content calendar as a JSON array. Each item must have exactly these fields: postDate (an ISO date, YYYY-MM-DD, within the given range), platform (one of: ${platforms.join(", ")}), postType (e.g. "Single Image", "Reel", "Carousel"), category (e.g. "Educational", "Promotional", "Behind the Scenes"), caption (a real, ready-to-use caption in the business's voice), contentIdea (a short description of what the visual/video should actually show), cta (a short call to action), and hashtags (space-separated, relevant to the business). Space posts out sensibly across the date range rather than clustering them. Output ONLY the JSON array, no other text, no markdown code fences.`;
+  const instructions = `You are a social media content strategist. Given a business's profile and a date range, generate a realistic, varied content calendar as a JSON array. Each item must have exactly these fields: postDate (an ISO date, YYYY-MM-DD, within the given range), platform (one of: ${platforms.join(", ")}), postType (e.g. "Single Image", "Reel", "Carousel"), category (e.g. "Educational", "Promotional", "Behind the Scenes"), caption (a real, ready-to-use caption in the business's voice), contentIdea (a short description of what the visual/video should actually show), cta (a short call to action), and hashtags (space-separated, relevant to the business). Space posts out sensibly across the date range rather than clustering them. If the manager has given specific instructions, follow them closely — they take priority over generic assumptions about the business. Output ONLY the JSON array, no other text, no markdown code fences.`;
 
-  const input = `Client: ${clientName}\n\nBusiness summary:\n${businessSummary}\n\nDate range: ${startDate} to ${endDate}\nTarget: roughly ${postsPerWeek} posts per week\nPlatforms to use: ${platforms.join(", ")}`;
+  const input = `Client: ${clientName}\n\nBusiness summary:\n${businessSummary}\n\nDate range: ${startDate} to ${endDate}\nTarget: roughly ${postsPerWeek} posts per week\nPlatforms to use: ${platforms.join(", ")}${customInstructions ? `\n\nSpecific instructions from the manager for this batch:\n${customInstructions}` : ""}`;
 
   const raw = await callOpenAI({ instructions, input });
 

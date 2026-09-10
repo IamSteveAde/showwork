@@ -422,7 +422,7 @@ export default async function CalendarDetailPage({
 
   const surface = "#FFFFFF";
   const surfaceSoft = "#F7F8FA";
-  const pageBackground = "#F4F6F8";
+  const pageBackground = "#F5F7FB";
   const pageText = "#0A0D12";
   const secondaryText = "#475467";
   const tertiaryText = "#667085";
@@ -580,35 +580,72 @@ export default async function CalendarDetailPage({
           MAIN WORKSPACE
       ============================================================ */}
       <div className="mx-auto max-w-[1500px] px-5 pb-28 md:px-8 md:pb-24 xl:px-10">
-        {/* Simple navigation rail */}
+        {/* Workspace command rail */}
         <nav
-          className="-mt-6 relative z-30 flex w-full items-center gap-1 overflow-x-auto rounded-2xl p-1.5 shadow-xl scrollbar-none"
+          className="sticky top-3 z-40 -mt-6 flex w-full items-center gap-1 overflow-x-auto rounded-[18px] p-1.5 scrollbar-none"
           style={{
-            background: "rgba(255,255,255,0.96)",
-            border: `1px solid ${border}`,
-            boxShadow: "0 18px 50px rgba(15,23,42,0.10)",
-            backdropFilter: "blur(18px)",
+            background: "rgba(255,255,255,0.92)",
+            border: "1px solid rgba(10,13,18,0.08)",
+            boxShadow: "0 18px 50px rgba(15,23,42,0.11)",
+            backdropFilter: "blur(22px)",
           }}
           aria-label="Workspace navigation"
         >
+          <div className="hidden shrink-0 items-center gap-2 px-2.5 lg:flex">
+            <span className="h-2 w-2 rounded-full bg-[#2478FF] shadow-[0_0_0_4px_rgba(36,120,255,0.10)]" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#98A2B3]">
+              Workspace
+            </span>
+          </div>
+
           {isManager && (
-            <a href="#team" className="shrink-0 rounded-xl bg-blue-500/10 px-4 py-2.5 text-[11px] font-semibold text-[#2478FF]">
+            <a
+              href="#team"
+              className="shrink-0 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold text-[#475467] transition-all hover:bg-[#F2F4F7] hover:text-[#101828]"
+            >
               Team
             </a>
           )}
-          <a href="#calendar" className="shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-semibold text-[#475467] transition-colors hover:bg-[#F2F4F7] hover:text-[#101828]">
-            Calendar
+
+          <a
+            href="#calendar"
+            className="shrink-0 rounded-xl bg-[#EEF5FF] px-3.5 py-2.5 text-[11px] font-semibold text-[#2478FF] transition-all hover:bg-[#E4F0FF]"
+          >
+            Content
           </a>
-          <a href="#overview" className="shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-semibold text-[#475467] transition-colors hover:bg-[#F2F4F7] hover:text-[#101828]">
-            Overview
+
+          <a
+            href="#overview"
+            className="shrink-0 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold text-[#475467] transition-all hover:bg-[#F2F4F7] hover:text-[#101828]"
+          >
+            Insights
           </a>
-          <a href="#access" className="shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-semibold text-[#475467] transition-colors hover:bg-[#F2F4F7] hover:text-[#101828]">
-            Access
+
+          <a
+            href="#access"
+            className="shrink-0 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold text-[#475467] transition-all hover:bg-[#F2F4F7] hover:text-[#101828]"
+          >
+            Client access
           </a>
+
           {isManager && (
-            <PublishTrigger className="ml-auto shrink-0 rounded-xl bg-[#0A0D12] px-4 py-2.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#161A22]">
-              Publish
-            </PublishTrigger>
+            <>
+              <a
+                href="#instagram"
+                className="shrink-0 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold text-[#475467] transition-all hover:bg-[#F2F4F7] hover:text-[#101828]"
+              >
+                Publishing
+              </a>
+              <a
+                href="#ai-assistant"
+                className="shrink-0 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold text-[#475467] transition-all hover:bg-[#F2F4F7] hover:text-[#101828]"
+              >
+                AI studio
+              </a>
+              <PublishTrigger className="ml-auto shrink-0 rounded-xl bg-[#0A0D12] px-4 py-2.5 text-[11px] font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#161A22]">
+                Publish
+              </PublishTrigger>
+            </>
           )}
         </nav>
 
@@ -740,7 +777,7 @@ export default async function CalendarDetailPage({
             </a>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-[28px]" style={{ background: surface, border: `1px solid ${border}` }}>
+          <div className="mt-8 overflow-hidden rounded-[32px] shadow-[0_20px_60px_rgba(15,23,42,0.07)]" style={{ background: surface, border: `1px solid ${border}` }}>
             <CalendarGrid
               calendarId={calendar.id}
               planStatus={calendar.planStatus}
@@ -803,7 +840,7 @@ export default async function CalendarDetailPage({
             </p>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-[26px] p-6 md:p-7" style={{ background: surface, border: `1px solid ${border}` }}>
               <div className="mb-8 flex items-center justify-between">
                 <div>
@@ -972,98 +1009,187 @@ export default async function CalendarDetailPage({
         </section>
 
         {/* ==========================================================
-            AUTO-PUBLISHING — manager-only, lets this calendar's
-            approved posts publish automatically once a matching
-            platform is connected.
+            PUBLISHING CONTROL CENTER
         =========================================================== */}
         {isManager && (
-          <section id="instagram" className="scroll-mt-8 pt-16 md:pt-24">
-            <div className="mb-7 max-w-2xl">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">Auto-publishing</p>
-              <h2 className="text-3xl font-semibold tracking-[-0.045em]" style={{ color: pageText }}>
-                Connect a platform, skip manual posting.
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: secondaryText }}>
-                Once connected, any approved post on that platform publishes on its own on the scheduled date — nobody has to post it by hand.
-              </p>
-            </div>
+          <section id="instagram" className="scroll-mt-24 pt-16 md:pt-24">
+            <div className="relative overflow-hidden rounded-[34px] border border-[#172033] bg-[#080D15] shadow-[0_26px_80px_rgba(15,23,42,0.15)]">
+              <div className="pointer-events-none absolute -right-28 -top-36 h-[420px] w-[420px] rounded-full bg-[#2478FF]/[0.14] blur-[90px]" />
+              <div className="pointer-events-none absolute -bottom-40 left-[18%] h-72 w-72 rounded-full bg-[#2478FF]/[0.07] blur-[80px]" />
 
-            <div className="grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
-              <InstagramConnectionCard
-                calendarId={calendar.id}
-                username={calendar.instagramUsername}
-                connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
-              />
-              <TikTokConnectionCard
-                calendarId={calendar.id}
-                username={calendar.tikTokUsername}
-                connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
-              />
+              <div className="relative border-b border-white/[0.07] px-6 py-7 md:px-9 md:py-9 lg:px-10">
+                <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-2xl">
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/15 bg-blue-400/[0.08] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-blue-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
+                        Publishing control
+                      </span>
+                      <span className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white/45">
+                        Automatic delivery
+                      </span>
+                    </div>
+
+                    <h2 className="max-w-xl text-3xl font-semibold tracking-[-0.05em] text-white md:text-5xl">
+                      Approved here. Published there.
+                    </h2>
+                    <p className="mt-4 max-w-xl text-sm leading-6 text-white/55">
+                      Connect each client channel once. Approved posts can then move from the content plan to the live platform on schedule.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 lg:w-[330px]">
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">Instagram</p>
+                      <p className="mt-2 text-xs font-semibold text-white">
+                        {calendar.instagramUsername ? "Connected" : "Not connected"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/35">TikTok</p>
+                      <p className="mt-2 text-xs font-semibold text-white">
+                        {calendar.tikTokUsername ? "Connected" : "Not connected"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative bg-white/[0.025] p-5 md:p-7 lg:p-8">
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-white">Connected channels</p>
+                  <p className="mt-1 text-[11px] leading-5 text-white/40">
+                    Manage authentication and publishing access for this client.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <InstagramConnectionCard
+                    calendarId={calendar.id}
+                    username={calendar.instagramUsername}
+                    connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
+                  />
+                  <TikTokConnectionCard
+                    calendarId={calendar.id}
+                    username={calendar.tikTokUsername}
+                    connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
+                  />
+                </div>
+              </div>
             </div>
           </section>
         )}
 
         {/* ==========================================================
-            AI CONTENT ASSISTANT — manager-only, account-level premium
-            add-on. Upload business documents, see the AI's current
-            understanding of this client, weekly research status.
+            AI CONTENT STUDIO
         =========================================================== */}
         {isManager && (
-          <section id="ai-assistant" className="scroll-mt-8 pt-16 md:pt-24">
-            <div className="mb-7 max-w-2xl">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">AI content assistant</p>
-              <h2 className="text-3xl font-semibold tracking-[-0.045em]" style={{ color: pageText }}>
-                Teach the AI this client&apos;s business.
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: secondaryText }}>
-                Upload documents so the AI understands what this business does — it researches the industry weekly and can generate a full content calendar on demand.
-              </p>
+          <section id="ai-assistant" className="scroll-mt-24 pt-16 md:pt-24">
+            <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="inline-flex h-7 items-center gap-2 rounded-full border border-[#CFE0FB] bg-[#EEF5FF] px-3 text-[9px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
+                    AI content studio
+                  </span>
+                </div>
+
+                <h2 className="max-w-2xl text-3xl font-semibold tracking-[-0.05em] text-[#101828] md:text-5xl">
+                  Context in. Better content out.
+                </h2>
+                <p className="mt-4 max-w-xl text-sm leading-6 text-[#667085]">
+                  Give Showwork real business context, then turn that understanding into thoughtful content batches you can review before they enter the calendar.
+                </p>
+              </div>
+
+              <div className="flex max-w-xl gap-2 overflow-x-auto pb-1">
+                {[
+                  ["01", "Teach", "Business knowledge"],
+                  ["02", "Generate", "Draft a content batch"],
+                  ["03", "Review", "Approve before calendar"],
+                ].map(([number, title, description]) => (
+                  <div
+                    key={number}
+                    className="min-w-[150px] rounded-2xl border border-[#E4E7EC] bg-white px-4 py-3.5 shadow-[0_6px_22px_rgba(15,23,42,0.04)]"
+                  >
+                    <p className="text-[9px] font-bold tracking-[0.14em] text-[#2478FF]">{number}</p>
+                    <p className="mt-1.5 text-[11px] font-semibold text-[#101828]">{title}</p>
+                    <p className="mt-0.5 text-[9px] leading-4 text-[#98A2B3]">{description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
-              <BusinessKnowledgeCard
-                calendarId={calendar.id}
-                aiActive={
-                  calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
+            <div className="relative overflow-hidden rounded-[34px] border border-[#DFE5EE] bg-[#EEF3F9] p-2 shadow-[0_20px_65px_rgba(15,23,42,0.07)] sm:p-3 lg:p-4">
+              <div className="pointer-events-none absolute -right-32 -top-36 h-96 w-96 rounded-full bg-[#2478FF]/[0.06] blur-3xl" />
+
+              <div className="relative grid grid-cols-1 gap-3 xl:grid-cols-2">
+                <BusinessKnowledgeCard
+                  calendarId={calendar.id}
+                  aiActive={
+                    calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
+                    (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
+                      !!calendar.manager.aiAssistantTrialEndsAt &&
+                      calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())
+                  }
+                  businessSummary={calendar.aiBusinessSummary}
+                  summaryUpdatedAt={calendar.aiBusinessSummaryUpdatedAt?.toISOString() ?? null}
+                  lastResearchedAt={calendar.aiLastResearchedAt?.toISOString() ?? null}
+                  documents={calendar.businessDocuments.map((doc) => ({
+                    id: doc.id,
+                    originalName: doc.originalName,
+                    createdAt: doc.createdAt.toISOString(),
+                  }))}
+                />
+
+                {(calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
                   (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
                     !!calendar.manager.aiAssistantTrialEndsAt &&
-                    calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())
-                }
-                businessSummary={calendar.aiBusinessSummary}
-                summaryUpdatedAt={calendar.aiBusinessSummaryUpdatedAt?.toISOString() ?? null}
-                lastResearchedAt={calendar.aiLastResearchedAt?.toISOString() ?? null}
-                documents={calendar.businessDocuments.map((doc) => ({
-                  id: doc.id,
-                  originalName: doc.originalName,
-                  createdAt: doc.createdAt.toISOString(),
-                }))}
-              />
-              {(calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
-                (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
-                  !!calendar.manager.aiAssistantTrialEndsAt &&
-                  calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())) && (
-                <AiContentGeneratorCard
-                  calendarId={calendar.id}
-                  hasBusinessSummary={!!calendar.aiBusinessSummary}
-                />
-              )}
+                    calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())) && (
+                  <AiContentGeneratorCard
+                    calendarId={calendar.id}
+                    hasBusinessSummary={!!calendar.aiBusinessSummary}
+                  />
+                )}
+              </div>
             </div>
           </section>
         )}
 
         {/* ==========================================================
-            PLAN
+            CLIENT PLAN & PUBLISH
         =========================================================== */}
-        <section id="publish" className="pt-16 md:pt-24">
-          <CalendarPlanStatus
-            calendarId={calendar.id}
-            planStatus={calendar.planStatus}
-            planApprovalNote={calendar.planApprovalNote}
-            headerTitle={calendar.headerTitle}
-            headerDescription={calendar.headerDescription}
-            headerBannerDesktopUrl={calendar.headerBannerDesktopUrl}
-            headerBannerMobileUrl={calendar.headerBannerMobileUrl}
-          />
+        <section id="publish" className="scroll-mt-24 pt-16 md:pt-24">
+          <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">
+                Client plan
+              </p>
+              <h2 className="text-3xl font-semibold tracking-[-0.045em] text-[#101828] md:text-4xl">
+                Move the plan from working to ready.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-[#667085]">
+                Finalise the client-facing plan, review its presentation and publish when everything is ready to share.
+              </p>
+            </div>
+
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-3 py-2 text-[10px] font-semibold text-[#667085]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
+              Publication controls
+            </span>
+          </div>
+
+          <div className="overflow-hidden rounded-[30px] border border-[#E1E6EE] bg-white p-1.5 shadow-[0_18px_55px_rgba(15,23,42,0.06)] sm:p-2">
+            <CalendarPlanStatus
+              calendarId={calendar.id}
+              planStatus={calendar.planStatus}
+              planApprovalNote={calendar.planApprovalNote}
+              headerTitle={calendar.headerTitle}
+              headerDescription={calendar.headerDescription}
+              headerBannerDesktopUrl={calendar.headerBannerDesktopUrl}
+              headerBannerMobileUrl={calendar.headerBannerMobileUrl}
+            />
+          </div>
         </section>
 
 
@@ -1073,10 +1199,10 @@ export default async function CalendarDetailPage({
         =========================================================== */}
         <section className="pt-20 md:pt-28">
           <div
-            className="relative overflow-hidden rounded-[32px] px-7 py-9 md:px-12 md:py-12"
+            className="relative overflow-hidden rounded-[36px] px-7 py-10 shadow-[0_28px_80px_rgba(15,23,42,0.18)] md:px-12 md:py-14"
             style={{
               background:
-                "radial-gradient(circle at 85% 20%, rgba(36,120,255,0.18), transparent 30%), linear-gradient(135deg, #111721, #0A0D12)",
+                "radial-gradient(circle at 88% 18%, rgba(36,120,255,0.24), transparent 28%), radial-gradient(circle at 15% 100%, rgba(36,120,255,0.08), transparent 30%), linear-gradient(135deg, #111721, #070A0F)",
               border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
@@ -1086,10 +1212,10 @@ export default async function CalendarDetailPage({
                   Keep the relationship moving
                 </p>
                 <h2 className="text-3xl font-semibold tracking-[-0.05em] text-white md:text-5xl">
-                  Keep adding. Keep reviewing. Keep creating.
+                  The workspace that grows with the relationship.
                 </h2>
                 <p className="mt-4 max-w-xl text-sm leading-6 text-white/60">
-                  This workspace stays with the client as the work evolves. No new project required every time something changes.
+                  Plan the next idea, review the next draft and keep every client conversation connected to the work — without starting over.
                 </p>
               </div>
 
@@ -1109,7 +1235,7 @@ export default async function CalendarDetailPage({
         {isManager && (
           <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 z-50 sm:bottom-5 sm:left-5">
             <PublishTrigger
-              className="group inline-flex h-11 items-center gap-2 rounded-full border border-[#1768E8] bg-[#2478FF] px-4 text-xs font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.26)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] focus:outline-none focus:ring-2 focus:ring-[#2478FF]/30 focus:ring-offset-2"
+              className="group inline-flex h-11 items-center gap-2 rounded-full border border-[#1768E8] bg-[#2478FF] px-4 text-xs font-semibold text-white shadow-[0_14px_36px_rgba(36,120,255,0.30)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] hover:shadow-[0_18px_42px_rgba(36,120,255,0.34)] focus:outline-none focus:ring-2 focus:ring-[#2478FF]/30 focus:ring-offset-2"
             >
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15">
                 +
