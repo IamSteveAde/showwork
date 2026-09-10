@@ -33,6 +33,8 @@ interface CalendarPostCustomFieldData {
 }
 
 type InstagramPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 
 interface CalendarPostData {
   id: string;
@@ -51,11 +53,13 @@ interface CalendarPostData {
   instagramPublishStatus: InstagramPublishStatus;
   instagramPermalink: string | null;
   instagramPublishError: string | null;
+  tikTokPublishStatus: TikTokPublishStatus;
+  tikTokPrivacyLevel: TikTokPrivacyLevel | null;
+  tikTokPublishError: string | null;
   assets: CalendarPostAssetData[];
   videoComments: CalendarVideoCommentData[];
   customFields: CalendarPostCustomFieldData[];
 }
-
 const PLATFORMS: {
   value: Platform;
   label: string;
@@ -505,7 +509,7 @@ function PostTile({
   // approval status underneath it — this overrides the bottom badge
   // text/color in that case, rather than showing both at once on a
   // tile this small.
-  const instagramStatusMeta =
+    const instagramStatusMeta =
     post.platform === "INSTAGRAM" && post.instagramPublishStatus !== "NOT_SCHEDULED"
       ? post.instagramPublishStatus === "PUBLISHED"
         ? { text: "Live on Instagram", color: "#E1306C" }
@@ -513,7 +517,17 @@ function PostTile({
         ? { text: "Scheduled to publish", color: "#2478FF" }
         : { text: "Publish failed", color: "#EF4444" }
       : null;
-  const bottomStatusMeta = instagramStatusMeta ?? approvalMeta;
+  // A post is only ever one platform, so at most one of these two
+  // is ever non-null at the same time — safe to just combine them.
+  const tikTokStatusMeta =
+    post.platform === "TIKTOK" && post.tikTokPublishStatus !== "NOT_SCHEDULED"
+      ? post.tikTokPublishStatus === "PUBLISHED"
+        ? { text: "Published to TikTok", color: "#00F2EA" }
+        : post.tikTokPublishStatus === "SCHEDULED"
+        ? { text: "Scheduled to publish", color: "#2478FF" }
+        : { text: "Publish failed", color: "#EF4444" }
+      : null;
+  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? approvalMeta;
 
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
@@ -886,6 +900,9 @@ function AddPostPanel({
   const [platforms, setPlatforms] =
     useState<Platform[]>([]);
 
+  const [tikTokPrivacyLevel, setTikTokPrivacyLevel] =
+    useState<"PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY">("SELF_ONLY");
+
   // Time of day this post is scheduled for — combined with the
   // clicked calendar day before sending to the server, since the day
   // alone would otherwise default to midnight.
@@ -1116,7 +1133,7 @@ function AddPostPanel({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+                 body: JSON.stringify({
             postDate: fullDate.toISOString(),
             platforms,
             postType,
@@ -1128,6 +1145,7 @@ function AddPostPanel({
             taggedAccounts,
             linkUrl,
             customFields,
+            tikTokPrivacyLevel: platforms.includes("TIKTOK") ? tikTokPrivacyLevel : undefined,
           }),
         }
       );
@@ -1618,7 +1636,7 @@ function AddPostPanel({
                 })}
               </div>
 
-              {platforms.length > 1 && (
+                            {platforms.length > 1 && (
                 <div
                   className="
                     mt-3
@@ -1641,6 +1659,51 @@ function AddPostPanel({
                     posts — one for each platform selected — all
                     with the same content below.
                   </p>
+                </div>
+              )}
+
+              {/* TikTok requires a real, active privacy choice —
+                  it can never be silently decided by this app, and
+                  which levels are even available differs per
+                  account (checked for real right before publish). */}
+              {platforms.includes("TIKTOK") && (
+                <div
+                  className="mt-3 rounded-xl border p-3"
+                  style={{ background: "rgba(0,242,234,0.05)", borderColor: "rgba(0,242,234,0.18)" }}
+                >
+                  <p className="mb-2 text-[11px] font-semibold" style={{ color: t.text }}>
+                    TikTok privacy level
+                  </p>
+                  <p className="mb-3 text-[10px] leading-relaxed" style={{ color: t.textFaint }}>
+                    TikTok requires this to be chosen up front — whichever level isn&apos;t actually available on the connected account will be flagged when it publishes.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        { value: "PUBLIC_TO_EVERYONE", label: "Public" },
+                        { value: "MUTUAL_FOLLOW_FRIENDS", label: "Friends" },
+                        { value: "FOLLOWER_OF_CREATOR", label: "Followers" },
+                        { value: "SELF_ONLY", label: "Only me" },
+                      ] as const
+                    ).map((option) => {
+                      const selected = tikTokPrivacyLevel === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setTikTokPrivacyLevel(option.value)}
+                          className="rounded-lg border px-3 py-2 text-[11px] font-semibold transition-all"
+                          style={{
+                            borderColor: selected ? "#00C2B8" : t.inputBorder,
+                            background: selected ? "rgba(0,242,234,0.12)" : t.inputBg,
+                            color: selected ? "#00C2B8" : t.pillText,
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </section>
@@ -3319,9 +3382,69 @@ function PostDetailPanel({
                       </>
                     )}
 
-                    {post.instagramPublishStatus === "FAILED" && (
+                                       {post.instagramPublishStatus === "FAILED" && (
                       <p className="text-sm leading-relaxed text-red-400">
                         {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+
+            {/* TIKTOK PUBLISH STATUS — same pattern as Instagram's,
+                but TikTok's API has no public permalink to link to
+                the way Instagram's does, so nothing to link even
+                once published. */}
+            {post.platform === "TIKTOK" &&
+              post.tikTokPublishStatus !== "NOT_SCHEDULED" && (
+                <section>
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{
+                      background:
+                        post.tikTokPublishStatus === "PUBLISHED"
+                          ? "rgba(0,242,234,0.06)"
+                          : post.tikTokPublishStatus === "FAILED"
+                          ? "rgba(239,68,68,0.06)"
+                          : "rgba(36,120,255,0.06)",
+                      borderColor:
+                        post.tikTokPublishStatus === "PUBLISHED"
+                          ? "rgba(0,242,234,0.18)"
+                          : post.tikTokPublishStatus === "FAILED"
+                          ? "rgba(239,68,68,0.16)"
+                          : "rgba(36,120,255,0.16)",
+                    }}
+                  >
+                    <p
+                      className="mb-1.5 text-[10px] font-bold uppercase"
+                      style={{
+                        letterSpacing: "0.08em",
+                        color:
+                          post.tikTokPublishStatus === "PUBLISHED"
+                            ? "#00C2B8"
+                            : post.tikTokPublishStatus === "FAILED"
+                            ? "#EF4444"
+                            : "#2478FF",
+                      }}
+                    >
+                      TikTok
+                    </p>
+
+                    {post.tikTokPublishStatus === "SCHEDULED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        This will publish to TikTok automatically once its scheduled time arrives — until this app clears TikTok&apos;s content audit, it will publish as private (visible only to the connected account).
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "PUBLISHED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        Published to TikTok. TikTok doesn&apos;t provide a direct link back to the post, and it&apos;s currently private-only pending this app&apos;s content audit — check the TikTok app directly to view it.
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "FAILED" && (
+                      <p className="text-sm leading-relaxed text-red-400">
+                        {post.tikTokPublishError ?? "Something went wrong publishing this post to TikTok."}
                       </p>
                     )}
                   </div>
