@@ -93,7 +93,15 @@ async function apiPost<T>(path: string, accessToken: string, body: Record<string
   });
   const data = await res.json();
   if (!res.ok || data.error?.code !== "ok") {
-    throw new Error(data.error?.message ?? `TikTok API request failed (${res.status})`);
+    // TikTok's human-readable `message` text is often identical
+    // generic wording across several different underlying error
+    // codes (e.g. several App-status and content-policy errors all
+    // point to the same guidelines URL) — the `code` itself is what
+    // actually tells you which one it really is, so it's included
+    // here even though it makes the message slightly less clean.
+    const code = data.error?.code;
+    const message = data.error?.message ?? `TikTok API request failed (${res.status})`;
+    throw new Error(code ? `[${code}] ${message}` : message);
   }
   return data.data as T;
 }
