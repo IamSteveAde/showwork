@@ -42,7 +42,7 @@ export async function POST(
     return NextResponse.json({ error: "Upload at least one business document first, so the AI understands what to create content about" }, { status: 400 });
   }
 
-  const { startDate, endDate, postsPerWeek, platforms } = await req.json();
+  const { startDate, endDate, postsPerWeek, platforms, customInstructions } = await req.json();
   if (!startDate || !endDate) {
     return NextResponse.json({ error: "A start and end date are required" }, { status: 400 });
   }
@@ -65,6 +65,7 @@ export async function POST(
       endDate,
       postsPerWeek: targetPostsPerWeek,
       platforms: validPlatforms,
+      customInstructions: typeof customInstructions === "string" && customInstructions.trim() ? customInstructions.trim() : undefined,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to generate content";
