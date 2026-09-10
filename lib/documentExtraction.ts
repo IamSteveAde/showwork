@@ -5,8 +5,16 @@
 // raw file to OpenAI itself, since plain text extraction is a solved,
 // cheap problem that doesn't need an AI call of its own.
 //
-// Requires two new packages:
-//   npm install pdf-parse mammoth --save
+// PDFs use pdf2json, not pdf-parse — pdf-parse pulls in pdfjs-dist's
+// browser-oriented rendering code, which references DOMMatrix (a
+// browser-only graphics API that doesn't exist in Node.js at all),
+// causing a hard crash in this server environment even though only
+// plain text extraction was ever needed. pdf2json avoids that
+// rendering path entirely.
+//
+// Requires two packages:
+//   npm install pdf2json mammoth --save
+// (pdf-parse can be removed if it was installed for this earlier.)
 // ─────────────────────────────────────────────
 
 export const ALLOWED_BUSINESS_DOCUMENT_TYPES = [
@@ -17,6 +25,34 @@ export const ALLOWED_BUSINESS_DOCUMENT_TYPES = [
 
 export function isAllowedBusinessDocumentType(contentType: string): boolean {
   return ALLOWED_BUSINESS_DOCUMENT_TYPES.includes(contentType);
+}
+
+/**
+ * pdf2json has no reliable official TypeScript types, so it's
+ * imported defensively as `any` rather than assuming a specific
+ * export shape. Its API is event-based (not Promise-based), so this
+ * wraps it in a Promise the rest of this file can simply await.
+ */
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const PDFParserModule: any = await import("pdf2json");
+  const PDFParser = PDFParserModule.default ?? PDFParserModule;
+
+  return new Promise((resolve, reject) => {
+    // The `1` here enables getRawTextContent()'s plain-text mode —
+    // without it, the parser is set up for structured field/form
+    // extraction instead of simple readable text.
+    const parser = new PDFParser(null, 1);
+
+    parser.on("pdfParser_dataError", (errData: any) => {
+      reject(new Error(errData?.parserError ?? "Failed to parse PDF"));
+    });
+
+    parser.on("pdfParser_dataReady", () => {
+      resolve(parser.getRawTextContent());
+    });
+
+    parser.parseBuffer(buffer);
+  });
 }
 
 /**
@@ -32,16 +68,9 @@ export async function extractTextFromDocument(fileUrl: string, contentType: stri
     throw new Error("Failed to download the uploaded document for processing");
   }
   const buffer = Buffer.from(await res.arrayBuffer());
+
   if (contentType === "application/pdf") {
-    // Imported defensively as `any` rather than assuming a specific
-    // export shape — pdf-parse's package typings don't reliably
-    // declare a `default` export even when one exists at runtime,
-    // and this works correctly whichever way the module actually
-    // exports its function.
-    const pdfParseModule: any = await import("pdf-parse");
-    const pdfParse = pdfParseModule.default ?? pdfParseModule;
-    const result = await pdfParse(buffer);
-    return result.text;
+    return extractPdfText(buffer);
   }
 
   if (contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
