@@ -1408,6 +1408,24 @@ model SocialCalendar {
   instagramTokenExpiresAt  DateTime?
   instagramConnectedAt     DateTime?
 
+  // ── TikTok publishing connection — one TikTok account per
+  // calendar, connected via TikTok's own OAuth. Null until the
+  // manager actually connects one. tikTokOpenId is the account's
+  // stable identifier — TikTok's equivalent of instagramAccountId.
+  // Until the content audit clears, everything published through
+  // this connection lands as private-only regardless of the privacy
+  // level chosen on the post itself — a genuine platform limitation,
+  // not something this app can override.
+  tikTokOpenId          String?
+  tikTokUsername        String?
+  // Access tokens are short-lived (a few hours); refreshToken is
+  // what a scheduled job uses to silently mint a new access token
+  // ahead of expiry, without ever needing the manager to reconnect.
+  tikTokAccessToken     String?
+  tikTokAccessTokenExpiresAt DateTime?
+  tikTokRefreshToken    String?
+  tikTokConnectedAt     DateTime?
+
   posts         CalendarPost[]
   collaborators CalendarCollaborator[]
   invites       CalendarInvite[]
@@ -1436,6 +1454,28 @@ enum InstagramPublishStatus {
   SCHEDULED
   PUBLISHED
   FAILED
+}
+
+// Mirrors InstagramPublishStatus exactly — same lifecycle, same
+// scheduling job, different platform.
+enum TikTokPublishStatus {
+  NOT_SCHEDULED
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+// TikTok requires the person creating the post to actively choose a
+// privacy level — it can never be silently decided by the system,
+// and which options are even available differs per TikTok account
+// (a private account has no PUBLIC_TO_EVERYONE option at all). Set
+// once, at post-creation time, and used as-is by the scheduler at
+// actual publish time.
+enum TikTokPrivacyLevel {
+  PUBLIC_TO_EVERYONE
+  MUTUAL_FOLLOW_FRIENDS
+  FOLLOWER_OF_CREATOR
+  SELF_ONLY
 }
 
 enum PostApprovalStatus {
@@ -1486,6 +1526,21 @@ model CalendarPost {
   // The most recent failure message, if instagramPublishStatus is
   // FAILED — cleared on the next successful publish attempt.
   instagramPublishError  String?
+
+  // ── TikTok auto-publishing ──
+  tikTokPublishStatus TikTokPublishStatus @default(NOT_SCHEDULED)
+  // Chosen by the manager at post-creation time, not decided by the
+  // system — TikTok requires this be a real, active human choice.
+  // Null until a manager actually sets one, which only ever happens
+  // for a TikTok post.
+  tikTokPrivacyLevel  TikTokPrivacyLevel?
+  tikTokPublishedAt   DateTime?
+  // TikTok's publish_id, filled in once actually published. TikTok's
+  // Direct Post API doesn't return a public permalink the way
+  // Instagram does — there's no equivalent field to store here until
+  // the content audit clears and posts become genuinely public.
+  tikTokPublishId     String?
+  tikTokPublishError  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

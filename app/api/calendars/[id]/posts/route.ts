@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
-import type { SocialPlatform } from "@prisma/client";
+import type { SocialPlatform, TikTokPrivacyLevel } from "@prisma/client";
 
 const VALID_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "YOUTUBE", "FACEBOOK", "X", "LINKEDIN"];
+const VALID_TIKTOK_PRIVACY_LEVELS: TikTokPrivacyLevel[] = [
+  "PUBLIC_TO_EVERYONE",
+  "MUTUAL_FOLLOW_FRIENDS",
+  "FOLLOWER_OF_CREATOR",
+  "SELF_ONLY",
+];
 
 function isSocialPlatform(value: unknown): value is SocialPlatform {
   return typeof value === "string" && (VALID_PLATFORMS as string[]).includes(value);
+}
+
+function isTikTokPrivacyLevel(value: unknown): value is TikTokPrivacyLevel {
+  return typeof value === "string" && (VALID_TIKTOK_PRIVACY_LEVELS as string[]).includes(value);
 }
 
 export async function POST(
@@ -26,7 +36,21 @@ export async function POST(
     return NextResponse.json({ error: "You don't have permission to add posts to this calendar" }, { status: 403 });
   }
 
-  const { postDate, platform, platforms, postType, category, caption, contentIdea, cta, hashtags, taggedAccounts, linkUrl, customFields } = await req.json();
+  const {
+    postDate,
+    platform,
+    platforms,
+    postType,
+    category,
+    caption,
+    contentIdea,
+    cta,
+    hashtags,
+    taggedAccounts,
+    linkUrl,
+    customFields,
+    tikTokPrivacyLevel,
+  } = await req.json();
   if (!postDate) {
     return NextResponse.json({ error: "A date is required" }, { status: 400 });
   }
@@ -41,6 +65,12 @@ export async function POST(
   if (validPlatforms.length === 0) {
     return NextResponse.json({ error: "At least one valid platform is required" }, { status: 400 });
   }
+
+  // Only meaningful (and only ever stored) for a TikTok post — the
+  // publish step itself refuses to run without this, since TikTok
+  // requires it to be a real, active human choice rather than
+  // something the system silently decides.
+  const validTikTokPrivacyLevel = isTikTokPrivacyLevel(tikTokPrivacyLevel) ? tikTokPrivacyLevel : null;
 
   const validCustomFields: { label: string; value: string }[] = Array.isArray(customFields)
     ? customFields.filter((f) => f?.label?.trim() && f?.value?.trim()).map((f) => ({ label: f.label.trim(), value: f.value.trim() }))
@@ -62,6 +92,7 @@ export async function POST(
           taggedAccounts: taggedAccounts?.trim() || null,
           linkUrl: linkUrl?.trim() || null,
           customFields: { create: validCustomFields },
+          tikTokPrivacyLevel: p === "TIKTOK" ? validTikTokPrivacyLevel : null,
         },
         include: { assets: true, customFields: true },
       })

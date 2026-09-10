@@ -16,6 +16,7 @@ import CalendarSettingsMenu from "@/components/calendars/CalendarSettingsMenu";
 import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisplay";
 import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaymentButton";
 import InstagramConnectionCard from "@/components/calendars/InstagramConnectionCard";
+import TikTokConnectionCard from "@/components/calendars/TikTokConnectionCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import PublishTrigger from "@/components/calendars/PublishTrigger";
 
@@ -750,11 +751,14 @@ export default async function CalendarDetailPage({
                 hashtags: p.hashtags,
                 taggedAccounts: p.taggedAccounts,
                 linkUrl: p.linkUrl,
-                                approvalStatus: p.approvalStatus,
+                               approvalStatus: p.approvalStatus,
                 approvalNote: p.approvalNote,
                 instagramPublishStatus: p.instagramPublishStatus,
                 instagramPermalink: p.instagramPermalink,
                 instagramPublishError: p.instagramPublishError,
+                tikTokPublishStatus: p.tikTokPublishStatus,
+                tikTokPrivacyLevel: p.tikTokPrivacyLevel,
+                tikTokPublishError: p.tikTokPublishError,
                 assets: p.assets.map((a) => ({
                   id: a.id,
                   fileKey: a.fileKey,
@@ -961,27 +965,32 @@ export default async function CalendarDetailPage({
         </section>
 
         {/* ==========================================================
-            INSTAGRAM PUBLISHING — manager-only, lets this calendar's
-            approved Instagram posts publish automatically once
-            connected.
+            AUTO-PUBLISHING — manager-only, lets this calendar's
+            approved posts publish automatically once a matching
+            platform is connected.
         =========================================================== */}
         {isManager && (
           <section id="instagram" className="scroll-mt-8 pt-16 md:pt-24">
             <div className="mb-7 max-w-2xl">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">Auto-publishing</p>
               <h2 className="text-3xl font-semibold tracking-[-0.045em]" style={{ color: pageText }}>
-                Connect Instagram, skip manual posting.
+                Connect a platform, skip manual posting.
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: secondaryText }}>
-                Once connected, any Instagram post your client approves publishes on its own on the scheduled date — nobody has to post it by hand.
+                Once connected, any approved post on that platform publishes on its own on the scheduled date — nobody has to post it by hand.
               </p>
             </div>
 
-            <div className="max-w-lg">
+            <div className="grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
               <InstagramConnectionCard
                 calendarId={calendar.id}
                 username={calendar.instagramUsername}
                 connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
+              />
+              <TikTokConnectionCard
+                calendarId={calendar.id}
+                username={calendar.tikTokUsername}
+                connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
               />
             </div>
           </section>

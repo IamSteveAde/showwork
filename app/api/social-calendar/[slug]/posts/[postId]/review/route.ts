@@ -51,6 +51,15 @@ export async function POST(
     !!calendar.instagramAccountId &&
     post.instagramPublishStatus === "NOT_SCHEDULED";
 
+  // Same reasoning, same guard, for TikTok — a separate connection
+  // and a separate publish status, so a calendar can have either or
+  // both connected without one affecting the other.
+  const shouldScheduleTikTok =
+    approved &&
+    post.platform === "TIKTOK" &&
+    !!calendar.tikTokOpenId &&
+    post.tikTokPublishStatus === "NOT_SCHEDULED";
+
   const updated = await db.calendarPost.update({
     where: { id: postId },
     data: {
@@ -58,6 +67,7 @@ export async function POST(
       approvalNote: approved ? null : note?.trim() || null,
       reviewedAt: new Date(),
       ...(shouldScheduleInstagram ? { instagramPublishStatus: "SCHEDULED" } : {}),
+      ...(shouldScheduleTikTok ? { tikTokPublishStatus: "SCHEDULED" } : {}),
     },
     include: {
       assets: { orderBy: { displayOrder: "asc" } },
