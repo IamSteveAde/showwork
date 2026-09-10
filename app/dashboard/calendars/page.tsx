@@ -7,6 +7,7 @@ import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
 import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
+import AiAssistantBillingSettings from "@/components/calendars/AiAssistantBillingSettings";
 import CalendarCard from "@/components/calendars/CalendarCard";
 
 function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
@@ -228,6 +229,8 @@ export default async function CalendarsPage({
       calendarBillingStatus: true,
       calendarTrialEndsAt: true,
       calendarSubscriptionRenewsAt: true,
+      aiAssistantBillingStatus: true,
+      aiAssistantSubscriptionRenewsAt: true,
     },
   });
 
@@ -460,6 +463,15 @@ export default async function CalendarsPage({
             trialEndsAt={calendarBilling.calendarTrialEndsAt?.toISOString() ?? null}
           />
         )}
+
+        {/* AI assistant billing — always shown, unlike calendar
+            billing above, since it doesn't depend on having created
+            a calendar first. Account-level, completely independent
+            of calendar billing. */}
+        <AiAssistantBillingSettings
+          billingStatus={calendarBilling?.aiAssistantBillingStatus ?? "PENDING_SETUP"}
+          subscriptionRenewsAt={calendarBilling?.aiAssistantSubscriptionRenewsAt?.toISOString() ?? null}
+        />
 
         {/* Payment callback */}
         <Suspense fallback={null}>

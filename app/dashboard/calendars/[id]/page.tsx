@@ -17,6 +17,8 @@ import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisp
 import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaymentButton";
 import InstagramConnectionCard from "@/components/calendars/InstagramConnectionCard";
 import TikTokConnectionCard from "@/components/calendars/TikTokConnectionCard";
+import BusinessKnowledgeCard from "@/components/calendars/BusinessKnowledgeCard";
+import AiContentGeneratorCard from "@/components/calendars/AiContentGeneratorCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import PublishTrigger from "@/components/calendars/PublishTrigger";
 
@@ -314,12 +316,17 @@ export default async function CalendarDetailPage({
         select: {
           calendarBillingStatus: true,
           calendarTrialEndsAt: true,
+          aiAssistantBillingStatus: true,
+          aiAssistantTrialEndsAt: true,
         },
       },
       _count: {
         select: {
           collaborators: true,
         },
+      },
+      businessDocuments: {
+        orderBy: { createdAt: "desc" },
       },
       posts: {
         orderBy: { postDate: "asc" },
@@ -992,6 +999,54 @@ export default async function CalendarDetailPage({
                 username={calendar.tikTokUsername}
                 connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
               />
+            </div>
+          </section>
+        )}
+
+        {/* ==========================================================
+            AI CONTENT ASSISTANT — manager-only, account-level premium
+            add-on. Upload business documents, see the AI's current
+            understanding of this client, weekly research status.
+        =========================================================== */}
+        {isManager && (
+          <section id="ai-assistant" className="scroll-mt-8 pt-16 md:pt-24">
+            <div className="mb-7 max-w-2xl">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">AI content assistant</p>
+              <h2 className="text-3xl font-semibold tracking-[-0.045em]" style={{ color: pageText }}>
+                Teach the AI this client&apos;s business.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-6" style={{ color: secondaryText }}>
+                Upload documents so the AI understands what this business does — it researches the industry weekly and can generate a full content calendar on demand.
+              </p>
+            </div>
+
+            <div className="grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
+              <BusinessKnowledgeCard
+                calendarId={calendar.id}
+                aiActive={
+                  calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
+                  (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
+                    !!calendar.manager.aiAssistantTrialEndsAt &&
+                    calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())
+                }
+                businessSummary={calendar.aiBusinessSummary}
+                summaryUpdatedAt={calendar.aiBusinessSummaryUpdatedAt?.toISOString() ?? null}
+                lastResearchedAt={calendar.aiLastResearchedAt?.toISOString() ?? null}
+                documents={calendar.businessDocuments.map((doc) => ({
+                  id: doc.id,
+                  originalName: doc.originalName,
+                  createdAt: doc.createdAt.toISOString(),
+                }))}
+              />
+              {(calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
+                (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
+                  !!calendar.manager.aiAssistantTrialEndsAt &&
+                  calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now())) && (
+                <AiContentGeneratorCard
+                  calendarId={calendar.id}
+                  hasBusinessSummary={!!calendar.aiBusinessSummary}
+                />
+              )}
             </div>
           </section>
         )}

@@ -184,8 +184,26 @@ model Creator {
   calendarPaystackCustomerCode     String?
   calendarSubscriptionRenewsAt     DateTime?
   calendarPendingSubscriptionRef   String?   @unique
-  calendarWentOfflineAt            DateTime?
+    calendarWentOfflineAt            DateTime?
   calendarLastPaymentReminderSentAt DateTime?
+
+  // ── AI content assistant — account-level premium add-on. Mirrors
+  // the calendar billing fields above in shape, but is a completely
+  // separate subscription: an account can have this active regardless
+  // of whether it also has Individual/Company calendar billing, and
+  // cancelling one never touches the other. Once active, every
+  // calendar on the account can use AI features — this was
+  // deliberately NOT made per-calendar, even though the business
+  // knowledge underneath it is per-calendar.
+  aiAssistantBillingStatus           CalendarBillingStatus @default(PENDING_SETUP)
+  aiAssistantTrialUsedAt             DateTime?
+  aiAssistantTrialEndsAt             DateTime?
+  aiAssistantPaystackSubscriptionCode String?
+  aiAssistantPaystackEmailToken       String?
+  aiAssistantPaystackCustomerCode     String?
+  aiAssistantSubscriptionRenewsAt     DateTime?
+  aiAssistantPendingSubscriptionRef   String?   @unique
+  aiAssistantWentOfflineAt            DateTime?
   // Admin-granted free month, same reasoning as before — now applies
   // to the whole account's calendar access, not one specific calendar.
   calendarLastFreeMonthGrantedAt   DateTime?
@@ -1379,10 +1397,21 @@ model SocialCalendar {
   // Desktop expects a landscape image, mobile a portrait one — same
   // split already used for portfolio banners, since a single image
   // rarely looks right cropped both ways.
-  headerBannerDesktopUrl String?
+    headerBannerDesktopUrl String?
   headerBannerMobileUrl  String?
   headerTitle            String?
   headerDescription      String? @db.Text
+
+  // ── AI business understanding — one rolling summary per calendar,
+  // continuously overwritten rather than kept as a history log. Old
+  // research goes stale on its own; a single current summary is what
+  // both the weekly research job and on-demand generation actually
+  // need, not an archive of every past version.
+  aiBusinessSummary      String?   @db.Text
+  aiBusinessSummaryUpdatedAt DateTime?
+  aiLastResearchedAt     DateTime?
+
+  businessDocuments      CalendarBusinessDocument[]
 
   passwordHash String
   accessCode   String?
@@ -1432,6 +1461,26 @@ model SocialCalendar {
   viewerEmails  CalendarViewerEmail[]
 
   @@index([managerId])
+}
+
+// One uploaded file the manager provided so the AI can understand
+// this specific client's business — brand guidelines, product
+// sheets, whatever they have. The raw file stays in R2 exactly like
+// post assets already work; extractedText is what's actually sent to
+// OpenAI, filled in once after upload rather than re-parsed every
+// time it's needed.
+model CalendarBusinessDocument {
+  id         String         @id @default(uuid())
+  calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId String
+
+  fileKey       String
+  originalName  String
+  extractedText String?  @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([calendarId])
 }
 
 enum SocialPlatform {
@@ -1511,9 +1560,17 @@ model CalendarPost {
   // the post itself.
   linkUrl     String?  @db.Text
 
-   approvalStatus PostApprovalStatus @default(PENDING)
+     approvalStatus PostApprovalStatus @default(PENDING)
   approvalNote   String?
   reviewedAt     DateTime?
+
+  // True only for a post the AI just generated that the manager
+  // hasn't confirmed yet. A draft is otherwise a completely normal
+  // CalendarPost — once confirmed, this simply flips to false and it
+  // becomes indistinguishable from a manually created post. MUST be
+  // excluded from every client-facing query — an unconfirmed draft
+  // should never be visible to a client for approval.
+  isAiDraft Boolean @default(false)
 
   // ── Instagram auto-publishing ──
   instagramPublishStatus InstagramPublishStatus @default(NOT_SCHEDULED)

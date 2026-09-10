@@ -51,7 +51,7 @@ export default function CalendarRowActions({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => patch("grant_free_month", "grant")}
           disabled={loading !== null}
@@ -62,6 +62,18 @@ export default function CalendarRowActions({
           }}
         >
           {loading === "grant" ? "..." : "Grant free month"}
+        </button>
+
+        <button
+          onClick={() => patch("grant_free_ai_month", "grant_ai")}
+          disabled={loading !== null}
+          className="rounded-md px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
+          style={{
+            background: "rgba(36,120,255,0.15)",
+            color: "#68B2FF",
+          }}
+        >
+          {loading === "grant_ai" ? "..." : "Grant free AI month"}
         </button>
 
         {confirmingReset ? (
