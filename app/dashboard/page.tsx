@@ -761,129 +761,200 @@ export default async function DashboardPage() {
   />
 </section>
       {/* =========================================================
-          APPS
+          APPS — CONTENT WORKSPACE LEADS
       ========================================================== */}
       <section className="relative overflow-hidden bg-[#F7F8FA]">
         <div className="mx-auto max-w-[1440px] px-5 py-14 sm:px-7 md:py-20 lg:px-10 lg:py-24">
-          <div className="mb-9 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2478FF]">
-                The Showwork suite
-              </p>
+          <div className="mb-10 max-w-3xl">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
+              The Showwork suite
+            </p>
 
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-[#0A0A0A] sm:text-4xl">
-                Pick your next move.
-              </h2>
-            </div>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[#0A0A0A] sm:text-5xl">
+              One workspace for the work
+              <br className="hidden sm:block" /> behind the content.
+            </h2>
 
-            <p className="max-w-[370px] text-sm leading-6 text-[#858A92]">
-              Four focused environments. One creative business. Jump into the
-              space that matches what you&apos;re doing right now.
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-[#737982] sm:text-[15px]">
+              Start with the environment that keeps your client content moving.
+              Then use the rest of Showwork to present your work, deliver projects
+              and grow your creative business.
             </p>
           </div>
 
           {/* =====================================================
-              HERO APP — DELIVERY
+              PRIMARY APP — CONTENT WORKSPACE
           ====================================================== */}
           <Link
-            href="/dashboard/projects"
-            className="group relative block min-h-[520px] overflow-hidden rounded-[32px] bg-[#08090B] shadow-[0_25px_80px_rgba(15,20,30,0.11)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_rgba(15,20,30,0.17)]"
+            href="/dashboard/calendars"
+            className="group relative block min-h-[590px] overflow-hidden rounded-[36px] border border-[#D6E0EF] bg-[#EDF4FF] shadow-[0_28px_90px_rgba(30,70,130,0.10)] transition-all duration-500 hover:-translate-y-1 hover:border-[#C7D7ED] hover:shadow-[0_38px_110px_rgba(30,70,130,0.15)]"
           >
-            {/* BLUE LIGHT */}
+            {/* Atmosphere */}
             <div
-              className="pointer-events-none absolute -right-[130px] -top-[180px] h-[600px] w-[600px] rounded-full"
+              className="pointer-events-none absolute -right-[180px] -top-[250px] h-[760px] w-[760px] rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(36,120,255,0.62) 0%, rgba(36,120,255,0.2) 35%, transparent 68%)",
+                  "radial-gradient(circle, rgba(36,120,255,0.34) 0%, rgba(36,120,255,0.12) 34%, transparent 69%)",
               }}
             />
 
-            {/* SECOND LIGHT */}
             <div
-              className="pointer-events-none absolute -bottom-[260px] left-[25%] h-[600px] w-[600px] rounded-full"
+              className="pointer-events-none absolute -bottom-[330px] left-[30%] h-[720px] w-[720px] rounded-full"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(20,70,180,0.25), transparent 68%)",
+                  "radial-gradient(circle, rgba(36,120,255,0.18), transparent 68%)",
               }}
             />
 
-            {/* diagonal architecture */}
+            {/* Architectural grid */}
             <div
-              className="pointer-events-none absolute right-[7%] top-[12%] h-[390px] w-[390px] rotate-[24deg] rounded-[80px] border border-white/[0.07]"
-              aria-hidden
-            >
-              <div className="absolute inset-[35px] rounded-[65px] border border-white/[0.05]" />
-              <div className="absolute inset-[70px] rounded-[50px] border border-white/[0.045]" />
-            </div>
-
-            {/* grid */}
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.12]"
+              className="pointer-events-none absolute inset-0 opacity-[0.48]"
               style={{
                 backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px)",
-                backgroundSize: "42px 42px",
+                  "linear-gradient(rgba(36,120,255,0.075) 1px, transparent 1px), linear-gradient(90deg, rgba(36,120,255,0.075) 1px, transparent 1px)",
+                backgroundSize: "34px 34px",
                 maskImage:
-                  "linear-gradient(to bottom right, black, transparent 70%)",
+                  "linear-gradient(to bottom right, black 0%, black 45%, transparent 82%)",
                 WebkitMaskImage:
-                  "linear-gradient(to bottom right, black, transparent 70%)",
+                  "linear-gradient(to bottom right, black 0%, black 45%, transparent 82%)",
               }}
             />
 
-            <div className="relative flex min-h-[520px] flex-col justify-between p-7 sm:p-10 lg:p-12">
-              <div className="flex items-start justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-white backdrop-blur-xl">
-                  <DeliveryIcon className="h-6 w-6" />
+            {/* Large calendar / AI composition */}
+            <div className="pointer-events-none absolute right-[-80px] top-[55px] hidden h-[420px] w-[590px] lg:block">
+              <div className="absolute right-0 top-0 h-[370px] w-[510px] rotate-[4deg] rounded-[30px] border border-white/80 bg-white/65 p-5 shadow-[0_30px_80px_rgba(30,70,130,0.10)] backdrop-blur-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="h-2 w-24 rounded-full bg-[#DCE7F7]" />
+                    <div className="mt-2 h-2 w-36 rounded-full bg-[#EDF2F8]" />
+                  </div>
+                  <div className="flex gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
+                    <span className="h-2 w-2 rounded-full bg-[#D7E4F7]" />
+                    <span className="h-2 w-2 rounded-full bg-[#D7E4F7]" />
+                  </div>
                 </div>
 
-                <AppPill dark>{planName}</AppPill>
+                <div className="mt-6 grid grid-cols-7 gap-2">
+                  {Array.from({ length: 35 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-[42px] rounded-lg border ${
+                        index === 9 || index === 18 || index === 27
+                          ? "border-[#AFCBFA] bg-[#EAF2FF]"
+                          : "border-[#EEF2F7] bg-white/70"
+                      }`}
+                    >
+                      {(index === 9 || index === 18 || index === 27) && (
+                        <div className="m-1.5 h-1.5 w-8 rounded-full bg-[#2478FF]/50" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="max-w-[760px]">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#72A8FF]">
-                  Client delivery
-                </p>
+              {/* AI card */}
+              <div className="absolute bottom-0 left-0 w-[300px] -rotate-[5deg] rounded-[24px] border border-white/90 bg-[#0A0F18]/95 p-5 text-white shadow-[0_25px_65px_rgba(10,20,40,0.22)]">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2478FF]/15 text-[#72A8FF]">
+                    <SparkIcon className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#72A8FF]">
+                      AI Studio
+                    </p>
+                    <p className="mt-0.5 text-xs font-medium text-white/75">
+                      Client-aware content
+                    </p>
+                  </div>
+                </div>
 
-                <h3 className="mt-3 text-[46px] font-semibold leading-[0.95] tracking-[-0.055em] text-white sm:text-[58px] lg:text-[70px]">
-                  Deliver work.
+                <div className="mt-5 space-y-2">
+                  <div className="h-2 w-[88%] rounded-full bg-white/10" />
+                  <div className="h-2 w-[68%] rounded-full bg-white/7" />
+                  <div className="mt-4 h-8 w-28 rounded-xl bg-[#2478FF]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative flex min-h-[590px] flex-col justify-between p-7 sm:p-10 lg:p-12">
+              <div className="flex items-start justify-between gap-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/80 text-[#2478FF] shadow-[0_8px_24px_rgba(36,120,255,0.08)] backdrop-blur-xl">
+                    <WorkspaceIcon className="h-6 w-6" />
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
+                      Content Workspace
+                    </p>
+                    <p className="mt-1 text-[11px] text-[#7C8CA5]">
+                      Your ongoing client content command center
+                    </p>
+                  </div>
+                </div>
+
+                <span className="hidden rounded-full border border-[#CFE0FF] bg-white/70 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.13em] text-[#2478FF] shadow-sm backdrop-blur-xl sm:inline-flex">
+                  Built for social teams
+                </span>
+              </div>
+
+              <div className="relative max-w-[780px]">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#CFE0FF] bg-white/65 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#2478FF] backdrop-blur-xl">
+                  <SparkIcon className="h-3.5 w-3.5" />
+                  Now with AI
+                </div>
+
+                <h3 className="max-w-[760px] text-[48px] font-semibold leading-[0.93] tracking-[-0.065em] text-[#080A0D] sm:text-[64px] lg:text-[78px]">
+                  Plan content.
                   <br />
-                  Get it across the line.
+                  <span className="text-[#71809A]">Create with AI.</span>
+                  <br />
+                  Get it approved.
                 </h3>
 
-                <p className="mt-6 max-w-[570px] text-[14px] leading-6 text-white/50 sm:text-[15px]">
-                  Send work through a premium client experience, collect
-                  feedback, manage revisions, secure approvals and keep every
-                  project moving.
+                <p className="mt-7 max-w-[640px] text-[15px] leading-7 text-[#5F6C80] sm:text-[17px]">
+                  A dedicated workspace for social media managers, agencies and
+                  creative teams managing content for clients. Keep the calendar,
+                  creative context, client feedback, approvals and publishing
+                  workflow together — and use AI to turn that context into better
+                  content ideas and drafts.
                 </p>
+
+                <div className="mt-8 flex flex-wrap gap-2">
+                  {[
+                    "Client content calendar",
+                    "AI content generation",
+                    "Business knowledge",
+                    "Approvals",
+                    "Publishing",
+                  ].map((item) => (
+                    <span
+                      key={item}
+                      className="rounded-full border border-white/80 bg-white/60 px-3 py-2 text-[10px] font-medium text-[#617087] shadow-sm backdrop-blur-xl"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-5 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.12em] text-white/25">
-                      Projects
-                    </p>
-                    <p className="mt-1 text-xs text-white/55">
-                      {projectCount} active in your account
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-[9px] uppercase tracking-[0.12em] text-white/25">
-                      Built for
-                    </p>
-                    <p className="mt-1 text-xs text-white/55">
-                      Creators &amp; creative teams
-                    </p>
-                  </div>
+              <div className="mt-10 flex flex-col gap-5 border-t border-[#C9D6E8] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#8796AA]">
+                    Best for
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-[#3E4B5E]">
+                    Social media managers · Agencies · Content teams
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-white">
-                    Open Project Delivery
+                  <span className="text-sm font-semibold text-[#172131]">
+                    {calendar ? "Open your workspace" : "Create a client workspace"}
                   </span>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#08090B] transition-transform duration-300 group-hover:translate-x-1">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#2478FF] text-white shadow-[0_10px_25px_rgba(36,120,255,0.22)] transition-transform duration-300 group-hover:translate-x-1">
                     <ArrowIcon className="h-5 w-5" />
                   </div>
                 </div>
@@ -895,42 +966,101 @@ export default async function DashboardPage() {
               SECONDARY APPS
           ====================================================== */}
           <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            {/* PROJECT DELIVERY */}
+            <Link
+              href="/dashboard/projects"
+              className="group relative min-h-[430px] overflow-hidden rounded-[32px] bg-[#08090B] shadow-[0_25px_80px_rgba(15,20,30,0.10)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_35px_100px_rgba(15,20,30,0.17)]"
+            >
+              <div
+                className="pointer-events-none absolute -right-[130px] -top-[180px] h-[600px] w-[600px] rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(36,120,255,0.62) 0%, rgba(36,120,255,0.2) 35%, transparent 68%)",
+                }}
+              />
+
+              <div
+                className="pointer-events-none absolute -bottom-[260px] left-[25%] h-[600px] w-[600px] rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(20,70,180,0.25), transparent 68%)",
+                }}
+              />
+
+              <div className="pointer-events-none absolute right-[7%] top-[12%] h-[390px] w-[390px] rotate-[24deg] rounded-[80px] border border-white/[0.07]">
+                <div className="absolute inset-[35px] rounded-[65px] border border-white/[0.05]" />
+                <div className="absolute inset-[70px] rounded-[50px] border border-white/[0.045]" />
+              </div>
+
+              <div className="relative flex min-h-[430px] flex-col justify-between p-7 sm:p-9">
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-white">
+                    <DeliveryIcon className="h-6 w-6" />
+                  </div>
+                  <AppPill dark>Project Delivery</AppPill>
+                </div>
+
+                <div className="max-w-[620px]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#72A8FF]">
+                    Client delivery
+                  </p>
+                  <h3 className="mt-3 text-[42px] font-semibold leading-[0.96] tracking-[-0.055em] text-white sm:text-[52px]">
+                    Deliver work.
+                    <br />
+                    Get it across the line.
+                  </h3>
+                  <p className="mt-5 max-w-[560px] text-[14px] leading-6 text-white/45">
+                    Present finished work, collect feedback, manage revisions,
+                    secure approvals and keep every project moving.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/10 pt-5">
+                  <div>
+                    <p className="text-[9px] uppercase tracking-[0.12em] text-white/25">
+                      Best for
+                    </p>
+                    <p className="mt-1 text-xs text-white/55">
+                      Creators & creative teams
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-white">
+                      Open Project Delivery
+                    </span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#08090B] transition-transform duration-300 group-hover:translate-x-1">
+                      <ArrowIcon className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
             {/* PORTFOLIO */}
             <Link
               href="/dashboard/portfolio"
               className="group relative min-h-[430px] overflow-hidden rounded-[32px] border border-[#E0E3E8] bg-white transition-all duration-500 hover:-translate-y-1 hover:border-[#D3D8E0] hover:shadow-[0_25px_70px_rgba(20,30,45,0.07)]"
             >
-              {/* cream / blue composition */}
               <div className="pointer-events-none absolute -right-20 -top-20 h-[310px] w-[310px] rounded-full bg-[#EAF1FF]" />
 
-              <div
-                className="pointer-events-none absolute right-10 top-10 h-[230px] w-[230px] rounded-full border-[1px] border-[#2478FF]/10"
-                aria-hidden
-              />
-
-              <div
-                className="pointer-events-none absolute right-[65px] top-[65px] h-[180px] w-[180px] rounded-full border-[1px] border-[#2478FF]/[0.07]"
-                aria-hidden
-              />
+              <div className="pointer-events-none absolute right-10 top-10 h-[230px] w-[230px] rounded-full border border-[#2478FF]/10" />
 
               <div className="relative flex h-full min-h-[430px] flex-col justify-between p-7 sm:p-9">
                 <div className="flex items-start justify-between">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F6FC] text-[#2478FF]">
                     <PortfolioIcon className="h-6 w-6" />
                   </div>
-
                   <AppPill>Free</AppPill>
                 </div>
 
-                <div className="relative">
+                <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2478FF]">
                     Showcase
                   </p>
-
                   <h3 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-[#090A0C] sm:text-[48px]">
                     Portfolio
                   </h3>
-
                   <p className="mt-4 max-w-[500px] text-sm leading-6 text-[#737880]">
                     {portfolio
                       ? "Your portfolio is already live. Keep shaping the way your work is seen."
@@ -941,92 +1071,7 @@ export default async function DashboardPage() {
                     <span className="text-xs font-semibold text-[#3E4249]">
                       {portfolio ? "Open your portfolio" : "Create your portfolio"}
                     </span>
-
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F1F5FC] text-[#2478FF] transition-transform duration-300 group-hover:translate-x-1">
-                      <ArrowIcon className="h-4 w-4" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-
-            {/* CONTENT WORKSPACE */}
-            <Link
-              href="/dashboard/calendars"
-              className="group relative min-h-[430px] overflow-hidden rounded-[32px] border border-[#DDE3ED] bg-[#F0F5FC] transition-all duration-500 hover:-translate-y-1 hover:border-[#CDD6E5] hover:shadow-[0_25px_70px_rgba(20,30,45,0.07)]"
-            >
-              {/* architectural background */}
-              <div
-                className="pointer-events-none absolute inset-0 opacity-50"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(rgba(36,120,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(36,120,255,0.08) 1px, transparent 1px)",
-                  backgroundSize: "28px 28px",
-                  maskImage:
-                    "linear-gradient(to bottom right, black, transparent 78%)",
-                  WebkitMaskImage:
-                    "linear-gradient(to bottom right, black, transparent 78%)",
-                }}
-              />
-
-              <div
-                className="pointer-events-none absolute -bottom-32 -right-32 h-[420px] w-[420px] rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(36,120,255,0.25), transparent 67%)",
-                }}
-              />
-
-              {/* floating interface cards */}
-              <div className="pointer-events-none absolute right-7 top-8 hidden w-[180px] rotate-[4deg] rounded-2xl border border-white/80 bg-white/75 p-3 shadow-[0_18px_45px_rgba(30,70,130,0.09)] backdrop-blur-xl sm:block">
-                <div className="flex items-center justify-between">
-                  <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
-                  <span className="text-[7px] font-semibold uppercase tracking-wider text-[#9AA2AF]">
-                    Content
-                  </span>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <div className="h-2 w-20 rounded-full bg-[#E7ECF4]" />
-                  <div className="h-2 w-28 rounded-full bg-[#EDF1F6]" />
-                  <div className="h-2 w-16 rounded-full bg-[#EDF1F6]" />
-                </div>
-              </div>
-
-              <div className="relative flex h-full min-h-[430px] flex-col justify-between p-7 sm:p-9">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/75 text-[#2478FF] shadow-sm backdrop-blur-xl">
-                    <WorkspaceIcon className="h-6 w-6" />
-                  </div>
-
-                  <AppPill>For Social media managers</AppPill>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2478FF]">
-                    Social media
-                  </p>
-
-                  <h3 className="mt-2 max-w-[550px] text-4xl font-semibold tracking-[-0.05em] text-[#090A0C] sm:text-[48px]">
-                    Content
-                    <br />
-                    Workspace
-                  </h3>
-
-                  <p className="mt-4 max-w-[500px] text-sm leading-6 text-[#687488]">
-                    {calendar
-                      ? "Your client workspace is ready. Keep planning, presenting and approving content in one ongoing space."
-                      : "Give every client an ongoing content space where your team can plan, present and get work approved."}
-                  </p>
-
-                  <div className="mt-7 flex items-center justify-between border-t border-[#D9E1EC] pt-5">
-                    <span className="text-xs font-semibold text-[#3E4652]">
-                      {calendar
-                        ? "Open content workspace"
-                        : "Create a client workspace"}
-                    </span>
-
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#2478FF] shadow-sm transition-transform duration-300 group-hover:translate-x-1">
                       <ArrowIcon className="h-4 w-4" />
                     </div>
                   </div>
@@ -1036,7 +1081,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* =====================================================
-              CREATIVO — DISTINCTIVE COMMUNITY AREA
+              CREATIVO
           ====================================================== */}
           <a
             href={COMMUNITY_URL}
@@ -1044,7 +1089,6 @@ export default async function DashboardPage() {
             rel="noopener noreferrer"
             className="group relative mt-5 block overflow-hidden rounded-[32px] bg-[#101114] text-white transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_30px_80px_rgba(10,10,15,0.15)]"
           >
-            {/* abstract color field */}
             <div
               className="pointer-events-none absolute -right-[100px] -top-[180px] h-[520px] w-[520px] rounded-full"
               style={{
@@ -1053,40 +1097,23 @@ export default async function DashboardPage() {
               }}
             />
 
-            <div
-              className="pointer-events-none absolute -bottom-[220px] left-[35%] h-[500px] w-[500px] rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(36,120,255,0.24), transparent 68%)",
-              }}
-            />
-
-            {/* oversized typography texture */}
-            <div
-              className="pointer-events-none absolute right-[-15px] top-[15px] select-none text-[180px] font-semibold leading-none tracking-[-0.1em] text-white/[0.025] sm:text-[240px]"
-              aria-hidden
-            >
+            <div className="pointer-events-none absolute right-[-15px] top-[15px] select-none text-[180px] font-semibold leading-none tracking-[-0.1em] text-white/[0.025] sm:text-[240px]">
               C
             </div>
 
             <div className="relative flex flex-col gap-9 p-7 sm:p-9 lg:flex-row lg:items-end lg:justify-between lg:p-11">
               <div className="max-w-[760px]">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-white backdrop-blur-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-white">
                     <CommunityIcon className="h-6 w-6" />
                   </div>
-
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#75A8FF]">
                       Creator network
                     </p>
-
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className="h-1 w-1 rounded-full bg-white/25" />
-                      <span className="text-[10px] uppercase tracking-[0.12em] text-white/35">
-                        Free
-                      </span>
-                    </div>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-white/35">
+                      Free
+                    </p>
                   </div>
                 </div>
 
@@ -1095,9 +1122,8 @@ export default async function DashboardPage() {
                 </h3>
 
                 <p className="mt-4 max-w-[620px] text-sm leading-6 text-white/45 sm:text-[15px]">
-                  A place for creators to learn, connect, exchange ideas,
-                  discover opportunities and become better at the business
-                  behind their craft.
+                  Learn, connect, exchange ideas, discover opportunities and get
+                  better at the business behind your craft.
                 </p>
               </div>
 
@@ -1105,7 +1131,6 @@ export default async function DashboardPage() {
                 <span className="text-sm font-semibold text-white">
                   Enter Creativo
                 </span>
-
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#101114] transition-transform duration-300 group-hover:translate-x-1">
                   <ArrowUpRightIcon className="h-5 w-5" />
                 </div>
@@ -1119,12 +1144,11 @@ export default async function DashboardPage() {
           <div className="mt-14 flex flex-col gap-6 border-t border-[#E1E4E9] pt-7 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-[#25272B]">
-                Need a hand choosing your next move?
+                Need help choosing where to start?
               </p>
-
               <p className="mt-1 text-xs leading-5 text-[#858A92]">
-                Tell us what you&apos;re trying to accomplish and we&apos;ll
-                point you in the right direction.
+                If you manage client content, start with Content Workspace.
+                If you&apos;re delivering finished work, use Project Delivery.
               </p>
             </div>
 
