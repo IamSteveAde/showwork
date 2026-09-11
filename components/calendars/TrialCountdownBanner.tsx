@@ -199,12 +199,7 @@ export default function TrialCountdownBanner({
                 )}
               </button>
 
-              <Link
-                href="/dashboard/billing"
-                className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-white/[0.08] px-4 py-2.5 text-[11px] font-medium text-white/45 transition-colors hover:border-white/[0.14] hover:bg-white/[0.04] hover:text-white"
-              >
-                View billing & plan
-              </Link>
+              
             </div>
           </div>
         </div>
