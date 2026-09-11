@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CalendarPeopleManager from "./CalendarPeopleManager";
 
 const BLUE = "#2478FF";
 
@@ -36,27 +37,66 @@ const PLAN_STATUS_LABEL: Record<
   },
 };
 
-function ArrowUpRightIcon({ className = "h-4 w-4" }: { className?: string }) {
+function ArrowUpRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M7 17L17 7" />
       <path d="M8 7h9v9" />
     </svg>
   );
 }
 
-function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
+function ArrowRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M5 12h14" />
       <path d="M13 6l6 6-6 6" />
     </svg>
   );
 }
 
-function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
+function TrashIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M3 6h18" />
       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -65,9 +105,22 @@ function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function CalendarIcon({ className = "h-4 w-4" }: { className?: string }) {
+function CalendarIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="3" y="5" width="18" height="16" rx="3" />
       <path d="M8 3v4M16 3v4M3 10h18" />
       <path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" />
@@ -82,6 +135,10 @@ interface CalendarCardProps {
   postCount: number;
   createdAt: string;
   globalIndex: number;
+
+  // Number of collaborators currently attached to this workspace.
+  // The owner is added separately when displaying the total.
+  collaboratorCount: number;
 }
 
 export default function CalendarCard({
@@ -91,14 +148,17 @@ export default function CalendarCard({
   postCount,
   createdAt,
   globalIndex,
+  collaboratorCount,
 }: CalendarCardProps) {
   const router = useRouter();
+
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const status =
     PLAN_STATUS_LABEL[planStatus] ?? PLAN_STATUS_LABEL.BUILDING;
+
   const href = `/dashboard/calendars/${id}`;
 
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
@@ -107,18 +167,28 @@ export default function CalendarCard({
     year: "numeric",
   });
 
+  // The workspace owner is not stored in the collaborators relation,
+  // so total people = owner + collaborators.
+  const totalMembers = 1 + collaboratorCount;
+
   const handleDelete = async () => {
     setDeleting(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/calendars/${id}`, {
+        method: "DELETE",
+      });
 
       if (res.ok) {
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Failed to delete — try again.");
+
+        setError(
+          data.error ?? "Failed to delete — try again.",
+        );
+
         setDeleting(false);
       }
     } catch {
@@ -130,24 +200,33 @@ export default function CalendarCard({
   return (
     <>
       <article className="group relative overflow-hidden rounded-[28px] border border-[#E4E7EC] bg-white shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-[#D0D5DD] hover:shadow-[0_22px_55px_rgba(16,24,40,0.10)]">
+        {/* =========================================================
+            FULL CARD NAVIGATION
+            ========================================================= */}
         <Link
           href={href}
           className="absolute inset-0 z-10 rounded-[28px]"
           aria-label={`Open ${clientName}`}
         />
 
-        {/* Decorative atmosphere */}
+        {/* =========================================================
+            DECORATIVE ATMOSPHERE
+            ========================================================= */}
         <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#2478FF]/[0.07] blur-3xl transition-all duration-500 group-hover:bg-[#2478FF]/[0.13]" />
+
         <div className="pointer-events-none absolute -bottom-24 -left-20 h-48 w-48 rounded-full bg-[#2478FF]/[0.035] blur-3xl" />
 
-        {/* subtle architectural line */}
         <div className="pointer-events-none absolute right-0 top-0 h-28 w-28 opacity-40 [background-image:linear-gradient(to_right,#E4E7EC_1px,transparent_1px),linear-gradient(to_bottom,#E4E7EC_1px,transparent_1px)] [background-size:14px_14px] [mask-image:radial-gradient(circle_at_top_right,black,transparent_72%)]" />
 
+        {/* =========================================================
+            DELETE
+            ========================================================= */}
         <button
           type="button"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+
             setError(null);
             setConfirming(true);
           }}
@@ -158,13 +237,16 @@ export default function CalendarCard({
         </button>
 
         <div className="relative">
-          {/* Header */}
+          {/* =======================================================
+              HEADER
+              ======================================================= */}
           <div className="flex items-start justify-between px-5 pb-5 pt-5 sm:px-6 sm:pt-6">
             <div className="flex min-w-0 items-center gap-3.5">
               <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#E4E7EC] bg-[#F8FAFC]">
                 <span className="text-[11px] font-bold tabular-nums tracking-[0.04em] text-[#475467]">
                   {String(globalIndex).padStart(2, "0")}
                 </span>
+
                 <span
                   className="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100"
                   style={{ background: BLUE }}
@@ -175,6 +257,7 @@ export default function CalendarCard({
                 <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#475467]">
                   Client workspace
                 </p>
+
                 <div className="mt-1.5 flex items-center gap-2">
                   <span
                     className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold"
@@ -185,8 +268,11 @@ export default function CalendarCard({
                   >
                     <span
                       className="h-1.5 w-1.5 rounded-full"
-                      style={{ background: status.dot }}
+                      style={{
+                        background: status.dot,
+                      }}
                     />
+
                     {status.text}
                   </span>
                 </div>
@@ -198,26 +284,34 @@ export default function CalendarCard({
             </div>
           </div>
 
-          {/* Identity */}
+          {/* =======================================================
+              IDENTITY
+              ======================================================= */}
           <div className="px-5 pb-6 sm:px-6">
             <h2 className="line-clamp-1 text-[21px] font-semibold tracking-[-0.035em] text-[#101828]">
               {clientName}
             </h2>
+
             <p className="mt-1.5 line-clamp-1 text-[12px] leading-5 text-[#475467]">
               Plan, present and manage ongoing client content.
             </p>
 
-            {/* Metrics */}
+            {/* =====================================================
+                METRICS
+                ===================================================== */}
             <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-2xl border border-[#EAECF0] bg-[#F8FAFC]">
               <div className="px-4 py-3.5">
                 <div className="flex items-center gap-2 text-[#475467]">
                   <CalendarIcon className="h-3.5 w-3.5" />
+
                   <p className="text-[9px] font-bold uppercase tracking-[0.13em]">
                     Content
                   </p>
                 </div>
+
                 <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[#101828]">
                   {postCount}
+
                   <span className="ml-1.5 text-[10px] font-medium tracking-normal text-[#475467]">
                     {postCount === 1 ? "post" : "posts"}
                   </span>
@@ -228,18 +322,36 @@ export default function CalendarCard({
                 <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#475467]">
                   Created
                 </p>
+
                 <p className="mt-2 text-sm font-semibold tracking-[-0.01em] text-[#344054]">
                   {formattedDate}
                 </p>
               </div>
             </div>
 
-            {/* CTA */}
+            {/* =====================================================
+                PEOPLE
+                This sits above the card navigation layer.
+                CalendarPeopleManager uses z-30 so clicking it does
+                NOT open the workspace.
+                ===================================================== */}
+            <div className="relative z-30 mt-3">
+              <CalendarPeopleManager
+  calendarId={id}
+  calendarName={clientName}
+  totalMembers={totalMembers}
+/>
+            </div>
+
+            {/* =====================================================
+                CTA
+                ===================================================== */}
             <div className="relative z-0 mt-5 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-[#475467] transition-colors group-hover:text-[#475467]">
                   Continue workspace
                 </p>
+
                 <p className="mt-1 text-xs font-medium text-[#475467]">
                   Open content planner
                 </p>
@@ -251,16 +363,23 @@ export default function CalendarCard({
             </div>
           </div>
 
-          {/* Bottom progress accent */}
+          {/* =======================================================
+              BOTTOM PROGRESS ACCENT
+              ======================================================= */}
           <div className="h-[3px] w-full bg-[#F2F4F7]">
             <div
               className="h-full w-0 transition-all duration-500 group-hover:w-full"
-              style={{ background: BLUE }}
+              style={{
+                background: BLUE,
+              }}
             />
           </div>
         </div>
       </article>
 
+      {/* ===========================================================
+          DELETE CONFIRMATION
+          =========================================================== */}
       {confirming && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101828]/55 p-4 backdrop-blur-sm"

@@ -261,6 +261,7 @@ export default async function CalendarsPage({
       _count: {
         select: {
           posts: true,
+          collaborators: true,
         },
       },
     },
@@ -545,6 +546,7 @@ export default async function CalendarsPage({
                   postCount={cal._count.posts}
                   createdAt={cal.createdAt.toISOString()}
                   globalIndex={skip + index + 1}
+                  collaboratorCount={cal._count.collaborators}
                 />
               ))}
             </div>
