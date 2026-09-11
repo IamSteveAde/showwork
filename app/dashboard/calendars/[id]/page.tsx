@@ -482,7 +482,7 @@ export default async function CalendarDetailPage({
       title: `Good to see you. Here’s ${calendar.clientName}.`,
       description:
         "The fastest view of what needs attention, what is ready, and what is moving next.",
-      group: "Insights",
+      group: "Workspace",
       content: (
         <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -699,40 +699,284 @@ export default async function CalendarDetailPage({
     ...(isManager
       ? [
           {
-            id: "team" as const,
-            label: "People",
-            eyebrow: "Collaboration",
-            title: "Build the right room.",
-            description:
-              "Give collaborators enough access to move the work forward, without giving away more than they need.",
-            group: "Collaboration" as const,
-            content: (
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="overflow-hidden rounded-[26px] border border-[#DFE6EF] bg-white p-2 shadow-[0_14px_44px_rgba(15,23,42,0.045)] sm:p-3">
-                  <InviteCollaboratorForm calendarId={calendar.id} />
+  id: "team" as const,
+  label: "People",
+  eyebrow: "Collaboration",
+  title: "Build the right room.",
+  description:
+    "Bring the people behind the work into one shared space. Give every collaborator exactly the access they need.",
+  group: "Collaboration" as const,
+
+  content: (
+    <div className="space-y-8">
+      {/* ─────────────────────────────────────────────────────────
+          PEOPLE HEADER
+      ───────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-[32px] border border-[#E1E7EF] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.055)]">
+        {/* atmospheric light */}
+        <div className="pointer-events-none absolute -right-24 -top-32 h-72 w-72 rounded-full bg-[#2478FF]/[0.08] blur-3xl" />
+        <div className="pointer-events-none absolute bottom-[-120px] left-[25%] h-64 w-64 rounded-full bg-[#7C3AED]/[0.045] blur-3xl" />
+
+        <div className="relative flex flex-col gap-7 px-6 py-7 sm:px-8 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF2FF] text-[#2478FF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-4 w-4"
+                >
+                  <path
+                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="9" cy="7" r="4" />
+                  <path
+                    d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
+                Collaboration
+              </span>
+            </div>
+
+            <h2 className="text-[30px] font-semibold tracking-[-0.045em] text-[#101828] sm:text-[38px] lg:text-[42px]">
+              The people behind the work.
+            </h2>
+
+            <p className="mt-3 max-w-xl text-[14px] leading-6 text-[#667085]">
+              Designers, creators, strategists and clients can work from the
+              same space without stepping on each other&apos;s permissions.
+            </p>
+          </div>
+
+          {/* Small contextual summary */}
+          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-[#E7ECF2] bg-[#F8FAFC] px-4 py-3">
+            <div className="flex -space-x-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8FAFC] bg-[#101828] text-[11px] font-bold text-white">
+                +
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8FAFC] bg-[#EAF2FF] text-[#2478FF]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-4 w-4"
+                >
+                  <path
+                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-[#101828]">
+                Shared workspace
+              </p>
+              <p className="mt-0.5 text-[10px] text-[#98A2B3]">
+                Invite people as you need them
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────
+          MAIN COLLABORATION AREA
+      ───────────────────────────────────────────────────────── */}
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        {/* MAIN PEOPLE EXPERIENCE */}
+        <div className="min-w-0">
+          <InviteCollaboratorForm calendarId={calendar.id} />
+        </div>
+
+        {/* ───────────────────────────────────────────────────────
+            ACCESS MODEL
+        ─────────────────────────────────────────────────────── */}
+        <aside className="space-y-4 xl:sticky xl:top-6">
+          <div className="relative overflow-hidden rounded-[28px] bg-[#101828] p-6 text-white shadow-[0_20px_55px_rgba(16,24,40,0.12)]">
+            {/* blue glow */}
+            <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#2478FF]/30 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-[#7C3AED]/20 blur-3xl" />
+
+            <div className="relative">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
+                  Access model
+                </span>
+
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/70">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    className="h-4 w-4"
+                  >
+                    <path
+                      d="M12 3 5 6v5c0 4.5 2.9 8.5 7 10 4.1-1.5 7-5.5 7-10V6l-7-3Z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="m9 12 2 2 4-4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              </div>
+
+              <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.035em]">
+                Everyone sees what they need.
+              </h3>
+
+              <p className="mt-2 text-[12px] leading-5 text-white/45">
+                Keep creative collaboration open while keeping workspace
+                control in the right hands.
+              </p>
+
+              <div className="mt-7 divide-y divide-white/10">
+                {/* VIEW */}
+                <div className="flex gap-3 py-4 first:pt-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-white/60">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      className="h-4 w-4"
+                    >
+                      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-white">
+                      View only
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
+                      Review the workspace without changing anything.
+                    </p>
+                  </div>
                 </div>
-                <div className="relative overflow-hidden rounded-[26px] bg-[linear-gradient(145deg,#1768E8,#125CCF)] p-6 text-white shadow-[0_18px_50px_rgba(23,104,232,0.20)]">
-                  <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-                  <div className="relative">
-                    <p className="text-[9px] font-black uppercase tracking-[0.16em] text-white/55">
-                      Team access
-                    </p>
-                    <p className="mt-4 text-[52px] font-semibold tracking-[-0.07em]">
-                      {totalMembers}
-                    </p>
-                    <p className="mt-1 text-[11px] text-white/55">
-                      {totalMembers === 1 ? "person" : "people"} currently inside this workspace.
-                    </p>
-                    <div className="mt-8 space-y-3 border-t border-white/15 pt-6 text-[11px] leading-5 text-white/60">
-                      <p><b className="text-white">View only</b> · review without editing.</p>
-                      <p><b className="text-white">Add content</b> · contribute creative.</p>
-                      <p><b className="text-white">Edit calendar</b> · manage the workspace.</p>
+
+                {/* ADD */}
+                <div className="flex gap-3 py-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#2478FF]/15 text-[#6EA4FF]">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        d="M12 16V4M7.5 8.5 12 4l4.5 4.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-semibold text-white">
+                        Add content
+                      </p>
+                      <span className="rounded-full bg-[#2478FF]/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#6EA4FF]">
+                        Best for creators
+                      </span>
                     </div>
+
+                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
+                      Upload creative to planned content without changing the
+                      workspace.
+                    </p>
+                  </div>
+                </div>
+
+                {/* EDIT */}
+                <div className="flex gap-3 py-4 last:pb-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F97316]/10 text-[#FB923C]">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-white">
+                      Edit workspace
+                    </p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
+                      Full control over posts and workspace details.
+                    </p>
                   </div>
                 </div>
               </div>
-            ),
-          },
+            </div>
+          </div>
+
+          {/* SMALL GUIDANCE CARD */}
+          <div className="rounded-[24px] border border-[#E1E7EF] bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.035)]">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F2F4F7] text-[#667085]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-4 w-4"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path
+                    d="M12 10v6M12 7.5h.01"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-[#101828]">
+                  A good default
+                </p>
+                <p className="mt-1 text-[10px] leading-5 text-[#667085]">
+                  For most creative teams,{" "}
+                  <span className="font-semibold text-[#2478FF]">
+                    Add content
+                  </span>{" "}
+                  gives collaborators enough freedom without exposing
+                  workspace controls.
+                </p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  ),
+},
         ]
       : []),
     {
@@ -819,22 +1063,28 @@ export default async function CalendarDetailPage({
           </div>
 
           <div className="rounded-[28px] border border-[#DFE6EF] bg-white p-6 shadow-[0_14px_40px_rgba(15,23,42,0.045)]">
-            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#98A2B3]">
-              Access credentials
-            </p>
-            <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#101828]">
-              Private workspace password
-            </h3>
-            <p className="mt-2 text-[11px] leading-5 text-[#667085]">
-              Only share this with people who should see the client-facing view.
-            </p>
-            <div className="mt-7" data-password-display>
-  <CalendarPasswordDisplay
-    calendarId={calendar.id}
-    accessCode={calendar.accessCode ?? ""}
-  />
+  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#98A2B3]">
+    Access credentials
+  </p>
+
+  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#101828]">
+    Private workspace password
+  </h3>
+
+  <p className="mt-2 text-[11px] leading-5 text-[#667085]">
+    Only share this with people who should see the client-facing view.
+  </p>
+
+  <div
+    className="mt-7 rounded-2xl border border-[#D8E0EA] bg-[#101828] p-4"
+    data-password-display
+  >
+    <CalendarPasswordDisplay
+      calendarId={calendar.id}
+      accessCode={calendar.accessCode ?? ""}
+    />
+  </div>
 </div>
-          </div>
         </div>
       ),
     },

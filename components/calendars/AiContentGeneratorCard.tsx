@@ -162,16 +162,72 @@ export default function AiContentGeneratorCard({
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#98A2B3] shadow-sm ring-1 ring-[#E4E7EC]">
                   <SparkIcon />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#101828]">
-                    Build the business context first
-                  </p>
-                  <p className="mt-1.5 max-w-xl text-[11px] leading-5 text-[#667085]">
-                    Upload a business document above so the AI understands this
-                    client before generating content. This keeps the drafts
-                    grounded in the actual business rather than generic ideas.
-                  </p>
-                </div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div className="flex min-w-0 items-start gap-3">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#D6E4FF] bg-[#EEF5FF]">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 3L14.8 9.2L21 12L14.8 14.8L12 21L9.2 14.8L3 12L9.2 9.2L12 3Z"
+          stroke="#2563EB"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-[#101828]">
+        Build the business context first
+      </p>
+
+      <p className="mt-1.5 max-w-xl text-[11px] leading-5 text-[#667085]">
+        Upload a business document so the AI understands this client before
+        generating content. This keeps drafts grounded in the actual business
+        rather than generic ideas.
+      </p>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    onClick={() => {
+      window.dispatchEvent(
+        new CustomEvent("showwork-workspace-navigate", {
+          detail: { id: "knowledge" },
+        }),
+      );
+    }}
+    className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#101828] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#1D2939] hover:shadow-md"
+  >
+    <span>Go to Knowledge</span>
+
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="transition-transform group-hover:translate-x-0.5"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 12H19M13 6L19 12L13 18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </button>
+</div>
               </div>
 
               <div className="mt-5 flex items-center gap-2 text-[10px] font-semibold text-[#98A2B3]">

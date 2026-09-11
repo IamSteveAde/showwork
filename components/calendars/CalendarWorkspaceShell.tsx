@@ -176,7 +176,18 @@ export default function CalendarWorkspaceShell({
   publishAction?: ReactNode;
   sections: WorkspaceSection[];
 }) {
-  const [activeId, setActiveId] = useState<WorkspaceSectionId>("content");
+  const [activeId, setActiveId] =
+  useState<WorkspaceSectionId>(() => {
+    if (typeof window === "undefined") return "overview";
+
+    const view = new URLSearchParams(window.location.search).get("view");
+
+    const validViews = sections.map((section) => section.id);
+
+    return validViews.includes(view as WorkspaceSectionId)
+      ? (view as WorkspaceSectionId)
+      : "overview";
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Allow rich overview modules to behave like real navigation controls without
@@ -209,25 +220,52 @@ export default function CalendarWorkspaceShell({
       items.filter(Boolean) as WorkspaceSection[];
 
     return [
-      { label: "Work", items: compact([byId("content")]) },
-      {
-        label: "AI Studio",
-        featured: true,
-        items: compact([byId("generate"), byId("knowledge")]),
-      },
-      {
-        label: "Collaborate",
-        items: compact([byId("team"), byId("access")]),
-      },
-      {
-        label: "Understand",
-        items: compact([byId("overview"), byId("analytics")]),
-      },
-      {
-        label: "Publish",
-        items: compact([byId("channels"), byId("publish")]),
-      },
-    ].filter((cluster) => cluster.items.length > 0);
+  {
+    label: "Workspace",
+    items: compact([
+      byId("overview"),
+      byId("content"),
+    ]),
+  },
+
+  {
+    label: "AI Studio",
+    featured: true,
+    items: compact([
+      byId("generate"),
+      byId("knowledge"),
+    ]),
+  },
+
+  {
+    label: "Collaborate",
+    items: compact([
+      byId("team"),
+    ]),
+  },
+
+  {
+    label: "Understand",
+    items: compact([
+      byId("analytics"),
+    ]),
+  },
+
+  {
+    label: "Publish",
+    items: compact([
+      byId("channels"),
+      byId("publish"),
+    ]),
+  },
+
+  {
+    label: "Client",
+    items: compact([
+      byId("access"),
+    ]),
+  },
+].filter((cluster) => cluster.items.length > 0);
   }, [visibleSections]);
 
   if (!active) return null;
@@ -307,7 +345,7 @@ export default function CalendarWorkspaceShell({
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </a>
 
-              <div className="flex h-10 items-center">{settings}</div>
+              
             </div>
 
             <button

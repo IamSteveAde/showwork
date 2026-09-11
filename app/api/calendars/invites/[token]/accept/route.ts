@@ -1,133 +1,212 @@
 import { NextRequest, NextResponse } from "next/server";
-import { randomUUID, createHash } from "crypto";
+import { createHash } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { sendCalendarInviteEmail } from "@/lib/resend";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-const VALID_ROLES = ["VIEW_ONLY", "ADD_CONTENT", "EDIT_CALENDAR"];
+const VALID_ROLES = ["VIEW_ONLY", "ADD_CONTENT", "EDIT_CALENDAR"] as const;
 
-// GET — everyone currently on this calendar (accepted collaborators)
-// plus anyone still waiting on an invite. Manager-only, since this is
-// the list behind "who have I added" on the invite panel.
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
-  if (!calendar || calendar.managerId !== creator.id) {
-    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  }
-
-  const [collaborators, pendingInvites] = await Promise.all([
-    db.calendarCollaborator.findMany({
-      where: { calendarId: id },
-      orderBy: { addedAt: "desc" },
-      include: { creator: { select: { name: true, email: true } } },
-    }),
-    db.calendarInvite.findMany({
-      where: { calendarId: id, status: "PENDING" },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
-
-  return NextResponse.json({
-    collaborators: collaborators.map((c) => ({
-      id: c.id,
-      name: c.creator.name,
-      email: c.creator.email,
-      role: c.role,
-    })),
-    pendingInvites: pendingInvites.map((i) => ({
-      id: i.id,
-      email: i.email,
-      role: i.role,
-      expiresAt: i.expiresAt,
-    })),
-  });
-}
+type Role = (typeof VALID_ROLES)[number];
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const creator = await getCurrentCreator();
 
-  const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
-  if (!calendar || calendar.managerId !== creator.id) {
-    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  }
+    if (!creator) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-  const account = await db.creator.findUnique({
-    where: { id: creator.id },
-    select: { calendarAccountType: true },
-  });
+    const { token } = await params;
 
-  // An Individual account can never collaborate at all, on any
-  // calendar — the frontend uses this exact response shape to show
-  // an upgrade prompt instead of a plain error message.
-  if (account?.calendarAccountType === "INDIVIDUAL") {
-    return NextResponse.json(
-      { error: "Collaborators require a Company account", requiresUpgrade: true },
-      { status: 403 }
-    );
-  }
+    if (!token) {
+      return NextResponse.json(
+        { error: "Invite token is required" },
+        { status: 400 }
+      );
+    }
 
-  // Company is capped at 10 people per calendar — counting both
-  // already-accepted collaborators and anyone still sitting on an
-  // unaccepted invite, since otherwise someone could send far more
-  // than 10 invites and have them all land at once.
-  const [collaboratorCount, pendingInviteCount] = await Promise.all([
-    db.calendarCollaborator.count({ where: { calendarId: id } }),
-    db.calendarInvite.count({ where: { calendarId: id, status: "PENDING" } }),
-  ]);
-  if (collaboratorCount + pendingInviteCount >= 10) {
+    /*
+     * Invite tokens are never stored in plain text.
+     * The original token sent in the invitation email is hashed
+     * and compared against the stored tokenHash.
+     */
+    const tokenHash = hashToken(token);
+
+    const invite = await db.calendarInvite.findFirst({
+      where: {
+        tokenHash,
+      },
+    });
+
+    if (!invite) {
+      return NextResponse.json(
+        { error: "This invite is invalid or no longer exists." },
+        { status: 404 }
+      );
+    }
+
+    /*
+     * An invite can only be accepted once.
+     */
+    if (invite.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "This invite has already been accepted or is no longer active." },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Invitations expire after 7 days.
+     */
+    if (invite.expiresAt && invite.expiresAt.getTime() <= Date.now()) {
+      return NextResponse.json(
+        { error: "This invite has expired. Ask the workspace manager to send a new invite." },
+        { status: 410 }
+      );
+    }
+
+    /*
+     * The invited email must match the currently authenticated
+     * creator's email. This prevents somebody who obtains a token
+     * from accepting an invitation intended for another account.
+     */
+    const creatorEmail = creator.email?.trim().toLowerCase();
+    const invitedEmail = invite.email?.trim().toLowerCase();
+
+    if (!creatorEmail || creatorEmail !== invitedEmail) {
+      return NextResponse.json(
+        {
+          error:
+            "This invitation was sent to a different email address. Sign in with the invited account to accept it.",
+        },
+        { status: 403 }
+      );
+    }
+
+    /*
+     * Make sure the target calendar still exists.
+     */
+    const calendar = await db.socialCalendar.findUnique({
+      where: {
+        id: invite.calendarId,
+      },
+      select: {
+        id: true,
+        clientName: true,
+        managerId: true,
+      },
+    });
+
+    if (!calendar) {
+      return NextResponse.json(
+        { error: "The client workspace no longer exists." },
+        { status: 404 }
+      );
+    }
+
+    /*
+     * The manager cannot accept their own collaborator invite.
+     */
+    if (calendar.managerId === creator.id) {
+      return NextResponse.json(
+        { error: "The workspace manager cannot accept a collaborator invite." },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * If this creator is already a collaborator on the workspace,
+     * don't create a duplicate relationship.
+     */
+    const existingCollaborator =
+      await db.calendarCollaborator.findFirst({
+        where: {
+          calendarId: calendar.id,
+          creatorId: creator.id,
+        },
+        select: {
+          id: true,
+          role: true,
+        },
+      });
+
+    if (existingCollaborator) {
+      /*
+       * The relationship already exists, so make sure the invitation
+       * itself is no longer pending.
+       */
+      await db.calendarInvite.update({
+        where: {
+          id: invite.id,
+        },
+        data: {
+          status: "ACCEPTED",
+        },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        alreadyMember: true,
+        calendarId: calendar.id,
+        role: existingCollaborator.role,
+      });
+    }
+
+    /*
+     * Validate the stored role before creating the collaborator.
+     * The role should already be valid because it was created through
+     * the invite API, but this keeps the acceptance route defensive.
+     */
+    const role = VALID_ROLES.includes(invite.role as Role)
+      ? (invite.role as Role)
+      : "ADD_CONTENT";
+
+    /*
+     * Create the collaborator and mark the invite as accepted
+     * atomically so we don't end up with a collaborator created
+     * while the invite remains pending, or vice versa.
+     */
+    await db.$transaction(async (tx) => {
+      await tx.calendarCollaborator.create({
+        data: {
+          calendarId: calendar.id,
+          creatorId: creator.id,
+          role,
+        },
+      });
+
+      await tx.calendarInvite.update({
+        where: {
+          id: invite.id,
+        },
+        data: {
+          status: "ACCEPTED",
+        },
+      });
+    });
+
+    return NextResponse.json({
+      ok: true,
+      calendarId: calendar.id,
+      role,
+    });
+  } catch (error) {
+    console.error("Failed to accept calendar invite:", error);
+
     return NextResponse.json(
       {
-        error: "This calendar already has 10 people on it. For more, contact hello@useshowwork.com.",
-        capReached: true,
+        error: "Something went wrong while accepting the invite.",
       },
-      { status: 403 }
+      { status: 500 }
     );
   }
-
-  const { email, role } = await req.json();
-  if (!email || !email.trim()) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
-  }
-  const finalRole = VALID_ROLES.includes(role) ? role : "ADD_CONTENT";
-
-  const token = randomUUID() + randomUUID();
-  const invite = await db.calendarInvite.create({
-    data: {
-      calendarId: calendar.id,
-      invitedByCreatorId: creator.id,
-      email: email.trim().toLowerCase(),
-      role: finalRole,
-      tokenHash: hashToken(token),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    },
-  });
-
-  try {
-    await sendCalendarInviteEmail({
-      to: invite.email,
-      invitedByName: creator.name || creator.email,
-      clientName: calendar.clientName,
-      token,
-    });
-  } catch (err) {
-    console.error("Failed to send calendar invite email:", err);
-  }
-
-  return NextResponse.json({ ok: true, role: finalRole });
 }
