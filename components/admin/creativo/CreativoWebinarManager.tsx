@@ -40,7 +40,24 @@ function rsvpWhatsappHref(
 ): string {
   const digits = normalizeNigerianWhatsappNumber(whatsappNumber);
 
-  const message = `Hi ${name}, thanks for RSVPing to "${webinarTopic}"!`;
+  const message = `Hey ${name}
+
+Just a little reminder
+
+You registered for “Talent Is Overrated” and we really hope you’ll be there.
+
+Because sometimes, the thing standing between where we are and where we want to be isn’t talent. Sometimes, there’s more to the story.
+
+Tomorrow, we’re unpacking that conversation together.
+
+📅 *13th September*
+⏰ *7:00 PM WAT*
+
+So, *save the date, set your alarm, and make sure you’re there.*
+
+*Tomorrow, we learn. Tomorrow, we rethink. Tomorrow, we grow.*
+
+See you in the room.`;
 
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
