@@ -4,13 +4,45 @@ import { useState } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 
-// wa.me needs a plain digit string — the RSVP form allows spaces and
-// a leading "+" (e.g. "+234 800 000 0000"), so those get stripped
-// here rather than requiring the admin to clean the number up first.
-function rsvpWhatsappHref(whatsappNumber: string, name: string, webinarTopic: string): string {
-  const digitsOnly = whatsappNumber.replace(/[^0-9]/g, "");
+// Converts Nigerian phone numbers into the international format WhatsApp requires.
+// Supports:
+// +234 801 234 5678
+// 234 801 234 5678
+// 0801 234 5678
+// 801 234 5678
+function normalizeNigerianWhatsappNumber(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+
+  // Already in Nigerian international format.
+  if (digits.startsWith("234")) {
+    return digits;
+  }
+
+  // Nigerian local format: 08012345678 → 2348012345678
+  if (digits.startsWith("0")) {
+    return `234${digits.slice(1)}`;
+  }
+
+  // Nigerian number entered without the leading 0 or +234:
+  // 8012345678 / 7012345678 / 9012345678 → 234...
+  if (digits.length === 10 && /^[789]/.test(digits)) {
+    return `234${digits}`;
+  }
+
+  // Fallback: return whatever digits were supplied.
+  return digits;
+}
+
+function rsvpWhatsappHref(
+  whatsappNumber: string,
+  name: string,
+  webinarTopic: string,
+): string {
+  const digits = normalizeNigerianWhatsappNumber(whatsappNumber);
+
   const message = `Hi ${name}, thanks for RSVPing to "${webinarTopic}"!`;
-  return `https://wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`;
+
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 const MAX_BIO_LENGTH = 185;
 
