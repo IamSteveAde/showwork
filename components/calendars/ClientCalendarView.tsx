@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, { type CalendarVideoCommentData } from "@/components/calendars/CalendarVideoComments";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
@@ -968,11 +968,13 @@ export default function ClientCalendarView({
   planStatus,
   posts: initialPosts,
   clientName,
+  initialMonth,
 }: {
   slug: string;
   planStatus: string;
   posts: CalendarPostData[];
   clientName: string;
+  initialMonth?: string;
 }) {
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("dark");
@@ -994,35 +996,154 @@ export default function ClientCalendarView({
   };
 
   const t = THEMES[theme];
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-  const [posts, setPosts] = useState<CalendarPostData[]>(
-    initialPosts.map((p) => ({ ...p, assets: p.assets ?? [], videoComments: p.videoComments ?? [], customFields: p.customFields ?? [] }))
+
+  const firstPostTimestamp = useMemo(() => {
+    if (!initialPosts.length) return Date.now();
+
+    return initialPosts.reduce((earliest, post) => {
+      const timestamp = new Date(post.postDate).getTime();
+      return Number.isFinite(timestamp) && timestamp < earliest ? timestamp : earliest;
+    }, Number.POSITIVE_INFINITY);
+  }, [initialPosts]);
+
+  const firstPostDate = new Date(
+    Number.isFinite(firstPostTimestamp) ? firstPostTimestamp : Date.now(),
   );
+
+  const parseMonth = (value?: string) => {
+    if (!value || !/^\\d{4}-\\d{2}$/.test(value)) {
+      return new Date(firstPostDate.getFullYear(), firstPostDate.getMonth(), 1);
+    }
+
+    const [yearValue, monthValue] = value.split("-").map(Number);
+    return new Date(yearValue, monthValue - 1, 1);
+  };
+
+  const monthKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+
+  const [currentMonth, setCurrentMonth] = useState(() => parseMonth(initialMonth));
+
+  const [posts, setPosts] = useState<CalendarPostData[]>(
+    initialPosts.map((p) => ({
+      ...p,
+      assets: p.assets ?? [],
+      videoComments: p.videoComments ?? [],
+      customFields: p.customFields ?? [],
+    })),
+  );
+
   const [selectedPost, setSelectedPost] = useState<CalendarPostData | null>(null);
   const [requestingChanges, setRequestingChanges] = useState(false);
   const [planNote, setPlanNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Client-side discovery controls. These stay on the same page so the
+  // client can jump directly to what matters instead of paging through
+  // months or posts one by one.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<Platform | "ALL">("ALL");
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalStatus | "ALL">("ALL");
+  const [contentFilter, setContentFilter] = useState<"ALL" | "WITH_CONTENT" | "WITHOUT_CONTENT">("ALL");
+
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
+  const monthOptions = useMemo(() => {
+    const values = new Set(posts.map((post) => monthKey(new Date(post.postDate))));
+    values.add(monthKey(firstPostDate));
+
+    return Array.from(values)
+      .sort()
+      .map((value) => {
+        const [y, m] = value.split("-").map(Number);
+        return {
+          value,
+          label: new Date(y, m - 1, 1).toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          }),
+        };
+      });
+  }, [posts, firstPostTimestamp]);
+
+  const filteredPosts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return posts.filter((post) => {
+      const matchesMonth =
+        monthKey(new Date(post.postDate)) === monthKey(currentMonth);
+
+      const searchable = [
+        post.caption,
+        post.contentIdea,
+        post.cta,
+        post.hashtags,
+        post.taggedAccounts,
+        post.category,
+        post.postType,
+        post.linkUrl,
+        PLATFORM_META[post.platform].label,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = !query || searchable.includes(query);
+      const matchesPlatform =
+        platformFilter === "ALL" || post.platform === platformFilter;
+      const matchesApproval =
+        approvalFilter === "ALL" || post.approvalStatus === approvalFilter;
+
+      const hasContent = post.assets.length > 0;
+      const matchesContent =
+        contentFilter === "ALL" ||
+        (contentFilter === "WITH_CONTENT" && hasContent) ||
+        (contentFilter === "WITHOUT_CONTENT" && !hasContent);
+
+      return (
+        matchesMonth &&
+        matchesSearch &&
+        matchesPlatform &&
+        matchesApproval &&
+        matchesContent
+      );
+    });
+  }, [
+    posts,
+    currentMonth,
+    searchQuery,
+    platformFilter,
+    approvalFilter,
+    contentFilter,
+  ]);
+
+  const activeFilterCount =
+    Number(Boolean(searchQuery.trim())) +
+    Number(platformFilter !== "ALL") +
+    Number(approvalFilter !== "ALL") +
+    Number(contentFilter !== "ALL");
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPlatformFilter("ALL");
+    setApprovalFilter("ALL");
+    setContentFilter("ALL");
+  };
+
   const postsForDate = (date: Date) =>
-    posts.filter((p) => {
+    filteredPosts.filter((p) => {
       const pd = new Date(p.postDate);
-      return pd.getFullYear() === date.getFullYear() && pd.getMonth() === date.getMonth() && pd.getDate() === date.getDate();
+      return (
+        pd.getFullYear() === date.getFullYear() &&
+        pd.getMonth() === date.getMonth() &&
+        pd.getDate() === date.getDate()
+      );
     });
 
-  // Only the dates that actually have something planned — grouped and
-  // sorted chronologically, rather than rendering every day of the
-  // month (most of them empty) the way a literal calendar grid would.
-  const postsInMonth = posts.filter((p) => {
-    const pd = new Date(p.postDate);
-    return pd.getFullYear() === year && pd.getMonth() === month;
-  });
+  // The month is the primary scope; the other controls refine that month.
+  const postsInMonth = filteredPosts;
   const activeDates = Array.from(
     new Set(postsInMonth.map((p) => new Date(p.postDate).getDate()))
   )
@@ -1144,7 +1265,7 @@ export default function ClientCalendarView({
               <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: t.text }}>Instagram Preview</h3>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 sm:text-sm" style={{ color: t.textMuted }}>Present your brand the right way — see how your Instagram content comes together before it goes live.</p>
             </div>
-            <InstagramPreview posts={posts} clientName={clientName?.trim() || "Your brand"} />
+            <InstagramPreview posts={filteredPosts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
       )}
@@ -1164,32 +1285,249 @@ export default function ClientCalendarView({
               <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl" style={{ color: t.text }}>TikTok experience</h3>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 sm:text-sm" style={{ color: t.textMuted }}>Experience the complete vertical sequence exactly as a viewer would scroll through it.</p>
             </div>
-            <TikTokPreview posts={posts} clientName={clientName?.trim() || "Your brand"} />
+            <TikTokPreview posts={filteredPosts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
       )}
 
       {viewMode === "calendar" && (
         <>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold" style={{ color: t.text }}>
-          {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-        </h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
-            aria-label="Previous month"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors" style={{ background: t.pillBg, color: t.textMuted }}
-          >
-            ←
-          </button>
-          <button
-            onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
-            aria-label="Next month"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors" style={{ background: t.pillBg, color: t.textMuted }}
-          >
-            →
-          </button>
+      <div
+        className="mb-7 overflow-hidden rounded-[26px] border transition-colors duration-300"
+        style={{
+          background:
+            theme === "dark"
+              ? "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))"
+              : "linear-gradient(145deg, #FFFFFF, #F7F9FC)",
+          borderColor: t.cardBorder,
+          boxShadow:
+            theme === "dark"
+              ? "0 20px 70px rgba(0,0,0,0.20)"
+              : "0 20px 70px rgba(15,23,42,0.06)",
+        }}
+      >
+        <div className="relative overflow-hidden p-4 sm:p-5">
+          <div
+            className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full blur-3xl"
+            style={{ background: "rgba(36,120,255,0.13)" }}
+          />
+
+          <div className="relative flex flex-col gap-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{
+                      background: "#2478FF",
+                      boxShadow: "0 0 14px rgba(36,120,255,0.7)",
+                    }}
+                  />
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-[0.2em]"
+                    style={{ color: t.textFaint }}
+                  >
+                    Content calendar
+                  </span>
+                </div>
+                <h2
+                  className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl"
+                  style={{ color: t.text }}
+                >
+                  {currentMonth.toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </h2>
+                <p className="mt-1 text-xs sm:text-sm" style={{ color: t.textMuted }}>
+                  {filteredPosts.length}{" "}
+                  {filteredPosts.length === 1 ? "post" : "posts"} in this view
+                  {activeFilterCount > 0 ? " · filtered" : ""}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={monthKey(currentMonth)}
+                  onChange={(e) => {
+                    const [y, m] = e.target.value.split("-").map(Number);
+                    setCurrentMonth(new Date(y, m - 1, 1));
+                  }}
+                  aria-label="Select month"
+                  className="h-11 min-w-[175px] rounded-xl border px-3.5 text-sm font-semibold outline-none transition-all"
+                  style={{
+                    background: t.inputBg,
+                    borderColor: t.inputBorder,
+                    color: t.text,
+                  }}
+                >
+                  {monthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+                  }}
+                  className="h-11 rounded-xl border px-4 text-xs font-semibold transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: t.pillBg,
+                    borderColor: t.cardBorder,
+                    color: t.textMuted,
+                  }}
+                >
+                  Today
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
+                  aria-label="Previous month"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border text-lg transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: t.pillBg,
+                    borderColor: t.cardBorder,
+                    color: t.textMuted,
+                  }}
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
+                  aria-label="Next month"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border text-lg transition-all hover:-translate-y-0.5"
+                  style={{
+                    background: t.pillBg,
+                    borderColor: t.cardBorder,
+                    color: t.textMuted,
+                  }}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.8fr))]">
+              <div className="relative">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  style={{ color: t.textFaint }}
+                >
+                  <circle cx="11" cy="11" r="6.5" />
+                  <path d="m16 16 4 4" strokeLinecap="round" />
+                </svg>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search captions, ideas, hashtags..."
+                  aria-label="Search content"
+                  className="h-11 w-full rounded-xl border pl-10 pr-4 text-sm outline-none transition-all placeholder:opacity-50 focus:ring-4 focus:ring-[#2478FF]/10"
+                  style={{
+                    background: t.inputBg,
+                    borderColor: t.inputBorder,
+                    color: t.text,
+                  }}
+                />
+              </div>
+
+              <select
+                value={platformFilter}
+                onChange={(e) =>
+                  setPlatformFilter(e.target.value as Platform | "ALL")
+                }
+                aria-label="Filter by platform"
+                className="h-11 rounded-xl border px-3 text-sm outline-none"
+                style={{
+                  background: t.inputBg,
+                  borderColor: t.inputBorder,
+                  color: t.text,
+                }}
+              >
+                <option value="ALL">All platforms</option>
+                {Object.entries(PLATFORM_META).map(([key, meta]) => (
+                  <option key={key} value={key}>
+                    {meta.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={approvalFilter}
+                onChange={(e) =>
+                  setApprovalFilter(e.target.value as ApprovalStatus | "ALL")
+                }
+                aria-label="Filter by approval status"
+                className="h-11 rounded-xl border px-3 text-sm outline-none"
+                style={{
+                  background: t.inputBg,
+                  borderColor: t.inputBorder,
+                  color: t.text,
+                }}
+              >
+                <option value="ALL">All statuses</option>
+                <option value="PENDING">Awaiting review</option>
+                <option value="APPROVED">Approved</option>
+                <option value="NEEDS_REVISION">Needs revision</option>
+              </select>
+
+              <select
+                value={contentFilter}
+                onChange={(e) =>
+                  setContentFilter(
+                    e.target.value as
+                      | "ALL"
+                      | "WITH_CONTENT"
+                      | "WITHOUT_CONTENT",
+                  )
+                }
+                aria-label="Filter by content availability"
+                className="h-11 rounded-xl border px-3 text-sm outline-none"
+                style={{
+                  background: t.inputBg,
+                  borderColor: t.inputBorder,
+                  color: t.text,
+                }}
+              >
+                <option value="ALL">All content</option>
+                <option value="WITH_CONTENT">Has content</option>
+                <option value="WITHOUT_CONTENT">Needs content</option>
+              </select>
+            </div>
+
+            {(activeFilterCount > 0 || searchQuery.trim()) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="rounded-full border px-2.5 py-1 text-[10px] font-semibold"
+                  style={{
+                    background: "rgba(36,120,255,0.10)",
+                    borderColor: "rgba(36,120,255,0.20)",
+                    color: "#68B2FF",
+                  }}
+                >
+                  {activeFilterCount} active{" "}
+                  {activeFilterCount === 1 ? "filter" : "filters"}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-[11px] font-semibold underline underline-offset-4"
+                  style={{ color: t.textMuted }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
