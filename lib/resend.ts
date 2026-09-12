@@ -2,42 +2,303 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Set this once you've verified a sending domain in Resend's dashboard —
-// e.g. "Showwork <no-reply@useshowwork.com>". Until a domain is
-// verified, check Resend's dashboard for what sender address is
-// currently allowed for testing.
-const FROM = process.env.RESEND_FROM_EMAIL ?? "Showwork <onboarding@resend.dev>";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://useshowwork.com";
 
-export async function sendOtpEmail(to: string, code: string, name?: string | null) {
-  const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi,";
+const FROM =
+  process.env.RESEND_FROM_EMAIL ?? "Showwork <onboarding@resend.dev>";
 
-  await resend.emails.send({
-    from: FROM,
-    to,
-    subject: `${code} is your Showwork verification code`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Showwork by Spotlite Africa
-        </p>
-        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
-        <p style="font-size: 15px; line-height: 1.6;">
-          Enter this code to verify your email and finish creating your account:
-        </p>
-        <p style="font-size: 36px; font-weight: 700; letter-spacing: 0.1em; color: #F5C842; margin: 24px 0;">
-          ${code}
-        </p>
-        <p style="font-size: 13px; color: #888786; line-height: 1.6;">
-          This code expires in 10 minutes. If you didn't request this, you can ignore this email.
-        </p>
-      </div>
-    `,
-  });
+const SHOWWORK_LOGO_URL =
+  "https://useshowwork.com/images/logo/sw.png";
+
+const CREATIVO_LOGO_URL =
+  "https://useshowwork.com/images/logo/creativo.png";
+
+type EmailPayload = Parameters<typeof resend.emails.send>[0];
+
+/**
+ * Central email sender.
+ * Keep email delivery independent of the local filesystem and inline attachments.
+ * Brand images are referenced through absolute HTTPS URLs from the public site.
+ */
+async function sendEmail(input: EmailPayload) {
+  const { data, error } = await resend.emails.send(input);
+
+  if (error) {
+    console.error("[Showwork email] Resend send failed", {
+      to: input.to,
+      subject: input.subject,
+      error,
+    });
+    throw new Error(
+      typeof error === "object" && error && "message" in error
+        ? String(error.message)
+        : "Email delivery failed",
+    );
+  }
+
+  return data;
+}
+const HERO_IMAGE_URL = `${APP_URL}/images/hero1.png`;
+const COMMUNITY_URL =
+  "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
+
+/**
+ * Email design system
+ * ---------------------------------------------------------------------------
+ * These emails deliberately use table-friendly HTML, inline styles and
+ * conservative CSS so they survive Gmail, Outlook, Apple Mail and mobile
+ * clients without losing the visual hierarchy.
+ *
+ * Brand rule:
+ * - Showwork emails use the Showwork logo.
+ * - Emails that mention Creativo use BOTH the Showwork and Creativo logos.
+ * - Email-safe PNG logos are loaded from the public Showwork domain.
+ * - Showwork's black logo sits on a white brand tile.
+ * - Creativo's white logo sits on a dark brand tile.
+ *
+ * This avoids logos disappearing into the background while keeping the source
+ * assets untouched.
+ */
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function firstNameOf(name?: string | null): string | null {
+  const value = name?.trim();
+  return value ? value.split(/\s+/)[0] : null;
+}
+
+function logoTile(dualBrand = false): string {
+  if (dualBrand) {
+    return `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+        <tr>
+          <td style="padding-right:8px;">
+            <div style="display:inline-block;padding:10px 14px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;">
+              <img src="${SHOWWORK_LOGO_URL}" alt="Showwork" width="112" style="display:block;width:112px;height:auto;max-height:28px;" />
+            </div>
+          </td>
+          <td style="padding-left:8px;">
+            <div style="display:inline-block;padding:10px 14px;background:#111827;border:1px solid #263246;border-radius:12px;">
+              <img src="${CREATIVO_LOGO_URL}" alt="Creativo" width="96" style="display:block;width:96px;height:auto;max-height:28px;" />
+            </div>
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+
+  return `
+    <div style="display:inline-block;padding:11px 16px;background:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;">
+      <img src="${SHOWWORK_LOGO_URL}" alt="Showwork" width="124" style="display:block;width:124px;height:auto;max-height:30px;" />
+    </div>
+  `;
+}
+
+function emailShell({
+  eyebrow,
+  headline,
+  body,
+  ctaLabel,
+  ctaUrl,
+  detailsHtml = "",
+  heroImage = false,
+  dualBrand = false,
+  accent = "#2478FF",
+  footer = "You're receiving this because of activity on Showwork.",
+}: {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  detailsHtml?: string;
+  heroImage?: boolean;
+  dualBrand?: boolean;
+  accent?: string;
+  footer?: string;
+}): string {
+  const safeEyebrow = escapeHtml(eyebrow);
+  const safeHeadline = escapeHtml(headline);
+  const safeBody = body;
+  const safeCtaLabel = ctaLabel ? escapeHtml(ctaLabel) : "";
+  const safeCtaUrl = ctaUrl ? escapeHtml(ctaUrl) : "";
+
+  return `
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Showwork</title>
+</head>
+<body style="margin:0;padding:0;background:#EEF2F7;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+    ${safeEyebrow} — ${safeHeadline}
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#EEF2F7;">
+    <tr>
+      <td align="center" style="padding:36px 14px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+
+          <tr>
+            <td align="center" style="padding:0 0 20px;">
+              ${logoTile(dualBrand)}
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#0B1220;border-radius:24px 24px 0 0;overflow:hidden;">
+                <tr>
+                  <td style="height:5px;background:${accent};font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+                ${
+                  heroImage
+                    ? `
+                <tr>
+                  <td>
+                    <img src="${HERO_IMAGE_URL}" alt="" width="600"
+                      style="display:block;width:100%;height:210px;object-fit:cover;background:#111827;" />
+                  </td>
+                </tr>`
+                    : ""
+                }
+                <tr>
+                  <td style="padding:34px 34px 36px;">
+                    <p style="margin:0 0 13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;line-height:1.4;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:${accent};">
+                      ${safeEyebrow}
+                    </p>
+                    <h1 style="margin:0;color:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:30px;line-height:1.15;letter-spacing:-0.7px;font-weight:760;">
+                      ${safeHeadline}
+                    </h1>
+                    <p style="margin:18px 0 0;color:#C8D1DE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.75;">
+                      ${safeBody}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                style="background:#FFFFFF;border-radius:0 0 24px 24px;border:1px solid #E1E7EF;border-top:0;">
+                <tr>
+                  <td style="padding:28px 34px 32px;">
+
+                    ${detailsHtml}
+
+                    ${
+                      ctaLabel && ctaUrl
+                        ? `
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:${detailsHtml ? "24px" : "0"};">
+                      <tr>
+                        <td>
+                          <a href="${safeCtaUrl}"
+                            style="display:inline-block;background:${accent};color:#FFFFFF;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:800;padding:14px 22px;border-radius:12px;">
+                            ${safeCtaLabel}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>`
+                        : ""
+                    }
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:22px 22px 0;">
+              <p style="margin:0;color:#7A8797;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:11px;line-height:1.6;">
+                ${footer}
+              </p>
+              <p style="margin:7px 0 0;color:#A0A9B5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:10px;">
+                Showwork &middot; useshowwork.com
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function infoBox(label: string, value: string, accent = "#2478FF"): string {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+      style="margin:0;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:14px;">
+      <tr>
+        <td style="padding:16px 18px;border-left:3px solid ${accent};">
+          <p style="margin:0 0 5px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#8A96A5;">
+            ${escapeHtml(label)}
+          </p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.5;font-weight:700;color:#172033;">
+            ${escapeHtml(value)}
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+function buttonHtml(label: string, url: string, accent = "#2478FF"): string {
+  return `
+    <a href="${escapeHtml(url)}"
+      style="display:inline-block;padding:14px 22px;background:${accent};color:#FFFFFF;text-decoration:none;border-radius:12px;font-family:Arial,sans-serif;font-size:14px;font-weight:800;">
+      ${escapeHtml(label)}
+    </a>
+  `;
 }
 
 /** Generates a random 6-digit numeric code, e.g. "042817". */
 export function generateOtpCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export async function sendOtpEmail(
+  to: string,
+  code: string,
+  name?: string | null,
+) {
+  const greeting = firstNameOf(name);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: `${code} is your Showwork verification code`,
+    html: emailShell({
+      eyebrow: "Verify your email",
+      headline: "One last step.",
+      body: `
+        ${greeting ? `Hi ${escapeHtml(greeting)},` : "Hi there,"}
+        <br /><br />
+        Enter the verification code below to confirm your email and finish setting up Showwork.
+      `,
+      detailsHtml: `
+        <div style="text-align:center;padding:22px 18px;background:#F7F9FC;border:1px solid #E2E8F0;border-radius:18px;">
+          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#8A96A5;">Your verification code</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:42px;line-height:1.1;letter-spacing:7px;font-weight:800;color:#101828;">${escapeHtml(code)}</p>
+          <p style="margin:12px 0 0;font-family:Arial,sans-serif;font-size:12px;color:#667085;">Expires in 10 minutes.</p>
+        </div>
+      `,
+      footer: "If you didn't request this code, you can safely ignore this email.",
+    }),
+  });
 }
 
 /**
@@ -61,51 +322,45 @@ export async function sendReviewNotificationEmail({
   note?: string | null;
   dashboardUrl: string;
 }) {
-  const greeting = creatorName ? `Hi ${creatorName.split(" ")[0]},` : "Hi,";
   const isApproved = status === "APPROVED";
 
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: isApproved
       ? `${clientName} approved a file`
       : `${clientName} requested a revision`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Showwork by Spotlite Africa
-        </p>
-        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
-        <p style="font-size: 15px; line-height: 1.6;">
-          ${clientName} just
-          <strong style="color: ${isApproved ? "#22C55E" : "#F97316"};">
-            ${isApproved ? "approved" : "requested a revision on"}
-          </strong>
-          a file in your project:
-        </p>
-        <p style="font-size: 14px; color: #F8F7F4; background: rgba(255,255,255,0.06); padding: 10px 14px; border-radius: 8px; margin: 16px 0;">
-          ${fileLabel}
-        </p>
+    html: emailShell({
+      eyebrow: isApproved ? "Approved" : "Revision requested",
+      headline: isApproved
+        ? `${clientName} approved your work.`
+        : `${clientName} has feedback for you.`,
+      body: `
+        Hi ${escapeHtml(firstNameOf(creatorName) ?? "there")},<br /><br />
+        ${escapeHtml(clientName)} just ${isApproved ? "approved" : "requested a revision on"} a file in your project.
+      `,
+      detailsHtml: `
+        ${infoBox("File", fileLabel, isApproved ? "#22C55E" : "#F97316")}
         ${
           !isApproved && note
-            ? `<p style="font-size: 14px; line-height: 1.6; color: #F8F7F4; background: rgba(249,115,22,0.1); border-left: 3px solid #F97316; padding: 12px 16px; margin: 16px 0;">
-                "${note}"
-               </p>`
+            ? `<div style="margin-top:14px;padding:16px 18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;">
+                <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#C2410C;">Client note</p>
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#7C2D12;">“${escapeHtml(note)}”</p>
+              </div>`
             : ""
         }
-        <a href="${dashboardUrl}" style="display: inline-block; margin-top: 16px; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 8px; text-decoration: none;">
-          View project
-        </a>
-      </div>
-    `,
+      `,
+      ctaLabel: "Open project",
+      ctaUrl: dashboardUrl,
+      accent: isApproved ? "#16A34A" : "#F97316",
+      footer: `Activity from ${escapeHtml(clientName)} on Showwork.`,
+    }),
   });
 }
 
 /**
  * Sent to the project owner (and the file's uploader, if different)
- * whenever a client leaves a new timestamped comment on a video —
- * separate from sendReviewNotificationEmail, since a comment isn't a
- * verdict and there can be any number of them on one file.
+ * whenever a client leaves a new timestamped comment on a video.
  */
 export async function sendVideoCommentNotificationEmail({
   to,
@@ -124,44 +379,40 @@ export async function sendVideoCommentNotificationEmail({
   videoTimestampSeconds: number;
   dashboardUrl: string;
 }) {
-  const greeting = creatorName ? `Hi ${creatorName.split(" ")[0]},` : "Hi,";
   const total = Math.max(0, Math.round(videoTimestampSeconds));
   const m = Math.floor(total / 60);
   const s = total % 60;
   const formattedTimestamp = `${m}:${String(s).padStart(2, "0")}`;
 
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
-    subject: `${clientName} left a comment on ${fileLabel}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Showwork by Spotlite Africa
-        </p>
-        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
-        <p style="font-size: 15px; line-height: 1.6;">
-          ${clientName} left a comment at
-          <strong style="color: #2478FF;">${formattedTimestamp}</strong>
-          in a video in your project:
-        </p>
-        <p style="font-size: 14px; color: #F8F7F4; background: rgba(255,255,255,0.06); padding: 10px 14px; border-radius: 8px; margin: 16px 0;">
-          ${fileLabel}
-        </p>
-        <p style="font-size: 14px; line-height: 1.6; color: #F8F7F4; background: rgba(36,120,255,0.1); border-left: 3px solid #2478FF; padding: 12px 16px; margin: 16px 0;">
-          "${note}"
-        </p>
-        <a href="${dashboardUrl}" style="display: inline-block; margin-top: 16px; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 8px; text-decoration: none;">
-          View project
-        </a>
-      </div>
-    `,
+    subject: `${clientName} commented on ${fileLabel}`,
+    html: emailShell({
+      eyebrow: "New video comment",
+      headline: "A client left a note on the timeline.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(creatorName) ?? "there")},<br /><br />
+        ${escapeHtml(clientName)} left a comment on your video. Jump straight to the moment they were talking about.
+      `,
+      detailsHtml: `
+        ${infoBox("File", fileLabel)}
+        <div style="margin-top:14px;padding:18px;background:#EEF5FF;border:1px solid #CFE0FF;border-radius:14px;">
+          <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2478FF;">Timestamp</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:24px;font-weight:800;color:#172033;">${formattedTimestamp}</p>
+          <p style="margin:8px 0 0;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#526173;">“${escapeHtml(note)}”</p>
+        </div>
+      `,
+      ctaLabel: "View comment",
+      ctaUrl: dashboardUrl,
+      heroImage: true,
+      footer: `A new client comment was added to ${escapeHtml(clientName)}'s project.`,
+    }),
   });
 }
 
 /**
- * Sent to the client (viewer) once the creator uploads a corrected
- * version of something they flagged, so they know to come look again.
+ * Sent to the client once the creator uploads a corrected version.
  */
 export async function sendRevisionReadyEmail({
   to,
@@ -172,165 +423,70 @@ export async function sendRevisionReadyEmail({
   clientName: string;
   publicUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `An update is ready on ${clientName}'s delivery`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Showwork by Spotlite Africa
-        </p>
-        <p style="font-size: 15px; line-height: 1.6;">
-          The file you flagged for revision has been updated. Take another look:
-        </p>
-        <a href="${publicUrl}" style="display: inline-block; margin-top: 16px; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 20px; border-radius: 8px; text-decoration: none;">
-          Review the update
-        </a>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Ready for review",
+      headline: "Your requested update is ready.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(clientName) ?? "there")},<br /><br />
+        The work you flagged for revision has been updated. Everything is ready for another look.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F4F9FF;border:1px solid #D9E9FF;border-radius:16px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#344054;">
+            When you're ready, open the delivery and review the latest version. If everything looks right, you're all set.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Review the update",
+      ctaUrl: publicUrl,
+      heroImage: true,
+      footer: `Your delivery from ${escapeHtml(clientName)} is ready on Showwork.`,
+    }),
   });
 }
 
 /**
- * Sent when someone requests a password reset. The link contains the
- * plain token — the only place it ever exists outside the moment of
- * generation; the database only ever stores its hash.
+ * Sent when someone requests a password reset.
  */
-export async function sendPasswordResetEmail(to: string, resetUrl: string, name?: string | null) {
-  const greeting = name ? `Hi ${name.split(" ")[0]},` : "Hi,";
-
-  await resend.emails.send({
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string,
+  name?: string | null,
+) {
+  await sendEmail({
     from: FROM,
     to,
     subject: "Reset your Showwork password",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Showwork by Spotlite Africa
-        </p>
-        <p style="font-size: 15px; line-height: 1.6;">${greeting}</p>
-        <p style="font-size: 15px; line-height: 1.6;">
-          Someone requested a password reset for your account. If this was you, click below to set a new password:
-        </p>
-        <a href="${resetUrl}" style="display: inline-block; margin: 20px 0; background: #F5C842; color: #0A0A0B; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
-          Reset password
-        </a>
-        <p style="font-size: 13px; color: #888786; line-height: 1.6;">
-          This link expires in 30 minutes. If you didn't request this, you can safely ignore this email — your password won't change.
-        </p>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Account security",
+      headline: "Let's get you back in.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        Someone requested a password reset for your Showwork account. If that was you, use the button below to choose a new password.
+      `,
+      detailsHtml: `
+        <div style="padding:16px 18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#667085;">
+            This reset link expires in 30 minutes. If you didn't request it, you don't need to do anything.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Reset password",
+      ctaUrl: resetUrl,
+      accent: "#101828",
+      footer: "For your security, your password will not change unless you use the reset link.",
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// COLLABORATION NOTIFICATIONS — invites, task assignment, review
-// decisions. All six share one visual template (emailShell below):
-// your actual hero image up top, the Showwork wordmark, and a real
-// gradient button — built once so changing the look later means
-// editing one function, not six emails that quietly drift apart.
-// Uses FROM (the same verified sender as every email above) rather
-// than a separate hardcoded address.
-// ─────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* COLLABORATION NOTIFICATIONS                                                 */
+/* -------------------------------------------------------------------------- */
 
-const HERO_IMAGE_URL = `${process.env.NEXT_PUBLIC_APP_URL}/images/hero1.png`;
-const COMMUNITY_URL = "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
-
-function emailShell({
-  eyebrow,
-  headline,
-  body,
-  ctaLabel,
-  ctaUrl,
-}: {
-  eyebrow: string;
-  headline: string;
-  body: string;
-  ctaLabel: string;
-  ctaUrl: string;
-}): string {
-  return `
-<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<!--
-  These two meta tags tell email clients not to apply their own
-  automatic dark-mode color inversion on top of this email's own
-  colors — some clients (Zoho among them) otherwise flip an already-
-  dark design and can leave white text sitting on a white background
-  it never should've touched. Without these, the same inline color
-  styles below can render correctly in one client and unreadably in
-  another.
--->
-<meta name="color-scheme" content="light only" />
-<meta name="supported-color-schemes" content="light only" />
-<title>Showwork</title>
-</head>
-<body style="margin:0; padding:0; background:#0A0A0A;" bgcolor="#0A0A0A">
-    <div style="background:#0A0A0A; padding:48px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;" bgcolor="#0A0A0A">
-      <div style="max-width:480px; margin:0 auto;">
-        <p style="margin:0 0 24px; font-size:18px; font-weight:700; color:#ffffff !important; text-align:center;">
-          Show<span style="color:#2478FF !important;">work</span>
-        </p>
-
-        <div style="background:#141414; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.06);" bgcolor="#141414">
-          <img
-            src="${HERO_IMAGE_URL}"
-            alt=""
-            width="480"
-            style="width:100%; max-width:480px; height:180px; object-fit:cover; display:block; background:#1a1a1a;"
-          />
-          <div style="padding:32px 28px 36px;">
-            <p style="margin:0 0 14px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#2478FF !important;">
-              ${eyebrow}
-            </p>
-            <h1 style="margin:0 0 16px; font-size:21px; line-height:1.35; font-weight:700; color:#ffffff !important;">
-              ${headline}
-            </h1>
-            <p style="margin:0 0 30px; font-size:14px; line-height:1.65; color:#B8B8B8 !important;">
-              ${body}
-            </p>
-            <a
-              href="${ctaUrl}"
-              style="display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#2478FF 0%,#0052FF 100%); background-color:#2478FF; color:#ffffff !important; text-decoration:none; border-radius:10px; font-weight:600; font-size:14px;"
-            >
-              ${ctaLabel}
-            </a>
-
-            <!-- Join Creativo — present on every email in this system,
-                 not just this one, since it's built into the shared
-                 shell rather than added per-email. Secondary/quieter
-                 styling on purpose: the main CTA above stays the
-                 primary action, this is a standing invitation, not a
-                 competing ask. -->
-            <div style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.08);">
-              <p style="margin:0 0 12px; font-size:13px; color:#B8B8B8 !important;">
-                Not figuring this out alone helps — Creativo is a free community for creators.
-              </p>
-              <a
-                href="${COMMUNITY_URL}"
-                style="display:inline-block; padding:10px 20px; background:transparent; color:#ffffff !important; text-decoration:none; border-radius:8px; border:1px solid rgba(255,255,255,0.2); font-weight:600; font-size:13px;"
-              >
-                Join Creativo
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <p style="margin:28px 0 0; text-align:center; font-size:11px; color:#666666 !important;">
-          Sent by Showwork &middot; useshowwork.com
-        </p>
-      </div>
-    </div>
-</body>
-</html>
-  `;
-}
-
-// ── Delivery-project collaboration invite ──
 export async function sendProjectInviteEmail({
   to,
   inviterName,
@@ -342,21 +498,26 @@ export async function sendProjectInviteEmail({
   projectName: string;
   acceptUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `${inviterName} invited you to collaborate on "${projectName}"`,
     html: emailShell({
       eyebrow: "You're invited",
-      headline: `${inviterName} wants you on "${projectName}"`,
-      body: `You've been invited to collaborate on this project on Showwork — upload your own work, and get credit for it directly. This invite expires in 7 days.`,
-      ctaLabel: "View invite",
+      headline: `${inviterName} wants you in the room.`,
+      body: `
+        You've been invited to collaborate on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong> on Showwork.
+        Bring your work into one place, keep the review moving, and give everyone a clear view of what's happening.
+      `,
+      detailsHtml: infoBox("Project", projectName),
+      ctaLabel: "View invitation",
       ctaUrl: acceptUrl,
+      heroImage: true,
+      footer: "This invitation expires in 7 days.",
     }),
   });
 }
 
-// ── Managed-project collaborator added ──
 export async function sendCollaboratorAddedEmail({
   to,
   addedByName,
@@ -368,21 +529,25 @@ export async function sendCollaboratorAddedEmail({
   projectName: string;
   projectUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `${addedByName} added you to "${projectName}"`,
     html: emailShell({
       eyebrow: "You're on the team",
-      headline: `${addedByName} added you to "${projectName}"`,
-      body: `You're now a collaborator on this project — take a look at what's assigned to you and get started whenever you're ready.`,
-      ctaLabel: "View project",
+      headline: "You're officially in.",
+      body: `
+        ${escapeHtml(addedByName)} added you as a collaborator on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong>.
+        Your workspace is ready whenever you are.
+      `,
+      detailsHtml: infoBox("Project", projectName),
+      ctaLabel: "Open project",
       ctaUrl: projectUrl,
+      heroImage: true,
     }),
   });
 }
 
-// ── Task assigned ──
 export async function sendTaskAssignedEmail({
   to,
   assignedByName,
@@ -396,21 +561,25 @@ export async function sendTaskAssignedEmail({
   projectName: string;
   projectUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `New task on "${projectName}": ${taskTitle}`,
     html: emailShell({
       eyebrow: "New task",
-      headline: taskTitle,
-      body: `${assignedByName} assigned you this task on "${projectName}". Head over whenever you're ready to get started.`,
+      headline: escapeHtml(taskTitle),
+      body: `
+        ${escapeHtml(assignedByName)} assigned you a task on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong>.
+        Pick it up when you're ready and keep the work moving.
+      `,
+      detailsHtml: infoBox("Project", projectName),
       ctaLabel: "View task",
       ctaUrl: projectUrl,
+      heroImage: true,
     }),
   });
 }
 
-// ── The owner requested changes on an uploaded file ──
 export async function sendTaskNeedsChangesEmail({
   to,
   reviewerName,
@@ -426,23 +595,36 @@ export async function sendTaskNeedsChangesEmail({
   note: string | null;
   projectUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `Changes requested on "${taskTitle}"`,
     html: emailShell({
       eyebrow: "Needs a revision",
-      headline: `"${taskTitle}" needs a small fix`,
-      body: note
-        ? `${reviewerName} left a note on "${projectName}": "${note}"`
-        : `${reviewerName} requested changes to your upload on "${projectName}". Take a look whenever you get a chance.`,
+      headline: "A small change, then you're clear.",
+      body: `
+        ${escapeHtml(reviewerName)} reviewed your work on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong>
+        and asked for a revision.
+      `,
+      detailsHtml: `
+        ${infoBox("Task", taskTitle, "#F97316")}
+        ${
+          note
+            ? `<div style="margin-top:14px;padding:16px 18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;">
+                <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#C2410C;">Review note</p>
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:#7C2D12;">“${escapeHtml(note)}”</p>
+              </div>`
+            : ""
+        }
+      `,
       ctaLabel: "View task",
       ctaUrl: projectUrl,
+      heroImage: true,
+      accent: "#F97316",
     }),
   });
 }
 
-// ── The owner approved an uploaded file ──
 export async function sendTaskApprovedEmail({
   to,
   reviewerName,
@@ -456,21 +638,26 @@ export async function sendTaskApprovedEmail({
   projectName: string;
   projectUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `"${taskTitle}" was approved`,
     html: emailShell({
       eyebrow: "Approved",
-      headline: `Your work on "${taskTitle}" was approved`,
-      body: `${reviewerName} approved what you uploaded on "${projectName}" — nice work.`,
+      headline: "That's a wrap on this task.",
+      body: `
+        ${escapeHtml(reviewerName)} approved your work on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong>.
+        Nice work — the next step is ready when you are.
+      `,
+      detailsHtml: infoBox("Task", taskTitle, "#16A34A"),
       ctaLabel: "View project",
       ctaUrl: projectUrl,
+      heroImage: true,
+      accent: "#16A34A",
     }),
   });
 }
 
-// ── A collaborator uploaded something — the owner needs to review it ──
 export async function sendNewUploadReadyForReviewEmail({
   to,
   uploaderName,
@@ -484,31 +671,29 @@ export async function sendNewUploadReadyForReviewEmail({
   projectName: string;
   projectUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `${uploaderName} uploaded work on "${projectName}"`,
     html: emailShell({
       eyebrow: "Ready for your review",
-      headline: `${uploaderName} finished "${taskTitle}"`,
-      body: `A new file is ready for your review on "${projectName}" — take a look and approve it, or send back a note if it needs anything.`,
+      headline: `${uploaderName} finished the work.`,
+      body: `
+        A new upload is waiting for your review on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong>.
+        Approve it or leave a note if anything needs another pass.
+      `,
+      detailsHtml: infoBox("Task", taskTitle),
       ctaLabel: "Review now",
       ctaUrl: projectUrl,
+      heroImage: true,
     }),
   });
 }
 
-// ─────────────────────────────────────────────
-// LIFECYCLE SEQUENCE — the automatic emails every creator moves
-// through after signup: welcome immediately, a portfolio nudge on
-// day 1, then on day 2 both a project-management introduction and a
-// Creativo invite, followed by a "deliver a project" reminder that
-// then repeats every week from then on, forever. Driven by
-// lib/lifecycleEmails.ts, which decides *when* each of these fires —
-// these five functions are just the content.
-// ─────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* LIFECYCLE                                                                    */
+/* -------------------------------------------------------------------------- */
 
-// ── Sent immediately at signup ──
 export async function sendWelcomeEmail({
   to,
   name,
@@ -516,22 +701,36 @@ export async function sendWelcomeEmail({
   to: string;
   name: string | null;
 }) {
-  const firstName = name?.split(" ")[0];
-  await resend.emails.send({
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
     from: FROM,
     to,
     subject: "Welcome to Showwork",
     html: emailShell({
-      eyebrow: "Welcome",
-      headline: firstName ? `Good to have you, ${firstName}.` : "Good to have you here.",
-      body: `Showwork is how your work gets delivered like the premium brand it already is — no more WeTransfer links, no more scattered folders. Your dashboard is ready whenever you are.`,
-      ctaLabel: "Go to your dashboard",
-      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      eyebrow: "Welcome to Showwork",
+      headline: firstName
+        ? `Good to have you here, ${firstName}.`
+        : "Good to have you here.",
+      body: `
+        Showwork gives your creative business a more polished way to run the work — from the first conversation to the final delivery.
+        <br /><br />
+        Your workspace is ready. Start with one thing that matters most to you today.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
+          <p style="margin:0 0 7px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">Your Showwork workspace</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;font-weight:700;color:#172033;">Plan it. Present it. Deliver it beautifully.</p>
+        </div>
+      `,
+      ctaLabel: "Open Showwork",
+      ctaUrl: `${APP_URL}/dashboard`,
+      heroImage: true,
+      footer: "Welcome to Showwork. We're glad you're here.",
     }),
   });
 }
 
-// ── Day 1 — invite to build a free portfolio ──
 export async function sendPortfolioInviteEmail({
   to,
   name,
@@ -539,22 +738,33 @@ export async function sendPortfolioInviteEmail({
   to: string;
   name: string | null;
 }) {
-  const firstName = name?.split(" ")[0];
-  await resend.emails.send({
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Your portfolio is free — and takes minutes",
+    subject: "Your portfolio is free — and ready when you are",
     html: emailShell({
-      eyebrow: "Free, always on",
-      headline: firstName ? `${firstName}, your portfolio is ready to build.` : "Your portfolio is ready to build.",
-      body: `A real portfolio — not a scattered Instagram feed — is often the first thing a serious client checks. Yours is free on every plan, always on, and takes minutes to set up.`,
-      ctaLabel: "Create your portfolio",
-      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio`,
+      eyebrow: "Portfolio · Free",
+      headline: firstName
+        ? `${firstName}, make the work easy to believe in.`
+        : "Make the work easy to believe in.",
+      body: `
+        Your portfolio is free on Showwork. Give potential clients one polished place to see what you do, what you've made, and why they should trust you with the next brief.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
+          <p style="margin:0 0 7px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">A better first impression</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.65;color:#344054;">Your work deserves more than a scattered feed or a folder of links.</p>
+        </div>
+      `,
+      ctaLabel: "Build your portfolio",
+      ctaUrl: `${APP_URL}/dashboard/portfolio`,
+      heroImage: true,
     }),
   });
 }
 
-// ── Day 2 — introduce project management ──
 export async function sendProjectManagementIntroEmail({
   to,
   name,
@@ -562,22 +772,29 @@ export async function sendProjectManagementIntroEmail({
   to: string;
   name: string | null;
 }) {
-  const firstName = name?.split(" ")[0];
-  await resend.emails.send({
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Plan the work, not just the delivery",
+    subject: "There's more to the work than the final delivery",
     html: emailShell({
-      eyebrow: "Also on Showwork",
-      headline: firstName ? `${firstName}, there's more than delivery.` : "There's more than delivery.",
-      body: `Before a single file gets delivered, you can plan it properly — a real brief, tasks assigned to your team, and a review step before anything reaches a client. Your client even gets a live progress view while the work is happening.`,
+      eyebrow: "Project Delivery · Showwork",
+      headline: firstName
+        ? `${firstName}, take control before delivery day.`
+        : "Take control before delivery day.",
+      body: `
+        Build the brief, assign the work, keep everyone aligned and give your client a live view of progress — before the final files ever arrive.
+        <br /><br />
+        It's the difference between simply finishing work and running a professional operation.
+      `,
       ctaLabel: "Start a managed project",
-      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/start`,
+      ctaUrl: `${APP_URL}/dashboard/start`,
+      heroImage: true,
     }),
   });
 }
 
-// ── Day 2, and every week after — invite to join Creativo ──
 export async function sendCreativoPromoEmail({
   to,
   name,
@@ -585,22 +802,32 @@ export async function sendCreativoPromoEmail({
   to: string;
   name: string | null;
 }) {
-  const firstName = name?.split(" ")[0];
-  await resend.emails.send({
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "You don't have to figure this out alone",
+    subject: "Meet Creativo — the community built around the creative life",
     html: emailShell({
-      eyebrow: "Introducing Creativo",
-      headline: firstName ? `${firstName}, meet Creativo.` : "Meet Creativo.",
-      body: `A free community for creators — not just Showwork users. Pricing, positioning, landing better clients, and the parts of this job nobody else teaches you, worked out alongside people actually doing it.`,
-      ctaLabel: "Join Creativo, it's free",
+      eyebrow: "Showwork × Creativo",
+      headline: firstName
+        ? `${firstName}, you don't have to build alone.`
+        : "You don't have to build alone.",
+      body: `
+        Creativo is a free community for creators who are figuring out the business behind the work — pricing, positioning, better clients, visibility, growth and the things nobody teaches you at the beginning.
+        <br /><br />
+        Showwork helps you run the work. <strong style="color:#FFFFFF;">Creativo helps you grow around it.</strong>
+      `,
+      ctaLabel: "Join Creativo — it's free",
       ctaUrl: COMMUNITY_URL,
+      dualBrand: true,
+      heroImage: true,
+      accent: "#7C5CFF",
+      footer: "Creativo is a free community for creators, presented by Showwork.",
     }),
   });
 }
 
-// ── Day 2, then weekly forever — reminder to deliver a project ──
 export async function sendDeliverReminderEmail({
   to,
   name,
@@ -608,22 +835,29 @@ export async function sendDeliverReminderEmail({
   to: string;
   name: string | null;
 }) {
-  const firstName = name?.split(" ")[0];
-  await resend.emails.send({
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
     from: FROM,
     to,
     subject: "Ready to send your next delivery?",
     html: emailShell({
-      eyebrow: "Whenever you're ready",
-      headline: firstName ? `${firstName}, got a delivery to send?` : "Got a delivery to send?",
-      body: `A branded, password-protected link says premium before you have to argue for it — and makes the number you're charging feel obvious. Takes minutes to set up your next one.`,
+      eyebrow: "Delivery · Whenever you're ready",
+      headline: firstName
+        ? `${firstName}, got something ready to send?`
+        : "Got something ready to send?",
+      body: `
+        A polished delivery changes how your work feels before the client even opens it.
+        <br /><br />
+        Put the files in one branded, password-protected experience and give the work the finish it deserves.
+      `,
       ctaLabel: "Deliver a project",
-      ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL}/start`,
+      ctaUrl: `${APP_URL}/start`,
+      heroImage: true,
     }),
   });
 }
 
-// ── Managed-project invite for someone with no Showwork account yet ──
 export async function sendManagedProjectInviteEmail({
   to,
   inviterName,
@@ -635,26 +869,30 @@ export async function sendManagedProjectInviteEmail({
   projectName: string;
   acceptUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `${inviterName} invited you to work on "${projectName}"`,
     html: emailShell({
       eyebrow: "You're invited",
-      headline: `${inviterName} wants you on "${projectName}"`,
-      body: `You've been invited to collaborate on this project on Showwork. If you don't have an account yet, you'll get one in a couple of clicks — this invite expires in 7 days.`,
-      ctaLabel: "View invite",
+      headline: `${inviterName} wants you on the project.`,
+      body: `
+        You've been invited to collaborate on <strong style="color:#FFFFFF;">${escapeHtml(projectName)}</strong> on Showwork.
+        If you don't have an account yet, we'll guide you through the setup.
+      `,
+      detailsHtml: infoBox("Project", projectName),
+      ctaLabel: "View invitation",
       ctaUrl: acceptUrl,
+      heroImage: true,
+      footer: "This invitation expires in 7 days.",
     }),
   });
 }
 
-// ─────────────────────────────────────────────
-// CREATIVO WEBINAR HOST APPLICATION — sent to the Showwork team
-// (hello@useshowwork.com), never to the applicant. Matches the same
-// dark/gold visual language as every other email in this file rather
-// than inventing a new style for one form.
-// ─────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* CREATIVO                                                                    */
+/* -------------------------------------------------------------------------- */
+
 export async function sendWebinarHostApplicationEmail({
   name,
   email,
@@ -668,35 +906,37 @@ export async function sendWebinarHostApplicationEmail({
   proposedTopic: string;
   whyThem: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to: "hello@useshowwork.com",
     replyTo: email,
     subject: `Creativo webinar host application — ${name}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Creativo — Webinar Host Application
-        </p>
-        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 140px;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Category</td><td style="padding: 6px 0;">${category}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Proposed topic</td><td style="padding: 6px 0;">${proposedTopic}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Why them</td><td style="padding: 6px 0;">${whyThem}</td></tr>
-        </table>
-        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to respond to the applicant.</p>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Showwork × Creativo · Host application",
+      headline: `${name} wants to host a Creativo session.`,
+      body: "A new creator has submitted an application to host a Creativo webinar. Here are the details.",
+      dualBrand: true,
+      accent: "#7C5CFF",
+      detailsHtml: `
+        ${infoBox("Name", name)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Email", email)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Category", category)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Proposed topic", proposedTopic)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Why them", whyThem)}
+      `,
+      footer: "Reply directly to this email to respond to the applicant.",
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// PORTFOLIO PAYMENT FAILED — sent to the agency the moment a client
-// portfolio's ₦1,000/month recurring charge fails and it goes
-// offline. This is the immediate notice; a separate scheduled job is
-// what re-sends reminders for as long as it stays unresolved.
-// ─────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* PORTFOLIO BILLING                                                           */
+/* -------------------------------------------------------------------------- */
+
 export async function sendPortfolioPaymentFailedEmail({
   to,
   name,
@@ -706,39 +946,34 @@ export async function sendPortfolioPaymentFailedEmail({
   name: string | null;
   portfolioName: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `Payment failed — "${portfolioName}" is now offline`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          The monthly payment for <strong style="color: #F8F7F4;">${portfolioName}</strong> didn't go through,
-          so that portfolio is now offline until it's resolved.
-        </p>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Update your payment details from your dashboard to bring it back online.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          Update payment details
-        </a>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Portfolio · Payment issue",
+      headline: "Your portfolio needs your attention.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        The monthly payment for <strong style="color:#FFFFFF;">${escapeHtml(portfolioName)}</strong> didn't go through, so the portfolio is currently offline.
+        <br /><br />
+        Update your payment details and bring it back online.
+      `,
+      detailsHtml: `
+        <div style="padding:16px 18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#7C2D12;">
+            Your portfolio content is still there. This is a billing interruption, not a deletion.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Update payment details",
+      ctaUrl: `${APP_URL}/dashboard/portfolio`,
+      accent: "#F97316",
+      footer: `Billing notice for ${escapeHtml(portfolioName)}.`,
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// PORTFOLIO PAYMENT REMINDER — the repeated nag, distinct from
-// sendPortfolioPaymentFailedEmail (the one-time "just went offline"
-// notice sent directly from the webhook). This one is sent by a
-// separate scheduled script for as long as a portfolio stays
-// offline, so the wording reflects an ongoing situation rather than
-// something that just happened.
-// ─────────────────────────────────────────────
 export async function sendPortfolioOfflineReminderEmail({
   to,
   name,
@@ -750,37 +985,36 @@ export async function sendPortfolioOfflineReminderEmail({
   portfolioName: string;
   daysOffline: number;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `Reminder: "${portfolioName}" is still offline`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          <strong style="color: #F8F7F4;">${portfolioName}</strong> has now been offline for
-          ${daysOffline} day${daysOffline === 1 ? "" : "s"} due to a failed monthly payment.
-        </p>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Update your payment details to bring it back online — the client-facing link stays
-          inactive until this is resolved.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/portfolio" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          Update payment details
-        </a>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Portfolio · Still offline",
+      headline: "Your portfolio is waiting for you.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        <strong style="color:#FFFFFF;">${escapeHtml(portfolioName)}</strong> has been offline for
+        ${daysOffline} day${daysOffline === 1 ? "" : "s"} because its recurring payment is still unresolved.
+      `,
+      detailsHtml: `
+        <div style="padding:16px 18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#7C2D12;">
+            Update your payment details to bring the client-facing portfolio back online.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Bring it back online",
+      ctaUrl: `${APP_URL}/dashboard/portfolio`,
+      accent: "#F97316",
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// MONTHLY SPOTLIGHT — SUBMISSION NOTIFICATION — sent to the Showwork
-// team every time someone submits, matching the same dark/gold visual
-// language as every other email in this file.
-// ─────────────────────────────────────────────
+/* -------------------------------------------------------------------------- */
+/* SPOTLIGHT                                                                   */
+/* -------------------------------------------------------------------------- */
+
 export async function sendSpotlightSubmissionEmail({
   name,
   email,
@@ -796,35 +1030,40 @@ export async function sendSpotlightSubmissionEmail({
   description: string;
   note: string | null;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to: "hello@useshowwork.com",
     replyTo: email,
     subject: `Spotlight submission — ${name} (${category})`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Monthly Spotlight — New Submission
-        </p>
-        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 140px;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Category</td><td style="padding: 6px 0;">${category}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Project link</td><td style="padding: 6px 0;"><a href="${projectLink}" style="color: #F5C842;">${projectLink}</a></td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Description</td><td style="padding: 6px 0;">${description}</td></tr>
-          ${note ? `<tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Note</td><td style="padding: 6px 0;">${note}</td></tr>` : ""}
-        </table>
-        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to respond to the submitter.</p>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: "Monthly Spotlight · New submission",
+      headline: `${name} submitted work for consideration.`,
+      body: "A new Spotlight submission has arrived. Everything you need for the first review is below.",
+      detailsHtml: `
+        ${infoBox("Name", name)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Email", email)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Category", category)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Project link", projectLink)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Description", description)}
+        ${
+          note
+            ? `<div style="height:10px;line-height:10px;">&nbsp;</div>${infoBox("Note", note)}`
+            : ""
+        }
+      `,
+      footer: "Reply directly to this email to respond to the submitter.",
+    }),
   });
 }
-// ─────────────────────────────────────────────
-// WEBINAR RSVP CONFIRMATION — sent immediately to the person who just
-// RSVP'd, confirming their spot and including the meeting link
-// directly, matching the same dark/gold visual language as every
-// other email in this file.
-// ─────────────────────────────────────────────
+
+/* -------------------------------------------------------------------------- */
+/* CREATIVO WEBINARS                                                           */
+/* -------------------------------------------------------------------------- */
+
 export async function sendWebinarRsvpConfirmationEmail({
   to,
   name,
@@ -848,138 +1087,39 @@ export async function sendWebinarRsvpConfirmationEmail({
     minute: "2-digit",
   });
 
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: `You're confirmed — ${topic}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Creativo Webinar — You're In
-        </p>
-        <p style="font-size: 16px; line-height: 1.6;">Hi ${name},</p>
-        <p style="font-size: 14px; line-height: 1.7; color: #D8D6D2;">Your spot for <strong style="color: #F8F7F4;">${topic}</strong> is confirmed.</p>
-        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse; margin-top: 16px;">
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 100px;">When</td><td style="padding: 6px 0;">${formattedDate}</td></tr>
-          ${venue ? `<tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Where</td><td style="padding: 6px 0;">${venue}</td></tr>` : ""}
-        </table>
+    html: emailShell({
+      eyebrow: "Showwork × Creativo · You're in",
+      headline: "Your seat is saved.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? name)},<br /><br />
+        You're confirmed for <strong style="color:#FFFFFF;">${escapeHtml(topic)}</strong>.
+        Keep this email — your session details are below.
+      `,
+      dualBrand: true,
+      heroImage: true,
+      accent: "#7C5CFF",
+      detailsHtml: `
+        ${infoBox("When", formattedDate, "#7C5CFF")}
+        ${
+          venue
+            ? `<div style="height:10px;line-height:10px;">&nbsp;</div>${infoBox("Where", venue, "#7C5CFF")}`
+            : ""
+        }
         ${
           meetingUrl
-            ? `<a href="${meetingUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">Join the session</a>`
-            : `<p style="font-size: 13px; color: #888786; margin-top: 20px;">We'll follow up with the meeting link closer to the date.</p>`
+            ? `<div style="margin-top:20px;">${buttonHtml("Join the session", meetingUrl, "#7C5CFF")}</div>`
+            : `<div style="margin-top:14px;padding:15px 17px;background:#F5F3FF;border:1px solid #E6E0FF;border-radius:14px;"><p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#51477A;">We'll send the meeting link closer to the session.</p></div>`
         }
-        <p style="font-size: 12px; color: #888786; margin-top: 28px;">See you there.</p>
-      </div>
-    `,
+      `,
+      footer: "Creativo is a free community for creators, presented by Showwork.",
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// ACCOUNT RECOVERY EMAIL — sent once, the moment a bulk-created
-// account is created. Honest about a real technical issue without
-// unnecessary detail, takes ownership, and gives the one concrete
-// thing the person needs to do to get back in.
-// ─────────────────────────────────────────────
-export async function sendAccountRecoveryEmail({ to }: { to: string }) {
-  await resend.emails.send({
-    from: FROM,
-    to,
-    subject: "We ran into an issue — here's how to get back into your account",
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          An update on your account
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          We ran into a technical issue on our end while working on some infrastructure changes, which affected
-          account data for a number of users, including yours. We take full responsibility for this, and we're
-          sorry for the disruption it's caused.
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          Your account has been recreated under this same email address, but for your security, you'll need to
-          set a new password before you can log back in.
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          Please go to our login page, click <strong style="color: #F8F7F4;">"Forgot password,"</strong> and use
-          this same email address — you'll get a reset link right away to set your new password.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          Go to login
-        </a>
-        <p style="font-size: 14px; line-height: 1.7; color: #888786; margin-top: 28px;">
-          We've made changes to make sure this doesn't happen again, and we're committed to serving you better
-          going forward. If you have any questions or anything doesn't look right once you're back in, just
-          reply directly to this email — we'll help however we can.
-        </p>
-      </div>
-    `,
-  });
-}
-
-// ─────────────────────────────────────────────
-// FREE ACCESS GRANTED — sent the moment an admin comps an account,
-// so the person actually knows to go use it rather than finding out
-// by accident later.
-// ─────────────────────────────────────────────
-export async function sendFreeAccessGrantedEmail({ to }: { to: string }) {
-  await resend.emails.send({
-    from: FROM,
-    to,
-    subject: "You've got free access to all Showwork features",
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          A gift from the Showwork team
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          You now have full, free access to every Showwork feature — no subscription needed. Go ahead and use
-          everything the platform offers.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          Go to your dashboard
-        </a>
-        <p style="font-size: 13px; color: #888786; margin-top: 28px;">Enjoy — and let us know if you need anything.</p>
-      </div>
-    `,
-  });
-}
-
-// ─────────────────────────────────────────────
-// DISCOUNT GRANTED — sent the moment an admin sets a discount
-// percentage above what it was before, so it's not a silent number
-// change the person never notices.
-// ─────────────────────────────────────────────
-export async function sendDiscountGrantedEmail({ to, discountPercent }: { to: string; discountPercent: number }) {
-  await resend.emails.send({
-    from: FROM,
-    to,
-    subject: `You've got ${discountPercent}% off your next Showwork plan`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          A gift from the Showwork team
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">Hi,</p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          You've been given a <strong style="color: #F8F7F4;">${discountPercent}% discount</strong> on your next
-          Showwork subscription — it'll apply automatically the next time you start or switch a plan.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #F5C842; color: #0A0A0A; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          Go to your dashboard
-        </a>
-        <p style="font-size: 13px; color: #888786; margin-top: 28px;">Enjoy — and let us know if you need anything.</p>
-      </div>
-    `,
-  });
-}
-// ─────────────────────────────────────────────
-// WEBINAR RSVP NOTIFICATION — sent to the team, not the RSVP'er, the
-// moment someone signs up. Separate from sendWebinarRsvpConfirmationEmail
-// above (which goes to the person themselves) — this one lets the
-// team see exactly who's coming, with a fast way to reach out.
-// ─────────────────────────────────────────────
 export async function sendWebinarRsvpNotificationEmail({
   webinarTopic,
   name,
@@ -991,33 +1131,123 @@ export async function sendWebinarRsvpNotificationEmail({
   email: string;
   whatsappNumber: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to: "hello@useshowwork.com",
     replyTo: email,
-    subject: `New RSVP — ${webinarTopic}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F5C842; margin-bottom: 24px;">
-          Webinar — New RSVP
-        </p>
-        <table style="width: 100%; font-size: 14px; line-height: 1.7; border-collapse: collapse;">
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top; width: 100px;">Webinar</td><td style="padding: 6px 0;">${webinarTopic}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Name</td><td style="padding: 6px 0;">${name}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">Email</td><td style="padding: 6px 0;">${email}</td></tr>
-          <tr><td style="color: #888786; padding: 6px 0; vertical-align: top;">WhatsApp</td><td style="padding: 6px 0;">${whatsappNumber}</td></tr>
-        </table>
-        <p style="font-size: 12px; color: #888786; margin-top: 24px;">Reply directly to this email to reach out to them.</p>
-      </div>
-    `,
+    subject: `New Creativo RSVP — ${webinarTopic}`,
+    html: emailShell({
+      eyebrow: "Showwork × Creativo · New RSVP",
+      headline: `${name} is joining the session.`,
+      body: "A new RSVP just came in. The attendee details are ready below.",
+      dualBrand: true,
+      accent: "#7C5CFF",
+      detailsHtml: `
+        ${infoBox("Webinar", webinarTopic, "#7C5CFF")}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Name", name, "#7C5CFF")}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Email", email, "#7C5CFF")}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("WhatsApp", whatsappNumber, "#7C5CFF")}
+      `,
+      footer: "Reply directly to this email to reach out to the attendee.",
+    }),
   });
 }
-// ─────────────────────────────────────────────
-// CALENDAR COLLABORATOR INVITE — sent when a manager invites someone
-// (a designer or content creator) onto one of their client calendars.
-// Same two-path acceptance as every other invite in this app: works
-// whether or not the invitee already has a Showwork account.
-// ─────────────────────────────────────────────
+
+/* -------------------------------------------------------------------------- */
+/* ACCOUNT / ADMIN                                                             */
+/* -------------------------------------------------------------------------- */
+
+export async function sendAccountRecoveryEmail({ to }: { to: string }) {
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "We ran into an issue — here's how to get back into your account",
+    html: emailShell({
+      eyebrow: "Account update",
+      headline: "We're sorry. Here's the way back in.",
+      body: `
+        Hi there,<br /><br />
+        We ran into a technical issue while working on infrastructure changes, which affected account data for a number of users, including yours.
+        We take responsibility for the disruption.
+        <br /><br />
+        Your account has been recreated under this same email address. For your security, you'll need to set a new password before signing in again.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;">
+          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">What to do</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#475467;">
+            Go to the login page, choose “Forgot password,” and use this same email address. You'll receive a reset link immediately.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Go to login",
+      ctaUrl: `${APP_URL}/login`,
+      accent: "#101828",
+      footer: "If anything looks wrong once you're back in, reply directly to this email and we'll help.",
+    }),
+  });
+}
+
+export async function sendFreeAccessGrantedEmail({ to }: { to: string }) {
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "You've got free access to Showwork",
+    html: emailShell({
+      eyebrow: "A gift from Showwork",
+      headline: "Everything is unlocked.",
+      body: `
+        You now have full, free access to the Showwork features included in your account — no subscription required.
+        <br /><br />
+        Go ahead. Put the platform to work.
+      `,
+      ctaLabel: "Open Showwork",
+      ctaUrl: `${APP_URL}/dashboard`,
+      heroImage: true,
+      accent: "#16A34A",
+      footer: "Enjoy the access — and reply if you need anything.",
+    }),
+  });
+}
+
+export async function sendDiscountGrantedEmail({
+  to,
+  discountPercent,
+}: {
+  to: string;
+  discountPercent: number;
+}) {
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: `You've got ${discountPercent}% off your next Showwork plan`,
+    html: emailShell({
+      eyebrow: "A gift from Showwork",
+      headline: `${discountPercent}% off. Yours.`,
+      body: `
+        We've added a <strong style="color:#FFFFFF;">${discountPercent}% discount</strong> to your account.
+        It'll apply automatically the next time you start or switch to a paid Showwork plan.
+      `,
+      detailsHtml: `
+        <div style="text-align:center;padding:20px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:16px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:42px;line-height:1;font-weight:850;color:#15803D;">${discountPercent}%</p>
+          <p style="margin:8px 0 0;font-family:Arial,sans-serif;font-size:12px;color:#166534;">discount applied to your next paid plan</p>
+        </div>
+      `,
+      ctaLabel: "Open Showwork",
+      ctaUrl: `${APP_URL}/dashboard`,
+      accent: "#16A34A",
+    }),
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* CLIENT WORKSPACE / CALENDAR                                                  */
+/* -------------------------------------------------------------------------- */
+
 export async function sendCalendarInviteEmail({
   to,
   invitedByName,
@@ -1029,34 +1259,36 @@ export async function sendCalendarInviteEmail({
   clientName: string;
   token: string;
 }) {
-  const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/calendars/invites/${token}`;
-  await resend.emails.send({
+  const acceptUrl = `${APP_URL}/calendars/invites/${token}`;
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: `${invitedByName} invited you to a content calendar`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 24px;">
-          Calendar invite
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          ${invitedByName} invited you to help create content for <strong style="color: #F8F7F4;">${clientName}</strong>'s content calendar on Showwork.
-        </p>
-        <a href="${acceptUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          View invite
-        </a>
-      </div>
-    `,
+    subject: `${invitedByName} invited you to ${clientName}'s client workspace`,
+    html: emailShell({
+      eyebrow: "Client Workspace · You're invited",
+      headline: `${invitedByName} wants you in ${clientName}'s workspace.`,
+      body: `
+        You've been invited to help create and manage content for <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> on Showwork.
+        <br /><br />
+        Everything you need for the client stays together — content, feedback, approvals and the people working on it.
+      `,
+      detailsHtml: `
+        ${infoBox("Client workspace", clientName)}
+        <div style="margin-top:14px;padding:15px 17px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#344054;">
+            Your access level will be set by the workspace owner.
+          </p>
+        </div>
+      `,
+      ctaLabel: "View invitation",
+      ctaUrl: acceptUrl,
+      heroImage: true,
+      footer: "This invitation expires in 7 days.",
+    }),
   });
 }
-// ─────────────────────────────────────────────
-// CALENDAR POST REVIEWED — sent to everyone involved (the manager and
-// every collaborator on the calendar) the moment a client approves or
-// requests changes on one specific post's uploaded content. Fires
-// again on the same post if it gets reuploaded and reviewed a second
-// time — nothing here tracks "already notified," since a genuinely
-// new review is always worth a fresh email.
-// ─────────────────────────────────────────────
+
 export async function sendCalendarPostReviewedEmail({
   to,
   clientName,
@@ -1070,36 +1302,35 @@ export async function sendCalendarPostReviewedEmail({
   note: string | null;
   calendarUrl: string;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
     subject: approved
       ? `${clientName} approved a post`
       : `${clientName} requested changes on a post`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: ${approved ? "#4ADE80" : "#F97316"}; margin-bottom: 24px;">
-          ${approved ? "Post approved" : "Changes requested"}
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          ${clientName} ${approved ? "approved" : "requested changes on"} a post on their content calendar.
-        </p>
-        ${note ? `<p style="font-size: 15px; line-height: 1.7; color: #D8D6D2; background: rgba(249,115,22,0.08); padding: 14px; border-radius: 8px;">"${note}"</p>` : ""}
-        <a href="${calendarUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          View calendar
-        </a>
-      </div>
-    `,
+    html: emailShell({
+      eyebrow: approved ? "Content approved" : "Changes requested",
+      headline: approved
+        ? `${clientName} approved the latest content.`
+        : `${clientName} has feedback on the latest content.`,
+      body: `
+        A new client review has landed in the <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> client workspace.
+        ${approved ? "The post has been approved." : "Take a look at the note and keep the next revision moving."}
+      `,
+      detailsHtml: note
+        ? `<div style="padding:16px 18px;background:${approved ? "#F0FDF4" : "#FFF7ED"};border:1px solid ${approved ? "#BBF7D0" : "#FED7AA"};border-radius:14px;">
+            <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:${approved ? "#15803D" : "#C2410C"};">Client note</p>
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:${approved ? "#166534" : "#7C2D12"};">“${escapeHtml(note)}”</p>
+          </div>`
+        : infoBox("Workspace", clientName, approved ? "#16A34A" : "#F97316"),
+      ctaLabel: "Open client workspace",
+      ctaUrl: calendarUrl,
+      heroImage: true,
+      accent: approved ? "#16A34A" : "#F97316",
+    }),
   });
 }
-// ─────────────────────────────────────────────
-// CALENDAR PAYMENT FAILED — sent to the manager the moment their
-// account-level calendar subscription's recurring charge fails.
-// Billing is account-level now (one subscription covers every
-// calendar the account owns), so this notifies about the whole
-// account going offline, not one specific client's calendar the way
-// the original version of this function was written.
-// ─────────────────────────────────────────────
+
 export async function sendCalendarPaymentFailedEmail({
   to,
   name,
@@ -1107,40 +1338,36 @@ export async function sendCalendarPaymentFailedEmail({
   to: string;
   name: string | null;
 }) {
-  await resend.emails.send({
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Payment failed — your calendars are now offline",
-    html: `
-      <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F97316; margin-bottom: 24px;">
-          Payment failed
-        </p>
-        <p style="font-size: 15px; line-height: 1.7; color: #D8D6D2;">
-          Hi${name ? ` ${name}` : ""}, your monthly calendar payment didn't go through, so every client calendar on your account is now offline until it's resolved.
-        </p>
-        <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/calendars" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2478FF; color: #FFFFFF; text-decoration: none; border-radius: 999px; font-weight: 700; font-size: 14px;">
-          Go to your calendars
-        </a>
-      </div>
-    `,
+    subject: "Payment failed — your Client Workspace is offline",
+    html: emailShell({
+      eyebrow: "Client Workspace · Payment issue",
+      headline: "Your client workspaces need your attention.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        Your recurring Client Workspace payment didn't go through, so the workspaces covered by that subscription are currently offline.
+        <br /><br />
+        Your content is not deleted. Resolve the billing issue and pick up where you left off.
+      `,
+      detailsHtml: `
+        <div style="padding:17px 18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#7C2D12;">
+            If your payment method has expired or been declined, updating it is usually all that's needed.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Open billing",
+      ctaUrl: `${APP_URL}/dashboard/billing`,
+      accent: "#F97316",
+      footer: "Billing notice from Showwork Client Workspace.",
+    }),
   });
 }
 
-// ─────────────────────────────────────────────
-// CALENDAR TRIAL EMAIL DRIP — four stages, sent by a daily scheduled
-// job (see lib/calendarTrialEmails.ts) rather than any of these being
-// called directly from application code. Each stage is tracked by
-// its own "sent at" timestamp on Creator, so the daily job can run
-// as often as it wants without ever double-sending a given stage.
-// ─────────────────────────────────────────────
-
-function calendarSubscribeButton(price: string) {
-  return `
-    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/calendars" style="display: inline-block; margin-top: 16px; padding: 12px 24px; background: #2478FF; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-      Subscribe — ${price}/month
-    </a>
-  `;
+function calendarSubscribeButton(price: string): string {
+  return buttonHtml(`Subscribe — ${price}/month`, `${APP_URL}/dashboard/calendars`);
 }
 
 export async function sendCalendarTrial2DaysLeftEmail({
@@ -1153,26 +1380,30 @@ export async function sendCalendarTrial2DaysLeftEmail({
   accountType: "INDIVIDUAL" | "COMPANY";
 }) {
   const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
-  await resend.emails.send({
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "2 days left on your Showwork calendar trial",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          You've got <strong style="color: #F8F7F4;">2 days left</strong> on your free content calendar trial.
-          Once it ends, your calendars will be locked until you subscribe.
-        </p>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Subscribe now so nothing interrupts your client's calendar.
-        </p>
-        ${calendarSubscribeButton(price)}
-      </div>
-    `,
+    subject: "2 days left on your Showwork Client Workspace trial",
+    html: emailShell({
+      eyebrow: "Client Workspace · 2 days left",
+      headline: "Your trial is almost at the finish line.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        You have <strong style="color:#FFFFFF;">2 days left</strong> on your free Client Workspace trial.
+        <br /><br />
+        Keep your client work moving without interruption by choosing your plan before the trial ends.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:16px;">
+          <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2478FF;">Your plan</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+        </div>
+      `,
+      ctaLabel: `Subscribe — ${price}/month`,
+      ctaUrl: `${APP_URL}/dashboard/calendars`,
+      accent: "#2478FF",
+    }),
   });
 }
 
@@ -1186,27 +1417,30 @@ export async function sendCalendarTrialFollowUpEmail({
   accountType: "INDIVIDUAL" | "COMPANY";
 }) {
   const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
-  await resend.emails.send({
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Still haven't subscribed?",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #2478FF; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          We noticed you haven't subscribed yet, and your trial ends tomorrow.
-          If something's holding you back, just reply to this email and let us know —
-          we're happy to help.
-        </p>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Otherwise, here's a quick link to get set up before your calendars lock.
-        </p>
-        ${calendarSubscribeButton(price)}
-      </div>
-    `,
+    subject: "Your Client Workspace trial ends tomorrow",
+    html: emailShell({
+      eyebrow: "Client Workspace · Tomorrow",
+      headline: "Still thinking about it?",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        Your free trial ends tomorrow. If you're getting value from keeping your client content, approvals and people in one place, now is a good time to choose your plan.
+        <br /><br />
+        And if something is holding you back, reply to this email. We'd genuinely like to know.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
+          <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2478FF;">Your plan</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+        </div>
+      `,
+      ctaLabel: `Keep my workspace — ${price}/month`,
+      ctaUrl: `${APP_URL}/dashboard/calendars`,
+      accent: "#2478FF",
+    }),
   });
 }
 
@@ -1220,23 +1454,30 @@ export async function sendCalendarTrialEndsTodayEmail({
   accountType: "INDIVIDUAL" | "COMPANY";
 }) {
   const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
-  await resend.emails.send({
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork calendar trial ends today",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F97316; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Your free trial <strong style="color: #F8F7F4;">ends today</strong>. Subscribe now to keep your
-          calendars accessible for you and your client, with no interruption.
-        </p>
-        ${calendarSubscribeButton(price)}
-      </div>
-    `,
+    subject: "Your Showwork Client Workspace trial ends today",
+    html: emailShell({
+      eyebrow: "Client Workspace · Ends today",
+      headline: "Today is the last day of your trial.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        Your free Client Workspace trial ends today.
+        <br /><br />
+        Subscribe now and keep your client work accessible without interruption.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:16px;">
+          <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#C2410C;">Starting price</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${price}/month</p>
+        </div>
+      `,
+      ctaLabel: `Subscribe — ${price}/month`,
+      ctaUrl: `${APP_URL}/dashboard/calendars`,
+      accent: "#F97316",
+    }),
   });
 }
 
@@ -1250,25 +1491,30 @@ export async function sendCalendarTrialEndedEmail({
   accountType: "INDIVIDUAL" | "COMPANY";
 }) {
   const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
-  await resend.emails.send({
+
+  await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork calendar trial has ended",
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #0A0A0A; color: #F8F7F4;">
-        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #F87171; margin-bottom: 20px;">
-          Showwork
-        </p>
-        <h2 style="font-size: 20px; margin: 0 0 12px;">Hi ${name ?? "there"},</h2>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Your free trial has ended, and your calendars are now locked until you subscribe —
-          your client won't be able to view them either until then.
-        </p>
-        <p style="font-size: 14px; line-height: 1.7; color: #C9CBD1;">
-          Subscribing takes a minute, and everything picks up right where you left off.
-        </p>
-        ${calendarSubscribeButton(price)}
-      </div>
-    `,
+    subject: "Your Showwork Client Workspace trial has ended",
+    html: emailShell({
+      eyebrow: "Client Workspace · Trial ended",
+      headline: "Your work is still here. Your trial has simply ended.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
+        Your free trial has ended and your Client Workspace access is currently locked until you subscribe.
+        <br /><br />
+        Your content hasn't gone anywhere. Subscribe and everything can continue from where you left off.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;">
+          <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#667085;">Your plan</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+        </div>
+      `,
+      ctaLabel: `Reactivate — ${price}/month`,
+      ctaUrl: `${APP_URL}/dashboard/calendars`,
+      accent: "#101828",
+      footer: "Your Client Workspace content remains associated with your account.",
+    }),
   });
 }

@@ -398,7 +398,7 @@ export default function CalendarPeopleManager({
         </span>
 
         <span className="flex shrink-0 items-center gap-2 text-[12px] font-semibold text-[#2478FF]">
-          Manage
+          Manage People
           <span className="transition-transform group-hover/people:translate-x-0.5">
             →
           </span>
