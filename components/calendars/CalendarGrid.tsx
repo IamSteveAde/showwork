@@ -2839,6 +2839,116 @@ function PostDetailPanel({
   const [activeAssetIdx, setActiveAssetIdx] =
     useState(0);
 
+  const isApproved = post.approvalStatus === "APPROVED";
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+
+  const [draftDetails, setDraftDetails] = useState({
+    postDate: "",
+    platform: post.platform,
+    postType: post.postType ?? "",
+    category: post.category ?? "",
+    caption: post.caption ?? "",
+    contentIdea: post.contentIdea ?? "",
+    cta: post.cta ?? "",
+    hashtags: post.hashtags ?? "",
+    taggedAccounts: post.taggedAccounts ?? "",
+    linkUrl: post.linkUrl ?? "",
+  });
+
+  const startEditingDetails = () => {
+    if (isApproved) return;
+
+    const date = new Date(post.postDate);
+    const localDateTime = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000
+    )
+      .toISOString()
+      .slice(0, 16);
+
+    setDraftDetails({
+      postDate: localDateTime,
+      platform: post.platform,
+      postType: post.postType ?? "",
+      category: post.category ?? "",
+      caption: post.caption ?? "",
+      contentIdea: post.contentIdea ?? "",
+      cta: post.cta ?? "",
+      hashtags: post.hashtags ?? "",
+      taggedAccounts: post.taggedAccounts ?? "",
+      linkUrl: post.linkUrl ?? "",
+    });
+    setDetailsError(null);
+    setEditingDetails(true);
+  };
+
+  const cancelEditingDetails = () => {
+    if (savingDetails) return;
+    setEditingDetails(false);
+    setDetailsError(null);
+  };
+
+  const saveDetails = async () => {
+    if (isApproved || savingDetails) return;
+
+    setSavingDetails(true);
+    setDetailsError(null);
+
+    try {
+      const res = await fetch(
+        `/api/calendars/${calendarId}/posts/${post.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postDate: draftDetails.postDate
+              ? new Date(draftDetails.postDate).toISOString()
+              : undefined,
+            platform: draftDetails.platform,
+            postType: draftDetails.postType,
+            category: draftDetails.category,
+            caption: draftDetails.caption,
+            contentIdea: draftDetails.contentIdea,
+            cta: draftDetails.cta,
+            hashtags: draftDetails.hashtags,
+            taggedAccounts: draftDetails.taggedAccounts,
+            linkUrl: draftDetails.linkUrl,
+          }),
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(
+          data.error ??
+            "We couldn't save these changes. Please try again."
+        );
+      }
+
+      onUpdated({
+        ...data.post,
+        assets: data.post?.assets ?? post.assets,
+        videoComments: data.post?.videoComments ?? post.videoComments,
+        customFields: data.post?.customFields ?? post.customFields,
+      });
+
+      setEditingDetails(false);
+      router.refresh();
+    } catch (err) {
+      setDetailsError(
+        err instanceof Error
+          ? err.message
+          : "We couldn't save these changes. Please try again."
+      );
+    } finally {
+      setSavingDetails(false);
+    }
+  };
+
   const platformMeta =
     PLATFORMS.find(
       (p) => p.value === post.platform
@@ -2853,6 +2963,12 @@ function PostDetailPanel({
     null;
 
   const uploadOne = async (file: File) => {
+    if (isApproved) {
+      throw new Error(
+        "This post has already been approved by the client and is locked."
+      );
+    }
+
     const presignRes = await fetch(
       `/api/calendars/${calendarId}/posts/${post.id}/upload-presign`,
       {
@@ -2965,6 +3081,13 @@ function PostDetailPanel({
   const removeAsset = async (
     assetId: string
   ) => {
+    if (isApproved) {
+      setError(
+        "This post has already been approved by the client and is locked."
+      );
+      return;
+    }
+
     try {
       const res = await fetch(
         `/api/calendars/${calendarId}/posts/${post.id}/assets/${assetId}`,
@@ -3753,6 +3876,7 @@ function PostDetailPanel({
               )}
 
               {/* UPLOAD */}
+              {!isApproved && (
               <label
                 className="
                   group
@@ -3867,6 +3991,22 @@ function PostDetailPanel({
                   }}
                 />
               </label>
+              )}
+
+              {isApproved && (
+                <div
+                  className="mt-3 flex items-center gap-2.5 rounded-2xl border px-4 py-3"
+                  style={{
+                    background: "rgba(34,197,94,0.045)",
+                    borderColor: "rgba(34,197,94,0.14)",
+                  }}
+                >
+                  <IconCheck className="h-4 w-4 flex-shrink-0 text-[#4ADE80]" />
+                  <p className="text-[10px] leading-relaxed" style={{ color: t.textMuted }}>
+                    Content is locked after client approval.
+                  </p>
+                </div>
+              )}
 
               {error && (
                 <div
@@ -3900,241 +4040,547 @@ function PostDetailPanel({
             </section>
 
             {/* POST DETAILS */}
-            {(post.caption ||
-              post.contentIdea ||
-              post.cta ||
-              post.hashtags) && (
-              <section>
-                <div className="mb-3">
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{
-                      color: t.text,
-                    }}
-                  >
-                    Post details
-                  </h3>
+            <section>
+              <div className="mb-3 flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{ color: t.text }}
+                    >
+                      Post details
+                    </h3>
+
+                    {isApproved && (
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-bold uppercase"
+                        style={{
+                          background: "rgba(34,197,94,0.12)",
+                          color: "#4ADE80",
+                          letterSpacing: "0.06em",
+                        }}
+                      >
+                        <IconCheck className="h-3 w-3" />
+                        Locked
+                      </span>
+                    )}
+                  </div>
 
                   <p
                     className="mt-1 text-[11px]"
-                    style={{
-                      color: t.textFaint,
-                    }}
+                    style={{ color: t.textFaint }}
                   >
-                    Everything planned for this piece of content.
+                    {isApproved
+                      ? "The client approved this post. Its details are now locked."
+                      : "Everything planned for this piece of content. You can keep refining it until the client approves it."}
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  {post.caption && (
-                    <div
-                      className="
-                        rounded-2xl
-                        border
-                        p-4
-                      "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
+                {!isApproved && !editingDetails && (
+                  <button
+                    type="button"
+                    onClick={startEditingDetails}
+                    className="flex flex-shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-[10px] font-semibold transition-all active:scale-[0.98]"
+                    style={{
+                      background: "rgba(36,120,255,0.08)",
+                      borderColor: "rgba(36,120,255,0.18)",
+                      color: "#2478FF",
+                    }}
+                  >
+                    <span className="text-sm">✎</span>
+                    Edit details
+                  </button>
+                )}
+              </div>
+
+              {isApproved && (
+                <div
+                  className="mb-4 flex items-start gap-3 rounded-2xl border p-4"
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? "rgba(34,197,94,0.055)"
+                        : "rgba(34,197,94,0.045)",
+                    borderColor: "rgba(34,197,94,0.16)",
+                  }}
+                >
+                  <span
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                    style={{
+                      background: "rgba(34,197,94,0.12)",
+                      color: "#4ADE80",
+                    }}
+                  >
+                    <IconCheck className="h-4 w-4" />
+                  </span>
+
+                  <div>
+                    <p
+                      className="text-xs font-semibold"
+                      style={{ color: t.text }}
                     >
-                      <p
-                        className="
-                          mb-2
-                          text-[10px]
-                          font-bold
-                          uppercase
-                        "
+                      Approved content is protected
+                    </p>
+                    <p
+                      className="mt-1 text-[11px] leading-relaxed"
+                      style={{ color: t.textMuted }}
+                    >
+                      This post can still be viewed and reviewed, but its
+                      details and content can no longer be changed. If something
+                      needs to change, ask the client to request a revision.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {editingDetails ? (
+                <div
+                  className="rounded-2xl border p-4 sm:p-5"
+                  style={{
+                    background: t.inputBg,
+                    borderColor: t.inputBorder,
+                  }}
+                >
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
                         style={{
-                          color:
-                            t.textFaint,
-                          letterSpacing:
-                            "0.08em",
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Publish date & time
+                      </span>
+                      <input
+                        type="datetime-local"
+                        value={draftDetails.postDate}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            postDate: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none transition-all"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Platform
+                      </span>
+                      <select
+                        value={draftDetails.platform}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            platform: e.target.value as Platform,
+                          }))
+                        }
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      >
+                        {PLATFORMS.map((platform) => (
+                          <option
+                            key={platform.value}
+                            value={platform.value}
+                          >
+                            {platform.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Format
+                      </span>
+                      <select
+                        value={draftDetails.postType}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            postType: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      >
+                        <option value="">No format</option>
+                        {POST_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Category
+                      </span>
+                      <input
+                        value={draftDetails.category}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            category: e.target.value,
+                          }))
+                        }
+                        list="calendar-post-categories"
+                        placeholder="e.g. Educational"
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                      <datalist id="calendar-post-categories">
+                        {DEFAULT_CATEGORIES.map((category) => (
+                          <option key={category} value={category} />
+                        ))}
+                      </datalist>
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
                         }}
                       >
                         Caption
-                      </p>
-
-                      <p
-                        className="
-                          whitespace-pre-wrap
-                          break-words
-                          text-sm
-                          leading-relaxed
-                        "
+                      </span>
+                      <textarea
+                        value={draftDetails.caption}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            caption: e.target.value,
+                          }))
+                        }
+                        rows={7}
+                        placeholder="Write the caption..."
+                        className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
                         style={{
-                          color:
-                            t.textMuted,
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+
+                    <label className="block sm:col-span-2">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
                         }}
                       >
+                        Creative direction
+                      </span>
+                      <textarea
+                        value={draftDetails.contentIdea}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            contentIdea: e.target.value,
+                          }))
+                        }
+                        rows={5}
+                        placeholder="Describe the visual or creative direction..."
+                        className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Call to action
+                      </span>
+                      <input
+                        value={draftDetails.cta}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            cta: e.target.value,
+                          }))
+                        }
+                        list="calendar-post-ctas"
+                        placeholder="e.g. Comment below"
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                      <datalist id="calendar-post-ctas">
+                        {DEFAULT_CTAS.map((cta) => (
+                          <option key={cta} value={cta} />
+                        ))}
+                      </datalist>
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Hashtags
+                      </span>
+                      <input
+                        value={draftDetails.hashtags}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            hashtags: e.target.value,
+                          }))
+                        }
+                        placeholder="#brand #content"
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Tagged accounts
+                      </span>
+                      <input
+                        value={draftDetails.taggedAccounts}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            taggedAccounts: e.target.value,
+                          }))
+                        }
+                        placeholder="@account"
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span
+                        className="mb-1.5 block text-[10px] font-bold uppercase"
+                        style={{
+                          color: t.textFaint,
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        Destination link
+                      </span>
+                      <input
+                        type="url"
+                        value={draftDetails.linkUrl}
+                        onChange={(e) =>
+                          setDraftDetails((prev) => ({
+                            ...prev,
+                            linkUrl: e.target.value,
+                          }))
+                        }
+                        placeholder="https://..."
+                        className="w-full rounded-xl border px-3.5 py-3 text-xs outline-none"
+                        style={{
+                          background: t.modalBg,
+                          borderColor: t.inputBorder,
+                          color: t.text,
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {detailsError && (
+                    <div
+                      className="mt-4 rounded-xl border px-3.5 py-3 text-xs leading-relaxed"
+                      style={{
+                        background: "rgba(239,68,68,0.07)",
+                        borderColor: "rgba(239,68,68,0.14)",
+                        color: "#FCA5A5",
+                      }}
+                    >
+                      {detailsError}
+                    </div>
+                  )}
+
+                  <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={cancelEditingDetails}
+                      disabled={savingDetails}
+                      className="rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all disabled:opacity-40"
+                      style={{
+                        borderColor: t.inputBorder,
+                        color: t.textMuted,
+                        background: t.pillBg,
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={saveDetails}
+                      disabled={savingDetails}
+                      className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+                        boxShadow:
+                          "0 8px 24px rgba(36,120,255,0.22)",
+                      }}
+                    >
+                      {savingDetails ? (
+                        <>
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          Saving changes...
+                        </>
+                      ) : (
+                        <>
+                          Save changes
+                          <span className="text-white/70">→</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {post.caption && (
+                    <div className="rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
+                      <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>
+                        Caption
+                      </p>
+                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed" style={{ color: t.textMuted }}>
                         {post.caption}
                       </p>
                     </div>
                   )}
 
                   {post.contentIdea && (
-                    <div
-                      className="
-                        rounded-2xl
-                        border
-                        p-4
-                      "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
-                    >
-                      <p
-                        className="
-                          mb-2
-                          text-[10px]
-                          font-bold
-                          uppercase
-                        "
-                        style={{
-                          color:
-                            t.textFaint,
-                          letterSpacing:
-                            "0.08em",
-                        }}
-                      >
+                    <div className="rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
+                      <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>
                         Creative direction
                       </p>
-
-                      <p
-                        className="
-                          whitespace-pre-wrap
-                          break-words
-                          text-sm
-                          leading-relaxed
-                        "
-                        style={{
-                          color:
-                            t.textMuted,
-                        }}
-                      >
+                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed" style={{ color: t.textMuted }}>
                         {post.contentIdea}
                       </p>
                     </div>
                   )}
 
                   {post.cta && (
-                    <div
-                      className="
-                        flex items-center
-                        justify-between
-                        gap-4
-                        rounded-2xl
-                        border
-                        p-4
-                      "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
-                    >
+                    <div className="flex items-center justify-between gap-4 rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
                       <div className="min-w-0">
-                        <p
-                          className="
-                            text-[10px]
-                            font-bold
-                            uppercase
-                          "
-                          style={{
-                            color:
-                              t.textFaint,
-                            letterSpacing:
-                              "0.08em",
-                          }}
-                        >
+                        <p className="text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>
                           Call to action
                         </p>
-
-                        <p
-                          className="
-                            mt-1.5
-                            break-words
-                            text-sm
-                            font-medium
-                          "
-                          style={{
-                            color:
-                              t.textMuted,
-                          }}
-                        >
+                        <p className="mt-1.5 break-words text-sm font-medium" style={{ color: t.textMuted }}>
                           {post.cta}
                         </p>
                       </div>
-
-                      <span
-                        className="
-                          flex h-8 w-8
-                          flex-shrink-0
-                          items-center
-                          justify-center
-                          rounded-xl
-                        "
-                        style={{
-                          background:
-                            "rgba(36,120,255,0.1)",
-                          color: "#2478FF",
-                        }}
-                      >
+                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(36,120,255,0.1)", color: "#2478FF" }}>
                         →
                       </span>
                     </div>
                   )}
 
                   {post.hashtags && (
-                    <div
-                      className="
-                        rounded-2xl
-                        border
-                        p-4
-                      "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
-                    >
-                      <p
-                        className="
-                          mb-2
-                          text-[10px]
-                          font-bold
-                          uppercase
-                        "
-                        style={{
-                          color:
-                            t.textFaint,
-                          letterSpacing:
-                            "0.08em",
-                        }}
-                      >
+                    <div className="rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
+                      <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>
                         Hashtags
                       </p>
-
-                      <p
-                        className="
-                          break-words
-                          text-sm
-                          leading-relaxed
-                        "
-                        style={{
-                          color: "#2478FF",
-                        }}
-                      >
+                      <p className="break-words text-sm leading-relaxed" style={{ color: "#2478FF" }}>
                         {post.hashtags}
                       </p>
                     </div>
                   )}
+
+                  {!post.caption &&
+                    !post.contentIdea &&
+                    !post.cta &&
+                    !post.hashtags && (
+                      <div
+                        className="rounded-2xl border border-dashed p-5 text-center"
+                        style={{
+                          background: t.inputBg,
+                          borderColor: t.inputBorder,
+                        }}
+                      >
+                        <p className="text-xs font-semibold" style={{ color: t.textMuted }}>
+                          No post details yet
+                        </p>
+                        <p className="mt-1 text-[10px]" style={{ color: t.textFaint }}>
+                          {isApproved
+                            ? "This approved post has no additional details."
+                            : "Add the details that will guide this post."}
+                        </p>
+                      </div>
+                    )}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
 
             {/* DISCOVERY */}
             {(post.taggedAccounts ||
@@ -5546,8 +5992,8 @@ export default function CalendarGrid({
                         )
                       }
                       canDelete={
-                        userRole ===
-                        "EDIT_CALENDAR"
+                        userRole === "EDIT_CALENDAR" &&
+                        post.approvalStatus !== "APPROVED"
                       }
                       onDelete={() =>
                         handleDeletePost(
@@ -5822,8 +6268,8 @@ export default function CalendarGrid({
                           )
                         }
                         canDelete={
-                          userRole ===
-                          "EDIT_CALENDAR"
+                          userRole === "EDIT_CALENDAR" &&
+                          post.approvalStatus !== "APPROVED"
                         }
                         onDelete={() =>
                           handleDeletePost(

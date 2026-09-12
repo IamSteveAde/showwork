@@ -29,8 +29,8 @@ enum BillingCycle {
 }
 
 model Creator {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String      @id @default(uuid())
+  email        String      @unique
   passwordHash String
   name         String?
   // Set once, at signup — a real, distinct account type rather than a
@@ -46,7 +46,7 @@ model Creator {
   // Optional — set at signup or later from the profile page. Shown on
   // the creator's own profile and in the admin creators table.
   companyName  String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime    @default(now())
   // Updated every time this creator successfully logs in — the basis
   // for tracking how actively each account uses the platform. Null
   // means they've never logged in since this field was added (or ever,
@@ -54,20 +54,20 @@ model Creator {
   lastLoginAt  DateTime?
 
   // Profile
-  avatarUrl      String?
+  avatarUrl     String?
   // True for anyone who completed the OTP signup flow (the only way a
   // real Creator row gets created in that path) or an admin-created
   // account — false is reserved for a future path where that isn't
   // guaranteed.
-  emailVerified  Boolean @default(true)
+  emailVerified Boolean @default(true)
   // Soft-pause, distinct from deletion — a deactivated account can't log
   // in, but nothing about them is removed, and it's reversible.
-  isDeactivated  Boolean @default(false)
+  isDeactivated Boolean @default(false)
   // Storage for the preference only — the actual "email me when a
   // client views this" trigger isn't wired up yet (see notes where
   // views are tracked); needs rate-limiting first so it can't spam
   // someone on every single page load of a popular delivery.
-  notifyOnView   Boolean @default(false)
+  notifyOnView  Boolean @default(false)
 
   // Which paid tier they're on, and whether that tier is currently in
   // good standing. If subscriptionActive is false (lapsed, cancelled,
@@ -97,21 +97,21 @@ model Creator {
   // everywhere access is gated. discountPercent (0-100) is applied the
   // next time this creator starts or switches a subscription — it
   // doesn't retroactively change an already-active one.
-  isComped        Boolean @default(false)
-  discountPercent Int     @default(0)
+  isComped              Boolean @default(false)
+  discountPercent       Int     @default(0)
   // Overrides the standard Free-tier limit (normally 1/month) for this
   // specific creator, without granting them a paid tier or full comped
   // access — they stay on Free, just with a raised allowance. Null
   // means "use the standard limit."
   freeTierLimitOverride Int?
 
-  projects            Project[]
-  paymentRecords      PaymentRecord[]
-  passwordResetTokens PasswordResetToken[]
+  projects             Project[]
+  paymentRecords       PaymentRecord[]
+  passwordResetTokens  PasswordResetToken[]
   // Was Portfolio? (one-to-one) — now an array, matching the removal
   // of @unique on Portfolio.creatorId, so an agency account can hold
   // more than one.
-  portfolios          Portfolio[]
+  portfolios           Portfolio[]
   spotlightSubmissions SpotlightSubmission[]
 
   // ── Collaboration ──
@@ -156,8 +156,8 @@ model Creator {
   // added to as a collaborator.
   managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
   managedProjectInvitesSent    ManagedProjectInvite[]       @relation("ManagedProjectInvitesSent")
-    
-   // ── Calendar feature billing — account-level, not per-calendar.
+
+  // ── Calendar feature billing — account-level, not per-calendar.
   // One subscription (or one trial) covers every calendar this
   // account owns, regardless of how many exist. Prefixed "calendar"
   // throughout since this account already has its own separate
@@ -170,21 +170,21 @@ model Creator {
   // account from then on. INDIVIDUAL can never add a collaborator;
   // switching to COMPANY (and subscribing at the Company price) is
   // the only way to unlock that.
-  calendarAccountType             CalendarAccountType?
-  calendarBillingStatus           CalendarBillingStatus @default(PENDING_SETUP)
+  calendarAccountType               CalendarAccountType?
+  calendarBillingStatus             CalendarBillingStatus @default(PENDING_SETUP)
   // Set once, the first time this account is EVER granted a calendar
   // trial, and never cleared again — including if every calendar is
   // later deleted. This is what actually closes the trial-abuse
   // loophole: eligibility is checked against this permanent marker,
   // never against how many calendars currently exist.
-  calendarTrialUsedAt             DateTime?
-  calendarTrialEndsAt             DateTime?
-  calendarPaystackSubscriptionCode String?
-  calendarPaystackEmailToken       String?
-  calendarPaystackCustomerCode     String?
-  calendarSubscriptionRenewsAt     DateTime?
-  calendarPendingSubscriptionRef   String?   @unique
-    calendarWentOfflineAt            DateTime?
+  calendarTrialUsedAt               DateTime?
+  calendarTrialEndsAt               DateTime?
+  calendarPaystackSubscriptionCode  String?
+  calendarPaystackEmailToken        String?
+  calendarPaystackCustomerCode      String?
+  calendarSubscriptionRenewsAt      DateTime?
+  calendarPendingSubscriptionRef    String?               @unique
+  calendarWentOfflineAt             DateTime?
   calendarLastPaymentReminderSentAt DateTime?
 
   // ── AI content assistant — account-level premium add-on. Mirrors
@@ -195,18 +195,18 @@ model Creator {
   // calendar on the account can use AI features — this was
   // deliberately NOT made per-calendar, even though the business
   // knowledge underneath it is per-calendar.
-  aiAssistantBillingStatus           CalendarBillingStatus @default(PENDING_SETUP)
-  aiAssistantTrialUsedAt             DateTime?
-  aiAssistantTrialEndsAt             DateTime?
+  aiAssistantBillingStatus            CalendarBillingStatus @default(PENDING_SETUP)
+  aiAssistantTrialUsedAt              DateTime?
+  aiAssistantTrialEndsAt              DateTime?
   aiAssistantPaystackSubscriptionCode String?
   aiAssistantPaystackEmailToken       String?
   aiAssistantPaystackCustomerCode     String?
   aiAssistantSubscriptionRenewsAt     DateTime?
-  aiAssistantPendingSubscriptionRef   String?   @unique
+  aiAssistantPendingSubscriptionRef   String?               @unique
   aiAssistantWentOfflineAt            DateTime?
   // Admin-granted free month, same reasoning as before — now applies
   // to the whole account's calendar access, not one specific calendar.
-  calendarLastFreeMonthGrantedAt   DateTime?
+  calendarLastFreeMonthGrantedAt      DateTime?
 
   // ── Trial email drip — each step tracked so the daily job never
   // sends the same step twice, regardless of how many times it runs.
@@ -215,18 +215,18 @@ model Creator {
   calendarTrialEndsTodayEmailSentAt DateTime?
   calendarTrialEndedEmailSentAt     DateTime?
 
-  ownedCalendars         SocialCalendar[]       @relation("OwnedCalendars")
-  calendarCollaborations CalendarCollaborator[] @relation("CalendarMemberships")
-  calendarInvitesSent    CalendarInvite[]       @relation("CalendarInvitesSent")
+  ownedCalendars           SocialCalendar[]       @relation("OwnedCalendars")
+  calendarCollaborations   CalendarCollaborator[] @relation("CalendarMemberships")
+  calendarInvitesSent      CalendarInvite[]       @relation("CalendarInvitesSent")
   // Every task assigned to this specific creator, across any managed
   // project they're on — what lets "my tasks" be queried directly
   // without joining through every project they collaborate on.
-  assignedTasks                Task[]                        @relation("AssignedTasks")
+  assignedTasks            Task[]                 @relation("AssignedTasks")
   // Tasks this creator created/assigned to someone else — the
   // opposite direction from assignedTasks above.
-  createdTasks                 Task[]                        @relation("CreatedTasks")
-  uploadedBriefAttachments     BriefAttachment[]              @relation("UploadedBriefAttachments")
-  uploadedTaskAssets           TaskAsset[]                    @relation("UploadedTaskAssets")
+  createdTasks             Task[]                 @relation("CreatedTasks")
+  uploadedBriefAttachments BriefAttachment[]      @relation("UploadedBriefAttachments")
+  uploadedTaskAssets       TaskAsset[]            @relation("UploadedTaskAssets")
 }
 
 // ─────────────────────────────────────────────
@@ -246,9 +246,9 @@ enum DeliveryStatus {
 }
 
 model Project {
-  id         String @id @default(uuid())
-  slug       String @unique // used in the URL: yourproduct.com/{slug}
-  clientName String
+  id             String         @id @default(uuid())
+  slug           String         @unique // used in the URL: yourproduct.com/{slug}
+  clientName     String
   deliveryStatus DeliveryStatus @default(DELIVERED)
 
   // access control
@@ -382,21 +382,21 @@ enum InviteStatus {
 }
 
 model ProjectInvite {
-  id                  String       @id @default(uuid())
-  project             Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId           String
-  invitedByCreator    Creator      @relation("InvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
-  invitedByCreatorId  String
+  id                 String       @id @default(uuid())
+  project            Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId          String
+  invitedByCreator   Creator      @relation("InvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
+  invitedByCreatorId String
   // The invitee's email — always stored even when they're invited via
   // an existing-account search, since the invite itself is fundamentally
   // addressed to an email address, not an account id. Matched against
   // Creator.email at signup/login time to auto-link this invite.
-  email               String
-  tokenHash           String       @unique
-  status               InviteStatus @default(PENDING)
-  expiresAt            DateTime
-  createdAt             DateTime     @default(now())
-  respondedAt           DateTime?
+  email              String
+  tokenHash          String       @unique
+  status             InviteStatus @default(PENDING)
+  expiresAt          DateTime
+  createdAt          DateTime     @default(now())
+  respondedAt        DateTime?
 
   @@index([projectId])
   @@index([email])
@@ -473,8 +473,8 @@ enum TaskStatus {
 }
 
 model ManagedProject {
-  id        String  @id @default(uuid())
-  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  id        String               @id @default(uuid())
+  creator   Creator              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId String
   name      String
   // Manually set by the owner — distinct from the completion
@@ -482,7 +482,7 @@ model ManagedProject {
   // stored), since a project can genuinely be "in progress" with 0%
   // of tasks marked done yet, or wrapped up as "completed" even with
   // a couple of minor tasks never formally closed out.
-  status ManagedProjectStatus @default(NOT_STARTED)
+  status    ManagedProjectStatus @default(NOT_STARTED)
 
   // ── Creative brief — every field optional, filled in only where
   // it's actually relevant to a given project. Editable by the owner
@@ -523,10 +523,10 @@ model ManagedProject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  collaborators ManagedProjectCollaborator[]
-  invites       ManagedProjectInvite[]
-  tasks         Task[]
-  milestones    Milestone[]
+  collaborators    ManagedProjectCollaborator[]
+  invites          ManagedProjectInvite[]
+  tasks            Task[]
+  milestones       Milestone[]
   briefAttachments BriefAttachment[]
 }
 
@@ -635,19 +635,19 @@ enum InternalReviewStatus {
 }
 
 model Task {
-  id                  String         @id @default(uuid())
-  managedProject      ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
-  managedProjectId    String
-  title               String
-  description         String?
+  id               String         @id @default(uuid())
+  managedProject   ManagedProject @relation(fields: [managedProjectId], references: [id], onDelete: Cascade)
+  managedProjectId String
+  title            String
+  description      String?
 
-  assignedTo          Creator        @relation("AssignedTasks", fields: [assignedToCreatorId], references: [id], onDelete: Cascade)
+  assignedTo          Creator @relation("AssignedTasks", fields: [assignedToCreatorId], references: [id], onDelete: Cascade)
   assignedToCreatorId String
   // Whoever created/assigned this task — usually the project owner,
   // but kept distinct from assignedTo since they're frequently
   // different people. Lets a task list show "assigned by X" alongside
   // "assigned to Y".
-  createdBy           Creator        @relation("CreatedTasks", fields: [createdByCreatorId], references: [id], onDelete: Cascade)
+  createdBy           Creator @relation("CreatedTasks", fields: [createdByCreatorId], references: [id], onDelete: Cascade)
   createdByCreatorId  String
 
   status   TaskStatus   @default(TODO)
@@ -657,8 +657,8 @@ model Task {
   milestone   Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
   milestoneId String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   // Set automatically the moment status transitions to DONE, cleared
   // if it's ever moved back out of DONE — distinct from updatedAt,
   // which changes on any edit, not only completion.
@@ -800,7 +800,7 @@ model Media {
   reviewedAt     DateTime?
   reviewerEmail  String?
 
-  reviews MediaReview[]
+  reviews       MediaReview[]
   videoComments VideoComment[]
 
   // Set only for Media rows that originated from the project
@@ -880,8 +880,8 @@ model ViewerEmail {
 // sits here so nothing is stored twice.
 // ─────────────────────────────────────────────
 model PendingSignup {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String      @id @default(uuid())
+  email        String      @unique
   name         String?
   phone        String?
   companyName  String?
@@ -891,7 +891,7 @@ model PendingSignup {
   passwordHash String
   otpCode      String
   otpExpiresAt DateTime
-  createdAt    DateTime @default(now())
+  createdAt    DateTime    @default(now())
 }
 
 // ─────────────────────────────────────────────
@@ -937,7 +937,7 @@ model PaymentRecord {
   type              PaymentType
   tier              SubscriptionTier?
   cycle             BillingCycle?
-   // Only set for PORTFOLIO_* payment types — which specific portfolio
+  // Only set for PORTFOLIO_* payment types — which specific portfolio
   // this charge was for, needed since one agency account can have many.
   portfolioId       String?
   // Only set for CALENDAR_* payment types — which specific calendar
@@ -957,8 +957,8 @@ model PaymentRecord {
 // every new subscription started while it's active.
 // ─────────────────────────────────────────────
 model PlatformSettings {
-  id                    String @id @default("singleton")
-  globalDiscountPercent Int    @default(0)
+  id                       String  @id @default("singleton")
+  globalDiscountPercent    Int     @default(0)
   // A rough, admin-typed figure shown on the Creativo landing page
   // (e.g. "50+ members") — deliberately not a precise live count, so
   // it never needs a real membership-tracking query behind it.
@@ -976,30 +976,30 @@ model PlatformSettings {
 // never padding with placeholder rows.
 // ─────────────────────────────────────────────
 model CreativoLeaderboardEntry {
-  id               String   @id @default(uuid())
-  name             String
-  profileImageUrl  String?
-  category         String // "Photography" | "Videography" | "Motion" | "Editing"
-  whatTheyDo       String? // short line — what they actually do
-  contact          String? // email, phone, or handle — admin's choice of format
+  id                 String   @id @default(uuid())
+  name               String
+  profileImageUrl    String?
+  category           String // "Photography" | "Videography" | "Motion" | "Editing"
+  whatTheyDo         String? // short line — what they actually do
+  contact            String? // email, phone, or handle — admin's choice of format
   // Shown as a real "View portfolio" link on the public page.
-  portfolioUrl     String?
+  portfolioUrl       String?
   // Digits only, no "+" or spaces (e.g. "2348012345678") — used to
   // build a wa.me deep link on the public page, pre-filled with a
   // message referencing the spotlight itself. Separate from `contact`
   // because it needs a predictable, parseable format to build that
   // link correctly, not free text.
-  whatsappNumber   String?
-  wonFor           String // e.g. "Best wedding series"
-  points           Int      @default(0)
-  periodDate       DateTime // the 1st of the month this entry represents
+  whatsappNumber     String?
+  wonFor             String // e.g. "Best wedding series"
+  points             Int      @default(0)
+  periodDate         DateTime // the 1st of the month this entry represents
   // Only set when this entry was created by ranking a real Spotlight
   // submission — null for entries an admin typed in directly. Lets
   // un-ranking a submission (rank set back to null) find and remove
   // the exact entry it created, rather than guessing by name/category.
-  sourceSubmissionId String? @unique
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  sourceSubmissionId String?  @unique
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([category, periodDate])
 }
@@ -1030,8 +1030,8 @@ model CreativoWebinar {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  rsvps         WebinarRsvp[]
-  speakers      WebinarSpeaker[]
+  rsvps    WebinarRsvp[]
+  speakers WebinarSpeaker[]
 
   @@index([startsAt])
 }
@@ -1107,36 +1107,36 @@ model PasswordResetToken {
 // for every creator regardless of subscription tier. One per creator.
 // ─────────────────────────────────────────────
 model Portfolio {
-  id           String   @id @default(uuid())
-  slug         String   @unique // useshowwork.com/p/{slug}
-  companyName  String
-  heroTagline  String?
+  id                    String   @id @default(uuid())
+  slug                  String   @unique // useshowwork.com/p/{slug}
+  companyName           String
+  heroTagline           String?
   // Legacy — picks one already-uploaded section photo as the hero.
   // Kept only as a fallback for portfolios that never set either
   // dedicated banner below; new portfolios use those two instead.
-  heroMediaId  String?
+  heroMediaId           String?
   // Two dedicated, directly-uploaded banner images — not picked from
   // section media. A single image can't look right on both a wide
   // desktop screen and a tall phone screen at once (it either gets
   // awkwardly cropped or leaves empty space), so each screen size
   // gets its own purpose-shot image instead.
-    heroBannerDesktopUrl  String? // recommended landscape, e.g. 1920x1080
+  heroBannerDesktopUrl  String? // recommended landscape, e.g. 1920x1080
   heroBannerDesktopType String? // "IMAGE" | "VIDEO" — which tag to render on the public page
   heroBannerMobileUrl   String? // recommended portrait, e.g. 1080x1350
   heroBannerMobileType  String? // "IMAGE" | "VIDEO"
-  logoUrl      String?
-  primaryColor String?
-  bgColor      String?
-  viewCount    Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  logoUrl               String?
+  primaryColor          String?
+  bgColor               String?
+  viewCount             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   // Contact — how a client reaches out after seeing the work. All
   // optional: a creator can fill in as much or as little as they want,
   // and the public page only shows what's actually been filled in.
-  contactEmail    String?
-  whatsappNumber  String?
-  ctaText         String?
+  contactEmail   String?
+  whatsappNumber String?
+  ctaText        String?
 
   // Social — shown as icons in the footer, only for whichever ones the
   // creator actually filled in.
@@ -1152,10 +1152,10 @@ model Portfolio {
   // short resume. heroTagline above already covers the role/title
   // line; these cover the rest. All optional, same philosophy as
   // contact info: show only whatever's actually been filled in.
-  bioText   String?
+  bioText     String?
   bioPhotoUrl String?
-  bioSkills String[] @default([])
-  bioStat   String? // e.g. "50+ projects delivered"
+  bioSkills   String[] @default([])
+  bioStat     String? // e.g. "50+ projects delivered"
 
   creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   // No longer @unique — an agency account can own many portfolios. A
@@ -1168,16 +1168,16 @@ model Portfolio {
   // account's first, created by an AGENCY account. A regular creator's
   // one portfolio has none of this set and is simply always ACTIVE.
   // One recurring charge — ₦5,000/year — no separate one-time fee. ──
-  billingStatus        PortfolioBillingStatus  @default(ACTIVE)
-  paystackSubscriptionCode String?
-  paystackEmailToken       String?
-  paystackCustomerCode     String?
-  subscriptionRenewsAt     DateTime?
+  billingStatus             PortfolioBillingStatus @default(ACTIVE)
+  paystackSubscriptionCode  String?
+  paystackEmailToken        String?
+  paystackCustomerCode      String?
+  subscriptionRenewsAt      DateTime?
   // The reference from the very first subscription checkout — used to
   // verify that charge directly with Paystack (needed for local
   // development, where webhooks can't be delivered at all) before the
   // webhook's own subscription.create event confirms it independently.
-  pendingSubscriptionRef   String?                 @unique
+  pendingSubscriptionRef    String?                @unique
   // Throttles the "your portfolio is offline" reminder email to at
   // most once a day, rather than resending on every check a reminder
   // script happens to run.
@@ -1185,14 +1185,14 @@ model Portfolio {
   // read from updatedAt — updatedAt would be wrong the moment the
   // creator edits anything else about the portfolio while it's
   // offline, silently resetting how "recently" it went down.
-  wentOfflineAt              DateTime?
+  wentOfflineAt             DateTime?
   lastPaymentReminderSentAt DateTime?
 
-  @@index([creatorId])
-
-  sections PortfolioSection[]
-  media    PortfolioMedia[]
+  sections     PortfolioSection[]
+  media        PortfolioMedia[]
   testimonials PortfolioTestimonial[]
+
+  @@index([creatorId])
 }
 
 model PortfolioSection {
@@ -1213,8 +1213,8 @@ model PortfolioSection {
 }
 
 model PortfolioMedia {
-  id           String   @id @default(uuid())
-  portfolio    Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  id           String            @id @default(uuid())
+  portfolio    Portfolio         @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
   portfolioId  String
   section      PortfolioSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   sectionId    String?
@@ -1230,8 +1230,8 @@ model PortfolioMedia {
   // without blocking the rest).
   aspectRatio  Float?
   caption      String?
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
+  displayOrder Int               @default(0)
+  createdAt    DateTime          @default(now())
 
   @@index([portfolioId])
 }
@@ -1267,33 +1267,33 @@ model PortfolioTestimonial {
 // actually produces, so no conversion step is needed to render it.
 // ─────────────────────────────────────────────
 model BlogPost {
-  id          String   @id @default(uuid())
-  slug        String   @unique
-  title       String
+  id                 String    @id @default(uuid())
+  slug               String    @unique
+  title              String
   // Short summary — shown on the listing page's cards, and used as
   // the meta description fallback if metaDescription isn't set.
-  excerpt     String?
-  bodyHtml    String   @db.Text
-  coverImageUrl String?
-  category    String?
+  excerpt            String?
+  bodyHtml           String    @db.Text
+  coverImageUrl      String?
+  category           String?
   // SEO overrides — fall back to title/excerpt when not explicitly
   // set, so a post can be published without filling these in, but an
   // admin who cares about ranking can tune them separately from the
   // on-page headline.
-  metaTitle       String?
-  metaDescription String?
-  published   Boolean  @default(false)
-  publishedAt DateTime?
-  viewCount   Int      @default(0)
+  metaTitle          String?
+  metaDescription    String?
+  published          Boolean   @default(false)
+  publishedAt        DateTime?
+  viewCount          Int       @default(0)
   // Clicks on the two promotional CTAs inserted mid-article — the
   // actual conversion signal from a post, not just how many people
   // opened it. Simple counters, matching the existing viewCount
   // pattern, rather than a separate event-log table — a blog's
   // traffic volume doesn't justify that added complexity yet.
-  deliverCtaClicks   Int @default(0)
-  portfolioCtaClicks Int @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  deliverCtaClicks   Int       @default(0)
+  portfolioCtaClicks Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@index([published, publishedAt])
   @@index([category])
@@ -1308,16 +1308,16 @@ model BlogPost {
 // not-yet-activated draft state while an admin is still setting it up.
 // ─────────────────────────────────────────────
 model SpotlightCycle {
-  id                 String    @id @default(uuid())
+  id                 String   @id @default(uuid())
   monthLabel         String // e.g. "August 2026" — admin-set, not derived, since a cycle's real-world label doesn't always match the calendar month it runs in
   heroImageUrl       String?
   heroHeadline       String?
   heroDescription    String?
   submissionOpensAt  DateTime
   submissionDeadline DateTime
-  isActive           Boolean   @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  isActive           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   submissions SpotlightSubmission[]
 
@@ -1325,36 +1325,37 @@ model SpotlightCycle {
 }
 
 model SpotlightSubmission {
-  id         String         @id @default(uuid())
-  cycle      SpotlightCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  cycleId    String
+  id            String         @id @default(uuid())
+  cycle         SpotlightCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId       String
   // Optional — anyone can submit without an account. Only ever set
   // if the person happened to be logged in at the moment they
   // submitted, which is also what unlocks the "pick from your
   // portfolio" option on the form instead of a plain manual link.
-  creator    Creator?       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId  String?
+  creator       Creator?       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId     String?
   // Snapshot at submission time, not read live from the Creator row —
   // a name change later shouldn't silently rewrite a past submission.
-  name        String
+  name          String
   // The only way to ever reach a winner who didn't have an account —
   // required regardless of whether they were logged in or not.
-  email       String
-  category    String // "Video" | "Graphics" | "Photography" | "Branding"
-  projectLink String // either a real Showwork portfolio URL, or a manual link
-  description String // max 150 chars, enforced in the API route
-  note        String?
-  isShortlisted Boolean @default(false)
+  email         String
+  category      String // "Video" | "Graphics" | "Photography" | "Branding"
+  projectLink   String // either a real Showwork portfolio URL, or a manual link
+  description   String // max 150 chars, enforced in the API route
+  note          String?
+  isShortlisted Boolean        @default(false)
   // A submission with a real rank IS a winner — 1, 2, or 3. No
   // separate winners table: duplicating name/category/link into a
   // second record risks the two drifting out of sync if either ever
   // needs correcting after the fact.
-  rank        Int?
-  submittedAt DateTime       @default(now())
+  rank          Int?
+  submittedAt   DateTime       @default(now())
 
   @@index([cycleId])
   @@index([cycleId, rank])
 }
+
 // ─────────────────────────────────────────────
 // SOCIAL CALENDAR — a social media manager's content calendar for one
 // client. Billing itself lives entirely on Creator now (see
@@ -1364,9 +1365,9 @@ model SpotlightSubmission {
 // anymore.
 // ─────────────────────────────────────────────
 enum CalendarPlanStatus {
-  BUILDING           // manager laying out the skeleton — client can't see it yet
-  AWAITING_APPROVAL  // manager marked the plan done — client reviewing the plan itself
-  PLAN_APPROVED      // client approved the plan — real content creation can now begin
+  BUILDING // manager laying out the skeleton — client can't see it yet
+  AWAITING_APPROVAL // manager marked the plan done — client reviewing the plan itself
+  PLAN_APPROVED // client approved the plan — real content creation can now begin
   PLAN_NEEDS_CHANGES // client asked for changes to the plan
 }
 
@@ -1383,13 +1384,13 @@ enum CalendarBillingStatus {
 }
 
 model SocialCalendar {
-  id           String   @id @default(uuid())
-  slug         String   @unique
+  id           String  @id @default(uuid())
+  slug         String  @unique
   clientName   String
   logoUrl      String?
   primaryColor String?
 
-    planStatus       CalendarPlanStatus @default(BUILDING)
+  planStatus       CalendarPlanStatus @default(BUILDING)
   planSubmittedAt  DateTime?
   planApprovedAt   DateTime?
   planApprovalNote String?
@@ -1399,7 +1400,7 @@ model SocialCalendar {
   // Desktop expects a landscape image, mobile a portrait one — same
   // split already used for portfolio banners, since a single image
   // rarely looks right cropped both ways.
-    headerBannerDesktopUrl String?
+  headerBannerDesktopUrl String?
   headerBannerMobileUrl  String?
   headerTitle            String?
   headerDescription      String? @db.Text
@@ -1409,11 +1410,11 @@ model SocialCalendar {
   // research goes stale on its own; a single current summary is what
   // both the weekly research job and on-demand generation actually
   // need, not an archive of every past version.
-  aiBusinessSummary      String?   @db.Text
+  aiBusinessSummary          String?   @db.Text
   aiBusinessSummaryUpdatedAt DateTime?
-  aiLastResearchedAt     DateTime?
+  aiLastResearchedAt         DateTime?
 
-  businessDocuments      CalendarBusinessDocument[]
+  businessDocuments CalendarBusinessDocument[]
 
   passwordHash String
   accessCode   String?
@@ -1427,17 +1428,17 @@ model SocialCalendar {
   // ── Instagram publishing connection — one Instagram Business
   // account per calendar, connected via Meta's Graph API through
   // Facebook Login. Null until the manager actually connects one.
-  instagramAccountId   String?
-  instagramUsername    String?
-  instagramPageId      String?
+  instagramAccountId      String?
+  instagramUsername       String?
+  instagramPageId         String?
   // Long-lived access token, valid roughly 60 days — refreshed by a
   // scheduled job ahead of instagramTokenExpiresAt, not stored
   // encrypted at rest, matching how every other third-party token in
   // this schema (Paystack subscription codes, email tokens) is
   // already stored as a plain column.
-  instagramAccessToken     String?
-  instagramTokenExpiresAt  DateTime?
-  instagramConnectedAt     DateTime?
+  instagramAccessToken    String?
+  instagramTokenExpiresAt DateTime?
+  instagramConnectedAt    DateTime?
 
   // ── TikTok publishing connection — one TikTok account per
   // calendar, connected via TikTok's own OAuth. Null until the
@@ -1447,15 +1448,15 @@ model SocialCalendar {
   // this connection lands as private-only regardless of the privacy
   // level chosen on the post itself — a genuine platform limitation,
   // not something this app can override.
-  tikTokOpenId          String?
-  tikTokUsername        String?
+  tikTokOpenId               String?
+  tikTokUsername             String?
   // Access tokens are short-lived (a few hours); refreshToken is
   // what a scheduled job uses to silently mint a new access token
   // ahead of expiry, without ever needing the manager to reconnect.
-  tikTokAccessToken     String?
+  tikTokAccessToken          String?
   tikTokAccessTokenExpiresAt DateTime?
-  tikTokRefreshToken    String?
-  tikTokConnectedAt     DateTime?
+  tikTokRefreshToken         String?
+  tikTokConnectedAt          DateTime?
 
   posts         CalendarPost[]
   collaborators CalendarCollaborator[]
@@ -1478,7 +1479,7 @@ model CalendarBusinessDocument {
 
   fileKey       String
   originalName  String
-  extractedText String?  @db.Text
+  extractedText String? @db.Text
 
   createdAt DateTime @default(now())
 
@@ -1540,29 +1541,29 @@ model CalendarPost {
   calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
   calendarId String
 
-  postDate    DateTime
-  platform    SocialPlatform
-    postType    String?  @db.Text
+  postDate       DateTime
+  platform       SocialPlatform
+  postType       String?        @db.Text
   // Free text — a preset list of common categories (Educational,
   // Lifestyle, Promotional, etc.) shown in the UI, but a manager can
   // always type their own instead. Kept separate from postType,
   // which is about format (Reel, Carousel); this is about the
   // content's actual purpose or theme.
-  category    String?  @db.Text
-  caption     String?  @db.Text
-  contentIdea String?  @db.Text
+  category       String?        @db.Text
+  caption        String?        @db.Text
+  contentIdea    String?        @db.Text
   // What the post is actually asking the viewer to do — "Link in
   // bio," "Comment below," etc. Free text with presets in the UI.
-  cta         String?  @db.Text
-  hashtags    String?  @db.Text
+  cta            String?        @db.Text
+  hashtags       String?        @db.Text
   // Accounts to @-mention/tag in the post, free text (comma or
   // space-separated, manager's own convention).
-  taggedAccounts String? @db.Text
+  taggedAccounts String?        @db.Text
   // A destination URL for platforms that support a clickable link on
   // the post itself.
-  linkUrl     String?  @db.Text
+  linkUrl        String?        @db.Text
 
-     approvalStatus PostApprovalStatus @default(PENDING)
+  approvalStatus PostApprovalStatus @default(PENDING)
   approvalNote   String?
   reviewedAt     DateTime?
 
@@ -1613,9 +1614,37 @@ model CalendarPost {
   comments      CalendarPostComment[]
   videoComments CalendarPostVideoComment[]
   customFields  CalendarPostCustomField[]
+  aiGenerations CalendarPostAiGeneration[]
 
   @@index([calendarId])
   @@index([calendarId, postDate])
+}
+
+// ─────────────────────────────────────────────
+// AI DRAFT GENERATION HISTORY
+// Stores every generated version of an AI draft so managers can
+// move backwards/forwards through generations and restore a version.
+// ─────────────────────────────────────────────
+model CalendarPostAiGeneration {
+  id     String       @id @default(uuid())
+  post   CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+
+  generationNumber Int
+
+  postDate    DateTime
+  platform    SocialPlatform
+  postType    String?        @db.Text
+  category    String?        @db.Text
+  caption     String?        @db.Text
+  contentIdea String?        @db.Text
+  cta         String?        @db.Text
+  hashtags    String?        @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([postId, generationNumber])
 }
 
 // ─────────────────────────────────────────────
@@ -1651,6 +1680,7 @@ model CalendarPostAsset {
 
   @@index([postId])
 }
+
 model CalendarPostComment {
   id          String       @id @default(uuid())
   post        CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -1677,8 +1707,8 @@ model CalendarPostVideoComment {
 }
 
 enum CalendarRole {
-  VIEW_ONLY     // can see the calendar, nothing else
-  ADD_CONTENT   // can also upload/add content to existing posts — the default for most collaborators
+  VIEW_ONLY // can see the calendar, nothing else
+  ADD_CONTENT // can also upload/add content to existing posts — the default for most collaborators
   EDIT_CALENDAR // can also create, edit, and delete posts, and edit the calendar's own details — a trusted, higher-risk role
 }
 
@@ -1702,7 +1732,7 @@ model CalendarInvite {
   calendarId         String
   invitedByCreator   Creator        @relation("CalendarInvitesSent", fields: [invitedByCreatorId], references: [id], onDelete: Cascade)
   invitedByCreatorId String
-   email              String
+  email              String
   role               CalendarRole   @default(ADD_CONTENT)
   tokenHash          String         @unique
   status             InviteStatus   @default(PENDING)

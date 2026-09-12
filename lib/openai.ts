@@ -213,3 +213,96 @@ export async function generateContentCalendar({
 
   return parsed as GeneratedPostIdea[];
 }
+export interface RegeneratedPost {
+  postDate: string;
+  platform: "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "FACEBOOK" | "X" | "LINKEDIN";
+  postType: string;
+  category: string;
+  caption: string;
+  contentIdea: string;
+  cta: string;
+  hashtags: string;
+}
+
+/**
+ * Regenerates one existing draft using the client's accumulated business
+ * context plus the current draft and the manager's requested direction.
+ */
+export async function regeneratePost({
+  clientName,
+  businessSummary,
+  currentPost,
+  instruction,
+}: {
+  clientName: string;
+  businessSummary: string;
+  currentPost: RegeneratedPost;
+  instruction?: string;
+}): Promise<RegeneratedPost> {
+  const instructions = `You are a senior social media strategist editing one existing draft for a client.
+
+Create ONE improved version of the draft. Preserve useful facts and the client's voice, but make meaningful improvements rather than simply changing a few words.
+
+Return ONLY one JSON object with exactly these fields:
+postDate, platform, postType, category, caption, contentIdea, cta, hashtags.
+
+Do not return an array. Do not use markdown fences.
+
+The manager's instruction is the highest priority.`;
+
+  const input = `Client: ${clientName}
+
+Business context:
+${businessSummary}
+
+Current draft:
+${JSON.stringify(currentPost, null, 2)}
+
+${instruction?.trim()
+  ? `Manager's request:
+${instruction.trim()}`
+  : "Manager's request: Improve this draft while keeping the strategy, brand voice and intent strong."}`;
+
+  const raw = await callOpenAI({ instructions, input });
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/, "").replace(/```\s*$/, "");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error("The AI's response wasn't valid content data — try regenerating again.");
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("The AI's response wasn't in the expected format — try regenerating again.");
+  }
+
+  const value = parsed as Record<string, unknown>;
+  const required = [
+    "postDate",
+    "platform",
+    "postType",
+    "category",
+    "caption",
+    "contentIdea",
+    "cta",
+    "hashtags",
+  ];
+
+  for (const key of required) {
+    if (!(key in value)) {
+      throw new Error(`The AI response is missing "${key}" — try regenerating again.`);
+    }
+  }
+
+  return {
+    postDate: String(value.postDate),
+    platform: value.platform as RegeneratedPost["platform"],
+    postType: String(value.postType ?? ""),
+    category: String(value.category ?? ""),
+    caption: String(value.caption ?? ""),
+    contentIdea: String(value.contentIdea ?? ""),
+    cta: String(value.cta ?? ""),
+    hashtags: String(value.hashtags ?? ""),
+  };
+}
