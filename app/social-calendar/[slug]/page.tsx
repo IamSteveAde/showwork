@@ -231,8 +231,12 @@ export default async function SocialCalendarPage({
     include: {
       manager: {
         select: {
-          calendarBillingStatus: true,
-          calendarTrialEndsAt: true,
+          id: true,
+contentWorkspacePlan: true,
+contentWorkspaceBillingStatus: true,
+contentWorkspaceBillingCycle: true,
+contentWorkspaceTrialEndsAt: true,
+isComped: true,
         },
       },
       posts: {

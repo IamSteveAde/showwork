@@ -3,12 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+type ContentWorkspaceBillingStatus =
+  | "PENDING_SETUP"
+  | "TRIAL"
+  | "ACTIVE"
+  | "OFFLINE";
+
 export default function CalendarRowActions({
   calendarId,
   billingStatus,
 }: {
   calendarId: string;
-  billingStatus: string;
+  billingStatus: ContentWorkspaceBillingStatus;
 }) {
   const router = useRouter();
 
@@ -64,18 +70,6 @@ export default function CalendarRowActions({
           {loading === "grant" ? "..." : "Grant free month"}
         </button>
 
-        <button
-          onClick={() => patch("grant_free_ai_month", "grant_ai")}
-          disabled={loading !== null}
-          className="rounded-md px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
-          style={{
-            background: "rgba(36,120,255,0.15)",
-            color: "#68B2FF",
-          }}
-        >
-          {loading === "grant_ai" ? "..." : "Grant free AI month"}
-        </button>
-
         {confirmingReset ? (
           <div className="flex items-center gap-2">
             <button
@@ -105,9 +99,27 @@ export default function CalendarRowActions({
         )}
       </div>
 
+      {billingStatus === "TRIAL" && (
+        <p className="text-[10px] text-white/30">
+          Content Workspace is currently in its free trial.
+        </p>
+      )}
+
       {billingStatus === "ACTIVE" && (
         <p className="text-[10px] text-white/30">
-          Calendar access is active for this manager's account.
+          Content Workspace access is active for this manager&apos;s account.
+        </p>
+      )}
+
+      {billingStatus === "OFFLINE" && (
+        <p className="text-[10px] text-red-400/70">
+          Content Workspace is offline because payment is not active.
+        </p>
+      )}
+
+      {billingStatus === "PENDING_SETUP" && (
+        <p className="text-[10px] text-white/30">
+          This manager has not activated a Content Workspace subscription.
         </p>
       )}
 

@@ -3,6 +3,10 @@ import { randomUUID, createHash } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sendCalendarInviteEmail } from "@/lib/resend";
+import {
+  canAddContentWorkspaceCollaborator,
+  getContentWorkspacePlan,
+} from "@/lib/contentWorkspaceUsage";
 
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -11,30 +15,59 @@ function hashToken(token: string): string {
 const VALID_ROLES = ["VIEW_ONLY", "ADD_CONTENT", "EDIT_CALENDAR"];
 
 // GET — everyone currently on this calendar (accepted collaborators)
-// plus anyone still waiting on an invite. Manager-only, since this is
-// the list behind "who have I added" on the invite panel.
+// plus anyone still waiting on an invite. Manager-only.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!creator) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
   const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
+
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id },
+  });
+
   if (!calendar || calendar.managerId !== creator.id) {
-    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Calendar not found" },
+      { status: 404 }
+    );
   }
 
   const [collaborators, pendingInvites] = await Promise.all([
     db.calendarCollaborator.findMany({
-      where: { calendarId: id },
-      orderBy: { addedAt: "desc" },
-      include: { creator: { select: { name: true, email: true } } },
+      where: {
+        calendarId: id,
+      },
+      orderBy: {
+        addedAt: "desc",
+      },
+      include: {
+        creator: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     }),
+
     db.calendarInvite.findMany({
-      where: { calendarId: id, status: "PENDING" },
-      orderBy: { createdAt: "desc" },
+      where: {
+        calendarId: id,
+        status: "PENDING",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     }),
   ]);
 
@@ -45,6 +78,7 @@ export async function GET(
       email: c.creator.email,
       role: c.role,
     })),
+
     pendingInvites: pendingInvites.map((i) => ({
       id: i.id,
       email: i.email,
@@ -54,72 +88,165 @@ export async function GET(
   });
 }
 
-// POST — sends a new collaborator invite. Blocked entirely for
-// Individual accounts (collaboration is a Company-only feature), and
-// capped at 10 people per calendar for Company accounts, counting
-// both already-accepted collaborators and anyone still sitting on an
-// unopened invite.
+// POST — sends a new collaborator invite.
+//
+// Creator: up to 3 collaborators/invites across the account.
+// Studio: up to 15 collaborators/invites across the account.
+//
+// Creator accounts ARE allowed to collaborate. The old
+// Individual-only restriction has therefore been removed.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
-  const calendar = await db.socialCalendar.findUnique({ where: { id } });
-  if (!calendar || calendar.managerId !== creator.id) {
-    return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  }
-
-  const account = await db.creator.findUnique({
-    where: { id: creator.id },
-    select: { calendarAccountType: true },
-  });
-
-  // An Individual account can never collaborate at all, on any
-  // calendar — the frontend uses this exact response shape to show
-  // an upgrade prompt instead of a plain error message.
-  if (account?.calendarAccountType === "INDIVIDUAL") {
+  if (!creator) {
     return NextResponse.json(
-      { error: "Collaborators require a Company account", requiresUpgrade: true },
-      { status: 403 }
+      { error: "Unauthorized" },
+      { status: 401 }
     );
   }
 
-  // Company is capped at 10 people per calendar — counting both
-  // already-accepted collaborators and anyone still sitting on an
-  // unaccepted invite, since otherwise someone could send far more
-  // than 10 invites and have them all land at once.
-  const [collaboratorCount, pendingInviteCount] = await Promise.all([
-    db.calendarCollaborator.count({ where: { calendarId: id } }),
-    db.calendarInvite.count({ where: { calendarId: id, status: "PENDING" } }),
-  ]);
-  if (collaboratorCount + pendingInviteCount >= 10) {
+  const { id } = await params;
+
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id },
+  });
+
+  if (!calendar || calendar.managerId !== creator.id) {
+    return NextResponse.json(
+      { error: "Calendar not found" },
+      { status: 404 }
+    );
+  }
+
+  /*
+   * Content Workspace access and collaborator entitlement are both
+   * enforced server-side.
+   */
+  const canAddCollaborator =
+    await canAddContentWorkspaceCollaborator(creator);
+
+  if (!canAddCollaborator) {
+    const plan = getContentWorkspacePlan(creator);
+
+    const message =
+      plan === "CREATOR"
+        ? "Your Creator plan allows up to 3 collaborators, including pending invitations."
+        : "Your Studio plan allows up to 15 collaborators, including pending invitations.";
+
     return NextResponse.json(
       {
-        error: "This calendar already has 10 people on it. For more, contact hello@useshowwork.com.",
+        error: message,
         capReached: true,
+        plan,
       },
       { status: 403 }
     );
   }
 
   const { email, role } = await req.json();
+
   if (!email || !email.trim()) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Email is required" },
+      { status: 400 }
+    );
   }
-  const finalRole = VALID_ROLES.includes(role) ? role : "ADD_CONTENT";
+
+  const finalRole = VALID_ROLES.includes(role)
+    ? role
+    : "ADD_CONTENT";
+
+  /*
+   * Re-check the account-level collaborator count immediately before
+   * creating the invite.
+   *
+   * This prevents the route from relying only on the entitlement
+   * helper's earlier read.
+   */
+  const [collaboratorCount, pendingInviteCount] =
+    await Promise.all([
+      db.calendarCollaborator.count({
+        where: {
+          calendar: {
+            managerId: creator.id,
+          },
+        },
+      }),
+
+      db.calendarInvite.count({
+        where: {
+          calendar: {
+            managerId: creator.id,
+          },
+          status: "PENDING",
+        },
+      }),
+    ]);
+
+  const plan = getContentWorkspacePlan(creator);
+  const collaboratorLimit = plan === "CREATOR" ? 3 : 15;
+
+  if (
+    collaboratorCount + pendingInviteCount >=
+    collaboratorLimit
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          plan === "CREATOR"
+            ? "Your Creator plan allows up to 3 collaborators, including pending invitations."
+            : "Your Studio plan allows up to 15 collaborators, including pending invitations.",
+        capReached: true,
+        plan,
+        collaboratorLimit,
+      },
+      { status: 403 }
+    );
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  /*
+   * Prevent inviting the same email repeatedly while an existing
+   * invitation is still pending.
+   */
+  const existingPendingInvite =
+    await db.calendarInvite.findFirst({
+      where: {
+        calendarId: calendar.id,
+        email: normalizedEmail,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+  if (existingPendingInvite) {
+    return NextResponse.json(
+      {
+        error:
+          "There is already a pending invitation for this email.",
+      },
+      { status: 400 }
+    );
+  }
 
   const token = randomUUID() + randomUUID();
+
   const invite = await db.calendarInvite.create({
     data: {
       calendarId: calendar.id,
       invitedByCreatorId: creator.id,
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       role: finalRole,
       tokenHash: hashToken(token),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      expiresAt: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ),
     },
   });
 
@@ -130,9 +257,15 @@ export async function POST(
       clientName: calendar.clientName,
       token,
     });
-  } catch (err) {
-    console.error("Failed to send calendar invite email:", err);
+  } catch (error) {
+    console.error(
+      "Failed to send calendar invite email:",
+      error
+    );
   }
 
-  return NextResponse.json({ ok: true, role: finalRole });
+  return NextResponse.json({
+    ok: true,
+    role: finalRole,
+  });
 }

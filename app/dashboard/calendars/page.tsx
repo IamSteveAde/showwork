@@ -222,17 +222,16 @@ export default async function CalendarsPage({
     redirect("/login");
   }
 
-  const calendarBilling = await db.creator.findUnique({
-    where: { id: creator.id },
-    select: {
-      calendarAccountType: true,
-      calendarBillingStatus: true,
-      calendarTrialEndsAt: true,
-      calendarSubscriptionRenewsAt: true,
-      aiAssistantBillingStatus: true,
-      aiAssistantSubscriptionRenewsAt: true,
-    },
-  });
+const calendarBilling = await db.creator.findUnique({
+  where: { id: creator.id },
+ select: {
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceBillingCycle: true,
+  contentWorkspaceTrialEndsAt: true,
+  contentWorkspaceSubscriptionRenewsAt: true,
+},
+});
 
   const params = await searchParams;
   const currentPage = getPageNumber(params?.page);
@@ -381,46 +380,46 @@ export default async function CalendarsPage({
   </div>
 
   {/* Divider */}
-  {calendarBilling?.calendarAccountType && (
-    <>
-      <div className="my-4 w-px bg-white/[0.08]" />
+  {calendarBilling?.contentWorkspacePlan && (
+  <>
+    <div className="my-4 w-px bg-white/[0.08]" />
 
-      {/* Account plan */}
-      <div className="relative min-w-[126px] px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              calendarBilling.calendarAccountType === "COMPANY"
-                ? "bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]"
-                : "bg-white/40"
-            }`}
-          />
+    {/* Workspace plan */}
+    <div className="relative min-w-[126px] px-5 py-4">
+      <div className="flex items-center gap-2">
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            calendarBilling.contentWorkspacePlan === "STUDIO"
+              ? "bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]"
+              : "bg-white/40"
+          }`}
+        />
 
-          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
-            Account
-          </p>
-        </div>
-
-        <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.025em] text-white">
-          {calendarBilling.calendarAccountType === "COMPANY"
-            ? "Company"
-            : "Individual"}
-        </p>
-
-        <p
-          className="mt-1.5 text-[10px] font-medium"
-          style={{
-            color:
-              calendarBilling.calendarAccountType === "COMPANY"
-                ? "#68A4FF"
-                : "rgba(255,255,255,0.30)",
-          }}
-        >
-          Account plan
+        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
+          Plan
         </p>
       </div>
-    </>
-  )}
+
+      <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.025em] text-white">
+        {calendarBilling.contentWorkspacePlan === "STUDIO"
+          ? "Studio"
+          : "Creator"}
+      </p>
+
+      <p
+        className="mt-1.5 text-[10px] font-medium"
+        style={{
+          color:
+            calendarBilling.contentWorkspacePlan === "STUDIO"
+              ? "#68A4FF"
+              : "rgba(255,255,255,0.30)",
+        }}
+      >
+        Workspace plan
+      </p>
+    </div>
+  </>
+)}
 
   {/* Divider */}
   <div className="my-4 w-px bg-white/[0.08]" />
@@ -446,33 +445,44 @@ export default async function CalendarsPage({
 </div></div>
         </header>
 
-        {calendarBilling?.calendarBillingStatus === "TRIAL" && calendarBilling.calendarTrialEndsAt && calendarBilling.calendarAccountType && (
-          <TrialCountdownBanner
-            trialEndsAt={calendarBilling.calendarTrialEndsAt.toISOString()}
-            accountType={calendarBilling.calendarAccountType}
-          />
-        )}
+       {calendarBilling?.contentWorkspaceBillingStatus === "TRIAL" &&
+  calendarBilling.contentWorkspaceTrialEndsAt &&
+  calendarBilling.contentWorkspacePlan && (
+    <TrialCountdownBanner
+      trialEndsAt={calendarBilling.contentWorkspaceTrialEndsAt.toISOString()}
+      plan={calendarBilling.contentWorkspacePlan}
+    />
+  )}
 
         {/* Billing settings — only shows once an account type has
             actually been chosen, i.e. once at least one calendar has
             ever been created. */}
-        {calendarBilling?.calendarAccountType && (
-          <CalendarBillingSettings
-            accountType={calendarBilling.calendarAccountType}
-            billingStatus={calendarBilling.calendarBillingStatus}
-            subscriptionRenewsAt={calendarBilling.calendarSubscriptionRenewsAt?.toISOString() ?? null}
-            trialEndsAt={calendarBilling.calendarTrialEndsAt?.toISOString() ?? null}
-          />
-        )}
+   {calendarBilling?.contentWorkspacePlan && (
+  <CalendarBillingSettings
+    plan={calendarBilling.contentWorkspacePlan}
+    billingStatus={calendarBilling.contentWorkspaceBillingStatus}
+    billingCycle={calendarBilling.contentWorkspaceBillingCycle}
+    subscriptionRenewsAt={
+      calendarBilling.contentWorkspaceSubscriptionRenewsAt?.toISOString() ??
+      null
+    }
+    trialEndsAt={
+      calendarBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? null
+    }
+  />
+)}
 
-        {/* AI assistant billing — always shown, unlike calendar
-            billing above, since it doesn't depend on having created
-            a calendar first. Account-level, completely independent
-            of calendar billing. */}
-        <AiAssistantBillingSettings
-          billingStatus={calendarBilling?.aiAssistantBillingStatus ?? "PENDING_SETUP"}
-          subscriptionRenewsAt={calendarBilling?.aiAssistantSubscriptionRenewsAt?.toISOString() ?? null}
-        />
+       {/* AI Studio — included with the Content Workspace subscription. */}
+       <AiAssistantBillingSettings
+  billingStatus={
+    calendarBilling?.contentWorkspaceBillingStatus ?? "PENDING_SETUP"
+  }
+  subscriptionRenewsAt={
+    calendarBilling?.contentWorkspaceSubscriptionRenewsAt?.toISOString() ??
+    null
+  }
+  plan={calendarBilling?.contentWorkspacePlan ?? null}
+/>
 
         {/* Payment callback */}
         <Suspense fallback={null}>
@@ -502,7 +512,9 @@ export default async function CalendarsPage({
             </div>
 
             <div className="p-4 sm:p-5">
-              <CreateCalendarForm calendarAccountType={calendarBilling?.calendarAccountType ?? null} />
+              <CreateCalendarForm
+  contentWorkspacePlan={calendarBilling?.contentWorkspacePlan ?? null}
+/>
             </div>
           </div>
         </section>

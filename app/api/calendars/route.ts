@@ -4,17 +4,17 @@ import { getCurrentCreator, hashPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { initializeSubscription } from "@/lib/paystack";
 import { appUrl } from "@/lib/url";
-
-const INDIVIDUAL_PLAN_CODE = process.env.PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE;
-const COMPANY_PLAN_CODE = process.env.PAYSTACK_CALENDAR_COMPANY_PLAN_CODE;
-// Paystack requires a non-zero amount on the request even though the
-// plan's own configured price is what actually gets charged — same
-// reasoning as the portfolio subscription checkout.
-const INDIVIDUAL_MONTHLY_NGN = 2800;
-const COMPANY_MONTHLY_NGN = 15000;
-// One-time, ever, per account — not per calendar. Both account types
-// get the same trial length.
-const TRIAL_DAYS = 3;
+import {
+  CONTENT_WORKSPACE_PLANS,
+  CONTENT_WORKSPACE_TRIAL_DAYS,
+  getContentWorkspacePlanCode,
+  type ContentWorkspaceBillingCycle,
+  type ContentWorkspacePlan,
+} from "@/lib/contentWorkspaceEntitlements";
+import {
+  canCreateContentWorkspace,
+  type ContentWorkspaceAccount,
+} from "@/lib/contentWorkspaceUsage";
 
 function slugify(input: string): string {
   return input
@@ -23,185 +23,456 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-// A random, easy-to-read access code — no character-composition rules
-// needed since nobody types this in by hand, they just copy-paste it.
-// Avoids visually ambiguous characters (0/O, 1/l/I) so it's also fine
-// to read aloud or retype if the manager ever needs to.
 function generateAccessCode(): string {
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const chars =
+    "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+
   let code = "";
+
   for (let i = 0; i < 10; i++) {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
+
   return code;
 }
 
 async function uniqueSlugFor(base: string): Promise<string> {
   let candidate = base || "calendar";
   let suffix = 2;
-  while (await db.socialCalendar.findUnique({ where: { slug: candidate }, select: { id: true } })) {
+
+  while (
+    await db.socialCalendar.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    })
+  ) {
     candidate = `${base}-${suffix}`;
     suffix++;
   }
+
   return candidate;
 }
 
-// GET — every calendar this creator owns, most recent first. Doesn't
-// yet include ones they only collaborate on — that's added once
-// collaborator invites exist.
+function resolvePlanFromLegacyAccountType(
+  accountType: unknown
+): ContentWorkspacePlan | null {
+  if (accountType === "INDIVIDUAL") return "CREATOR";
+  if (accountType === "COMPANY") return "STUDIO";
+
+  return null;
+}
+
+function resolveBillingCycle(
+  value: unknown
+): ContentWorkspaceBillingCycle {
+  return value === "ANNUAL" ? "ANNUAL" : "MONTHLY";
+}
+
+// GET — every calendar this creator owns, most recent first.
 export async function GET() {
   const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!creator) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
   const calendars = await db.socialCalendar.findMany({
-    where: { managerId: creator.id },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { posts: true } } },
+    where: {
+      managerId: creator.id,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      _count: {
+        select: {
+          posts: true,
+        },
+      },
+    },
   });
 
   return NextResponse.json({ calendars });
 }
 
-// POST — creates a new calendar for one client. Billing itself is
-// entirely account-level now, not per-calendar: one subscription (or
-// one trial) covers every calendar this account owns.
+// POST — creates a new Content Workspace.
 //
-// On an account's very first-ever calendar, `accountType` must be
-// supplied ("INDIVIDUAL" or "COMPANY") — that choice is permanent for
-// the account and made exactly once, right here. Every calendar after
-// that ignores accountType entirely, since it's already set.
+// Billing is account-level:
+// - Creator: 1 active workspace
+// - Studio: 10 active workspaces
 //
-// The very first calendar this account EVER creates also starts a
-// free 3-day trial, tracked by calendarTrialUsedAt — a permanent
-// marker that's set once and never cleared, even if every calendar is
-// later deleted, specifically so deleting and recreating a calendar
-// can never be used to farm additional trials.
+// Every account gets one 3-day trial, ever.
+// The trial is attached to the Content Workspace subscription,
+// not to an individual calendar/workspace.
+//
+// `accountType` is accepted temporarily for backwards compatibility
+// with the existing frontend:
+// - INDIVIDUAL -> Creator
+// - COMPANY -> Studio
+//
+// New frontend code should send `plan` instead.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { clientName, accountType } = await req.json();
-  if (!clientName || !clientName.trim()) {
-    return NextResponse.json({ error: "Client name is required" }, { status: 400 });
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
-  // Re-fetched fresh rather than trusting whatever getCurrentCreator()
-  // returned — these fields change over time and the session object
-  // may not reflect the very latest billing state.
+  let body: {
+    clientName?: unknown;
+    plan?: unknown;
+    accountType?: unknown;
+    billingCycle?: unknown;
+  };
+
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid request body" },
+      { status: 400 }
+    );
+  }
+
+  const clientName =
+    typeof body.clientName === "string"
+      ? body.clientName.trim()
+      : "";
+
+  if (!clientName) {
+    return NextResponse.json(
+      { error: "Client name is required" },
+      { status: 400 }
+    );
+  }
+
   const creator = await db.creator.findUnique({
-    where: { id: session.id },
+    where: {
+      id: session.id,
+    },
     select: {
       id: true,
       email: true,
+
+      contentWorkspacePlan: true,
+      contentWorkspaceBillingStatus: true,
+      contentWorkspaceBillingCycle: true,
+      contentWorkspaceTrialUsedAt: true,
+      contentWorkspaceTrialEndsAt: true,
+      contentWorkspacePendingSubscriptionRef: true,
+
+      isComped: true,
+
+      // Kept temporarily because older accounts may still have this
+      // value from the previous Calendar billing system.
       calendarAccountType: true,
-      calendarTrialUsedAt: true,
-      calendarBillingStatus: true,
-      calendarTrialEndsAt: true,
     },
   });
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let resolvedAccountType = creator.calendarAccountType;
+  if (!creator) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
-  // First calendar this account has ever created — the account-type
-  // choice is made right here, once, and never revisited by this
-  // route again.
-  if (!resolvedAccountType) {
-    if (accountType !== "INDIVIDUAL" && accountType !== "COMPANY") {
-      return NextResponse.json({ error: "Choose Individual or Company first" }, { status: 400 });
+  /*
+   * Determine the Content Workspace plan.
+   *
+   * Existing accounts that previously selected:
+   *   INDIVIDUAL -> CREATOR
+   *   COMPANY    -> STUDIO
+   *
+   * New accounts should provide `plan`.
+   *
+   * Once a Content Workspace plan exists on the account, it is used
+   * as the source of truth.
+   */
+  let plan: ContentWorkspacePlan | null =
+    creator.contentWorkspacePlan;
+
+  if (!plan) {
+    if (
+      body.plan === "CREATOR" ||
+      body.plan === "STUDIO"
+    ) {
+      plan = body.plan;
+    } else {
+      plan = resolvePlanFromLegacyAccountType(
+        body.accountType
+      );
     }
-    resolvedAccountType = accountType;
+
+    if (!plan) {
+      plan = resolvePlanFromLegacyAccountType(
+        creator.calendarAccountType
+      );
+    }
+  }
+
+  if (!plan) {
+    return NextResponse.json(
+      {
+        error:
+          "Choose a Content Workspace plan first: Creator or Studio",
+      },
+      { status: 400 }
+    );
+  }
+
+  /*
+   * Build the account shape expected by the centralized
+   * Content Workspace entitlement service.
+   */
+  const account: ContentWorkspaceAccount = {
+  id: creator.id,
+  contentWorkspacePlan: plan,
+  contentWorkspaceBillingStatus: creator.contentWorkspaceBillingStatus,
+  contentWorkspaceBillingCycle: creator.contentWorkspaceBillingCycle,
+  contentWorkspaceTrialUsedAt: creator.contentWorkspaceTrialUsedAt,
+  contentWorkspaceTrialEndsAt: creator.contentWorkspaceTrialEndsAt,
+  isComped: creator.isComped,
+};
+
+  /*
+   * IMPORTANT:
+   * Check the workspace entitlement BEFORE creating the database row.
+   *
+   * This enforces:
+   * Creator -> maximum 1 active workspace
+   * Studio  -> maximum 10 active workspaces
+   */
+  const creationCheck = await canCreateContentWorkspace(account);
+
+  if (!creationCheck.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          creationCheck.reason ??
+          "You cannot create another Content Workspace.",
+        usage: creationCheck.usage,
+      },
+      { status: 403 }
+    );
+  }
+
+  /*
+   * Persist the selected Content Workspace plan if this is the
+   * account's first Content Workspace setup.
+   *
+   * This does NOT touch the main Showwork subscription fields.
+   */
+  if (!creator.contentWorkspacePlan) {
     await db.creator.update({
-      where: { id: creator.id },
-      data: { calendarAccountType: resolvedAccountType },
+      where: {
+        id: creator.id,
+      },
+      data: {
+        contentWorkspacePlan: plan,
+      },
     });
   }
 
-  const slug = await uniqueSlugFor(slugify(clientName.trim()));
+  /*
+   * Generate the workspace credentials.
+   */
+  const slug = await uniqueSlugFor(slugify(clientName));
   const accessCode = generateAccessCode();
   const passwordHash = await hashPassword(accessCode);
 
-  // Calendars themselves carry no billing fields anymore — creating
-  // one is always allowed; whether it's actually USABLE afterward is
-  // entirely down to canAccessCalendar() checking the account below.
+  /*
+   * Create the workspace.
+   *
+   * There are deliberately no billing fields on SocialCalendar.
+   * Billing belongs to the creator's Content Workspace subscription.
+   */
   const calendar = await db.socialCalendar.create({
     data: {
       slug,
-      clientName: clientName.trim(),
+      clientName,
       passwordHash,
-      accessCode, // plain copy, same reasoning as Project.accessCode — lets the manager re-share it later
+      accessCode,
       managerId: creator.id,
     },
   });
 
-  // Never trialed before, on any account type — starts now, covers
-  // every calendar on the account, and can never be granted again.
-  if (!creator.calendarTrialUsedAt) {
+  /*
+   * FIRST-EVER CONTENT WORKSPACE:
+   *
+   * Start the 3-day free trial.
+   *
+   * No payment is requested.
+   * No Paystack subscription is created.
+   */
+  if (!creator.contentWorkspaceTrialUsedAt) {
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
+
+    trialEndsAt.setDate(
+      trialEndsAt.getDate() + CONTENT_WORKSPACE_TRIAL_DAYS
+    );
 
     await db.creator.update({
-      where: { id: creator.id },
+      where: {
+        id: creator.id,
+      },
       data: {
-        calendarBillingStatus: "TRIAL",
-        calendarTrialEndsAt: trialEndsAt,
-        calendarTrialUsedAt: new Date(),
+        contentWorkspacePlan: plan,
+        contentWorkspaceBillingStatus: "TRIAL",
+        contentWorkspaceBillingCycle: null,
+        contentWorkspaceTrialUsedAt: new Date(),
+        contentWorkspaceTrialEndsAt: trialEndsAt,
+        contentWorkspaceWentOfflineAt: null,
       },
     });
 
-    return NextResponse.json({ calendarId: calendar.id, trial: true });
+    return NextResponse.json({
+      calendarId: calendar.id,
+      trial: true,
+      plan,
+      trialEndsAt,
+    });
   }
 
-  // Already paying — this new calendar is covered by that same
-  // subscription immediately, no checkout needed.
-  if (creator.calendarBillingStatus === "ACTIVE") {
-    return NextResponse.json({ calendarId: calendar.id, alreadyActive: true });
-  }
-
-  // Still inside a previously-started trial window — also just goes
-  // straight in.
+  /*
+   * Existing active subscription:
+   *
+   * The new workspace is immediately covered by the same
+   * Content Workspace subscription.
+   */
   if (
-    creator.calendarBillingStatus === "TRIAL" &&
-    creator.calendarTrialEndsAt &&
-    creator.calendarTrialEndsAt.getTime() > Date.now()
+    creator.contentWorkspaceBillingStatus === "ACTIVE"
   ) {
-    return NextResponse.json({ calendarId: calendar.id, trial: true });
+    return NextResponse.json({
+      calendarId: calendar.id,
+      alreadyActive: true,
+      plan,
+    });
   }
 
-  // Everything else (trial already used up and expired, or billing
-  // OFFLINE/PENDING_SETUP with no active subscription) means this
-  // account genuinely needs to pay before this — or any — calendar on
-  // it is usable.
-  const planCode = resolvedAccountType === "COMPANY" ? COMPANY_PLAN_CODE : INDIVIDUAL_PLAN_CODE;
-  const amountNgn = resolvedAccountType === "COMPANY" ? COMPANY_MONTHLY_NGN : INDIVIDUAL_MONTHLY_NGN;
-
-  if (!planCode) {
-    console.error(`Paystack plan code for ${resolvedAccountType} calendars is not set — cannot start checkout.`);
-    return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });
+  /*
+   * Existing trial is still active:
+   *
+   * The new workspace is covered by the current trial.
+   */
+  if (
+    creator.contentWorkspaceBillingStatus === "TRIAL" &&
+    creator.contentWorkspaceTrialEndsAt &&
+    creator.contentWorkspaceTrialEndsAt.getTime() > Date.now()
+  ) {
+    return NextResponse.json({
+      calendarId: calendar.id,
+      trial: true,
+      plan,
+      trialEndsAt: creator.contentWorkspaceTrialEndsAt,
+    });
   }
 
-  const reference = `showwork_calendar_sub_${creator.id}_${randomUUID()}`;
+  /*
+   * Trial has ended or the subscription is offline/pending.
+   *
+   * Start the Content Workspace subscription checkout.
+   */
+  const billingCycle = resolveBillingCycle(
+    body.billingCycle ??
+      creator.contentWorkspaceBillingCycle
+  );
+
+  const planConfig = CONTENT_WORKSPACE_PLANS[plan];
+
+  let planCode: string;
+
+  try {
+    planCode = getContentWorkspacePlanCode(
+      plan,
+      billingCycle
+    );
+  } catch (error) {
+    console.error(
+      "Content Workspace Paystack plan configuration error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Billing isn't configured yet — contact support",
+      },
+      { status: 500 }
+    );
+  }
+
+  const amountNgn =
+    billingCycle === "ANNUAL"
+      ? planConfig.priceNgnAnnual
+      : planConfig.priceNgnMonthly;
+
+  const reference =
+    `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
 
   try {
     const result = await initializeSubscription({
       email: creator.email,
       reference,
-      callbackUrl: `${appUrl()}/dashboard/calendars?subscriptionPayment=callback&calendarId=${calendar.id}`,
+      callbackUrl:
+        `${appUrl()}/dashboard/calendars` +
+        `?subscriptionPayment=callback` +
+        `&calendarId=${calendar.id}`,
+
       planCode,
+
+      // Paystack expects kobo.
       amount: amountNgn * 100,
-      metadata: { creatorId: creator.id, calendarId: calendar.id },
+
+      metadata: {
+        creatorId: creator.id,
+        calendarId: calendar.id,
+        contentWorkspacePlan: plan,
+        billingCycle,
+      },
     });
 
     await db.creator.update({
-      where: { id: creator.id },
-      data: { calendarPendingSubscriptionRef: reference },
+      where: {
+        id: creator.id,
+      },
+      data: {
+        contentWorkspacePlan: plan,
+        contentWorkspaceBillingCycle: billingCycle,
+        contentWorkspacePendingSubscriptionRef: reference,
+      },
     });
 
-    return NextResponse.json({ authorizationUrl: result.data.authorization_url, calendarId: calendar.id });
-  } catch (err) {
-    console.error("Calendar subscription initialize error:", err);
-    // The calendar row is left in place, just locked behind billing
-    // until the manager retries — same recovery path as before.
-    return NextResponse.json({ error: "Failed to start payment — try again" }, { status: 500 });
+    return NextResponse.json({
+      authorizationUrl:
+        result.data.authorization_url,
+      calendarId: calendar.id,
+      plan,
+      billingCycle,
+    });
+  } catch (error) {
+    console.error(
+      "Content Workspace subscription initialize error:",
+      error
+    );
+
+    /*
+     * Leave the workspace row in place.
+     *
+     * It remains inaccessible until the account has an active
+     * Content Workspace subscription or valid trial.
+     */
+    return NextResponse.json(
+      {
+        error:
+          "Failed to start payment — try again",
+      },
+      { status: 500 }
+    );
   }
 }

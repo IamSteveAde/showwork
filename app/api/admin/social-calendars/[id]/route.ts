@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
+import { ContentWorkspacePlan } from "@prisma/client";
 
 async function requireAdmin() {
   const creator = await getCurrentCreator();
@@ -14,8 +15,8 @@ async function requireAdmin() {
 }
 
 // PATCH — admin billing controls for the account that owns a
-// client workspace. Calendar billing is account-level: one
-// calendar subscription covers every workspace owned by the creator.
+// client workspace. Content Workspace billing is account-level:
+// one subscription covers every workspace owned by the creator.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -37,6 +38,22 @@ export async function PATCH(
     select: {
       id: true,
       managerId: true,
+      manager: {
+        select: {
+          id: true,
+          contentWorkspacePlan: true,
+          contentWorkspaceBillingStatus: true,
+          contentWorkspaceBillingCycle: true,
+          contentWorkspacePaystackCustomerCode: true,
+          contentWorkspacePaystackSubscriptionCode: true,
+          contentWorkspacePaystackEmailToken: true,
+          contentWorkspaceSubscriptionRenewsAt: true,
+          contentWorkspacePendingSubscriptionRef: true,
+          contentWorkspaceTrialUsedAt: true,
+          contentWorkspaceTrialEndsAt: true,
+          contentWorkspaceWentOfflineAt: true,
+        },
+      },
     },
   });
 
@@ -53,9 +70,12 @@ export async function PATCH(
   // GRANT FREE MONTH
   // ─────────────────────────────────────────────
   //
-  // Calendar billing lives on Creator, not SocialCalendar.
+  // Content Workspace billing lives on Creator, not SocialCalendar.
   // Granting a free month therefore gives the entire account
-  // one month of calendar access across all of its workspaces.
+  // one month of Content Workspace access across all workspaces.
+  //
+  // AI Studio is included automatically because it is part of
+  // the Content Workspace subscription.
   //
   if (action === "grant_free_month") {
     const now = new Date();
@@ -63,67 +83,35 @@ export async function PATCH(
     const oneMonthFromNow = new Date(now);
     oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
 
-    const updated = await db.creator.update({
-      where: {
-        id: calendar.managerId,
-      },
-      data: {
-        calendarBillingStatus: "ACTIVE",
-        calendarSubscriptionRenewsAt: oneMonthFromNow,
-        calendarWentOfflineAt: null,
-        calendarLastPaymentReminderSentAt: null,
-        calendarTrialEndsAt: null,
-      },
-      select: {
-        id: true,
-        calendarAccountType: true,
-        calendarBillingStatus: true,
-        calendarSubscriptionRenewsAt: true,
-        calendarTrialEndsAt: true,
-      },
-    });
-
-    return NextResponse.json({
-      creator: updated,
-      message: "One free month granted for the account's calendar access.",
-    });
-  }
-
-  // ─────────────────────────────────────────────
-  // GRANT FREE AI ASSISTANT MONTH
-  // ─────────────────────────────────────────────
-  //
-  // Same mechanics as grant_free_month above, but for the AI content
-  // assistant add-on specifically — a completely separate
-  // subscription from calendar billing. Granting this never touches
-  // calendarBillingStatus or anything else calendar-related; it only
-  // ever sets the account's AI assistant billing fields.
-  //
-  if (action === "grant_free_ai_month") {
-    const now = new Date();
-
-    const oneMonthFromNow = new Date(now);
-    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    const plan: ContentWorkspacePlan =
+      calendar.manager.contentWorkspacePlan ?? "CREATOR";
 
     const updated = await db.creator.update({
       where: {
         id: calendar.managerId,
       },
       data: {
-        aiAssistantBillingStatus: "ACTIVE",
-        aiAssistantSubscriptionRenewsAt: oneMonthFromNow,
-        aiAssistantWentOfflineAt: null,
+        contentWorkspacePlan: plan,
+        contentWorkspaceBillingStatus: "ACTIVE",
+        contentWorkspaceSubscriptionRenewsAt: oneMonthFromNow,
+        contentWorkspaceWentOfflineAt: null,
+        contentWorkspaceTrialEndsAt: null,
+        contentWorkspacePendingSubscriptionRef: null,
       },
       select: {
         id: true,
-        aiAssistantBillingStatus: true,
-        aiAssistantSubscriptionRenewsAt: true,
+        contentWorkspacePlan: true,
+        contentWorkspaceBillingStatus: true,
+        contentWorkspaceBillingCycle: true,
+        contentWorkspaceSubscriptionRenewsAt: true,
+        contentWorkspaceTrialEndsAt: true,
       },
     });
 
     return NextResponse.json({
       creator: updated,
-      message: "One free month of the AI content assistant granted for this account.",
+      message:
+        "One free month granted for the account's Content Workspace access.",
     });
   }
 
@@ -131,9 +119,9 @@ export async function PATCH(
   // RESET BILLING
   // ─────────────────────────────────────────────
   //
-  // Completely resets the account's calendar billing state.
-  // This does NOT delete or modify any client workspaces,
-  // posts, collaborators, or other calendar data.
+  // Completely resets the account's Content Workspace billing state.
+  // This does NOT delete or modify any client workspaces, posts,
+  // collaborators, AI history, documents, or other workspace data.
   //
   if (action === "reset_billing") {
     const updated = await db.creator.update({
@@ -141,28 +129,28 @@ export async function PATCH(
         id: calendar.managerId,
       },
       data: {
-        calendarBillingStatus: "PENDING_SETUP",
-        calendarPaystackCustomerCode: null,
-        calendarPaystackSubscriptionCode: null,
-        calendarPaystackEmailToken: null,
-        calendarSubscriptionRenewsAt: null,
-        calendarPendingSubscriptionRef: null,
-        calendarWentOfflineAt: null,
-        calendarLastPaymentReminderSentAt: null,
-        calendarTrialEndsAt: null,
+        contentWorkspaceBillingStatus: "PENDING_SETUP",
+        contentWorkspacePaystackCustomerCode: null,
+        contentWorkspacePaystackSubscriptionCode: null,
+        contentWorkspacePaystackEmailToken: null,
+        contentWorkspaceSubscriptionRenewsAt: null,
+        contentWorkspacePendingSubscriptionRef: null,
+        contentWorkspaceWentOfflineAt: null,
+        contentWorkspaceTrialEndsAt: null,
       },
       select: {
         id: true,
-        calendarAccountType: true,
-        calendarBillingStatus: true,
-        calendarSubscriptionRenewsAt: true,
-        calendarTrialEndsAt: true,
+        contentWorkspacePlan: true,
+        contentWorkspaceBillingStatus: true,
+        contentWorkspaceBillingCycle: true,
+        contentWorkspaceSubscriptionRenewsAt: true,
+        contentWorkspaceTrialEndsAt: true,
       },
     });
 
     return NextResponse.json({
       creator: updated,
-      message: "Calendar billing has been reset for the account.",
+      message: "Content Workspace billing has been reset for the account.",
     });
   }
 

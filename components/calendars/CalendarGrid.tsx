@@ -1045,9 +1045,10 @@ function AddPostPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type,
-          }),
+  filename: file.name,
+  contentType: file.type,
+  fileSize: file.size,
+}),
         }
       );
       const presignData = await presignRes.json();
@@ -1078,9 +1079,10 @@ function AddPostPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            fileKey: presignData.fileKey,
-            mediaType,
-          }),
+  fileKey: presignData.fileKey,
+  mediaType,
+  fileSize: file.size,
+}),
         }
       );
       const completeData = await completeRes.json();
@@ -2977,9 +2979,10 @@ function PostDetailPanel({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-        }),
+  filename: file.name,
+  contentType: file.type,
+  fileSize: file.size,
+}),
       }
     );
 

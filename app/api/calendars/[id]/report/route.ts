@@ -260,7 +260,19 @@ export async function GET(
   const calendar = await db.socialCalendar.findUnique({
     where: { id },
     include: {
-      manager: { select: { name: true, email: true, calendarBillingStatus: true, calendarTrialEndsAt: true } },
+      manager: {
+  select: {
+    name: true,
+    email: true,
+    id: true,
+    contentWorkspacePlan: true,
+    contentWorkspaceBillingStatus: true,
+    contentWorkspaceBillingCycle: true,
+    contentWorkspaceTrialEndsAt: true,
+    isComped: true,
+  },
+},
+      
       posts: { orderBy: { postDate: "asc" } },
     },
   });

@@ -23,9 +23,20 @@ enum SubscriptionTier {
   UNLIMITED
 }
 
+enum ContentWorkspaceStorageReservationStatus {
+  PENDING
+  COMPLETED
+  RELEASED
+}
+
 enum BillingCycle {
   MONTHLY
   ANNUAL
+}
+
+enum ContentWorkspacePlan {
+  CREATOR
+  STUDIO
 }
 
 model Creator {
@@ -151,11 +162,29 @@ model Creator {
   // Managed projects this creator owns — briefs, tasks, and their own
   // collaborator system, entirely independent of the delivery
   // Project model above.
-  managedProjects              ManagedProject[]
+  managedProjects                     ManagedProject[]
   // Managed projects (owned by someone else) this creator has been
   // added to as a collaborator.
-  managedProjectCollaborations ManagedProjectCollaborator[] @relation("ManagedProjectMemberships")
-  managedProjectInvitesSent    ManagedProjectInvite[]       @relation("ManagedProjectInvitesSent")
+  managedProjectCollaborations        ManagedProjectCollaborator[]         @relation("ManagedProjectMemberships")
+  managedProjectInvitesSent           ManagedProjectInvite[]               @relation("ManagedProjectInvitesSent")
+  contentWorkspaceUsage               ContentWorkspaceUsage?
+  contentWorkspaceStorageReservations ContentWorkspaceStorageReservation[]
+
+  // ── Content Workspace subscription ──
+  // Account-level billing for the Content Workspace / Calendar product.
+  // This is completely separate from the main Showwork subscription above.
+  // One subscription covers all Content Workspaces owned by this creator.
+  contentWorkspacePlan                     ContentWorkspacePlan?
+  contentWorkspaceBillingStatus            CalendarBillingStatus @default(PENDING_SETUP)
+  contentWorkspaceBillingCycle             BillingCycle?
+  contentWorkspaceTrialUsedAt              DateTime?
+  contentWorkspaceTrialEndsAt              DateTime?
+  contentWorkspacePaystackSubscriptionCode String?
+  contentWorkspacePaystackEmailToken       String?
+  contentWorkspacePaystackCustomerCode     String?
+  contentWorkspaceSubscriptionRenewsAt     DateTime?
+  contentWorkspacePendingSubscriptionRef   String?               @unique
+  contentWorkspaceWentOfflineAt            DateTime?
 
   // ── Calendar feature billing — account-level, not per-calendar.
   // One subscription (or one trial) covers every calendar this
@@ -927,24 +956,27 @@ enum PaymentType {
   CALENDAR_SUBSCRIPTION_RENEWAL
   AI_ASSISTANT_SUBSCRIPTION_INITIAL
   AI_ASSISTANT_SUBSCRIPTION_RENEWAL
+  CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL
+  CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL
 }
 
 model PaymentRecord {
-  id                String            @id @default(uuid())
-  creator           Creator           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  creatorId         String
-  amountNgn         Int
-  type              PaymentType
-  tier              SubscriptionTier?
-  cycle             BillingCycle?
+  id                   String                @id @default(uuid())
+  creator              Creator               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId            String
+  amountNgn            Int
+  type                 PaymentType
+  tier                 SubscriptionTier?
+  cycle                BillingCycle?
+  contentWorkspacePlan ContentWorkspacePlan?
   // Only set for PORTFOLIO_* payment types — which specific portfolio
   // this charge was for, needed since one agency account can have many.
-  portfolioId       String?
+  portfolioId          String?
   // Only set for CALENDAR_* payment types — which specific calendar
   // this charge was for, since one manager can have several clients.
-  calendarId        String?
-  paystackReference String?
-  createdAt         DateTime          @default(now())
+  calendarId           String?
+  paystackReference    String?
+  createdAt            DateTime              @default(now())
 
   @@index([creatorId])
   @@index([createdAt])
@@ -1463,6 +1495,8 @@ model SocialCalendar {
   invites       CalendarInvite[]
   viewerEmails  CalendarViewerEmail[]
 
+  contentWorkspaceStorageReservations ContentWorkspaceStorageReservation[]
+
   @@index([managerId])
 }
 
@@ -1479,6 +1513,7 @@ model CalendarBusinessDocument {
 
   fileKey       String
   originalName  String
+  sizeBytes     BigInt  @default(0)
   extractedText String? @db.Text
 
   createdAt DateTime @default(now())
@@ -1675,6 +1710,7 @@ model CalendarPostAsset {
   postId       String
   fileKey      String
   mediaType    MediaType
+  sizeBytes    BigInt       @default(0)
   displayOrder Int          @default(0)
   createdAt    DateTime     @default(now())
 
@@ -1753,4 +1789,59 @@ model CalendarViewerEmail {
   viewedAt   DateTime       @default(now())
 
   @@index([calendarId])
+}
+
+// ─────────────────────────────────────────────
+// CONTENT WORKSPACE USAGE
+// ─────────────────────────────────────────────
+// One usage record per creator for the current Content Workspace
+// billing cycle.
+//
+// Workspace and collaborator limits are calculated from live records.
+// Storage and AI usage are tracked here because they are cumulative
+// usage metrics for the billing cycle.
+// ─────────────────────────────────────────────
+model ContentWorkspaceUsage {
+  creatorId String @id
+
+  cycleStart DateTime @default(now())
+
+  // Current confirmed storage usage across all Content Workspaces
+  // owned by this creator.
+  storageBytes BigInt @default(0)
+
+  // Storage temporarily reserved for uploads that have received
+  // a presigned URL but have not yet completed.
+  storageReservedBytes BigInt @default(0)
+
+  aiGenerationsUsed   Int @default(0)
+  aiRegenerationsUsed Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model ContentWorkspaceStorageReservation {
+  id         String @id @default(uuid())
+  creatorId  String
+  calendarId String
+  fileKey    String
+  bytes      BigInt
+
+  status ContentWorkspaceStorageReservationStatus @default(PENDING)
+
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  completedAt DateTime?
+  releasedAt  DateTime?
+
+  creator  Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  calendar SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, status])
+  @@index([calendarId])
+  @@index([fileKey])
+  @@index([expiresAt])
 }

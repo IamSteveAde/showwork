@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  HeadObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   CompleteMultipartUploadCommand,
@@ -180,6 +181,31 @@ export function publicUrlFor(key: string) {
 export function buildMediaKey(projectId: string, filename: string) {
   const safeName = filename.replace(/[^a-zA-Z0-9.\-_]/g, "_");
   return `projects/${projectId}/${Date.now()}-${safeName}`;
+}
+
+/**
+ * Returns the actual size of a completed R2 object.
+ *
+ * This is used by Content Workspace storage accounting so the server
+ * never has to trust a file size supplied by the browser.
+ */
+export async function getObjectSize(key: string): Promise<number> {
+  const result = await r2.send(
+    new HeadObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+    })
+  );
+
+  if (typeof result.ContentLength !== "number") {
+    throw new Error("R2 did not return the object's content length");
+  }
+
+  if (!Number.isSafeInteger(result.ContentLength) || result.ContentLength < 0) {
+    throw new Error("R2 returned an invalid object size");
+  }
+
+  return result.ContentLength;
 }
 
 /**

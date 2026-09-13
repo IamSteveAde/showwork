@@ -317,10 +317,13 @@ export default async function CalendarDetailPage({
     include: {
       manager: {
         select: {
-          calendarBillingStatus: true,
-          calendarTrialEndsAt: true,
-          aiAssistantBillingStatus: true,
-          aiAssistantTrialEndsAt: true,
+          id: true,
+          contentWorkspacePlan: true,
+          contentWorkspaceBillingStatus: true,
+          contentWorkspaceBillingCycle: true,
+          contentWorkspaceTrialEndsAt: true,
+          isComped: true,
+          
         },
       },
       _count: {
@@ -360,7 +363,10 @@ export default async function CalendarDetailPage({
   const totalMembers = 1 + calendar._count.collaborators;
 
   if (!canAccessCalendar(calendar.manager)) {
-    const trialExpired = calendar.manager.calendarBillingStatus === "TRIAL";
+   const trialExpired =
+  calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
+  !!calendar.manager.contentWorkspaceTrialEndsAt &&
+  calendar.manager.contentWorkspaceTrialEndsAt.getTime() <= Date.now();
 
     return (
       <main
@@ -423,11 +429,12 @@ export default async function CalendarDetailPage({
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
 
-  const aiActive =
-    calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
-    (calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
-      !!calendar.manager.aiAssistantTrialEndsAt &&
-      calendar.manager.aiAssistantTrialEndsAt.getTime() > Date.now());
+ const aiActive =
+  calendar.manager.contentWorkspaceBillingStatus === "ACTIVE" ||
+  (calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
+    !!calendar.manager.contentWorkspaceTrialEndsAt &&
+    calendar.manager.contentWorkspaceTrialEndsAt.getTime() > Date.now()) ||
+  calendar.manager.isComped;
 
   const calendarPosts = calendar.posts.map((p) => ({
     id: p.id,

@@ -1370,16 +1370,27 @@ function calendarSubscribeButton(price: string): string {
   return buttonHtml(`Subscribe — ${price}/month`, `${APP_URL}/dashboard/calendars`);
 }
 
+type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+
+function contentWorkspacePlanLabel(plan: ContentWorkspacePlan): string {
+  return plan === "STUDIO" ? "Studio" : "Creator";
+}
+
+function contentWorkspacePlanPrice(plan: ContentWorkspacePlan): string {
+  return plan === "STUDIO" ? "₦15,000" : "₦2,800";
+}
+
 export async function sendCalendarTrial2DaysLeftEmail({
   to,
   name,
-  accountType,
+  plan,
 }: {
   to: string;
   name: string | null;
-  accountType: "INDIVIDUAL" | "COMPANY";
+  plan: ContentWorkspacePlan;
 }) {
-  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  const price = contentWorkspacePlanPrice(plan);
+  const planLabel = contentWorkspacePlanLabel(plan);
 
   await sendEmail({
     from: FROM,
@@ -1397,7 +1408,7 @@ export async function sendCalendarTrial2DaysLeftEmail({
       detailsHtml: `
         <div style="padding:18px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:16px;">
           <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2478FF;">Your plan</p>
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${planLabel} · ${price}/month</p>
         </div>
       `,
       ctaLabel: `Subscribe — ${price}/month`,
@@ -1410,13 +1421,14 @@ export async function sendCalendarTrial2DaysLeftEmail({
 export async function sendCalendarTrialFollowUpEmail({
   to,
   name,
-  accountType,
+  plan,
 }: {
   to: string;
   name: string | null;
-  accountType: "INDIVIDUAL" | "COMPANY";
+  plan: ContentWorkspacePlan;
 }) {
-  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  const price = contentWorkspacePlanPrice(plan);
+  const planLabel = contentWorkspacePlanLabel(plan);
 
   await sendEmail({
     from: FROM,
@@ -1434,7 +1446,7 @@ export async function sendCalendarTrialFollowUpEmail({
       detailsHtml: `
         <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
           <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#2478FF;">Your plan</p>
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${planLabel} · ${price}/month</p>
         </div>
       `,
       ctaLabel: `Keep my workspace — ${price}/month`,
@@ -1447,13 +1459,13 @@ export async function sendCalendarTrialFollowUpEmail({
 export async function sendCalendarTrialEndsTodayEmail({
   to,
   name,
-  accountType,
+  plan,
 }: {
   to: string;
   name: string | null;
-  accountType: "INDIVIDUAL" | "COMPANY";
+  plan: ContentWorkspacePlan;
 }) {
-  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  const price = contentWorkspacePlanPrice(plan);
 
   await sendEmail({
     from: FROM,
@@ -1484,13 +1496,14 @@ export async function sendCalendarTrialEndsTodayEmail({
 export async function sendCalendarTrialEndedEmail({
   to,
   name,
-  accountType,
+  plan,
 }: {
   to: string;
   name: string | null;
-  accountType: "INDIVIDUAL" | "COMPANY";
+  plan: ContentWorkspacePlan;
 }) {
-  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
+  const price = contentWorkspacePlanPrice(plan);
+  const planLabel = contentWorkspacePlanLabel(plan);
 
   await sendEmail({
     from: FROM,
@@ -1508,13 +1521,12 @@ export async function sendCalendarTrialEndedEmail({
       detailsHtml: `
         <div style="padding:18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;">
           <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#667085;">Your plan</p>
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${accountType === "COMPANY" ? "Team" : "Individual"} · ${price}/month</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;font-weight:800;color:#172033;">${planLabel} · ${price}/month</p>
         </div>
       `,
       ctaLabel: `Reactivate — ${price}/month`,
       ctaUrl: `${APP_URL}/dashboard/calendars`,
-      accent: "#101828",
-      footer: "Your Client Workspace content remains associated with your account.",
+      accent: "#F97316",
     }),
   });
 }
