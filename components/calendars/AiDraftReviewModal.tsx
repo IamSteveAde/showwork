@@ -394,6 +394,86 @@ export default function AiDraftReviewModal({
           </button>
         </header>
 
+        {/* Mobile draft navigation.
+            The desktop queue is intentionally hidden on small screens, so mobile
+            needs its own first-class way to move between generated drafts. */}
+        <div className="shrink-0 border-b border-[#E4E9F1] bg-white px-4 py-3 lg:hidden">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!drafts.length || !selectedId) return;
+                const index = drafts.findIndex((draft) => draft.id === selectedId);
+                if (index > 0) setSelectedId(drafts[index - 1].id);
+              }}
+              disabled={!drafts.length || !selectedId || drafts.findIndex((draft) => draft.id === selectedId) <= 0}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label="Previous draft"
+            >
+              ←
+            </button>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
+                  AI draft queue
+                </p>
+                <span className="shrink-0 text-[10px] font-semibold text-[#667085]">
+                  {selectedId
+                    ? `${Math.max(1, drafts.findIndex((draft) => draft.id === selectedId) + 1)} of ${drafts.length}`
+                    : `0 of ${drafts.length}`}
+                </span>
+              </div>
+
+              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {drafts.map((draft, index) => {
+                  const draftMeta =
+                    PLATFORM_META[draft.platform] ?? {
+                      label: draft.platform,
+                      mark: "•",
+                    };
+                  const active = draft.id === selectedId;
+
+                  return (
+                    <button
+                      key={draft.id}
+                      type="button"
+                      onClick={() => setSelectedId(draft.id)}
+                      className={[
+                        "flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[9px] font-bold transition-all",
+                        active
+                          ? "border-[#2478FF] bg-[#2478FF] text-white shadow-[0_5px_14px_rgba(36,120,255,0.18)]"
+                          : "border-[#E4E9F1] bg-[#F8FAFC] text-[#667085]",
+                      ].join(" ")}
+                      aria-label={`Open draft ${index + 1}`}
+                      aria-current={active ? "true" : undefined}
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-black/10 text-[8px]">
+                        {draftMeta.mark}
+                      </span>
+                      <span>#{index + 1}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!drafts.length || !selectedId) return;
+                const index = drafts.findIndex((draft) => draft.id === selectedId);
+                if (index < drafts.length - 1) setSelectedId(drafts[index + 1].id);
+              }}
+              disabled={!drafts.length || !selectedId || drafts.findIndex((draft) => draft.id === selectedId) >= drafts.length - 1}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
+              aria-label="Next draft"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
         <div className="flex min-h-0 flex-1">
           <aside className="hidden w-[310px] shrink-0 border-r border-[#E4E9F1] bg-white lg:flex lg:flex-col">
             <div className="border-b border-[#EEF2F6] px-5 py-4">
@@ -461,7 +541,7 @@ export default function AiDraftReviewModal({
             )}
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-y-auto">
+          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
             {error && (
               <div className="mx-5 mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 lg:mx-8">
                 {error}
@@ -469,7 +549,7 @@ export default function AiDraftReviewModal({
             )}
 
             {selected ? (
-              <div className="mx-auto max-w-[920px] p-5 lg:p-10">
+              <div className="mx-auto w-full max-w-[920px] p-4 sm:p-5 lg:p-10">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[#EEF5FF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#2478FF]">
                     {meta?.label}
@@ -622,23 +702,23 @@ export default function AiDraftReviewModal({
                   <button
                     onClick={() => discardDraft(selected.id)}
                     disabled={saving}
-                    className="rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-50 sm:w-auto"
                   >
                     Discard this post
                   </button>
 
-                  <div className="flex gap-3">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">
                     <button
                       onClick={saveEdits}
                       disabled={saving}
-                      className="rounded-xl border border-[#D9E1EA] bg-white px-4 py-3 text-xs font-bold text-[#101828] hover:bg-[#F7F9FC] disabled:opacity-50"
+                      className="w-full rounded-xl border border-[#D9E1EA] bg-white px-4 py-3 text-xs font-bold text-[#101828] hover:bg-[#F7F9FC] disabled:opacity-50 sm:w-auto"
                     >
                       {saving ? "Saving…" : "Save edits"}
                     </button>
                     <button
                       onClick={() => confirmDraft(selected.id)}
                       disabled={saving}
-                      className="rounded-xl bg-[#101828] px-5 py-3 text-xs font-bold text-white hover:bg-[#1D2939] disabled:opacity-50"
+                      className="w-full rounded-xl bg-[#101828] px-5 py-3 text-xs font-bold text-white hover:bg-[#1D2939] disabled:opacity-50 sm:w-auto"
                     >
                       Confirm & add to calendar
                     </button>

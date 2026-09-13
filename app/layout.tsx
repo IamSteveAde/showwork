@@ -4,6 +4,7 @@ import Script from "next/script";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import RouteTransitionIndicator from "@/components/RouteTransitionIndicator";
+import ShowworkSupport from "@/components/support/ShowworkSupport";
 
 // The platform's one and only font source — swap the typeface by
 // changing this import and the name below; every component using
@@ -70,6 +71,7 @@ export default function RootLayout({
           <RouteTransitionIndicator />
         </Suspense>
         {children}
+        <ShowworkSupport />
       </body>
     </html>
   );
