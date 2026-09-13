@@ -2,108 +2,239 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { initializeSubscription, cancelSubscription } from "@/lib/paystack";
+import {
+  initializeSubscription,
+  cancelSubscription,
+} from "@/lib/paystack";
 import { appUrl } from "@/lib/url";
+import {
+  getContentWorkspacePlanCode,
+  type ContentWorkspaceBillingCycle,
+} from "@/lib/contentWorkspaceEntitlements";
 
-const INDIVIDUAL_PLAN_CODE = process.env.PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE;
-const INDIVIDUAL_MONTHLY_NGN = 2800;
+const CREATOR_MONTHLY_NGN = 2800;
+const CREATOR_ANNUAL_NGN = 31920;
 
-// POST — switches a Company account back to Individual. Blocked
-// entirely if any collaborator or pending invite still exists on any
-// calendar this account owns.
+// POST — switches a Studio Content Workspace account back to Creator.
 //
-// What happens next mirrors the upgrade route's logic exactly, just
-// in the other direction:
-//   - ACTIVE: always straight to checkout (cancel old, start new).
-//   - TRIAL, already expired: also straight to checkout automatically
-//     — already locked out either way.
-//   - TRIAL, still valid: only case with a real choice — `payNow`
-//     (set by the frontend after prompting the person) decides
-//     whether to check out now or just apply the switch and leave
-//     them on the remainder of their trial.
-//   - PENDING_SETUP / OFFLINE: straight to checkout, same as expired.
+// Creator allows collaboration, so collaborators and pending invites
+// are NOT blockers.
+//
+// The Creator plan supports only 1 active client workspace, so the
+// account must reduce its active workspaces to 1 or fewer before
+// downgrading.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { payNow } = await req.json().catch(() => ({ payNow: false }));
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  const { payNow } = await req.json().catch(() => ({
+    payNow: false,
+  }));
 
   const creator = await db.creator.findUnique({
-    where: { id: session.id },
+    where: {
+      id: session.id,
+    },
     select: {
       id: true,
       email: true,
-      calendarAccountType: true,
-      calendarBillingStatus: true,
-      calendarTrialEndsAt: true,
-      calendarPaystackSubscriptionCode: true,
-      calendarPaystackEmailToken: true,
+
+      contentWorkspacePlan: true,
+      contentWorkspaceBillingStatus: true,
+      contentWorkspaceBillingCycle: true,
+      contentWorkspaceTrialEndsAt: true,
+
+      contentWorkspacePaystackSubscriptionCode: true,
+      contentWorkspacePaystackEmailToken: true,
     },
   });
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (creator.calendarAccountType !== "COMPANY") {
-    return NextResponse.json({ error: "Your account is already Individual" }, { status: 400 });
+  if (!creator) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
-  const [collaboratorCount, pendingInviteCount] = await Promise.all([
-    db.calendarCollaborator.count({ where: { calendar: { managerId: creator.id } } }),
-    db.calendarInvite.count({ where: { calendar: { managerId: creator.id }, status: "PENDING" } }),
-  ]);
-  if (collaboratorCount + pendingInviteCount > 0) {
+  if (creator.contentWorkspacePlan !== "STUDIO") {
     return NextResponse.json(
-      { error: "Remove every collaborator and pending invite from all your calendars before switching to Individual." },
+      {
+        error:
+          "Your Content Workspace account is already on Creator",
+      },
       { status: 400 }
     );
   }
 
+  /*
+   * Creator supports only 1 active client workspace.
+   *
+   * Collaborators are allowed on Creator, so we deliberately do not
+   * block this downgrade based on collaborators or pending invites.
+   */
+  const activeWorkspaceCount = await db.socialCalendar.count({
+    where: {
+      managerId: creator.id,
+    },
+  });
+
+  if (activeWorkspaceCount > 1) {
+    return NextResponse.json(
+      {
+        error:
+          "Creator supports 1 active client workspace. Remove or deactivate your extra workspaces before switching to Creator.",
+        activeWorkspaceCount,
+        allowedWorkspaceCount: 1,
+      },
+      { status: 400 }
+    );
+  }
+
+  /*
+   * Preserve the current billing cycle where possible.
+   *
+   * If no cycle has been established yet, use monthly.
+   */
+  const billingCycle: ContentWorkspaceBillingCycle =
+    creator.contentWorkspaceBillingCycle === "ANNUAL"
+      ? "ANNUAL"
+      : "MONTHLY";
+
+  /*
+   * Change the selected plan immediately.
+   */
   await db.creator.update({
-    where: { id: creator.id },
-    data: { calendarAccountType: "INDIVIDUAL" },
+    where: {
+      id: creator.id,
+    },
+    data: {
+      contentWorkspacePlan: "CREATOR",
+    },
   });
 
   const trialStillValid =
-    creator.calendarBillingStatus === "TRIAL" &&
-    !!creator.calendarTrialEndsAt &&
-    creator.calendarTrialEndsAt.getTime() > Date.now();
+    creator.contentWorkspaceBillingStatus === "TRIAL" &&
+    !!creator.contentWorkspaceTrialEndsAt &&
+    creator.contentWorkspaceTrialEndsAt.getTime() > Date.now();
 
+  /*
+   * During an active trial, payment is optional unless the user
+   * explicitly chooses to pay immediately.
+   */
   if (trialStillValid && !payNow) {
-    return NextResponse.json({ ok: true, requiresPayment: false, stillInTrial: true });
+    return NextResponse.json({
+      ok: true,
+      requiresPayment: false,
+      stillInTrial: true,
+      plan: "CREATOR",
+      billingCycle,
+    });
   }
 
-  if (!INDIVIDUAL_PLAN_CODE) {
-    console.error("PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE is not set — cannot start Individual checkout.");
-    return NextResponse.json({ error: "Billing isn't configured yet — contact support" }, { status: 500 });
+  let creatorPlanCode: string;
+
+  try {
+    creatorPlanCode = getContentWorkspacePlanCode(
+      "CREATOR",
+      billingCycle
+    );
+  } catch (error) {
+    console.error(
+      "Content Workspace Creator Paystack plan code is not configured:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          "Billing isn't configured yet — contact support",
+      },
+      { status: 500 }
+    );
   }
 
-  if (creator.calendarPaystackSubscriptionCode && creator.calendarPaystackEmailToken) {
+  /*
+   * Cancel the existing Studio subscription before starting the
+   * Creator subscription.
+   */
+  if (
+    creator.contentWorkspacePaystackSubscriptionCode &&
+    creator.contentWorkspacePaystackEmailToken
+  ) {
     try {
-      await cancelSubscription(creator.calendarPaystackSubscriptionCode, creator.calendarPaystackEmailToken);
-    } catch (err) {
-      console.error("Failed to cancel previous Company calendar subscription during downgrade:", err);
+      await cancelSubscription(
+        creator.contentWorkspacePaystackSubscriptionCode,
+        creator.contentWorkspacePaystackEmailToken
+      );
+    } catch (error) {
+      /*
+       * Preserve the previous behavior: a Paystack cancellation
+       * failure should not prevent the customer from attempting
+       * the new checkout.
+       */
+      console.error(
+        "Failed to cancel previous Content Workspace subscription during Creator downgrade:",
+        error
+      );
     }
   }
 
-  const reference = `showwork_calendar_sub_${creator.id}_${randomUUID()}`;
+  const reference =
+    `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
+
+  const amount =
+    billingCycle === "ANNUAL"
+      ? CREATOR_ANNUAL_NGN
+      : CREATOR_MONTHLY_NGN;
 
   try {
     const result = await initializeSubscription({
       email: creator.email,
       reference,
-      callbackUrl: `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
-      planCode: INDIVIDUAL_PLAN_CODE,
-      amount: INDIVIDUAL_MONTHLY_NGN * 100,
-      metadata: { creatorId: creator.id },
+      callbackUrl:
+        `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
+      planCode: creatorPlanCode,
+      amount: amount * 100,
+      metadata: {
+        creatorId: creator.id,
+        contentWorkspacePlan: "CREATOR",
+        billingCycle,
+      },
     });
 
     await db.creator.update({
-      where: { id: creator.id },
-      data: { calendarPendingSubscriptionRef: reference },
+      where: {
+        id: creator.id,
+      },
+      data: {
+        contentWorkspacePendingSubscriptionRef: reference,
+        contentWorkspaceBillingCycle: billingCycle,
+      },
     });
 
-    return NextResponse.json({ authorizationUrl: result.data.authorization_url, requiresPayment: true });
-  } catch (err) {
-    console.error("Individual downgrade checkout initialize error:", err);
-    return NextResponse.json({ error: "Failed to start payment — try again" }, { status: 500 });
+    return NextResponse.json({
+      authorizationUrl: result.data.authorization_url,
+      requiresPayment: true,
+      plan: "CREATOR",
+      billingCycle,
+    });
+  } catch (error) {
+    console.error(
+      "Content Workspace Creator downgrade checkout initialize error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error: "Failed to start payment — try again",
+      },
+      { status: 500 }
+    );
   }
 }

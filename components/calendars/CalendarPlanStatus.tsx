@@ -49,8 +49,10 @@ function HeaderBannerModal({
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
-  const [desktopUrl, setDesktopUrl] = useState(initialDesktopUrl);
-  const [mobileUrl, setMobileUrl] = useState(initialMobileUrl);
+const [desktopUrl, setDesktopUrl] = useState(initialDesktopUrl);
+const [mobileUrl, setMobileUrl] = useState(initialMobileUrl);
+const [desktopReservationId, setDesktopReservationId] = useState<string | null>(null);
+const [mobileReservationId, setMobileReservationId] = useState<string | null>(null);
   const [uploadingDesktop, setUploadingDesktop] = useState(false);
   const [uploadingMobile, setUploadingMobile] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,16 +66,40 @@ function HeaderBannerModal({
       const presignRes = await fetch(`/api/calendars/${calendarId}/banner-upload-presign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, variant }),
+        body: JSON.stringify({
+  filename: file.name,
+  contentType: file.type,
+  fileSize: file.size,
+  variant,
+}),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      const uploadRes = await fetch(presignData.uploadUrl, {
+  method: "PUT",
+  body: file,
+  headers: { "Content-Type": file.type },
+});
 
-      const publicUrl = presignData.fileKey;
-      if (variant === "desktop") setDesktopUrl(publicUrl);
-      else setMobileUrl(publicUrl);
+if (!uploadRes.ok) {
+  throw new Error("Banner upload failed");
+}
+
+     const publicUrl = presignData.fileKey;
+const reservationId = presignData.reservationId;
+
+if (!reservationId) {
+  throw new Error("Storage reservation was not created");
+}
+
+if (variant === "desktop") {
+  setDesktopUrl(publicUrl);
+  setDesktopReservationId(reservationId);
+} else {
+  setMobileUrl(publicUrl);
+  setMobileReservationId(reservationId);
+}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -88,13 +114,15 @@ function HeaderBannerModal({
       const res = await fetch(`/api/calendars/${calendarId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "update_header",
-          headerTitle: title,
-          headerDescription: description,
-          headerBannerDesktopUrl: desktopUrl,
-          headerBannerMobileUrl: mobileUrl,
-        }),
+       body: JSON.stringify({
+  action: "update_header",
+  headerTitle: title,
+  headerDescription: description,
+  headerBannerDesktopUrl: desktopUrl,
+  headerBannerMobileUrl: mobileUrl,
+  desktopReservationId,
+  mobileReservationId,
+}),
       });
       if (!res.ok) {
         const data = await res.json();

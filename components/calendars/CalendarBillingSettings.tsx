@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 
-type AccountType = "INDIVIDUAL" | "COMPANY";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type BillingCycle = "MONTHLY" | "ANNUAL";
 type BillingStatus = "PENDING_SETUP" | "TRIAL" | "ACTIVE" | "OFFLINE";
 type PendingSwitch = "upgrade" | "downgrade" | null;
 
@@ -79,7 +80,7 @@ function UsersIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function ShieldIcon({ className = "h-4 w-4" }: { className?: string }) {
+function SparklesIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -91,8 +92,11 @@ function ShieldIcon({ className = "h-4 w-4" }: { className?: string }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M12 3 5 6v5c0 5 3.2 8.7 7 10 3.8-1.3 7-5 7-10V6l-7-3Z" />
-      <path d="m9 12 2 2 4-4" />
+      <path
+        d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z"
+        strokeLinejoin="round"
+      />
+      <path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z" />
     </svg>
   );
 }
@@ -106,6 +110,7 @@ function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
       stroke="currentColor"
       strokeWidth="1.8"
       strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden="true"
     >
       <path d="m6 6 12 12M18 6 6 18" />
@@ -113,14 +118,52 @@ function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+const PLAN_DETAILS: Record<
+  ContentWorkspacePlan,
+  {
+    name: string;
+    monthlyPrice: number;
+    annualPrice: number;
+    workspaces: string;
+    collaborators: string;
+    storage: string;
+    ai: string;
+  }
+> = {
+  CREATOR: {
+    name: "Creator",
+    monthlyPrice: 2800,
+    annualPrice: 31920,
+    workspaces: "1 active client workspace",
+    collaborators: "Up to 3 collaborators",
+    storage: "5 GB storage",
+    ai: "100 AI generations / month",
+  },
+  STUDIO: {
+    name: "Studio",
+    monthlyPrice: 15000,
+    annualPrice: 171000,
+    workspaces: "Up to 10 active client workspaces",
+    collaborators: "Up to 15 collaborators",
+    storage: "50 GB storage",
+    ai: "500 AI generations / month",
+  },
+};
+
+function formatNaira(value: number) {
+  return `₦${value.toLocaleString("en-NG")}`;
+}
+
 export default function CalendarBillingSettings({
-  accountType,
+  plan,
   billingStatus,
+  billingCycle,
   subscriptionRenewsAt,
   trialEndsAt,
 }: {
-  accountType: AccountType;
+  plan: ContentWorkspacePlan;
   billingStatus: BillingStatus;
+  billingCycle: BillingCycle | null;
   subscriptionRenewsAt: string | null;
   trialEndsAt: string | null;
 }) {
@@ -130,13 +173,26 @@ export default function CalendarBillingSettings({
   const [error, setError] = useState<string | null>(null);
   const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch>(null);
 
-  const price = accountType === "COMPANY" ? "₦15,000" : "₦2,800";
-  const planName = accountType === "COMPANY" ? "Company" : "Individual";
+  const currentPlan = PLAN_DETAILS[plan];
+
   const isActive = billingStatus === "ACTIVE";
+
   const isStillInTrial =
     billingStatus === "TRIAL" &&
     !!trialEndsAt &&
     new Date(trialEndsAt).getTime() > Date.now();
+
+  const cycle = billingCycle ?? "MONTHLY";
+
+  const currentPrice =
+    cycle === "ANNUAL"
+      ? currentPlan.annualPrice
+      : currentPlan.monthlyPrice;
+
+  const currentPriceLabel =
+    cycle === "ANNUAL"
+      ? `${formatNaira(currentPrice)}/year`
+      : `${formatNaira(currentPrice)}/month`;
 
   const statusMeta = useMemo(() => {
     if (billingStatus === "ACTIVE") {
@@ -188,6 +244,31 @@ export default function CalendarBillingSettings({
     });
   }, [subscriptionRenewsAt]);
 
+  const formattedTrialDate = useMemo(() => {
+    if (!trialEndsAt) return null;
+
+    return new Date(trialEndsAt).toLocaleDateString("en-NG", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }, [trialEndsAt]);
+
+  const targetPlan: ContentWorkspacePlan =
+    pendingSwitch === "upgrade" ? "STUDIO" : "CREATOR";
+
+  const targetPlanDetails = PLAN_DETAILS[targetPlan];
+
+  const targetPrice =
+    cycle === "ANNUAL"
+      ? targetPlanDetails.annualPrice
+      : targetPlanDetails.monthlyPrice;
+
+  const targetPriceLabel =
+    cycle === "ANNUAL"
+      ? `${formatNaira(targetPrice)}/year`
+      : `${formatNaira(targetPrice)}/month`;
+
   const runSwitch = async (
     kind: "upgrade" | "downgrade",
     payNow: boolean
@@ -204,8 +285,13 @@ export default function CalendarBillingSettings({
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payNow }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          payNow,
+          billingCycle: cycle,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -216,10 +302,13 @@ export default function CalendarBillingSettings({
         } else {
           window.location.reload();
         }
+
         return;
       }
 
-      setError(data.error ?? "Failed to switch plans. Please try again.");
+      setError(
+        data.error ?? "Failed to switch plans. Please try again."
+      );
       setLoading(null);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -262,9 +351,6 @@ export default function CalendarBillingSettings({
     }
   };
 
-  const pendingPrice =
-    pendingSwitch === "upgrade" ? "₦15,000" : "₦2,800";
-
   if (!open) {
     return (
       <button
@@ -280,7 +366,7 @@ export default function CalendarBillingSettings({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold tracking-[-0.01em] text-[#101828]">
-                Billing & plan
+                Content Workspace
               </p>
 
               <span
@@ -300,7 +386,7 @@ export default function CalendarBillingSettings({
             </div>
 
             <p className="mt-1 truncate text-xs text-[#667085]">
-              {planName} · {price}/month
+              {currentPlan.name} · {currentPriceLabel}
             </p>
           </div>
         </div>
@@ -325,7 +411,7 @@ export default function CalendarBillingSettings({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#78AEFF]">
-                  Billing & plan
+                  Content Workspace
                 </span>
 
                 <span
@@ -352,12 +438,12 @@ export default function CalendarBillingSettings({
               </div>
 
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[28px]">
-                {planName} plan
+                {currentPlan.name} plan
               </h2>
 
               <p className="mt-2 max-w-lg text-sm leading-6 text-white/45">
-                Manage your workspace plan, billing cycle and account access in
-                one place.
+                Manage your Content Workspace subscription, plan and access
+                in one place.
               </p>
             </div>
 
@@ -383,32 +469,41 @@ export default function CalendarBillingSettings({
               <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
                 Current plan
               </p>
+
               <p className="mt-2 text-base font-semibold text-[#101828]">
-                {planName}
+                {currentPlan.name}
               </p>
-              <p className="mt-1 text-xs text-[#667085]">{price}/month</p>
+
+              <p className="mt-1 text-xs text-[#667085]">
+                {currentPriceLabel}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-[#EAECF0] bg-[#F9FAFB] p-4">
               <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
                 Status
               </p>
+
               <div className="mt-2 flex items-center gap-2">
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{ background: statusMeta.dot }}
                 />
+
                 <p className="text-base font-semibold text-[#101828]">
                   {statusMeta.label}
                 </p>
               </div>
+
               <p className="mt-1 text-xs text-[#667085]">
                 {billingStatus === "TRIAL"
-                  ? "Trial access is currently enabled."
+                  ? formattedTrialDate
+                    ? `Trial ends ${formattedTrialDate}.`
+                    : "Trial access is currently enabled."
                   : billingStatus === "ACTIVE"
                     ? "Your subscription is active."
                     : billingStatus === "OFFLINE"
-                      ? "Your workspaces are currently locked."
+                      ? "Your workspace access is currently restricted."
                       : "Complete billing setup to continue."}
               </p>
             </div>
@@ -417,6 +512,7 @@ export default function CalendarBillingSettings({
               <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
                 Next billing
               </p>
+
               <p className="mt-2 text-base font-semibold text-[#101828]">
                 {isActive && formattedBillingDate
                   ? formattedBillingDate
@@ -424,9 +520,12 @@ export default function CalendarBillingSettings({
                     ? "After your trial"
                     : "—"}
               </p>
+
               <p className="mt-1 text-xs text-[#667085]">
                 {isActive
-                  ? "Your next scheduled renewal."
+                  ? cycle === "ANNUAL"
+                    ? "Annual renewal."
+                    : "Monthly renewal."
                   : "No active renewal date yet."}
               </p>
             </div>
@@ -444,14 +543,111 @@ export default function CalendarBillingSettings({
           <div className="mt-7">
             <div className="mb-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
-                Plan management
+                Your plan
               </p>
+
               <h3 className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[#101828]">
-                Choose what fits how you work.
+                Everything you need to manage client content.
               </h3>
             </div>
 
-            {accountType === "INDIVIDUAL" && (
+            <div className="rounded-[24px] border border-[#D1E9FF] bg-[#F5FAFF] p-5 sm:p-6">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E5F0FF] text-[#2478FF]">
+                      {plan === "STUDIO" ? (
+                        <UsersIcon className="h-4 w-4" />
+                      ) : (
+                        <SparklesIcon className="h-4 w-4" />
+                      )}
+                    </span>
+
+                    <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#175CD3]">
+                      {plan === "STUDIO"
+                        ? "Built for teams & agencies"
+                        : "Built for independent creators"}
+                    </span>
+                  </div>
+
+                  <h4 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
+                    {currentPlan.name}
+                  </h4>
+
+                  <p className="mt-2 text-sm leading-6 text-[#475467]">
+                    Your Content Workspace subscription includes client
+                    workspaces, collaboration, storage, publishing,
+                    analytics and AI Studio.
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                    {[
+                      currentPlan.workspaces,
+                      currentPlan.collaborators,
+                      currentPlan.storage,
+                      currentPlan.ai,
+                      "AI Studio included",
+                    ].map((feature) => (
+                      <span
+                        key={feature}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#344054]"
+                      >
+                        <CheckIcon className="h-3.5 w-3.5 text-[#12B76A]" />
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="shrink-0 lg:text-right">
+                  <p className="text-2xl font-semibold tracking-tight text-[#101828]">
+                    {formatNaira(currentPrice)}
+                    <span className="ml-1 text-xs font-normal text-[#667085]">
+                      /{cycle === "ANNUAL" ? "year" : "month"}
+                    </span>
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-[#667085]">
+                    {cycle === "ANNUAL"
+                      ? "Annual billing"
+                      : "Monthly billing"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-[#EAECF0] bg-white p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-[#101828]">
+                    AI Studio
+                  </p>
+
+                  <p className="mt-1 text-[11px] leading-5 text-[#667085]">
+                    AI content generation, regeneration, Business Knowledge
+                    and scheduled AI research are included with your plan.
+                  </p>
+                </div>
+
+                <span className="shrink-0 rounded-full border border-[#D1FADF] bg-[#ECFDF3] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-[#027A48]">
+                  Included
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-7">
+            <div className="mb-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
+                Plan management
+              </p>
+
+              <h3 className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[#101828]">
+                Change your Content Workspace plan.
+              </h3>
+            </div>
+
+            {plan === "CREATOR" ? (
               <div className="relative overflow-hidden rounded-[24px] border border-[#D1E9FF] bg-[#F5FAFF] p-5 sm:p-6">
                 <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#2478FF] opacity-[0.08] blur-[55px]" />
 
@@ -461,25 +657,28 @@ export default function CalendarBillingSettings({
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E5F0FF] text-[#2478FF]">
                         <UsersIcon className="h-4 w-4" />
                       </span>
+
                       <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#175CD3]">
                         Recommended for teams
                       </span>
                     </div>
 
                     <h4 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
-                      Upgrade to Company
+                      Upgrade to Studio
                     </h4>
 
                     <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Invite up to 10 designers or content creators and manage
-                      how each person can contribute to client workspaces.
+                      Manage more client workspaces and collaborate with a
+                      larger team while keeping your content, approvals and
+                      AI tools in one workspace.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
                       {[
-                        "Up to 10 collaborators",
-                        "Role-based permissions",
-                        "Unlimited client workspaces",
+                        "Up to 10 active workspaces",
+                        "Up to 15 collaborators",
+                        "50 GB storage",
+                        "500 AI generations / month",
                       ].map((feature) => (
                         <span
                           key={feature}
@@ -494,9 +693,14 @@ export default function CalendarBillingSettings({
 
                   <div className="shrink-0 lg:text-right">
                     <p className="text-2xl font-semibold tracking-tight text-[#101828]">
-                      ₦15,000
+                      {formatNaira(
+                        cycle === "ANNUAL"
+                          ? PLAN_DETAILS.STUDIO.annualPrice
+                          : PLAN_DETAILS.STUDIO.monthlyPrice
+                      )}
+
                       <span className="ml-1 text-xs font-normal text-[#667085]">
-                        /month
+                        /{cycle === "ANNUAL" ? "year" : "month"}
                       </span>
                     </p>
 
@@ -513,7 +717,7 @@ export default function CalendarBillingSettings({
                         </>
                       ) : (
                         <>
-                          Upgrade plan
+                          Upgrade to Studio
                           <ArrowRightIcon className="h-3.5 w-3.5" />
                         </>
                       )}
@@ -521,36 +725,57 @@ export default function CalendarBillingSettings({
                   </div>
                 </div>
               </div>
-            )}
-
-            {accountType === "COMPANY" && (
+            ) : (
               <div className="rounded-[24px] border border-[#EAECF0] bg-[#F9FAFB] p-5 sm:p-6">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                   <div className="max-w-2xl">
                     <div className="flex items-center gap-2">
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#475467] shadow-sm ring-1 ring-[#EAECF0]">
-                        <ShieldIcon className="h-4 w-4" />
+                        <SparklesIcon className="h-4 w-4" />
                       </span>
+
                       <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#667085]">
-                        Plan options
+                        For independent creators
                       </span>
                     </div>
 
                     <h4 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
-                      Switch to Individual
+                      Switch to Creator
                     </h4>
 
                     <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Move back to a solo account for ₦2,800/month. Every
-                      collaborator and pending invitation must be removed first.
+                      Move to the Creator plan for a single active client
+                      workspace, up to 3 collaborators and 5 GB of storage.
                     </p>
+
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+                      {[
+                        "1 active workspace",
+                        "Up to 3 collaborators",
+                        "5 GB storage",
+                        "100 AI generations / month",
+                      ].map((feature) => (
+                        <span
+                          key={feature}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#344054]"
+                        >
+                          <CheckIcon className="h-3.5 w-3.5 text-[#12B76A]" />
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="shrink-0 lg:text-right">
                     <p className="text-2xl font-semibold tracking-tight text-[#101828]">
-                      ₦2,800
+                      {formatNaira(
+                        cycle === "ANNUAL"
+                          ? PLAN_DETAILS.CREATOR.annualPrice
+                          : PLAN_DETAILS.CREATOR.monthlyPrice
+                      )}
+
                       <span className="ml-1 text-xs font-normal text-[#667085]">
-                        /month
+                        /{cycle === "ANNUAL" ? "year" : "month"}
                       </span>
                     </p>
 
@@ -566,7 +791,7 @@ export default function CalendarBillingSettings({
                           Switching...
                         </>
                       ) : (
-                        "Switch plan"
+                        "Switch to Creator"
                       )}
                     </button>
                   </div>
@@ -581,12 +806,14 @@ export default function CalendarBillingSettings({
                 {confirmingCancel ? (
                   <div>
                     <p className="text-sm font-semibold text-[#101828]">
-                      Cancel your subscription?
+                      Cancel your Content Workspace subscription?
                     </p>
+
                     <p className="mt-1.5 max-w-2xl text-xs leading-5 text-[#667085]">
-                      Your client workspaces will lock immediately. You and your
-                      clients will not be able to access them until you subscribe
-                      again.
+                      Your client workspaces will become inaccessible after
+                      cancellation. AI Studio and the other features included
+                      in your Content Workspace subscription will also become
+                      unavailable until you subscribe again.
                     </p>
 
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -596,7 +823,9 @@ export default function CalendarBillingSettings({
                         disabled={loading === "cancel"}
                         className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#D92D20] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#B42318] disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {loading === "cancel" ? "Cancelling..." : "Yes, cancel subscription"}
+                        {loading === "cancel"
+                          ? "Cancelling..."
+                          : "Yes, cancel subscription"}
                       </button>
 
                       <button
@@ -615,8 +844,10 @@ export default function CalendarBillingSettings({
                       <p className="text-sm font-semibold text-[#101828]">
                         Cancel subscription
                       </p>
+
                       <p className="mt-1 text-xs leading-5 text-[#667085]">
-                        Stop billing and lock all client workspaces on this account.
+                        Stop billing and restrict access to your Content
+                        Workspace account.
                       </p>
                     </div>
 
@@ -679,8 +910,9 @@ export default function CalendarBillingSettings({
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-white/50">
-                You can activate billing now for {pendingPrice}/month, or switch
-                the plan while keeping the rest of your current free trial.
+                You can activate {targetPlanDetails.name} billing now for{" "}
+                {targetPriceLabel}, or switch your plan while keeping the
+                remainder of your current free trial.
               </p>
 
               <div className="mt-6 grid gap-3">
@@ -693,8 +925,9 @@ export default function CalendarBillingSettings({
                   <span>
                     {loading
                       ? "Starting checkout..."
-                      : `Pay ${pendingPrice}/month now`}
+                      : `Pay ${targetPriceLabel} now`}
                   </span>
+
                   <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </button>
 
@@ -709,12 +942,31 @@ export default function CalendarBillingSettings({
               </div>
 
               <p className="mt-4 text-center text-[10px] leading-4 text-white/25">
-                Your existing client workspaces and content stay on your account.
+                Your existing client workspaces and content stay on your
+                account.
               </p>
             </div>
           </div>
         </div>
       )}
     </>
+  );
+}
+
+function ShieldIcon({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 5 6v5c0 5 3.2 8.7 7 10 3.8-1.3 7-5 7-10V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
   );
 }

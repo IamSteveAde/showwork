@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
+import {
+  consumeAiRegeneration,
+  getContentWorkspacePlan,
+} from "@/lib/contentWorkspaceUsage";
 import { regeneratePost } from "@/lib/openai";
 
 const VALID_PLATFORMS = [
@@ -129,6 +133,11 @@ export async function GET(
  * Every regeneration is saved as a new CalendarPostAiGeneration
  * record and the current CalendarPost is updated to the newest
  * generated version.
+ *
+ * AI regeneration is included in the Content Workspace subscription.
+ *
+ * Creator: 30 regenerations/month
+ * Studio: 150 regenerations/month
  */
 export async function POST(
   req: NextRequest,
@@ -163,10 +172,10 @@ export async function POST(
   }
 
   /**
-   * The AI assistant must still be active.
-   *
-   * We intentionally check the calendar owner because the AI
-   * entitlement belongs to the account that owns the workspace.
+   * The Content Workspace subscription belongs to the owner of
+   * the calendar. A collaborator can perform the regeneration when
+   * they have EDIT_CALENDAR permission, but the usage allowance
+   * belongs to the workspace owner's account.
    */
   const calendar = await db.socialCalendar.findUnique({
     where: {
@@ -176,12 +185,6 @@ export async function POST(
       clientName: true,
       managerId: true,
       aiBusinessSummary: true,
-      manager: {
-        select: {
-          aiAssistantBillingStatus: true,
-          aiAssistantTrialEndsAt: true,
-        },
-      },
     },
   });
 
@@ -192,30 +195,72 @@ export async function POST(
     );
   }
 
-  const aiActive =
-    calendar.manager.aiAssistantBillingStatus === "ACTIVE" ||
-    (
-      calendar.manager.aiAssistantBillingStatus === "TRIAL" &&
-      !!calendar.manager.aiAssistantTrialEndsAt &&
-      calendar.manager.aiAssistantTrialEndsAt.getTime() >
-        Date.now()
-    );
+  const owner = await db.creator.findUnique({
+    where: {
+      id: calendar.managerId,
+    },
+    select: {
+      id: true,
+      contentWorkspacePlan: true,
+      contentWorkspaceBillingStatus: true,
+      contentWorkspaceBillingCycle: true,
+      contentWorkspaceTrialEndsAt: true,
+      isComped: true,
+    },
+  });
 
-  if (!aiActive) {
+  if (!owner) {
+    return NextResponse.json(
+      { error: "Calendar owner not found" },
+      { status: 404 }
+    );
+  }
+
+  const contentWorkspacePlan =
+    getContentWorkspacePlan(owner);
+
+  /**
+   * Consume one included AI regeneration.
+   *
+   * This also verifies that the Content Workspace is currently
+   * accessible and that the monthly regeneration allowance has
+   * not been exhausted.
+   */
+  const consumed = await consumeAiRegeneration(owner.id);
+
+  if (!consumed) {
     return NextResponse.json(
       {
         error:
-          "The AI content assistant isn't active on this account yet",
+          contentWorkspacePlan === "CREATOR"
+            ? "You've reached your 30 AI regenerations for this month. Your allowance resets at the start of your next billing cycle."
+            : "You've reached your 150 AI regenerations for this month. Your allowance resets at the start of your next billing cycle.",
+        code: "AI_REGENERATION_LIMIT_REACHED",
+        plan: contentWorkspacePlan,
       },
       { status: 403 }
     );
   }
 
   if (!calendar.aiBusinessSummary) {
+    /*
+     * The request cannot be processed without business context, so
+     * return the consumed regeneration to the account.
+     */
+    await db.contentWorkspaceUsage.updateMany({
+      where: {
+        creatorId: owner.id,
+      },
+      data: {
+        aiRegenerationsUsed: {
+          decrement: 1,
+        },
+      },
+    });
+
     return NextResponse.json(
       {
-        error:
-          "Business context is not available yet",
+        error: "Business context is not available yet",
       },
       { status: 400 }
     );
@@ -277,6 +322,21 @@ export async function POST(
           : undefined,
     });
   } catch (error) {
+    /*
+     * The AI request failed, so return the consumed regeneration
+     * to the account.
+     */
+    await db.contentWorkspaceUsage.updateMany({
+      where: {
+        creatorId: owner.id,
+      },
+      data: {
+        aiRegenerationsUsed: {
+          decrement: 1,
+        },
+      },
+    });
+
     const message =
       error instanceof Error
         ? error.message
@@ -293,6 +353,17 @@ export async function POST(
    * the database.
    */
   if (!isValidPlatform(generated.platform)) {
+    await db.contentWorkspaceUsage.updateMany({
+      where: {
+        creatorId: owner.id,
+      },
+      data: {
+        aiRegenerationsUsed: {
+          decrement: 1,
+        },
+      },
+    });
+
     return NextResponse.json(
       {
         error:
@@ -303,6 +374,17 @@ export async function POST(
   }
 
   if (!isValidDate(generated.postDate)) {
+    await db.contentWorkspaceUsage.updateMany({
+      where: {
+        creatorId: owner.id,
+      },
+      data: {
+        aiRegenerationsUsed: {
+          decrement: 1,
+        },
+      },
+    });
+
     return NextResponse.json(
       {
         error:
