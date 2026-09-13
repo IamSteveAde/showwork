@@ -219,15 +219,18 @@ const validatedMediaType = mediaType as MediaType;
       );
     }
 
-    return NextResponse.json({
-      post: {
-        ...updated,
-        assets: updated.assets.map((asset) => ({
-          ...asset,
-          contentUrl: publicUrlFor(asset.fileKey),
-        })),
-      },
-    });
+    const serializedPost = {
+  ...updated,
+  assets: updated.assets.map((asset) => ({
+    ...asset,
+    sizeBytes: asset.sizeBytes.toString(),
+    contentUrl: publicUrlFor(asset.fileKey),
+  })),
+};
+
+return NextResponse.json({
+  post: serializedPost,
+});
   }
 
   /*
@@ -546,15 +549,18 @@ const validatedMediaType = mediaType as MediaType;
       });
     });
 
-    return NextResponse.json({
-      post: {
-        ...updated,
-        assets: updated.assets.map((asset) => ({
-          ...asset,
-          contentUrl: publicUrlFor(asset.fileKey),
-        })),
-      },
-    });
+    const serializedPost = {
+  ...updated,
+  assets: updated.assets.map((asset) => ({
+    ...asset,
+    sizeBytes: asset.sizeBytes.toString(),
+    contentUrl: publicUrlFor(asset.fileKey),
+  })),
+};
+
+return NextResponse.json({
+  post: serializedPost,
+});
   } catch (error) {
     if (
       error instanceof Error &&
