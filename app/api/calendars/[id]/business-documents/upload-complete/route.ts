@@ -611,19 +611,29 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({
-      document,
-      summaryUpdated: true,
-    });
+    const serializedDocument = {
+  ...document,
+  sizeBytes: document.sizeBytes.toString(),
+};
+
+return NextResponse.json({
+  document: serializedDocument,
+  summaryUpdated: true,
+});
   } catch (error) {
     console.error(
       `Failed to fold business document into AI summary for calendar ${id}:`,
       error
     );
 
-    return NextResponse.json({
-      document,
-      summaryUpdated: false,
-    });
+   const serializedDocument = {
+  ...document,
+  sizeBytes: document.sizeBytes.toString(),
+};
+
+return NextResponse.json({
+  document: serializedDocument,
+  summaryUpdated: false,
+});
   }
 }

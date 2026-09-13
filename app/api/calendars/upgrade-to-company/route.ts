@@ -15,6 +15,21 @@ import {
 const STUDIO_MONTHLY_NGN = 15000;
 const STUDIO_ANNUAL_NGN = 171000;
 
+function resolveBillingCycle(
+  value: unknown,
+  fallback: ContentWorkspaceBillingCycle | null
+): ContentWorkspaceBillingCycle {
+  if (value === "ANNUAL") {
+    return "ANNUAL";
+  }
+
+  if (value === "MONTHLY") {
+    return "MONTHLY";
+  }
+
+  return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
+}
+
 // POST — switches a Creator Content Workspace account to Studio.
 //
 // If the account is still inside its valid 3-day trial, the switch can
@@ -32,9 +47,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { payNow } = await req.json().catch(() => ({
-    payNow: false,
-  }));
+  const body = await req.json().catch(() => ({}));
+
+  const payNow =
+    body?.payNow === true;
 
   const creator = await db.creator.findUnique({
     where: {
@@ -69,20 +85,25 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * Preserve the existing billing cycle where possible.
+   * IMPORTANT:
    *
-   * If there is no cycle yet, default to monthly.
+   * If the frontend explicitly sends a billing cycle,
+   * that choice wins.
+   *
+   * Only fall back to the account's existing cycle when
+   * no billing cycle was supplied.
    */
-  const billingCycle: ContentWorkspaceBillingCycle =
-    creator.contentWorkspaceBillingCycle === "ANNUAL"
-      ? "ANNUAL"
-      : "MONTHLY";
+  const billingCycle =
+    resolveBillingCycle(
+      body?.billingCycle,
+      creator.contentWorkspaceBillingCycle
+    );
 
   /*
-   * Update the selected plan immediately.
+   * Update the selected plan and billing cycle immediately.
    *
-   * This means the account's intended Content Workspace plan is now
-   * Studio even before payment is completed.
+   * This records the customer's intended Content Workspace
+   * configuration even before payment is completed.
    */
   await db.creator.update({
     where: {
@@ -90,18 +111,20 @@ export async function POST(req: NextRequest) {
     },
     data: {
       contentWorkspacePlan: "STUDIO",
+      contentWorkspaceBillingCycle: billingCycle,
     },
   });
 
   const trialStillValid =
     creator.contentWorkspaceBillingStatus === "TRIAL" &&
     !!creator.contentWorkspaceTrialEndsAt &&
-    creator.contentWorkspaceTrialEndsAt.getTime() > Date.now();
+    creator.contentWorkspaceTrialEndsAt.getTime() >
+      Date.now();
 
   /*
-   * During an active trial, changing from Creator to Studio does not
-   * require immediate payment unless the user explicitly chooses
-   * `payNow`.
+   * During an active trial, changing from Creator to Studio
+   * does not require immediate payment unless the user
+   * explicitly chooses `payNow`.
    */
   if (trialStillValid && !payNow) {
     return NextResponse.json({
@@ -114,7 +137,8 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * All other cases require a real Studio subscription.
+   * Resolve the Paystack plan using the EXACT billing cycle
+   * selected by the customer.
    */
   let studioPlanCode: string;
 
@@ -139,8 +163,8 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * If there is an existing Content Workspace subscription, cancel it
-   * before creating the Studio subscription.
+   * If there is an existing Content Workspace subscription,
+   * cancel it before creating the new Studio subscription.
    */
   if (
     creator.contentWorkspacePaystackSubscriptionCode &&
@@ -153,8 +177,8 @@ export async function POST(req: NextRequest) {
       );
     } catch (error) {
       /*
-       * Keep the existing behavior: cancellation failure should not
-       * prevent the customer from attempting the new Studio checkout.
+       * Preserve existing behavior: cancellation failure should
+       * not prevent the customer from attempting the new checkout.
        */
       console.error(
         "Failed to cancel previous Content Workspace subscription during Studio upgrade:",
@@ -175,10 +199,15 @@ export async function POST(req: NextRequest) {
     const result = await initializeSubscription({
       email: creator.email,
       reference,
+
       callbackUrl:
         `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
+
       planCode: studioPlanCode,
+
+      // Paystack expects kobo.
       amount: amount * 100,
+
       metadata: {
         creatorId: creator.id,
         contentWorkspacePlan: "STUDIO",
@@ -197,7 +226,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      authorizationUrl: result.data.authorization_url,
+      authorizationUrl:
+        result.data.authorization_url,
       requiresPayment: true,
       plan: "STUDIO",
       billingCycle,
@@ -210,7 +240,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Failed to start payment — try again",
+        error:
+          "Failed to start payment — try again",
       },
       { status: 500 }
     );
