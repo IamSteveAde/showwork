@@ -6,6 +6,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import FloatingStartButton from "@/components/FloatingStartButton";
 import Navbar from "@/components/Navbar";
+import PricingSection from "@/components/landing/PricingSection";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -1556,7 +1557,9 @@ export default function HomeClient({
 
       <Worlds />
 
-      <ProductMoment onOpen={() => setShowVideo(true)} />
+<PricingSection />
+
+<ProductMoment onOpen={() => setShowVideo(true)} />
 
       <Philosophy />
 

@@ -160,30 +160,50 @@ export default async function DashboardPage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard/billing"
-              className="hidden rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition hover:border-[#CBD1DA] sm:flex"
-            >
-              {planName}
-            </Link>
+  <Link
+    href="/dashboard/profile"
+    className="hidden rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition hover:bg-[#F5F6F8] hover:text-[#101114] sm:flex"
+  >
+    Profile
+  </Link>
 
-            <Link
-              href="/dashboard/profile"
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-[11px] font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
-              aria-label="Account"
-            >
-              {creator.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={creator.avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                initials(creator.name, creator.email)
-              )}
-            </Link>
+  {isAdminEmail(creator.email) && (
+    <Link
+      href="/admin"
+      className="hidden rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition hover:bg-[#F5F6F8] hover:text-[#101114] sm:flex"
+    >
+      Admin
+    </Link>
+  )}
 
-            <div className="hidden sm:block">
-              <LogoutButton />
-            </div>
-          </div>
+  <Link
+  href="/dashboard/billing"
+  className="hidden rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition hover:border-[#CBD1DA] hover:bg-[#F9FAFB] hover:text-[#101114] sm:flex"
+>
+  Billing
+</Link>
+
+  <Link
+    href="/dashboard/profile"
+    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-[11px] font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
+    aria-label="Profile"
+  >
+    {creator.avatarUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={creator.avatarUrl}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+    ) : (
+      initials(creator.name, creator.email)
+    )}
+  </Link>
+
+  <div className="hidden sm:block">
+    <LogoutButton />  
+  </div>
+</div>
         </div>
       </header>
 

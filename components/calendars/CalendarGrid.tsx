@@ -1082,6 +1082,7 @@ function AddPostPanel({
   fileKey: presignData.fileKey,
   mediaType,
   fileSize: file.size,
+  reservationId: presignData.reservationId,
 }),
         }
       );
@@ -3026,9 +3027,11 @@ function PostDetailPanel({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fileKey: presignData.fileKey,
-          mediaType,
-        }),
+  fileKey: presignData.fileKey,
+  mediaType,
+  fileSize: file.size,
+  reservationId: presignData.reservationId,
+}),
       }
     );
 
