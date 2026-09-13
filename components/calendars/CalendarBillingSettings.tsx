@@ -4,10 +4,18 @@ import { useMemo, useState } from "react";
 
 type ContentWorkspacePlan = "CREATOR" | "STUDIO";
 type BillingCycle = "MONTHLY" | "ANNUAL";
-type BillingStatus = "PENDING_SETUP" | "TRIAL" | "ACTIVE" | "OFFLINE";
+type BillingStatus =
+  | "PENDING_SETUP"
+  | "TRIAL"
+  | "ACTIVE"
+  | "OFFLINE";
 type PendingSwitch = "upgrade" | "downgrade" | null;
 
-function SettingsIcon({ className = "h-4 w-4" }: { className?: string }) {
+function SettingsIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -25,7 +33,11 @@ function SettingsIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
+function ArrowRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -43,7 +55,11 @@ function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
+function CheckIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -60,7 +76,11 @@ function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function UsersIcon({ className = "h-4 w-4" }: { className?: string }) {
+function UsersIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -80,7 +100,11 @@ function UsersIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function SparklesIcon({ className = "h-4 w-4" }: { className?: string }) {
+function SparklesIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -101,7 +125,11 @@ function SparklesIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
+function CloseIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -114,6 +142,28 @@ function CloseIcon({ className = "h-4 w-4" }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+function ShieldIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3 5 6v5c0 5 3.2 8.7 7 10 3.8-1.3 7-5 7-10V6l-7-3Z" />
+      <path d="m9 12 2 2 4-4" />
     </svg>
   );
 }
@@ -168,10 +218,30 @@ export default function CalendarBillingSettings({
   trialEndsAt: string | null;
 }) {
   const [open, setOpen] = useState(false);
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const [loading, setLoading] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] =
+    useState(false);
+  const [loading, setLoading] = useState<string | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
-  const [pendingSwitch, setPendingSwitch] = useState<PendingSwitch>(null);
+  const [pendingSwitch, setPendingSwitch] =
+    useState<PendingSwitch>(null);
+
+  /*
+   * Billing cycle used specifically for a plan switch.
+   *
+   * Important:
+   * - Existing annual subscribers start on Annual.
+   * - Existing monthly subscribers start on Monthly.
+   * - Trial accounts with no cycle start on Monthly.
+   *
+   * The customer can explicitly change this in the
+   * switch confirmation modal.
+   */
+  const [switchBillingCycle, setSwitchBillingCycle] =
+    useState<BillingCycle>(
+      billingCycle ?? "MONTHLY"
+    );
 
   const currentPlan = PLAN_DETAILS[plan];
 
@@ -237,7 +307,9 @@ export default function CalendarBillingSettings({
   const formattedBillingDate = useMemo(() => {
     if (!subscriptionRenewsAt) return null;
 
-    return new Date(subscriptionRenewsAt).toLocaleDateString("en-NG", {
+    return new Date(
+      subscriptionRenewsAt
+    ).toLocaleDateString("en-NG", {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -247,31 +319,44 @@ export default function CalendarBillingSettings({
   const formattedTrialDate = useMemo(() => {
     if (!trialEndsAt) return null;
 
-    return new Date(trialEndsAt).toLocaleDateString("en-NG", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    return new Date(trialEndsAt).toLocaleDateString(
+      "en-NG",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }
+    );
   }, [trialEndsAt]);
 
   const targetPlan: ContentWorkspacePlan =
-    pendingSwitch === "upgrade" ? "STUDIO" : "CREATOR";
+    pendingSwitch === "upgrade"
+      ? "STUDIO"
+      : "CREATOR";
 
   const targetPlanDetails = PLAN_DETAILS[targetPlan];
 
   const targetPrice =
-    cycle === "ANNUAL"
+    switchBillingCycle === "ANNUAL"
       ? targetPlanDetails.annualPrice
       : targetPlanDetails.monthlyPrice;
 
   const targetPriceLabel =
-    cycle === "ANNUAL"
+    switchBillingCycle === "ANNUAL"
       ? `${formatNaira(targetPrice)}/year`
       : `${formatNaira(targetPrice)}/month`;
 
+  const targetAnnualSavings =
+    targetPlanDetails.monthlyPrice * 12 -
+    targetPlanDetails.annualPrice;
+
+  const targetAnnualEquivalent =
+    targetPlanDetails.annualPrice / 12;
+
   const runSwitch = async (
     kind: "upgrade" | "downgrade",
-    payNow: boolean
+    payNow: boolean,
+    selectedBillingCycle: BillingCycle
   ) => {
     setLoading(kind);
     setError(null);
@@ -290,7 +375,7 @@ export default function CalendarBillingSettings({
         },
         body: JSON.stringify({
           payNow,
-          billingCycle: cycle,
+          billingCycle: selectedBillingCycle,
         }),
       });
 
@@ -298,7 +383,8 @@ export default function CalendarBillingSettings({
 
       if (res.ok) {
         if (data.authorizationUrl) {
-          window.location.href = data.authorizationUrl;
+          window.location.href =
+            data.authorizationUrl;
         } else {
           window.location.reload();
         }
@@ -307,7 +393,8 @@ export default function CalendarBillingSettings({
       }
 
       setError(
-        data.error ?? "Failed to switch plans. Please try again."
+        data.error ??
+          "Failed to switch plans. Please try again."
       );
       setLoading(null);
     } catch {
@@ -316,13 +403,30 @@ export default function CalendarBillingSettings({
     }
   };
 
-  const startSwitch = (kind: "upgrade" | "downgrade") => {
+  const startSwitch = (
+    kind: "upgrade" | "downgrade"
+  ) => {
+    /*
+     * Always initialize the switch choice from the
+     * customer's current billing cycle.
+     *
+     * A trial has no billing cycle, so it starts at
+     * Monthly rather than silently choosing Annual.
+     */
+    setSwitchBillingCycle(
+      billingCycle ?? "MONTHLY"
+    );
+
     if (isStillInTrial) {
       setPendingSwitch(kind);
       return;
     }
 
-    void runSwitch(kind, false);
+    void runSwitch(
+      kind,
+      false,
+      billingCycle ?? "MONTHLY"
+    );
   };
 
   const cancel = async () => {
@@ -330,9 +434,12 @@ export default function CalendarBillingSettings({
     setError(null);
 
     try {
-      const res = await fetch("/api/calendars/cancel-subscription", {
-        method: "POST",
-      });
+      const res = await fetch(
+        "/api/calendars/cancel-subscription",
+        {
+          method: "POST",
+        }
+      );
 
       const data = await res.json().catch(() => ({}));
 
@@ -341,7 +448,10 @@ export default function CalendarBillingSettings({
         return;
       }
 
-      setError(data.error ?? "Failed to cancel. Please try again.");
+      setError(
+        data.error ??
+          "Failed to cancel. Please try again."
+      );
       setLoading(null);
       setConfirmingCancel(false);
     } catch {
@@ -379,7 +489,9 @@ export default function CalendarBillingSettings({
               >
                 <span
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: statusMeta.dot }}
+                  style={{
+                    background: statusMeta.dot,
+                  }}
                 />
                 {statusMeta.label}
               </span>
@@ -425,13 +537,17 @@ export default function CalendarBillingSettings({
                           : billingStatus === "OFFLINE"
                             ? "#FDA29B"
                             : "#FEC84B",
-                    background: "rgba(255,255,255,0.045)",
-                    borderColor: "rgba(255,255,255,0.08)",
+                    background:
+                      "rgba(255,255,255,0.045)",
+                    borderColor:
+                      "rgba(255,255,255,0.08)",
                   }}
                 >
                   <span
                     className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: statusMeta.dot }}
+                    style={{
+                      background: statusMeta.dot,
+                    }}
                   />
                   {statusMeta.label}
                 </span>
@@ -442,8 +558,8 @@ export default function CalendarBillingSettings({
               </h2>
 
               <p className="mt-2 max-w-lg text-sm leading-6 text-white/45">
-                Manage your Content Workspace subscription, plan and access
-                in one place.
+                Manage your Content Workspace subscription,
+                plan and access in one place.
               </p>
             </div>
 
@@ -487,7 +603,9 @@ export default function CalendarBillingSettings({
               <div className="mt-2 flex items-center gap-2">
                 <span
                   className="h-2 w-2 rounded-full"
-                  style={{ background: statusMeta.dot }}
+                  style={{
+                    background: statusMeta.dot,
+                  }}
                 />
 
                 <p className="text-base font-semibold text-[#101828]">
@@ -575,9 +693,9 @@ export default function CalendarBillingSettings({
                   </h4>
 
                   <p className="mt-2 text-sm leading-6 text-[#475467]">
-                    Your Content Workspace subscription includes client
-                    workspaces, collaboration, storage, publishing,
-                    analytics and AI Studio.
+                    Your Content Workspace subscription includes
+                    client workspaces, collaboration, storage,
+                    publishing, analytics and AI Studio.
                   </p>
 
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
@@ -624,8 +742,9 @@ export default function CalendarBillingSettings({
                   </p>
 
                   <p className="mt-1 text-[11px] leading-5 text-[#667085]">
-                    AI content generation, regeneration, Business Knowledge
-                    and scheduled AI research are included with your plan.
+                    AI content generation, regeneration, Business
+                    Knowledge and scheduled AI research are
+                    included with your plan.
                   </p>
                 </div>
 
@@ -668,9 +787,9 @@ export default function CalendarBillingSettings({
                     </h4>
 
                     <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Manage more client workspaces and collaborate with a
-                      larger team while keeping your content, approvals and
-                      AI tools in one workspace.
+                      Manage more client workspaces and collaborate
+                      with a larger team while keeping your content,
+                      approvals and AI tools in one workspace.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
@@ -706,7 +825,9 @@ export default function CalendarBillingSettings({
 
                     <button
                       type="button"
-                      onClick={() => startSwitch("upgrade")}
+                      onClick={() =>
+                        startSwitch("upgrade")
+                      }
                       disabled={loading === "upgrade"}
                       className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-5 py-3 text-xs font-semibold text-white shadow-[0_10px_28px_rgba(36,120,255,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
                     >
@@ -744,8 +865,9 @@ export default function CalendarBillingSettings({
                     </h4>
 
                     <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Move to the Creator plan for a single active client
-                      workspace, up to 3 collaborators and 5 GB of storage.
+                      Move to the Creator plan for a single active
+                      client workspace, up to 3 collaborators and
+                      5 GB of storage.
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
@@ -781,7 +903,9 @@ export default function CalendarBillingSettings({
 
                     <button
                       type="button"
-                      onClick={() => startSwitch("downgrade")}
+                      onClick={() =>
+                        startSwitch("downgrade")
+                      }
                       disabled={loading === "downgrade"}
                       className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-5 py-3 text-xs font-semibold text-[#344054] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
                     >
@@ -810,10 +934,11 @@ export default function CalendarBillingSettings({
                     </p>
 
                     <p className="mt-1.5 max-w-2xl text-xs leading-5 text-[#667085]">
-                      Your client workspaces will become inaccessible after
-                      cancellation. AI Studio and the other features included
-                      in your Content Workspace subscription will also become
-                      unavailable until you subscribe again.
+                      Your client workspaces will become inaccessible
+                      after cancellation. AI Studio and the other
+                      features included in your Content Workspace
+                      subscription will also become unavailable until
+                      you subscribe again.
                     </p>
 
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -830,7 +955,9 @@ export default function CalendarBillingSettings({
 
                       <button
                         type="button"
-                        onClick={() => setConfirmingCancel(false)}
+                        onClick={() =>
+                          setConfirmingCancel(false)
+                        }
                         disabled={loading === "cancel"}
                         className="inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold text-[#475467] transition-colors hover:bg-white disabled:opacity-60"
                       >
@@ -846,14 +973,16 @@ export default function CalendarBillingSettings({
                       </p>
 
                       <p className="mt-1 text-xs leading-5 text-[#667085]">
-                        Stop billing and restrict access to your Content
-                        Workspace account.
+                        Stop billing and restrict access to your
+                        Content Workspace account.
                       </p>
                     </div>
 
                     <button
                       type="button"
-                      onClick={() => setConfirmingCancel(true)}
+                      onClick={() =>
+                        setConfirmingCancel(true)
+                      }
                       className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-[#FECDCA] bg-white px-4 py-2.5 text-xs font-semibold text-[#B42318] transition-colors hover:bg-[#FEF3F2]"
                     >
                       Cancel subscription
@@ -869,7 +998,10 @@ export default function CalendarBillingSettings({
       {pendingSwitch && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A0D12]/70 p-4 backdrop-blur-sm"
-          onClick={() => loading === null && setPendingSwitch(null)}
+          onClick={() =>
+            loading === null &&
+            setPendingSwitch(null)
+          }
           role="presentation"
         >
           <div
@@ -877,7 +1009,9 @@ export default function CalendarBillingSettings({
             aria-modal="true"
             aria-labelledby="trial-switch-title"
             className="relative w-full max-w-md overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#11151C] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.45)] sm:p-7"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
             <div className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full bg-[#2478FF] opacity-20 blur-[75px]" />
 
@@ -889,7 +1023,9 @@ export default function CalendarBillingSettings({
 
                 <button
                   type="button"
-                  onClick={() => setPendingSwitch(null)}
+                  onClick={() =>
+                    setPendingSwitch(null)
+                  }
                   disabled={loading !== null}
                   aria-label="Close plan switch dialog"
                   className="flex h-8 w-8 items-center justify-center rounded-full text-white/35 transition-colors hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
@@ -906,19 +1042,127 @@ export default function CalendarBillingSettings({
                 id="trial-switch-title"
                 className="mt-2 text-xl font-semibold tracking-[-0.025em] text-white"
               >
-                When should your new plan start?
+                Choose how you want to continue.
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-white/50">
-                You can activate {targetPlanDetails.name} billing now for{" "}
-                {targetPriceLabel}, or switch your plan while keeping the
-                remainder of your current free trial.
+                Switch to {targetPlanDetails.name} and choose
+                whether you want to pay monthly or annually.
+                Your current free trial remains available if
+                you choose to keep it.
               </p>
 
-              <div className="mt-6 grid gap-3">
+              {/* Billing cycle selector */}
+              <div className="mt-5">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.14em] text-white/30">
+                  Billing cycle
+                </p>
+
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+                  <div
+                    className="grid grid-cols-2 gap-1"
+                    role="group"
+                    aria-label="Choose billing cycle"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSwitchBillingCycle(
+                          "MONTHLY"
+                        );
+                        setError(null);
+                      }}
+                      disabled={loading !== null}
+                      className={`rounded-lg px-3 py-2.5 text-[11px] font-semibold transition-all ${
+                        switchBillingCycle === "MONTHLY"
+                          ? "bg-white/[0.10] text-white shadow-sm"
+                          : "text-white/35 hover:bg-white/[0.04] hover:text-white/65"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      Monthly
+                      <span className="ml-1 text-white/30">
+                        {formatNaira(
+                          targetPlanDetails.monthlyPrice
+                        )}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSwitchBillingCycle("ANNUAL");
+                        setError(null);
+                      }}
+                      disabled={loading !== null}
+                      className={`rounded-lg px-3 py-2.5 text-[11px] font-semibold transition-all ${
+                        switchBillingCycle === "ANNUAL"
+                          ? "bg-[#2478FF] text-white shadow-[0_6px_18px_rgba(36,120,255,0.22)]"
+                          : "text-white/45 hover:bg-white/[0.04] hover:text-white/75"
+                      } disabled:cursor-not-allowed disabled:opacity-60`}
+                    >
+                      Annual
+                      <span
+                        className={`ml-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold ${
+                          switchBillingCycle ===
+                          "ANNUAL"
+                            ? "bg-white/15 text-white"
+                            : "bg-emerald-400/10 text-emerald-300"
+                        }`}
+                      >
+                        Save 5%
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected billing summary */}
+              <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/25">
+                      {targetPlanDetails.name} ·{" "}
+                      {switchBillingCycle === "ANNUAL"
+                        ? "Annual"
+                        : "Monthly"}
+                    </p>
+
+                    <p className="mt-1 text-2xl font-semibold tracking-tight text-white">
+                      {targetPriceLabel}
+                    </p>
+                  </div>
+
+                  {switchBillingCycle ===
+                    "ANNUAL" && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-semibold text-emerald-300">
+                        Save{" "}
+                        {formatNaira(
+                          targetAnnualSavings
+                        )}
+                      </p>
+
+                      <p className="mt-0.5 text-[9px] text-white/25">
+                        {formatNaira(
+                          targetAnnualEquivalent
+                        )}
+                        /month equivalent
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
                 <button
                   type="button"
-                  onClick={() => void runSwitch(pendingSwitch, true)}
+                  onClick={() =>
+                    void runSwitch(
+                      pendingSwitch,
+                      true,
+                      switchBillingCycle
+                    )
+                  }
                   disabled={loading !== null}
                   className="group inline-flex min-h-12 items-center justify-between rounded-xl bg-[#2478FF] px-4 py-3 text-left text-sm font-semibold text-white transition-all hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -933,7 +1177,13 @@ export default function CalendarBillingSettings({
 
                 <button
                   type="button"
-                  onClick={() => void runSwitch(pendingSwitch, false)}
+                  onClick={() =>
+                    void runSwitch(
+                      pendingSwitch,
+                      false,
+                      switchBillingCycle
+                    )
+                  }
                   disabled={loading !== null}
                   className="min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -942,31 +1192,13 @@ export default function CalendarBillingSettings({
               </div>
 
               <p className="mt-4 text-center text-[10px] leading-4 text-white/25">
-                Your existing client workspaces and content stay on your
-                account.
+                Your existing client workspaces and content
+                stay on your account.
               </p>
             </div>
           </div>
         </div>
       )}
     </>
-  );
-}
-
-function ShieldIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 3 5 6v5c0 5 3.2 8.7 7 10 3.8-1.3 7-5 7-10V6l-7-3Z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
   );
 }

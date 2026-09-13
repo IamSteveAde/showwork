@@ -15,6 +15,21 @@ import {
 const CREATOR_MONTHLY_NGN = 2800;
 const CREATOR_ANNUAL_NGN = 31920;
 
+function resolveBillingCycle(
+  value: unknown,
+  fallback: ContentWorkspaceBillingCycle | null
+): ContentWorkspaceBillingCycle {
+  if (value === "ANNUAL") {
+    return "ANNUAL";
+  }
+
+  if (value === "MONTHLY") {
+    return "MONTHLY";
+  }
+
+  return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
+}
+
 // POST — switches a Studio Content Workspace account back to Creator.
 //
 // Creator allows collaboration, so collaborators and pending invites
@@ -33,9 +48,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { payNow } = await req.json().catch(() => ({
-    payNow: false,
-  }));
+  const body = await req.json().catch(() => ({}));
+
+  const payNow =
+    body?.payNow === true;
 
   const creator = await db.creator.findUnique({
     where: {
@@ -75,14 +91,16 @@ export async function POST(req: NextRequest) {
   /*
    * Creator supports only 1 active client workspace.
    *
-   * Collaborators are allowed on Creator, so we deliberately do not
-   * block this downgrade based on collaborators or pending invites.
+   * Collaborators are allowed on Creator, so we deliberately
+   * do not block this downgrade based on collaborators or
+   * pending invites.
    */
-  const activeWorkspaceCount = await db.socialCalendar.count({
-    where: {
-      managerId: creator.id,
-    },
-  });
+  const activeWorkspaceCount =
+    await db.socialCalendar.count({
+      where: {
+        managerId: creator.id,
+      },
+    });
 
   if (activeWorkspaceCount > 1) {
     return NextResponse.json(
@@ -97,17 +115,22 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * Preserve the current billing cycle where possible.
+   * IMPORTANT:
    *
-   * If no cycle has been established yet, use monthly.
+   * If the frontend explicitly sends a billing cycle,
+   * that choice wins.
+   *
+   * Only fall back to the account's existing cycle when
+   * no billing cycle was supplied.
    */
-  const billingCycle: ContentWorkspaceBillingCycle =
-    creator.contentWorkspaceBillingCycle === "ANNUAL"
-      ? "ANNUAL"
-      : "MONTHLY";
+  const billingCycle =
+    resolveBillingCycle(
+      body?.billingCycle,
+      creator.contentWorkspaceBillingCycle
+    );
 
   /*
-   * Change the selected plan immediately.
+   * Change the selected plan and billing cycle immediately.
    */
   await db.creator.update({
     where: {
@@ -115,13 +138,15 @@ export async function POST(req: NextRequest) {
     },
     data: {
       contentWorkspacePlan: "CREATOR",
+      contentWorkspaceBillingCycle: billingCycle,
     },
   });
 
   const trialStillValid =
     creator.contentWorkspaceBillingStatus === "TRIAL" &&
     !!creator.contentWorkspaceTrialEndsAt &&
-    creator.contentWorkspaceTrialEndsAt.getTime() > Date.now();
+    creator.contentWorkspaceTrialEndsAt.getTime() >
+      Date.now();
 
   /*
    * During an active trial, payment is optional unless the user
@@ -137,6 +162,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  /*
+   * Resolve the Paystack plan using the EXACT billing cycle
+   * selected by the customer.
+   */
   let creatorPlanCode: string;
 
   try {
@@ -160,8 +189,8 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * Cancel the existing Studio subscription before starting the
-   * Creator subscription.
+   * Cancel the existing Studio subscription before starting
+   * the new Creator subscription.
    */
   if (
     creator.contentWorkspacePaystackSubscriptionCode &&
@@ -174,7 +203,7 @@ export async function POST(req: NextRequest) {
       );
     } catch (error) {
       /*
-       * Preserve the previous behavior: a Paystack cancellation
+       * Preserve existing behavior: a Paystack cancellation
        * failure should not prevent the customer from attempting
        * the new checkout.
        */
@@ -197,10 +226,15 @@ export async function POST(req: NextRequest) {
     const result = await initializeSubscription({
       email: creator.email,
       reference,
+
       callbackUrl:
         `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
+
       planCode: creatorPlanCode,
+
+      // Paystack expects kobo.
       amount: amount * 100,
+
       metadata: {
         creatorId: creator.id,
         contentWorkspacePlan: "CREATOR",
@@ -219,7 +253,8 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      authorizationUrl: result.data.authorization_url,
+      authorizationUrl:
+        result.data.authorization_url,
       requiresPayment: true,
       plan: "CREATOR",
       billingCycle,
@@ -232,7 +267,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Failed to start payment — try again",
+        error:
+          "Failed to start payment — try again",
       },
       { status: 500 }
     );

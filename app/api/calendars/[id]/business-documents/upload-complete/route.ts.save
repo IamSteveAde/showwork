@@ -15,7 +15,7 @@ export async function POST(
 ) {
   const creator = await getCurrentCreator();
 
-  if (!creator) {
+A  if (!creator) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }
@@ -611,29 +611,19 @@ export async function POST(
       },
     });
 
-    const serializedDocument = {
-  ...document,
-  sizeBytes: document.sizeBytes.toString(),
-};
-
-return NextResponse.json({
-  document: serializedDocument,
-  summaryUpdated: true,
-});
+    return NextResponse.json({
+      document,
+      summaryUpdated: true,
+    });
   } catch (error) {
     console.error(
       `Failed to fold business document into AI summary for calendar ${id}:`,
       error
     );
 
-   const serializedDocument = {
-  ...document,
-  sizeBytes: document.sizeBytes.toString(),
-};
-
-return NextResponse.json({
-  document: serializedDocument,
-  summaryUpdated: false,
-});
+    return NextResponse.json({
+      document,
+      summaryUpdated: false,
+    });
   }
 }
