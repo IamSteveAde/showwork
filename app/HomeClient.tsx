@@ -995,13 +995,13 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
 const WORLDS = [
   {
     number: "01",
-    title: "Portfolio",
-    label: "Show the work",
-    body: "A considered home for the work you're proud to put your name on.",
-    href: "/signup?next=/dashboard/portfolio",
-    Icon: PortfolioIcon,
+    title: "Content Workspace",
+    label: "Plan together",
+    body: "An ongoing space for teams and clients to plan, present and approve.",
+    href: "/signup?next=/dashboard/calendars",
+    Icon: WorkspaceIcon,
   },
-  {
+    {
     number: "02",
     title: "Project Delivery",
     label: "Move the work",
@@ -1011,12 +1011,13 @@ const WORLDS = [
   },
   {
     number: "03",
-    title: "Content Workspace",
-    label: "Plan together",
-    body: "An ongoing space for teams and clients to plan, present and approve.",
-    href: "/signup?next=/dashboard/calendars",
-    Icon: WorkspaceIcon,
+    title: "Portfolio",
+    label: "Show the work",
+    body: "A considered home for the work you're proud to put your name on.",
+    href: "/signup?next=/dashboard/portfolio",
+    Icon: PortfolioIcon,
   },
+
   {
     number: "04",
     title: "Creativo",
