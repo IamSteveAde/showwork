@@ -429,40 +429,34 @@ export default function PricingSection() {
 
             let href = plan.href;
 
-            if (plan.name === "Free") {
-              href = "/start";
-            } else if (product === "delivery") {
-              const tierMap: Record<
-                string,
-                string
-              > = {
-                Starter: "STARTER",
-                Growth: "GROWTH",
-                Unlimited: "UNLIMITED",
-              };
+if (product === "delivery") {
+  if (plan.name === "Free") {
+    href = "/start";
+  } else {
+    const tierMap: Record<string, string> = {
+      Starter: "STARTER",
+      Growth: "GROWTH",
+      Unlimited: "UNLIMITED",
+    };
 
-              href = buildHref(
-                "delivery",
-                cycle,
-                tierMap[plan.name]
-              );
-            } else {
-              const workspacePlanMap: Record<
-                string,
-                string
-              > = {
-                Creator: "CREATOR",
-                Studio: "STUDIO",
-              };
+    href = buildHref(
+      "delivery",
+      cycle,
+      tierMap[plan.name]
+    );
+  }
+} else {
+  const workspacePlanMap: Record<string, string> = {
+    Creator: "CREATOR",
+    Studio: "STUDIO",
+  };
 
-              href = buildHref(
-                "workspace",
-                cycle,
-                undefined,
-                workspacePlanMap[plan.name]
-              );
-            }
+  const workspacePlan = workspacePlanMap[plan.name];
 
+  href = `/signup?next=/dashboard/calendars&plan=${workspacePlan}&cycle=${
+    cycle === "monthly" ? "MONTHLY" : "ANNUAL"
+  }`;
+}
             return (
               <motion.div
                 key={plan.name}
