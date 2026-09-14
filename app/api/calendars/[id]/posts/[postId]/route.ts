@@ -19,14 +19,26 @@ export async function PATCH(
 ) {
   const creator = await getCurrentCreator();
   if (!creator) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { id, postId } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (
+    !(await hasCalendarPermission(
+      creator.id,
+      id,
+      "EDIT_CALENDAR"
+    ))
+  ) {
     return NextResponse.json(
-      { error: "You don't have permission to edit posts on this calendar" },
+      {
+        error:
+          "You don't have permission to edit posts on this calendar",
+      },
       { status: 403 }
     );
   }
@@ -36,7 +48,10 @@ export async function PATCH(
   });
 
   if (!post || post.calendarId !== id) {
-    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Post not found" },
+      { status: 404 }
+    );
   }
 
   // Client approval is the permanent lock point for normal post editing.
@@ -65,7 +80,10 @@ export async function PATCH(
     linkUrl,
   } = await req.json();
 
-  if (platform && !VALID_PLATFORMS.includes(platform)) {
+  if (
+    platform &&
+    !VALID_PLATFORMS.includes(platform)
+  ) {
     return NextResponse.json(
       { error: "Invalid platform" },
       { status: 400 }
@@ -75,24 +93,54 @@ export async function PATCH(
   const updated = await db.calendarPost.update({
     where: { id: postId },
     data: {
-      ...(postDate ? { postDate: new Date(postDate) } : {}),
+      ...(postDate
+        ? { postDate: new Date(postDate) }
+        : {}),
       ...(platform ? { platform } : {}),
-      postType: postType !== undefined ? postType?.trim() || null : undefined,
-      category: category !== undefined ? category?.trim() || null : undefined,
-      caption: caption !== undefined ? caption?.trim() || null : undefined,
+      postType:
+        postType !== undefined
+          ? postType?.trim() || null
+          : undefined,
+      category:
+        category !== undefined
+          ? category?.trim() || null
+          : undefined,
+      caption:
+        caption !== undefined
+          ? caption?.trim() || null
+          : undefined,
       contentIdea:
-        contentIdea !== undefined ? contentIdea?.trim() || null : undefined,
-      cta: cta !== undefined ? cta?.trim() || null : undefined,
-      hashtags: hashtags !== undefined ? hashtags?.trim() || null : undefined,
+        contentIdea !== undefined
+          ? contentIdea?.trim() || null
+          : undefined,
+      cta:
+        cta !== undefined
+          ? cta?.trim() || null
+          : undefined,
+      hashtags:
+        hashtags !== undefined
+          ? hashtags?.trim() || null
+          : undefined,
       taggedAccounts:
         taggedAccounts !== undefined
           ? taggedAccounts?.trim() || null
           : undefined,
-      linkUrl: linkUrl !== undefined ? linkUrl?.trim() || null : undefined,
+      linkUrl:
+        linkUrl !== undefined
+          ? linkUrl?.trim() || null
+          : undefined,
     },
     include: {
-      assets: { orderBy: { displayOrder: "asc" } },
-      videoComments: { orderBy: { videoTimestampSeconds: "asc" } },
+      assets: {
+        orderBy: {
+          displayOrder: "asc",
+        },
+      },
+      videoComments: {
+        orderBy: {
+          videoTimestampSeconds: "asc",
+        },
+      },
       customFields: true,
     },
   });
@@ -102,6 +150,7 @@ export async function PATCH(
       ...updated,
       assets: updated.assets.map((a) => ({
         ...a,
+        sizeBytes: Number(a.sizeBytes),
         contentUrl: publicUrlFor(a.fileKey),
       })),
     },
@@ -113,13 +162,23 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; postId: string }> }
 ) {
   const creator = await getCurrentCreator();
+
   if (!creator) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { id, postId } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (
+    !(await hasCalendarPermission(
+      creator.id,
+      id,
+      "EDIT_CALENDAR"
+    ))
+  ) {
     return NextResponse.json(
       {
         error:
@@ -131,11 +190,16 @@ export async function DELETE(
 
   const post = await db.calendarPost.findUnique({
     where: { id: postId },
-    include: { assets: true },
+    include: {
+      assets: true,
+    },
   });
 
   if (!post || post.calendarId !== id) {
-    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Post not found" },
+      { status: 404 }
+    );
   }
 
   // Approved posts are protected from deletion as well as editing.
@@ -156,11 +220,18 @@ export async function DELETE(
     try {
       await deleteObject(asset.fileKey);
     } catch (err) {
-      console.error(`Failed to delete R2 object for asset ${asset.id}:`, err);
+      console.error(
+        `Failed to delete R2 object for asset ${asset.id}:`,
+        err
+      );
     }
   }
 
-  await db.calendarPost.delete({ where: { id: postId } });
+  await db.calendarPost.delete({
+    where: { id: postId },
+  });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+  });
 }

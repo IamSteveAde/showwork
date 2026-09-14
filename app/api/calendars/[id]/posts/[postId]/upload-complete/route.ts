@@ -393,7 +393,8 @@ return NextResponse.json({
    * create the asset without accounting for its storage.
    */
   try {
-    const updated = await db.$transaction(async (tx) => {
+    const updated = await db.$transaction(
+  async (tx) => {
       /*
        * Re-check the reservation inside the transaction to prevent
        * two simultaneous completion requests from both consuming it.
@@ -547,7 +548,12 @@ return NextResponse.json({
           customFields: true,
         },
       });
-    });
+    },
+    {
+      maxWait: 15000,
+      timeout: 15000,
+    }
+  );
 
     const serializedPost = {
   ...updated,

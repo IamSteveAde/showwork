@@ -434,7 +434,8 @@ export async function reserveContentWorkspaceStorage(
 
   await getOrCreateContentWorkspaceUsage(creatorId);
 
-  const result = await db.$transaction(async (tx) => {
+  const result = await db.$transaction(
+    async (tx) => {
     const current = await tx.contentWorkspaceUsage.findUnique({
       where: { creatorId },
       select: {
@@ -494,7 +495,12 @@ export async function reserveContentWorkspaceStorage(
       storageBytes,
       storageReservedBytes: storageReservedBytes + bytes,
     };
-  });
+    },
+    {
+      maxWait: 15000,
+      timeout: 15000,
+    }
+  );
 
   if (!result.allowed) {
     return {
