@@ -565,7 +565,7 @@ export default function DeliveryPage() {
             >
               <Link
                 href="/start"
-                className="group inline-flex h-13 items-center justify-center gap-3 rounded-full bg-slate-950 px-7 text-sm font-semibold text-white shadow-xl shadow-slate-950/10 transition hover:-translate-y-0.5 hover:bg-[#2478FF]"
+                className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-slate-950 px-7 text-sm font-semibold text-white shadow-xl shadow-slate-950/10 transition hover:-translate-y-0.5 hover:bg-[#2478FF]"
               >
                 Start a project
                 <ArrowRight
@@ -576,7 +576,7 @@ export default function DeliveryPage() {
 
               <a
                 href="#workflow"
-                className="inline-flex h-13 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-7 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                className="inline-flex h-14 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-7 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
               >
                 See how it works
                 <ChevronRight size={15} />
@@ -1107,7 +1107,7 @@ export default function DeliveryPage() {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/start"
-              className="group inline-flex h-13 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 text-sm font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-[#2478FF]"
+              className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 text-sm font-semibold text-white shadow-xl transition hover:-translate-y-0.5 hover:bg-[#2478FF]"
             >
               Deliver your next project
               <ArrowRight
@@ -1118,7 +1118,7 @@ export default function DeliveryPage() {
 
             <Link
               href="/"
-              className="inline-flex h-13 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex h-14 items-center justify-center rounded-full border border-slate-200 bg-white px-8 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
             >
               Back to Showwork
             </Link>
