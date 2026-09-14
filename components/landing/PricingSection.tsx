@@ -91,7 +91,7 @@ const WORKSPACE_PLANS: PricingPlan[] = [
       "100 AI generations / month",
     ],
     cta: "Start 3-day trial",
-    href: "/start?product=workspace&cycle=MONTHLY&plan=CREATOR",
+    href: "/signup?next=/dashboard/calendars&plan=CREATOR&cycle=MONTHLY",
   },
   {
     name: "Studio",
@@ -106,7 +106,7 @@ const WORKSPACE_PLANS: PricingPlan[] = [
       "500 AI generations / month",
     ],
     cta: "Start 3-day trial",
-    href: "/start?product=workspace&cycle=MONTHLY&plan=STUDIO",
+    href: "/signup?next=/dashboard/calendars&plan=STUDIO&cycle=MONTHLY",
     popular: true,
   },
 ];
