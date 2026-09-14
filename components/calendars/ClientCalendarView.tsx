@@ -979,6 +979,7 @@ export default function ClientCalendarView({
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("dark");
   const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok">("calendar");
+  const [currentPlanStatus, setCurrentPlanStatus] = useState(planStatus);
 
   useEffect(() => {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
@@ -1153,20 +1154,34 @@ export default function ClientCalendarView({
   const respondToPlan = async (action: "approve" | "request_changes") => {
     setSubmitting(true);
     setError(null);
-    const res = await fetch(`/api/social-calendar/${slug}/respond`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, note: planNote }),
-    });
-    if (res.ok) {
-      router.refresh();
-      setRequestingChanges(false);
-      setPlanNote("");
-    } else {
-      const data = await res.json();
-      setError(data.error ?? "Something went wrong");
+
+    try {
+      const res = await fetch(`/api/social-calendar/${slug}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, note: planNote }),
+      });
+
+      if (res.ok) {
+        setCurrentPlanStatus(
+          action === "approve"
+            ? "PLAN_APPROVED"
+            : "PLAN_NEEDS_CHANGES"
+        );
+        setRequestingChanges(false);
+        setPlanNote("");
+        setSubmitting(false);
+        router.refresh();
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      setError(data?.error ?? "Something went wrong");
+    } catch {
+      setError("Unable to submit your response. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   return (
@@ -1591,7 +1606,7 @@ export default function ClientCalendarView({
         />
       )}
 
-      {planStatus === "AWAITING_APPROVAL" && (
+      {currentPlanStatus === "AWAITING_APPROVAL" && (
         <div className="mt-8 rounded-xl border p-6 transition-colors duration-300"
           style={{ background: t.cardBg, borderColor: t.cardBorder }}>
           <p className="mb-4 text-sm font-semibold" style={{ color: t.text }}>Does this plan work for you?</p>
@@ -1648,7 +1663,7 @@ export default function ClientCalendarView({
         </div>
       )}
 
-      {planStatus === "PLAN_APPROVED" && (
+      {currentPlanStatus === "PLAN_APPROVED" && (
         <div className="mt-8 rounded-xl border p-5 text-sm"
           style={{ background: "rgba(74,222,128,0.1)", borderColor: "rgba(74,222,128,0.18)", color: "#4ade80" }}>
           You&apos;ve approved this plan — click any post below to review its actual content as it gets uploaded.

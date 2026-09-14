@@ -65,13 +65,13 @@ const PLATFORMS: {
   label: string;
   color: string;
 }[] = [
-  { value: "INSTAGRAM", label: "Instagram", color: "#E1306C" },
-  { value: "TIKTOK", label: "TikTok", color: "#00F2EA" },
-  { value: "YOUTUBE", label: "YouTube", color: "#FF0000" },
-  { value: "FACEBOOK", label: "Facebook", color: "#1877F2" },
-  { value: "X", label: "X", color: "#FFFFFF" },
-  { value: "LINKEDIN", label: "LinkedIn", color: "#0A66C2" },
-];
+    { value: "INSTAGRAM", label: "Instagram", color: "#E1306C" },
+    { value: "TIKTOK", label: "TikTok", color: "#00F2EA" },
+    { value: "YOUTUBE", label: "YouTube", color: "#FF0000" },
+    { value: "FACEBOOK", label: "Facebook", color: "#1877F2" },
+    { value: "X", label: "X", color: "#FFFFFF" },
+    { value: "LINKEDIN", label: "LinkedIn", color: "#0A66C2" },
+  ];
 
 const POST_TYPES = [
   "Single Image",
@@ -469,7 +469,7 @@ function VideoThumbnail({
         if (vid) {
           try {
             vid.currentTime = 0.1;
-          } catch {}
+          } catch { }
         }
       }}
     />
@@ -509,13 +509,13 @@ function PostTile({
   // approval status underneath it — this overrides the bottom badge
   // text/color in that case, rather than showing both at once on a
   // tile this small.
-    const instagramStatusMeta =
+  const instagramStatusMeta =
     post.platform === "INSTAGRAM" && post.instagramPublishStatus !== "NOT_SCHEDULED"
       ? post.instagramPublishStatus === "PUBLISHED"
         ? { text: "Live on Instagram", color: "#E1306C" }
         : post.instagramPublishStatus === "SCHEDULED"
-        ? { text: "Scheduled to publish", color: "#2478FF" }
-        : { text: "Publish failed", color: "#EF4444" }
+          ? { text: "Scheduled to publish", color: "#2478FF" }
+          : { text: "Publish failed", color: "#EF4444" }
       : null;
   // A post is only ever one platform, so at most one of these two
   // is ever non-null at the same time — safe to just combine them.
@@ -524,8 +524,8 @@ function PostTile({
       ? post.tikTokPublishStatus === "PUBLISHED"
         ? { text: "Published to TikTok", color: "#00F2EA" }
         : post.tikTokPublishStatus === "SCHEDULED"
-        ? { text: "Scheduled to publish", color: "#2478FF" }
-        : { text: "Publish failed", color: "#EF4444" }
+          ? { text: "Scheduled to publish", color: "#2478FF" }
+          : { text: "Publish failed", color: "#EF4444" }
       : null;
   const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? approvalMeta;
 
@@ -728,7 +728,7 @@ function PostTile({
             </span>
           )}
 
-           {/* Status — Instagram publish status when relevant, plain
+        {/* Status — Instagram publish status when relevant, plain
             approval status otherwise. */}
         {cover && (
           <span
@@ -943,6 +943,10 @@ function AddPostPanel({
   const [saving, setSaving] = useState(false);
   const [uploadingStage, setUploadingStage] =
     useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] =
+    useState(0);
+  const [sharingProgress, setSharingProgress] =
+    useState(0);
   const [error, setError] =
     useState<string | null>(null);
 
@@ -1031,12 +1035,65 @@ function AddPostPanel({
   // Uploads every pending file onto one already-created post — same
   // presign → PUT → complete flow used from the post's own detail
   // panel.
+  // Uploads every pending file to ONE source post.
+  // The resulting assets can then be attached to the other
+  // platform posts without uploading the actual files again.
+  // Upload every pending file to ONE source post.
+  // Files are uploaded concurrently so multiple images/videos
+  // can transfer at the same time. Each physical file is still
+  // uploaded only once.
+  // Upload every pending file to ONE source post.
+  // Files are uploaded concurrently so multiple images/videos
+  // can transfer at the same time. Each physical file is still
+  // uploaded only once.
+  //
+  // Progress is calculated from the actual number of bytes
+  // uploaded across ALL files, so larger files contribute more
+  // to the overall percentage than smaller files.
   const uploadFilesToPost = async (
     postId: string
   ): Promise<CalendarPostData | null> => {
-    let latestPost: CalendarPostData | null = null;
+    const files = pendingFilesRef.current;
 
-    for (const { file } of pendingFilesRef.current) {
+    if (files.length === 0) {
+      return null;
+    }
+
+    const totalBytes = files.reduce(
+      (total, { file }) => total + file.size,
+      0
+    );
+
+    const uploadedBytesByFile = new Array(files.length).fill(0);
+
+    const updateOverallProgress = () => {
+      const uploadedBytes = uploadedBytesByFile.reduce(
+        (total, bytes) => total + bytes,
+        0
+      );
+
+      const overallPercent =
+        totalBytes > 0
+          ? Math.min(
+            100,
+            Math.round(
+              (uploadedBytes / totalBytes) * 100
+            )
+          )
+          : 100;
+
+      setUploadProgress(overallPercent);
+
+      setUploadingStage(
+        `Uploading ${files.length
+        } ${files.length === 1 ? "file" : "files"}`
+      );
+    };
+
+    const uploadSingleFile = async (
+      file: File,
+      index: number
+    ): Promise<CalendarPostData> => {
       const presignRes = await fetch(
         `/api/calendars/${calendarId}/posts/${postId}/upload-presign`,
         {
@@ -1045,27 +1102,75 @@ function AddPostPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-  filename: file.name,
-  contentType: file.type,
-  fileSize: file.size,
-}),
+            filename: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          }),
         }
       );
+
       const presignData = await presignRes.json();
+
       if (!presignRes.ok) {
         throw new Error(
           presignData.error ?? "Failed to start upload"
         );
       }
 
-      const uploadRes = await fetch(presignData.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("PUT", presignData.uploadUrl);
+
+        xhr.setRequestHeader(
+          "Content-Type",
+          file.type
+        );
+
+        xhr.upload.onprogress = (event) => {
+          if (!event.lengthComputable) {
+            return;
+          }
+
+          uploadedBytesByFile[index] = event.loaded;
+
+          updateOverallProgress();
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            uploadedBytesByFile[index] = file.size;
+
+            updateOverallProgress();
+
+            resolve();
+          } else {
+            reject(
+              new Error(
+                `Failed to upload ${file.name}`
+              )
+            );
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(
+            new Error(
+              `Failed to upload ${file.name}`
+            )
+          );
+        };
+
+        xhr.onabort = () => {
+          reject(
+            new Error(
+              `Upload cancelled for ${file.name}`
+            )
+          );
+        };
+
+        xhr.send(file);
       });
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload file");
-      }
 
       const mediaType = file.type.startsWith("video/")
         ? "VIDEO"
@@ -1079,31 +1184,102 @@ function AddPostPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-  fileKey: presignData.fileKey,
-  mediaType,
-  fileSize: file.size,
-  reservationId: presignData.reservationId,
-}),
+            fileKey: presignData.fileKey,
+            mediaType,
+            fileSize: file.size,
+            reservationId: presignData.reservationId,
+          }),
         }
       );
+
       const completeData = await completeRes.json();
+
       if (!completeRes.ok) {
         throw new Error(
           completeData.error ?? "Failed to save content"
         );
       }
 
-      // Each successive upload's response already includes every
-      // asset attached so far — capturing it here is what actually
-      // lets the calendar show the real image immediately, instead
-      // of discarding the result of every upload.
-      latestPost = completeData.post;
-    }
+      return completeData.post;
+    };
+
+    setUploadingStage(
+      `Preparing ${files.length
+      } ${files.length === 1 ? "file" : "files"}...`
+    );
+
+    const uploadedPosts = await Promise.all(
+      files.map(({ file }, index) =>
+        uploadSingleFile(file, index)
+      )
+    );
+
+    setUploadProgress(100);
+
+    setUploadingStage(
+      "Upload complete — 100%. Saving content..."
+    );
+
+    // The upload-complete requests can finish in any order.
+    // Return whichever response contains the most complete
+    // asset collection.
+    const latestPost = uploadedPosts.reduce(
+      (latest, current) => {
+        const latestAssetCount =
+          latest?.assets?.length ?? 0;
+
+        const currentAssetCount =
+          current?.assets?.length ?? 0;
+
+        return currentAssetCount >= latestAssetCount
+          ? current
+          : latest;
+      },
+      null as CalendarPostData | null
+    );
 
     return latestPost;
   };
+  // Attaches an asset that already exists on the source post
+  // to another platform post. This does NOT upload the file again.
+  const attachAssetToPost = async (
+    sourcePostId: string,
+    destinationPostId: string,
+    fileKey: string
+  ): Promise<CalendarPostData> => {
+    const response = await fetch(
+      `/api/calendars/${calendarId}/posts/${destinationPostId}/attach-asset`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sourcePostId,
+          fileKey,
+        }),
+      }
+    );
 
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ??
+        "Failed to share content with another platform"
+      );
+    }
+
+    return {
+      ...data.post,
+      assets: data.post.assets ?? [],
+      videoComments: data.post.videoComments ?? [],
+      customFields: data.post.customFields ?? [],
+    };
+  };
   const submit = async () => {
+    setUploadProgress(0);
+    setSharingProgress(0);
     if (platforms.length === 0) {
       setError("Pick at least one platform");
       return;
@@ -1136,7 +1312,7 @@ function AddPostPanel({
           headers: {
             "Content-Type": "application/json",
           },
-                 body: JSON.stringify({
+          body: JSON.stringify({
             postDate: fullDate.toISOString(),
             platforms,
             postType,
@@ -1175,18 +1351,82 @@ function AddPostPanel({
       // posts are simply created empty, ready to have content added
       // later from their own tile, exactly as before.
       if (pendingFilesRef.current.length > 0) {
-        for (let i = 0; i < createdPosts.length; i++) {
-          setUploadingStage(
-            `Uploading content (${i + 1}/${createdPosts.length})...`
+        setUploadProgress(0);
+        setSharingProgress(0);
+        // The first platform is the single source upload target.
+        // Every selected file is physically uploaded only once.
+        const sourcePost = createdPosts[0];
+
+        if (!sourcePost) {
+          throw new Error(
+            "No post was created for the selected platform."
           );
-          const updated = await uploadFilesToPost(createdPosts[i].id);
-          if (updated) {
-            createdPosts[i] = {
-              ...updated,
-              assets: updated.assets ?? [],
-              videoComments: updated.videoComments ?? [],
-              customFields: updated.customFields ?? [],
-            };
+        }
+
+        const updatedSourcePost =
+          await uploadFilesToPost(sourcePost.id);
+
+        if (updatedSourcePost) {
+          createdPosts[0] = {
+            ...updatedSourcePost,
+            assets: updatedSourcePost.assets ?? [],
+            videoComments:
+              updatedSourcePost.videoComments ?? [],
+            customFields:
+              updatedSourcePost.customFields ?? [],
+          };
+        }
+
+        // Share each already-uploaded asset with the remaining
+        // platform posts. No additional R2 upload takes place.
+        if (createdPosts.length > 1) {
+          const sourceAssets =
+            createdPosts[0].assets ?? [];
+
+          const destinationCount =
+            createdPosts.length - 1;
+
+          setSharingProgress(0);
+
+          for (
+            let destinationIndex = 1;
+            destinationIndex < createdPosts.length;
+            destinationIndex++
+          ) {
+            const destinationPost =
+              createdPosts[destinationIndex];
+
+            setUploadingStage(
+              `Sharing content with platform ${destinationIndex} of ${destinationCount}...`
+            );
+
+            let updatedDestinationPost =
+              destinationPost;
+
+            for (
+              let assetIndex = 0;
+              assetIndex < sourceAssets.length;
+              assetIndex++
+            ) {
+              const sourceAsset =
+                sourceAssets[assetIndex];
+
+              updatedDestinationPost =
+                await attachAssetToPost(
+                  sourcePost.id,
+                  destinationPost.id,
+                  sourceAsset.fileKey
+                );
+            }
+
+            createdPosts[destinationIndex] =
+              updatedDestinationPost;
+
+            setSharingProgress(
+              Math.round(
+                (destinationIndex / destinationCount) * 100
+              )
+            );
           }
         }
       }
@@ -1639,7 +1879,7 @@ function AddPostPanel({
                 })}
               </div>
 
-                            {platforms.length > 1 && (
+              {platforms.length > 1 && (
                 <div
                   className="
                     mt-3
@@ -2714,12 +2954,11 @@ function AddPostPanel({
         {/* FOOTER */}
         <div
           className="
-            flex
-            flex-shrink-0
-            items-center
-            justify-between
-            gap-2
-            border-t
+          flex
+          flex-col
+          flex-shrink-0
+          gap-3
+          border-t
             px-4 py-3
             sm:px-7 sm:py-4
           "
@@ -2732,6 +2971,51 @@ function AddPostPanel({
             backdropFilter: "blur(16px)",
           }}
         >
+          {saving && uploadingStage && (
+  <div className="mb-3 w-full">
+    <div className="mb-1.5 flex items-center justify-between">
+      <span
+        className="truncate pr-4 text-[11px] font-medium"
+        style={{ color: t.textMuted }}
+      >
+        {uploadingStage}
+      </span>
+
+      <span
+        className="flex-shrink-0 text-[11px] font-semibold"
+        style={{ color: t.text }}
+      >
+        {uploadingStage.startsWith("Sharing")
+          ? sharingProgress
+          : uploadProgress}
+        %
+      </span>
+    </div>
+
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full"
+      style={{
+        background:
+          theme === "dark"
+            ? "rgba(255,255,255,0.08)"
+            : "rgba(0,0,0,0.08)",
+      }}
+    >
+      <div
+        className="h-full rounded-full transition-[width] duration-200 ease-out"
+        style={{
+          width: `${
+            uploadingStage.startsWith("Sharing")
+              ? sharingProgress
+              : uploadProgress
+          }%`,
+          background:
+            "linear-gradient(90deg, #2478FF 0%, #0052FF 100%)",
+        }}
+      />
+    </div>
+  </div>
+)}
           <button
             type="button"
             onClick={onClose}
@@ -2784,17 +3068,22 @@ function AddPostPanel({
             }}
           >
             {saving ? (
-              <>
-                <span className="
-                  h-3.5 w-3.5
-                  animate-spin
-                  rounded-full
-                  border-2
-                  border-white/30
-                  border-t-white
-                " />
-                {uploadingStage ?? "Adding..."}
-              </>
+              <div className="flex w-full items-center justify-center gap-3">
+                <span
+                  className="
+        h-4 w-4
+        animate-spin
+        rounded-full
+        border-2
+        border-white/30
+        border-t-white
+      "
+                />
+
+                <span className="truncate">
+                  {uploadingStage ?? "Adding..."}
+                </span>
+              </div>
             ) : (
               <>
                 Add to calendar
@@ -2804,6 +3093,8 @@ function AddPostPanel({
               </>
             )}
           </button>
+          
+
         </div>
       </div>
     </div>
@@ -2928,7 +3219,7 @@ function PostDetailPanel({
       if (!res.ok) {
         throw new Error(
           data.error ??
-            "We couldn't save these changes. Please try again."
+          "We couldn't save these changes. Please try again."
         );
       }
 
@@ -2980,10 +3271,10 @@ function PostDetailPanel({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-  filename: file.name,
-  contentType: file.type,
-  fileSize: file.size,
-}),
+          filename: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        }),
       }
     );
 
@@ -2993,7 +3284,7 @@ function PostDetailPanel({
     if (!presignRes.ok) {
       throw new Error(
         presignData.error ??
-          "Failed to start upload"
+        "Failed to start upload"
       );
     }
 
@@ -3027,11 +3318,11 @@ function PostDetailPanel({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-  fileKey: presignData.fileKey,
-  mediaType,
-  fileSize: file.size,
-  reservationId: presignData.reservationId,
-}),
+          fileKey: presignData.fileKey,
+          mediaType,
+          fileSize: file.size,
+          reservationId: presignData.reservationId,
+        }),
       }
     );
 
@@ -3041,7 +3332,7 @@ function PostDetailPanel({
     if (!completeRes.ok) {
       throw new Error(
         completeData.error ??
-          "Failed to save content"
+        "Failed to save content"
       );
     }
 
@@ -3360,7 +3651,7 @@ function PostDetailPanel({
                     }}
                   >
                     {post.approvalStatus ===
-                    "APPROVED" ? (
+                      "APPROVED" ? (
                       <IconCheck className="h-4 w-4" />
                     ) : (
                       <span className="text-sm">
@@ -3387,17 +3678,17 @@ function PostDetailPanel({
                       }}
                     >
                       {post.approvalStatus ===
-                      "APPROVED"
+                        "APPROVED"
                         ? "This content has been approved."
                         : post.approvalStatus ===
                           "NEEDS_REVISION"
-                        ? "Changes have been requested before approval."
-                        : "Waiting for client review."}
+                          ? "Changes have been requested before approval."
+                          : "Waiting for client review."}
                     </p>
                   </div>
                 </div>
 
-                                {post.approvalStatus ===
+                {post.approvalStatus ===
                   "NEEDS_REVISION" &&
                   post.approvalNote && (
                     <div
@@ -3460,14 +3751,14 @@ function PostDetailPanel({
                         post.instagramPublishStatus === "PUBLISHED"
                           ? "rgba(225,48,108,0.06)"
                           : post.instagramPublishStatus === "FAILED"
-                          ? "rgba(239,68,68,0.06)"
-                          : "rgba(36,120,255,0.06)",
+                            ? "rgba(239,68,68,0.06)"
+                            : "rgba(36,120,255,0.06)",
                       borderColor:
                         post.instagramPublishStatus === "PUBLISHED"
                           ? "rgba(225,48,108,0.16)"
                           : post.instagramPublishStatus === "FAILED"
-                          ? "rgba(239,68,68,0.16)"
-                          : "rgba(36,120,255,0.16)",
+                            ? "rgba(239,68,68,0.16)"
+                            : "rgba(36,120,255,0.16)",
                     }}
                   >
                     <p
@@ -3478,8 +3769,8 @@ function PostDetailPanel({
                           post.instagramPublishStatus === "PUBLISHED"
                             ? "#E1306C"
                             : post.instagramPublishStatus === "FAILED"
-                            ? "#EF4444"
-                            : "#2478FF",
+                              ? "#EF4444"
+                              : "#2478FF",
                       }}
                     >
                       Instagram
@@ -3497,7 +3788,7 @@ function PostDetailPanel({
                           This post is live on Instagram.
                         </p>
                         {post.instagramPermalink && (
-                          
+
                           <a href={post.instagramPermalink}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -3511,7 +3802,7 @@ function PostDetailPanel({
                       </>
                     )}
 
-                                       {post.instagramPublishStatus === "FAILED" && (
+                    {post.instagramPublishStatus === "FAILED" && (
                       <p className="text-sm leading-relaxed text-red-400">
                         {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
                       </p>
@@ -3534,14 +3825,14 @@ function PostDetailPanel({
                         post.tikTokPublishStatus === "PUBLISHED"
                           ? "rgba(0,242,234,0.06)"
                           : post.tikTokPublishStatus === "FAILED"
-                          ? "rgba(239,68,68,0.06)"
-                          : "rgba(36,120,255,0.06)",
+                            ? "rgba(239,68,68,0.06)"
+                            : "rgba(36,120,255,0.06)",
                       borderColor:
                         post.tikTokPublishStatus === "PUBLISHED"
                           ? "rgba(0,242,234,0.18)"
                           : post.tikTokPublishStatus === "FAILED"
-                          ? "rgba(239,68,68,0.16)"
-                          : "rgba(36,120,255,0.16)",
+                            ? "rgba(239,68,68,0.16)"
+                            : "rgba(36,120,255,0.16)",
                     }}
                   >
                     <p
@@ -3552,8 +3843,8 @@ function PostDetailPanel({
                           post.tikTokPublishStatus === "PUBLISHED"
                             ? "#00C2B8"
                             : post.tikTokPublishStatus === "FAILED"
-                            ? "#EF4444"
-                            : "#2478FF",
+                              ? "#EF4444"
+                              : "#2478FF",
                       }}
                     >
                       TikTok
@@ -3642,7 +3933,7 @@ function PostDetailPanel({
                     }}
                   >
                     {activeAsset.mediaType ===
-                    "VIDEO" ? (
+                      "VIDEO" ? (
                       <video
                         ref={videoRef}
                         src={
@@ -3765,7 +4056,7 @@ function PostDetailPanel({
                               }}
                             >
                               {asset.mediaType ===
-                              "VIDEO" ? (
+                                "VIDEO" ? (
                                 <>
                                   <video
                                     src={
@@ -3823,28 +4114,28 @@ function PostDetailPanel({
 
                   {activeAsset.mediaType ===
                     "VIDEO" && (
-                    <div className="mt-4">
-                      <CalendarVideoComments
-                        comments={
-                          post.videoComments
-                        }
-                        readOnly
-                        onSeekTo={(seconds) => {
-                          const vid =
-                            videoRef.current;
+                      <div className="mt-4">
+                        <CalendarVideoComments
+                          comments={
+                            post.videoComments
+                          }
+                          readOnly
+                          onSeekTo={(seconds) => {
+                            const vid =
+                              videoRef.current;
 
-                          if (!vid) return;
+                            if (!vid) return;
 
-                          vid.currentTime =
-                            seconds;
+                            vid.currentTime =
+                              seconds;
 
-                          vid
-                            .play()
-                            .catch(() => {});
-                        }}
-                      />
-                    </div>
-                  )}
+                            vid
+                              .play()
+                              .catch(() => { });
+                          }}
+                        />
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div
@@ -3883,8 +4174,8 @@ function PostDetailPanel({
 
               {/* UPLOAD */}
               {!isApproved && (
-              <label
-                className="
+                <label
+                  className="
                   group
                   mt-3
                   flex
@@ -3902,26 +4193,26 @@ function PostDetailPanel({
                   hover:border-blue-500/40
                   active:scale-[0.99]
                 "
-                style={{
-                  borderColor: t.inputBorder,
-                  background: t.inputBg,
-                }}
-              >
-                <span
-                  className="
+                  style={{
+                    borderColor: t.inputBorder,
+                    background: t.inputBg,
+                  }}
+                >
+                  <span
+                    className="
                     flex h-9 w-9
                     flex-shrink-0
                     items-center justify-center
                     rounded-xl
                   "
-                  style={{
-                    background:
-                      "rgba(36,120,255,0.1)",
-                    color: "#2478FF",
-                  }}
-                >
-                  {uploading ? (
-                    <span className="
+                    style={{
+                      background:
+                        "rgba(36,120,255,0.1)",
+                      color: "#2478FF",
+                    }}
+                  >
+                    {uploading ? (
+                      <span className="
                       h-3.5 w-3.5
                       animate-spin
                       rounded-full
@@ -3929,74 +4220,74 @@ function PostDetailPanel({
                       border-blue-500/30
                       border-t-blue-500
                     " />
-                  ) : (
-                    "+"
-                  )}
-                </span>
-
-                <span className="min-w-0 text-left">
-                  <span
-                    className="block text-xs font-semibold"
-                    style={{
-                      color: uploading
-                        ? t.textFaint
-                        : "#2478FF",
-                    }}
-                  >
-                    {uploading
-                      ? "Uploading files..."
-                      : post.assets.length > 0
-                      ? post.postType ===
-                        "Carousel"
-                        ? "Add more files"
-                        : "Replace content"
-                      : "Upload content"}
+                    ) : (
+                      "+"
+                    )}
                   </span>
 
-                  {!uploading && (
+                  <span className="min-w-0 text-left">
                     <span
-                      className="
+                      className="block text-xs font-semibold"
+                      style={{
+                        color: uploading
+                          ? t.textFaint
+                          : "#2478FF",
+                      }}
+                    >
+                      {uploading
+                        ? "Uploading files..."
+                        : post.assets.length > 0
+                          ? post.postType ===
+                            "Carousel"
+                            ? "Add more files"
+                            : "Replace content"
+                          : "Upload content"}
+                    </span>
+
+                    {!uploading && (
+                      <span
+                        className="
                         mt-0.5
                         block
                         text-[9px]
                       "
-                      style={{
-                        color: t.textFaint,
-                      }}
-                    >
-                      {post.postType ===
+                        style={{
+                          color: t.textFaint,
+                        }}
+                      >
+                        {post.postType ===
+                          "Carousel"
+                          ? "Add more images or videos to this carousel"
+                          : "JPG, PNG, WebP, MP4, MOV or WebM"}
+                      </span>
+                    )}
+                  </span>
+
+                  <input
+                    type="file"
+                    multiple={
+                      post.postType ===
                       "Carousel"
-                        ? "Add more images or videos to this carousel"
-                        : "JPG, PNG, WebP, MP4, MOV or WebM"}
-                    </span>
-                  )}
-                </span>
-
-                <input
-                  type="file"
-                  multiple={
-                    post.postType ===
-                    "Carousel"
-                  }
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    if (
-                      e.target.files &&
-                      e.target.files.length >
-                        0
-                    ) {
-                      uploadMany(
-                        e.target.files
-                      );
-
-                      e.currentTarget.value =
-                        "";
                     }
-                  }}
-                />
-              </label>
+                    accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      if (
+                        e.target.files &&
+                        e.target.files.length >
+                        0
+                      ) {
+                        uploadMany(
+                          e.target.files
+                        );
+
+                        e.currentTarget.value =
+                          "";
+                      }
+                    }}
+                  />
+                </label>
               )}
 
               {isApproved && (
@@ -4591,175 +4882,175 @@ function PostDetailPanel({
             {/* DISCOVERY */}
             {(post.taggedAccounts ||
               post.linkUrl) && (
-              <section>
-                <div className="mb-3">
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{
-                      color: t.text,
-                    }}
-                  >
-                    Discovery & reach
-                  </h3>
+                <section>
+                  <div className="mb-3">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{
+                        color: t.text,
+                      }}
+                    >
+                      Discovery & reach
+                    </h3>
 
-                  <p
-                    className="mt-1 text-[11px]"
-                    style={{
-                      color: t.textFaint,
-                    }}
-                  >
-                    Accounts and destinations connected to this post.
-                  </p>
-                </div>
+                    <p
+                      className="mt-1 text-[11px]"
+                      style={{
+                        color: t.textFaint,
+                      }}
+                    >
+                      Accounts and destinations connected to this post.
+                    </p>
+                  </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {post.taggedAccounts && (
-                    <div
-                      className="
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {post.taggedAccounts && (
+                      <div
+                        className="
                         rounded-2xl
                         border
                         p-4
                       "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
-                    >
-                      <p
-                        className="
+                        style={{
+                          background: t.inputBg,
+                          borderColor:
+                            t.inputBorder,
+                        }}
+                      >
+                        <p
+                          className="
                           text-[10px]
                           font-bold
                           uppercase
                         "
-                        style={{
-                          color:
-                            t.textFaint,
-                          letterSpacing:
-                            "0.08em",
-                        }}
-                      >
-                        Tagged accounts
-                      </p>
+                          style={{
+                            color:
+                              t.textFaint,
+                            letterSpacing:
+                              "0.08em",
+                          }}
+                        >
+                          Tagged accounts
+                        </p>
 
-                      <p
-                        className="
+                        <p
+                          className="
                           mt-2
                           break-words
                           text-xs
                         "
-                        style={{
-                          color:
-                            t.textMuted,
-                        }}
-                      >
-                        {post.taggedAccounts}
-                      </p>
-                    </div>
-                  )}
+                          style={{
+                            color:
+                              t.textMuted,
+                          }}
+                        >
+                          {post.taggedAccounts}
+                        </p>
+                      </div>
+                    )}
 
-                  {post.linkUrl && (
-                    <div
-                      className="
+                    {post.linkUrl && (
+                      <div
+                        className="
                         rounded-2xl
                         border
                         p-4
                       "
-                      style={{
-                        background: t.inputBg,
-                        borderColor:
-                          t.inputBorder,
-                      }}
-                    >
-                      <p
-                        className="
+                        style={{
+                          background: t.inputBg,
+                          borderColor:
+                            t.inputBorder,
+                        }}
+                      >
+                        <p
+                          className="
                           text-[10px]
                           font-bold
                           uppercase
                         "
-                        style={{
-                          color:
-                            t.textFaint,
-                          letterSpacing:
-                            "0.08em",
-                        }}
-                      >
-                        Destination link
-                      </p>
+                          style={{
+                            color:
+                              t.textFaint,
+                            letterSpacing:
+                              "0.08em",
+                          }}
+                        >
+                          Destination link
+                        </p>
 
-                      <a
-                        href={post.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="
+                        <a
+                          href={post.linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="
                           mt-2
                           flex items-center gap-1.5
                           text-xs
                           font-medium
                         "
-                        style={{
-                          color: "#2478FF",
-                        }}
-                      >
-                        <span className="
+                          style={{
+                            color: "#2478FF",
+                          }}
+                        >
+                          <span className="
                           min-w-0
                           truncate
                         ">
-                          {post.linkUrl}
-                        </span>
+                            {post.linkUrl}
+                          </span>
 
-                        <span className="flex-shrink-0">
-                          ↗
-                        </span>
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
+                          <span className="flex-shrink-0">
+                            ↗
+                          </span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
             {/* CUSTOM FIELDS */}
             {post.customFields.length >
               0 && (
-              <section>
-                <div className="mb-3">
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{
-                      color: t.text,
-                    }}
-                  >
-                    Additional details
-                  </h3>
+                <section>
+                  <div className="mb-3">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{
+                        color: t.text,
+                      }}
+                    >
+                      Additional details
+                    </h3>
 
-                  <p
-                    className="mt-1 text-[11px]"
-                    style={{
-                      color: t.textFaint,
-                    }}
-                  >
-                    Extra information attached to this post.
-                  </p>
-                </div>
+                    <p
+                      className="mt-1 text-[11px]"
+                      style={{
+                        color: t.textFaint,
+                      }}
+                    >
+                      Extra information attached to this post.
+                    </p>
+                  </div>
 
-                <div
-                  className="
+                  <div
+                    className="
                     overflow-hidden
                     rounded-2xl
                     border
                   "
-                  style={{
-                    borderColor:
-                      t.inputBorder,
-                    background:
-                      t.inputBg,
-                  }}
-                >
-                  {post.customFields.map(
-                    (field, index) => (
-                      <div
-                        key={field.id}
-                        className="
+                    style={{
+                      borderColor:
+                        t.inputBorder,
+                      background:
+                        t.inputBg,
+                    }}
+                  >
+                    {post.customFields.map(
+                      (field, index) => (
+                        <div
+                          key={field.id}
+                          className="
                           flex
                           flex-col
                           gap-1.5
@@ -4768,47 +5059,47 @@ function PostDetailPanel({
                           sm:grid-cols-[120px_1fr]
                           sm:gap-4
                         "
-                        style={{
-                          borderTop:
-                            index > 0
-                              ? `1px solid ${t.inputBorder}`
-                              : undefined,
-                        }}
-                      >
-                        <span
-                          className="
+                          style={{
+                            borderTop:
+                              index > 0
+                                ? `1px solid ${t.inputBorder}`
+                                : undefined,
+                          }}
+                        >
+                          <span
+                            className="
                             text-[10px]
                             font-semibold
                             uppercase
                             sm:text-xs
                             sm:normal-case
                           "
-                          style={{
-                            color:
-                              t.textFaint,
-                          }}
-                        >
-                          {field.label}
-                        </span>
+                            style={{
+                              color:
+                                t.textFaint,
+                            }}
+                          >
+                            {field.label}
+                          </span>
 
-                        <span
-                          className="
+                          <span
+                            className="
                             break-words
                             text-xs
                           "
-                          style={{
-                            color:
-                              t.textMuted,
-                          }}
-                        >
-                          {field.value}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
-              </section>
-            )}
+                            style={{
+                              color:
+                                t.textMuted,
+                            }}
+                          >
+                            {field.value}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </section>
+              )}
           </div>
         </div>
 
@@ -4855,15 +5146,14 @@ function PostDetailPanel({
               }}
             >
               {post.assets.length > 0
-                ? `${post.assets.length} ${
-                    post.assets.length === 1
-                      ? "file"
-                      : "files"
-                  } attached`
+                ? `${post.assets.length} ${post.assets.length === 1
+                  ? "file"
+                  : "files"
+                } attached`
                 : "No content attached yet"}
             </p>
           </div>
-
+          <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -4885,6 +5175,7 @@ function PostDetailPanel({
           >
             Close
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -5149,11 +5440,11 @@ export default function CalendarGrid({
 
         return (
           pd.getFullYear() ===
-            date.getFullYear() &&
+          date.getFullYear() &&
           pd.getMonth() ===
-            date.getMonth() &&
+          date.getMonth() &&
           pd.getDate() ===
-            date.getDate()
+          date.getDate()
         );
       })
       .sort(
@@ -5184,11 +5475,11 @@ export default function CalendarGrid({
     date: Date
   ) =>
     date.getFullYear() ===
-      today.getFullYear() &&
+    today.getFullYear() &&
     date.getMonth() ===
-      today.getMonth() &&
+    today.getMonth() &&
     date.getDate() ===
-      today.getDate();
+    today.getDate();
 
   const visibleDays =
     cells.filter(
@@ -5258,15 +5549,15 @@ export default function CalendarGrid({
           >
             {viewMode === "calendar"
               ? currentMonth.toLocaleDateString(
-                  "en-US",
-                  {
-                    month: "long",
-                    year: "numeric",
-                  }
-                )
+                "en-US",
+                {
+                  month: "long",
+                  year: "numeric",
+                }
+              )
               : viewMode === "instagram"
-              ? "Instagram Preview"
-              : "TikTok Preview"}
+                ? "Instagram Preview"
+                : "TikTok Preview"}
           </h2>
         </div>
 
@@ -5781,8 +6072,8 @@ export default function CalendarGrid({
             tab.key === "instagram"
               ? "#D62976"
               : tab.key === "tiktok"
-              ? "#FE2C55"
-              : "#2478FF";
+                ? "#FE2C55"
+                : "#2478FF";
 
           return (
             <button
@@ -5836,29 +6127,29 @@ export default function CalendarGrid({
 
       {viewMode === "calendar" && (
         <>
-      {/* =====================================================
+          {/* =====================================================
           DESKTOP / TABLET CALENDAR
           ===================================================== */}
 
-      <div className="
+          <div className="
         hidden
         sm:grid
         sm:grid-cols-7
         sm:gap-1.5
         lg:gap-2
       ">
-        {[
-          "Sun",
-          "Mon",
-          "Tue",
-          "Wed",
-          "Thu",
-          "Fri",
-          "Sat",
-        ].map((day, dayIdx) => (
-          <div
-            key={day}
-            className="
+            {[
+              "Sun",
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+            ].map((day, dayIdx) => (
+              <div
+                key={day}
+                className="
               pb-1.5
               text-center
               text-[9px]
@@ -5869,46 +6160,46 @@ export default function CalendarGrid({
               lg:pb-2
               lg:text-xs
             "
-            style={{
-              color:
-                DAY_COLORS[dayIdx],
-            }}
-          >
-            {day}
-          </div>
-        ))}
+                style={{
+                  color:
+                    DAY_COLORS[dayIdx],
+                }}
+              >
+                {day}
+              </div>
+            ))}
 
-        {cells.map((date, i) => {
-          if (!date) {
-            return (
-              <div
-                key={i}
-                className="
+            {cells.map((date, i) => {
+              if (!date) {
+                return (
+                  <div
+                    key={i}
+                    className="
                   min-h-[125px]
                   rounded-xl
                   md:min-h-[145px]
                   lg:min-h-[170px]
                 "
-                aria-hidden="true"
-              />
-            );
-          }
+                    aria-hidden="true"
+                  />
+                );
+              }
 
-          const dayPosts =
-            postsForDate(date);
+              const dayPosts =
+                postsForDate(date);
 
-          const dayColor =
-            DAY_COLORS[
-              date.getDay()
-            ];
+              const dayColor =
+                DAY_COLORS[
+                date.getDay()
+                ];
 
-          const todayDate =
-            isToday(date);
+              const todayDate =
+                isToday(date);
 
-          return (
-            <div
-              key={i}
-              className="
+              return (
+                <div
+                  key={i}
+                  className="
                 flex
                 min-h-[125px]
                 flex-col
@@ -5922,25 +6213,25 @@ export default function CalendarGrid({
                 md:p-2
                 lg:min-h-[170px]
               "
-              style={{
-                background:
-                  theme === "dark"
-                    ? `${dayColor}14`
-                    : `${dayColor}0d`,
-                border: todayDate
-                  ? `1.5px solid ${dayColor}`
-                  : `1px solid ${dayColor}30`,
-              }}
-            >
-              {/* DAY HEADER */}
-              <div className="
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? `${dayColor}14`
+                        : `${dayColor}0d`,
+                    border: todayDate
+                      ? `1.5px solid ${dayColor}`
+                      : `1px solid ${dayColor}30`,
+                  }}
+                >
+                  {/* DAY HEADER */}
+                  <div className="
                 flex
                 items-center
                 justify-between
                 gap-1
               ">
-                <span
-                  className="
+                    <span
+                      className="
                     flex
                     h-5
                     min-w-5
@@ -5955,22 +6246,22 @@ export default function CalendarGrid({
                     md:text-[10px]
                     lg:text-xs
                   "
-                  style={{
-                    color: todayDate
-                      ? "#FFFFFF"
-                      : dayColor,
-                    background:
-                      todayDate
-                        ? dayColor
-                        : "transparent",
-                  }}
-                >
-                  {date.getDate()}
-                </span>
-              </div>
+                      style={{
+                        color: todayDate
+                          ? "#FFFFFF"
+                          : dayColor,
+                        background:
+                          todayDate
+                            ? dayColor
+                            : "transparent",
+                      }}
+                    >
+                      {date.getDate()}
+                    </span>
+                  </div>
 
-              {/* POSTS */}
-              <div className="
+                  {/* POSTS */}
+                  <div className="
                 flex
                 min-h-0
                 flex-1
@@ -5981,45 +6272,45 @@ export default function CalendarGrid({
                 md:gap-2
                 md:pt-1
               ">
-                {dayPosts.map(
-                  (
-                    post,
-                    postIndex
-                  ) => (
-                    <PostTile
-                      key={post.id}
-                      post={post}
-                      index={
+                    {dayPosts.map(
+                      (
+                        post,
                         postIndex
-                      }
-                      onClick={() =>
-                        setSelectedPost(
-                          post
-                        )
-                      }
-                      canDelete={
-                        userRole === "EDIT_CALENDAR" &&
-                        post.approvalStatus !== "APPROVED"
-                      }
-                      onDelete={() =>
-                        handleDeletePost(
-                          post.id
-                        )
-                      }
-                    />
-                  )
-                )}
-
-                {userRole ===
-                  "EDIT_CALENDAR" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAddingDate(
-                        date
+                      ) => (
+                        <PostTile
+                          key={post.id}
+                          post={post}
+                          index={
+                            postIndex
+                          }
+                          onClick={() =>
+                            setSelectedPost(
+                              post
+                            )
+                          }
+                          canDelete={
+                            userRole === "EDIT_CALENDAR" &&
+                            post.approvalStatus !== "APPROVED"
+                          }
+                          onDelete={() =>
+                            handleDeletePost(
+                              post.id
+                            )
+                          }
+                        />
                       )
-                    }
-                    className="
+                    )}
+
+                    {userRole ===
+                      "EDIT_CALENDAR" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAddingDate(
+                              date
+                            )
+                          }
+                          className="
                       flex
                       w-full
                       min-h-8
@@ -6043,78 +6334,78 @@ export default function CalendarGrid({
                       md:text-[9px]
                       lg:text-[10px]
                     "
-                    style={{
-                      borderColor:
-                        `${dayColor}55`,
-                      color:
-                        dayColor,
-                    }}
-                  >
-                    <span className="
+                          style={{
+                            borderColor:
+                              `${dayColor}55`,
+                            color:
+                              dayColor,
+                          }}
+                        >
+                          <span className="
                       text-xs
                       leading-none
                       md:text-sm
                     ">
-                      +
-                    </span>
+                            +
+                          </span>
 
-                    <span>
-                      Add post
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                          <span>
+                            Add post
+                          </span>
+                        </button>
+                      )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-      {/* =====================================================
+          {/* =====================================================
           MOBILE AGENDA
           ===================================================== */}
 
-      <div className="
+          <div className="
         flex
         flex-col
         gap-3
         sm:hidden
       ">
-        {visibleDays.map((date) => {
-          const dayPosts =
-            postsForDate(date);
+            {visibleDays.map((date) => {
+              const dayPosts =
+                postsForDate(date);
 
-          const dayColor =
-            DAY_COLORS[
-              date.getDay()
-            ];
+              const dayColor =
+                DAY_COLORS[
+                date.getDay()
+                ];
 
-          const todayDate =
-            isToday(date);
+              const todayDate =
+                isToday(date);
 
-          return (
-            <section
-              key={date.toISOString()}
-              className="
+              return (
+                <section
+                  key={date.toISOString()}
+                  className="
                 overflow-hidden
                 rounded-2xl
                 border
               "
-              style={{
-                background:
-                  theme === "dark"
-                    ? `${dayColor}0c`
-                    : `${dayColor}08`,
-                borderColor: todayDate
-                  ? dayColor
-                  : `${dayColor}28`,
-                boxShadow: todayDate
-                  ? `0 0 0 1px ${dayColor}18`
-                  : "none",
-              }}
-            >
-              {/* DAY HEADER */}
-              <div
-                className="
+                  style={{
+                    background:
+                      theme === "dark"
+                        ? `${dayColor}0c`
+                        : `${dayColor}08`,
+                    borderColor: todayDate
+                      ? dayColor
+                      : `${dayColor}28`,
+                    boxShadow: todayDate
+                      ? `0 0 0 1px ${dayColor}18`
+                      : "none",
+                  }}
+                >
+                  {/* DAY HEADER */}
+                  <div
+                    className="
                   flex
                   items-center
                   justify-between
@@ -6123,23 +6414,23 @@ export default function CalendarGrid({
                   px-3.5
                   py-3
                 "
-                style={{
-                  borderColor:
-                    `${dayColor}22`,
-                  background:
-                    theme === "dark"
-                      ? "rgba(255,255,255,0.025)"
-                      : "rgba(0,0,0,0.018)",
-                }}
-              >
-                <div className="
+                    style={{
+                      borderColor:
+                        `${dayColor}22`,
+                      background:
+                        theme === "dark"
+                          ? "rgba(255,255,255,0.025)"
+                          : "rgba(0,0,0,0.018)",
+                    }}
+                  >
+                    <div className="
                   flex
                   min-w-0
                   items-center
                   gap-3
                 ">
-                  <div
-                    className="
+                      <div
+                        className="
                       flex h-10 w-10
                       flex-shrink-0
                       items-center
@@ -6148,63 +6439,63 @@ export default function CalendarGrid({
                       text-sm
                       font-bold
                     "
-                    style={{
-                      background:
-                        todayDate
-                          ? dayColor
-                          : `${dayColor}16`,
-                      color: todayDate
-                        ? "#FFFFFF"
-                        : dayColor,
-                    }}
-                  >
-                    {date.getDate()}
-                  </div>
+                        style={{
+                          background:
+                            todayDate
+                              ? dayColor
+                              : `${dayColor}16`,
+                          color: todayDate
+                            ? "#FFFFFF"
+                            : dayColor,
+                        }}
+                      >
+                        {date.getDate()}
+                      </div>
 
-                  <div className="min-w-0">
-                    <p
-                      className="
+                      <div className="min-w-0">
+                        <p
+                          className="
                         truncate
                         text-xs
                         font-bold
                       "
-                      style={{
-                        color: t.text,
-                      }}
-                    >
-                      {date.toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday:
-                            "long",
-                        }
-                      )}
-                    </p>
+                          style={{
+                            color: t.text,
+                          }}
+                        >
+                          {date.toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday:
+                                "long",
+                            }
+                          )}
+                        </p>
 
-                    <p
-                      className="
+                        <p
+                          className="
                         mt-0.5
                         truncate
                         text-[10px]
                       "
-                      style={{
-                        color:
-                          t.textFaint,
-                      }}
-                    >
-                      {date.toLocaleDateString(
-                        "en-US",
-                        {
-                          month:
-                            "long",
-                        }
-                      )}
-                    </p>
-                  </div>
+                          style={{
+                            color:
+                              t.textFaint,
+                          }}
+                        >
+                          {date.toLocaleDateString(
+                            "en-US",
+                            {
+                              month:
+                                "long",
+                            }
+                          )}
+                        </p>
+                      </div>
 
-                  {todayDate && (
-                    <span
-                      className="
+                      {todayDate && (
+                        <span
+                          className="
                         hidden
                         rounded-full
                         px-2
@@ -6215,20 +6506,20 @@ export default function CalendarGrid({
                         tracking-wider
                         min-[360px]:inline-flex
                       "
-                      style={{
-                        background:
-                          `${dayColor}18`,
-                        color:
-                          dayColor,
-                      }}
-                    >
-                      Today
-                    </span>
-                  )}
-                </div>
+                          style={{
+                            background:
+                              `${dayColor}18`,
+                            color:
+                              dayColor,
+                          }}
+                        >
+                          Today
+                        </span>
+                      )}
+                    </div>
 
-                <span
-                  className="
+                    <span
+                      className="
                     flex-shrink-0
                     rounded-full
                     px-2.5
@@ -6236,58 +6527,58 @@ export default function CalendarGrid({
                     text-[9px]
                     font-semibold
                   "
-                  style={{
-                    background:
-                      theme === "dark"
-                        ? "rgba(255,255,255,0.06)"
-                        : "rgba(0,0,0,0.05)",
-                    color:
-                      t.textMuted,
-                  }}
-                >
-                  {dayPosts.length}{" "}
-                  {dayPosts.length ===
-                  1
-                    ? "post"
-                    : "posts"}
-                </span>
-              </div>
+                      style={{
+                        background:
+                          theme === "dark"
+                            ? "rgba(255,255,255,0.06)"
+                            : "rgba(0,0,0,0.05)",
+                        color:
+                          t.textMuted,
+                      }}
+                    >
+                      {dayPosts.length}{" "}
+                      {dayPosts.length ===
+                        1
+                        ? "post"
+                        : "posts"}
+                    </span>
+                  </div>
 
-              {/* DAY CONTENT */}
-              <div className="flex flex-col gap-2 p-3">
-                {dayPosts.length >
-                0 ? (
-                  dayPosts.map(
-                    (
-                      post,
-                      postIndex
-                    ) => (
-                      <PostTile
-                        key={post.id}
-                        post={post}
-                        index={
+                  {/* DAY CONTENT */}
+                  <div className="flex flex-col gap-2 p-3">
+                    {dayPosts.length >
+                      0 ? (
+                      dayPosts.map(
+                        (
+                          post,
                           postIndex
-                        }
-                        onClick={() =>
-                          setSelectedPost(
-                            post
-                          )
-                        }
-                        canDelete={
-                          userRole === "EDIT_CALENDAR" &&
-                          post.approvalStatus !== "APPROVED"
-                        }
-                        onDelete={() =>
-                          handleDeletePost(
-                            post.id
-                          )
-                        }
-                      />
-                    )
-                  )
-                ) : (
-                  <div
-                    className="
+                        ) => (
+                          <PostTile
+                            key={post.id}
+                            post={post}
+                            index={
+                              postIndex
+                            }
+                            onClick={() =>
+                              setSelectedPost(
+                                post
+                              )
+                            }
+                            canDelete={
+                              userRole === "EDIT_CALENDAR" &&
+                              post.approvalStatus !== "APPROVED"
+                            }
+                            onDelete={() =>
+                              handleDeletePost(
+                                post.id
+                              )
+                            }
+                          />
+                        )
+                      )
+                    ) : (
+                      <div
+                        className="
                       rounded-xl
                       border
                       border-dashed
@@ -6295,43 +6586,43 @@ export default function CalendarGrid({
                       py-5
                       text-center
                     "
-                    style={{
-                      borderColor:
-                        `${dayColor}25`,
-                      background:
-                        theme ===
-                        "dark"
-                          ? "rgba(255,255,255,0.018)"
-                          : "rgba(0,0,0,0.015)",
-                    }}
-                  >
-                    <p
-                      className="
+                        style={{
+                          borderColor:
+                            `${dayColor}25`,
+                          background:
+                            theme ===
+                              "dark"
+                              ? "rgba(255,255,255,0.018)"
+                              : "rgba(0,0,0,0.015)",
+                        }}
+                      >
+                        <p
+                          className="
                         text-[10px]
                         font-medium
                       "
-                      style={{
-                        color:
-                          t.textFaint,
-                      }}
-                    >
-                      {filtersActive
-                        ? "No posts match your filters"
-                        : "Nothing scheduled"}
-                    </p>
-                  </div>
-                )}
+                          style={{
+                            color:
+                              t.textFaint,
+                          }}
+                        >
+                          {filtersActive
+                            ? "No posts match your filters"
+                            : "Nothing scheduled"}
+                        </p>
+                      </div>
+                    )}
 
-                {userRole ===
-                  "EDIT_CALENDAR" && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setAddingDate(
-                        date
-                      )
-                    }
-                    className="
+                    {userRole ===
+                      "EDIT_CALENDAR" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAddingDate(
+                              date
+                            )
+                          }
+                          className="
                       flex
                       min-h-11
                       w-full
@@ -6348,42 +6639,42 @@ export default function CalendarGrid({
                       transition-all
                       active:scale-[0.98]
                     "
-                    style={{
-                      borderColor:
-                        `${dayColor}55`,
-                      background:
-                        theme ===
-                        "dark"
-                          ? `${dayColor}08`
-                          : `${dayColor}06`,
-                      color:
-                        dayColor,
-                    }}
-                  >
-                    <span className="
+                          style={{
+                            borderColor:
+                              `${dayColor}55`,
+                            background:
+                              theme ===
+                                "dark"
+                                ? `${dayColor}08`
+                                : `${dayColor}06`,
+                            color:
+                              dayColor,
+                          }}
+                        >
+                          <span className="
                       text-base
                       leading-none
                     ">
-                      +
-                    </span>
+                            +
+                          </span>
 
-                    <span>
-                      Add post to{" "}
-                      {date.toLocaleDateString(
-                        "en-US",
-                        {
-                          weekday:
-                            "short",
-                        }
+                          <span>
+                            Add post to{" "}
+                            {date.toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday:
+                                  "short",
+                              }
+                            )}
+                          </span>
+                        </button>
                       )}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
         </>
       )}
 
