@@ -1,17 +1,17 @@
-import { redirect, notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
+
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminEmail } from "@/lib/admin";
 import CalendarRowActions from "@/components/admin/social-calendars/CalendarRowActions";
-import type { PaymentType } from "@prisma/client";
 
-const PAGE_SIZE = 18;
+const PAGE_SIZE = 12;
 
 const COLOR = {
   black: "#0A0A0A",
   charcoal: "#141414",
-  charcoal2: "#1A1A1A",
   white: "#FFFFFF",
   muted: "rgba(255,255,255,0.48)",
   faint: "rgba(255,255,255,0.28)",
@@ -47,42 +47,50 @@ function formatDate(date: Date | null | undefined) {
   });
 }
 
-function formatDateTime(date: Date | null | undefined) {
-  if (!date) return "—";
-
-  return date.toLocaleString("en-NG", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function relativeTime(date: Date | null | undefined) {
   if (!date) return "Never";
 
   const diff = Date.now() - date.getTime();
-  const seconds = Math.max(1, Math.floor(diff / 1000));
+  const seconds = Math.max(
+    1,
+    Math.floor(diff / 1000)
+  );
 
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 60) {
+    return `${seconds}s ago`;
+  }
 
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
 
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+
+  if (days < 30) {
+    return `${days}d ago`;
+  }
 
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
+
+  if (months < 12) {
+    return `${months}mo ago`;
+  }
 
   return `${Math.floor(months / 12)}y ago`;
 }
 
-function initials(name: string | null, email: string) {
+function initials(
+  name: string | null,
+  email: string
+) {
   const value = name?.trim() || email;
 
   const parts = value
@@ -90,22 +98,34 @@ function initials(name: string | null, email: string) {
     .filter(Boolean)
     .slice(0, 2);
 
-  if (parts.length === 0) return "?";
+  if (parts.length === 0) {
+    return "?";
+  }
 
-  return parts.map((part) => part[0]?.toUpperCase()).join("");
+  return parts
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
-function labelize(value: string | null | undefined) {
+function labelize(
+  value: string | null | undefined
+) {
   if (!value) return "—";
 
   return value
     .toLowerCase()
     .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map(
+      (part) =>
+        part.charAt(0).toUpperCase() +
+        part.slice(1)
+    )
     .join(" ");
 }
 
-function statusMeta(status: string | null | undefined) {
+function billingMeta(
+  status: string | null | undefined
+) {
   switch (status) {
     case "ACTIVE":
       return {
@@ -144,7 +164,9 @@ function statusMeta(status: string | null | undefined) {
   }
 }
 
-function planMeta(plan: string | null | undefined) {
+function planMeta(
+  plan: string | null | undefined
+) {
   switch (plan) {
     case "CREATOR":
       return {
@@ -169,7 +191,9 @@ function planMeta(plan: string | null | undefined) {
   }
 }
 
-function workspacePlanStatusMeta(status: string) {
+function workflowMeta(
+  status: string | null | undefined
+) {
   switch (status) {
     case "PLAN_APPROVED":
       return {
@@ -201,11 +225,14 @@ function workspacePlanStatusMeta(status: string) {
   }
 }
 
-function connectionState(
+function connectionMeta(
   instagramAccountId: string | null,
   tikTokOpenId: string | null
 ) {
-  if (instagramAccountId && tikTokOpenId) {
+  if (
+    instagramAccountId &&
+    tikTokOpenId
+  ) {
     return {
       label: "2 connected",
       color: COLOR.green,
@@ -213,7 +240,10 @@ function connectionState(
     };
   }
 
-  if (instagramAccountId || tikTokOpenId) {
+  if (
+    instagramAccountId ||
+    tikTokOpenId
+  ) {
     return {
       label: "1 connected",
       color: COLOR.blue,
@@ -257,121 +287,86 @@ export default async function AdminSocialCalendarsPage({
   const params = await searchParams;
 
   const query = params.q?.trim() || "";
-  const billingFilter = params.billing || "ALL";
-  const planFilter = params.plan || "ALL";
-  const statusFilter = params.status || "ALL";
-  const accountFilter = params.account || "ALL";
-  const connectionFilter = params.connection || "ALL";
 
-  const requestedPage = Number.parseInt(params.page || "1", 10);
+  const billingFilter =
+    params.billing || "ALL";
+
+  const planFilter =
+    params.plan || "ALL";
+
+  const statusFilter =
+    params.status || "ALL";
+
+  const accountFilter =
+    params.account || "ALL";
+
+  const connectionFilter =
+    params.connection || "ALL";
+
+  const requestedPage = Number.parseInt(
+    params.page || "1",
+    10
+  );
+
   const safeRequestedPage =
-    Number.isFinite(requestedPage) && requestedPage > 0
+    Number.isFinite(requestedPage) &&
+    requestedPage > 0
       ? requestedPage
       : 1;
 
   /*
-   * ------------------------------------------------------------
-   * DATE WINDOWS
-   * ------------------------------------------------------------
-   */
-
-  const now = new Date();
-
-  const startOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1
-  );
-
-  const startOfYear = new Date(
-    now.getFullYear(),
-    0,
-    1
-  );
-
-  const sevenDaysAgo = new Date(
-    now.getTime() - 7 * 24 * 60 * 60 * 1000
-  );
-
-  const thirtyDaysAgo = new Date(
-    now.getTime() - 30 * 24 * 60 * 60 * 1000
-  );
-
-  /*
-   * ------------------------------------------------------------
-   * ACCOUNT / WORKSPACE COUNTS
+   * IMPORTANT:
    *
-   * Sequential intentionally.
-   * Database connection_limit = 1.
-   * ------------------------------------------------------------
+   * All Prisma calls below are intentionally sequential.
+   *
+   * The production database uses a very small
+   * connection pool. Running these queries through
+   * Promise.all() can cause the admin RSC request
+   * to stall and eventually terminate.
    */
 
-  const totalManagers = await db.creator.count({
-    where: {
-      accountType: "SOCIAL_MEDIA_MANAGER",
-    },
-  });
+  // ------------------------------------------------------------
+  // BASIC COUNTS
+  // ------------------------------------------------------------
 
-  const totalWorkspaces = await db.socialCalendar.count();
+  const totalWorkspaces =
+    await db.socialCalendar.count();
 
-  const activeCalendarBillingAccounts =
+  const totalManagers =
     await db.creator.count({
       where: {
-        calendarBillingStatus: "ACTIVE",
+        accountType:
+          "SOCIAL_MEDIA_MANAGER",
       },
     });
 
-  const activeWorkspaceBillingAccounts =
-    await db.creator.count({
-      where: {
-        contentWorkspaceBillingStatus: "ACTIVE",
-      },
-    });
-
-  const trialAccounts = await db.creator.count({
-    where: {
-      OR: [
-        {
-          calendarBillingStatus: "TRIAL",
-        },
-        {
-          contentWorkspaceBillingStatus: "TRIAL",
-        },
-      ],
-    },
-  });
-
-  const offlineAccounts = await db.creator.count({
-    where: {
-      OR: [
-        {
-          calendarBillingStatus: "OFFLINE",
-        },
-        {
-          contentWorkspaceBillingStatus: "OFFLINE",
-        },
-      ],
-    },
-  });
-
-  const totalPosts = await db.calendarPost.count();
+  const totalPosts =
+    await db.calendarPost.count();
 
   const totalCollaborators =
     await db.calendarCollaborator.count();
 
-  const totalInvites = await db.calendarInvite.count();
-
   const totalClientViews =
     await db.calendarViewerEmail.count();
 
-  const totalBusinessDocuments =
+  const totalDocuments =
     await db.calendarBusinessDocument.count();
 
-  /*
-   * ------------------------------------------------------------
-   * RECENT ACTIVITY COUNTS
-   * ------------------------------------------------------------
-   */
+  // ------------------------------------------------------------
+  // RECENT ACTIVITY
+  // ------------------------------------------------------------
+
+  const now = new Date();
+
+  const sevenDaysAgo = new Date(
+    now.getTime() -
+      7 * 24 * 60 * 60 * 1000
+  );
+
+  const thirtyDaysAgo = new Date(
+    now.getTime() -
+      30 * 24 * 60 * 60 * 1000
+  );
 
   const workspacesCreatedLast7Days =
     await db.socialCalendar.count({
@@ -409,120 +404,15 @@ export default async function AdminSocialCalendarsPage({
       },
     });
 
-  /*
-   * ------------------------------------------------------------
-   * REVENUE
-   *
-   * Both names are retained because the schema contains historical
-   * CALENDAR_* records as well as CONTENT_WORKSPACE_* records.
-   * ------------------------------------------------------------
-   */
+  // ------------------------------------------------------------
+  // WORKSPACE FILTERS
+  // ------------------------------------------------------------
 
-  const workspaceRevenueTypes: PaymentType[] = [
-    "CALENDAR_SUBSCRIPTION_INITIAL",
-    "CALENDAR_SUBSCRIPTION_RENEWAL",
-    "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
-    "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
-  ];
-
-  const workspaceRevenueFilter = {
-    type: {
-      in: workspaceRevenueTypes,
-    },
-  };
-
-  const allTimeRevenue =
-    await db.paymentRecord.aggregate({
-      _sum: {
-        amountNgn: true,
-      },
-      where: workspaceRevenueFilter,
-    });
-
-  const monthRevenue =
-    await db.paymentRecord.aggregate({
-      _sum: {
-        amountNgn: true,
-      },
-      where: {
-        ...workspaceRevenueFilter,
-        createdAt: {
-          gte: startOfMonth,
-        },
-      },
-    });
-
-  const yearRevenue =
-    await db.paymentRecord.aggregate({
-      _sum: {
-        amountNgn: true,
-      },
-      where: {
-        ...workspaceRevenueFilter,
-        createdAt: {
-          gte: startOfYear,
-        },
-      },
-    });
-
-  /*
-   * ------------------------------------------------------------
-   * MANAGERS
-   * ------------------------------------------------------------
-   */
-
-  const managers = await db.creator.findMany({
-    where: {
-      accountType: "SOCIAL_MEDIA_MANAGER",
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      companyName: true,
-      avatarUrl: true,
-      createdAt: true,
-      lastLoginAt: true,
-
-      calendarAccountType: true,
-      calendarBillingStatus: true,
-     
-      calendarTrialEndsAt: true,
-      calendarSubscriptionRenewsAt: true,
-
-      contentWorkspacePlan: true,
-      contentWorkspaceBillingStatus: true,
-      
-      contentWorkspaceTrialEndsAt: true,
-      contentWorkspaceSubscriptionRenewsAt: true,
-
-      aiAssistantBillingStatus: true,
-      aiAssistantTrialEndsAt: true,
-      aiAssistantSubscriptionRenewsAt: true,
-
-      _count: {
-        select: {
-          ownedCalendars: true,
-          calendarCollaborations: true,
-          calendarInvitesSent: true,
-        },
-      },
-    },
-  });
-
-  /*
-   * ------------------------------------------------------------
-   * FILTERABLE WORKSPACE WHERE
-   * ------------------------------------------------------------
-   */
-
-  const workspaceAndFilters: Array<Record<string, unknown>> = [];
+  const workspaceFilters: Prisma.SocialCalendarWhereInput[] =
+    [];
 
   if (query) {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       OR: [
         {
           clientName: {
@@ -565,87 +455,61 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (planFilter !== "ALL") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       manager: {
-        contentWorkspacePlan: planFilter,
+        contentWorkspacePlan:
+          planFilter as "CREATOR" | "STUDIO",
       },
     });
   }
 
   if (accountFilter !== "ALL") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       manager: {
-        calendarAccountType: accountFilter,
+        calendarAccountType:
+          accountFilter as
+            | "INDIVIDUAL"
+            | "COMPANY",
       },
     });
   }
 
   if (statusFilter !== "ALL") {
-    if (statusFilter === "ACTIVE") {
-      workspaceAndFilters.push({
-        manager: {
-          OR: [
-            {
-              contentWorkspaceBillingStatus: "ACTIVE",
-            },
-            {
-              calendarBillingStatus: "ACTIVE",
-            },
-          ],
-        },
-      });
-    } else if (statusFilter === "TRIAL") {
-      workspaceAndFilters.push({
-        manager: {
-          OR: [
-            {
-              contentWorkspaceBillingStatus: "TRIAL",
-            },
-            {
-              calendarBillingStatus: "TRIAL",
-            },
-          ],
-        },
-      });
-    } else if (statusFilter === "OFFLINE") {
-      workspaceAndFilters.push({
-        manager: {
-          OR: [
-            {
-              contentWorkspaceBillingStatus: "OFFLINE",
-            },
-            {
-              calendarBillingStatus: "OFFLINE",
-            },
-          ],
-        },
-      });
-    } else if (statusFilter === "PENDING_SETUP") {
-      workspaceAndFilters.push({
-        manager: {
-          OR: [
-            {
-              contentWorkspaceBillingStatus:
-                "PENDING_SETUP",
-            },
-            {
-              calendarBillingStatus: "PENDING_SETUP",
-            },
-          ],
-        },
-      });
-    }
-  }
-
-  if (billingFilter === "PAID") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       manager: {
         OR: [
           {
-            contentWorkspaceBillingStatus: "ACTIVE",
+            contentWorkspaceBillingStatus:
+              statusFilter as
+                | "PENDING_SETUP"
+                | "TRIAL"
+                | "ACTIVE"
+                | "OFFLINE",
           },
           {
-            calendarBillingStatus: "ACTIVE",
+            calendarBillingStatus:
+              statusFilter as
+                | "PENDING_SETUP"
+                | "TRIAL"
+                | "ACTIVE"
+                | "OFFLINE",
+          },
+        ],
+      },
+    });
+  }
+
+  if (billingFilter === "PAID") {
+    workspaceFilters.push({
+      manager: {
+        OR: [
+          {
+            contentWorkspaceBillingStatus:
+              "ACTIVE",
+          },
+          {
+            calendarBillingStatus:
+              "ACTIVE",
           },
         ],
       },
@@ -653,14 +517,16 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (billingFilter === "TRIAL") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       manager: {
         OR: [
           {
-            contentWorkspaceBillingStatus: "TRIAL",
+            contentWorkspaceBillingStatus:
+              "TRIAL",
           },
           {
-            calendarBillingStatus: "TRIAL",
+            calendarBillingStatus:
+              "TRIAL",
           },
         ],
       },
@@ -668,14 +534,16 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (billingFilter === "OFFLINE") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       manager: {
         OR: [
           {
-            contentWorkspaceBillingStatus: "OFFLINE",
+            contentWorkspaceBillingStatus:
+              "OFFLINE",
           },
           {
-            calendarBillingStatus: "OFFLINE",
+            calendarBillingStatus:
+              "OFFLINE",
           },
         ],
       },
@@ -683,7 +551,7 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (connectionFilter === "INSTAGRAM") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       instagramAccountId: {
         not: null,
       },
@@ -691,7 +559,7 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (connectionFilter === "TIKTOK") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       tikTokOpenId: {
         not: null,
       },
@@ -699,7 +567,7 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (connectionFilter === "CONNECTED") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       OR: [
         {
           instagramAccountId: {
@@ -716,7 +584,7 @@ export default async function AdminSocialCalendarsPage({
   }
 
   if (connectionFilter === "NONE") {
-    workspaceAndFilters.push({
+    workspaceFilters.push({
       AND: [
         {
           instagramAccountId: null,
@@ -728,18 +596,16 @@ export default async function AdminSocialCalendarsPage({
     });
   }
 
-  const workspaceWhere =
-    workspaceAndFilters.length > 0
+  const workspaceWhere: Prisma.SocialCalendarWhereInput =
+    workspaceFilters.length > 0
       ? {
-          AND: workspaceAndFilters,
+          AND: workspaceFilters,
         }
       : {};
 
-  /*
-   * ------------------------------------------------------------
-   * WORKSPACE TOTAL FOR PAGINATION
-   * ------------------------------------------------------------
-   */
+  // ------------------------------------------------------------
+  // PAGINATION COUNT
+  // ------------------------------------------------------------
 
   const filteredWorkspaceCount =
     await db.socialCalendar.count({
@@ -748,7 +614,10 @@ export default async function AdminSocialCalendarsPage({
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredWorkspaceCount / PAGE_SIZE)
+    Math.ceil(
+      filteredWorkspaceCount /
+        PAGE_SIZE
+    )
   );
 
   const currentPage = Math.min(
@@ -756,100 +625,93 @@ export default async function AdminSocialCalendarsPage({
     totalPages
   );
 
-  /*
-   * ------------------------------------------------------------
-   * WORKSPACES
-   * ------------------------------------------------------------
-   */
+  // ------------------------------------------------------------
+  // WORKSPACES
+  // ------------------------------------------------------------
 
-  const calendars = await db.socialCalendar.findMany({
-    where: workspaceWhere,
-    orderBy: [
-      {
+  const calendars =
+    await db.socialCalendar.findMany({
+      where: workspaceWhere,
+      orderBy: {
         updatedAt: "desc",
       },
-      {
-        createdAt: "desc",
-      },
-    ],
-    skip: (currentPage - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
-    select: {
-      id: true,
-      slug: true,
-      clientName: true,
-      logoUrl: true,
+      skip:
+        (currentPage - 1) *
+        PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        slug: true,
+        clientName: true,
+        logoUrl: true,
 
-      planStatus: true,
-      planSubmittedAt: true,
-      planApprovedAt: true,
-      planApprovalNote: true,
+        planStatus: true,
+        planSubmittedAt: true,
+        planApprovedAt: true,
 
-      headerTitle: true,
+        createdAt: true,
+        updatedAt: true,
 
-      aiBusinessSummaryUpdatedAt: true,
-      aiLastResearchedAt: true,
+        instagramAccountId: true,
+        instagramUsername: true,
+        instagramConnectedAt: true,
+        instagramTokenExpiresAt: true,
 
-      createdAt: true,
-      updatedAt: true,
+        tikTokOpenId: true,
+        tikTokUsername: true,
+        tikTokConnectedAt: true,
+        tikTokAccessTokenExpiresAt: true,
 
-      instagramAccountId: true,
-      instagramUsername: true,
-      instagramConnectedAt: true,
-      instagramTokenExpiresAt: true,
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            companyName: true,
+            avatarUrl: true,
 
-      tikTokOpenId: true,
-      tikTokUsername: true,
-      tikTokConnectedAt: true,
-      tikTokAccessTokenExpiresAt: true,
+            calendarAccountType: true,
+            calendarBillingStatus: true,
+            calendarTrialEndsAt: true,
+            calendarSubscriptionRenewsAt:
+              true,
 
-      manager: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          companyName: true,
-          avatarUrl: true,
+            contentWorkspacePlan: true,
+            contentWorkspaceBillingStatus:
+              true,
+            contentWorkspaceTrialEndsAt:
+              true,
+            contentWorkspaceSubscriptionRenewsAt:
+              true,
+          },
+        },
 
-          calendarAccountType: true,
-          calendarBillingStatus: true,
-          
-          calendarTrialEndsAt: true,
-          calendarSubscriptionRenewsAt: true,
-
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          
-          contentWorkspaceTrialEndsAt: true,
-          contentWorkspaceSubscriptionRenewsAt: true,
-
-          aiAssistantBillingStatus: true,
-          aiAssistantTrialEndsAt: true,
-          aiAssistantSubscriptionRenewsAt: true,
+        _count: {
+          select: {
+            posts: true,
+            collaborators: true,
+            invites: true,
+            viewerEmails: true,
+            businessDocuments: true,
+          },
         },
       },
+    });
 
-      _count: {
-        select: {
-          posts: true,
-          collaborators: true,
-          invites: true,
-          viewerEmails: true,
-          businessDocuments: true,
-        },
-      },
-    },
-  });
+  // ------------------------------------------------------------
+  // PAGE MANAGER REVENUE
+  // ------------------------------------------------------------
 
-  /*
-   * ------------------------------------------------------------
-   * MANAGER ROLLUPS
-   * ------------------------------------------------------------
-   */
+  const managerIds = Array.from(
+    new Set(
+      calendars.map(
+        (calendar) =>
+          calendar.manager.id
+      )
+    )
+  );
 
-  const managerIds = managers.map((manager) => manager.id);
-
-  const managerPaymentRows =
+  const pageRevenueRows =
     managerIds.length > 0
       ? await db.paymentRecord.findMany({
           where: {
@@ -857,97 +719,141 @@ export default async function AdminSocialCalendarsPage({
               in: managerIds,
             },
             type: {
-              in: workspaceRevenueTypes,
+              in: [
+                "CALENDAR_SUBSCRIPTION_INITIAL",
+                "CALENDAR_SUBSCRIPTION_RENEWAL",
+                "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
+                "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
+              ],
             },
           },
           select: {
             creatorId: true,
             amountNgn: true,
-            createdAt: true,
           },
         })
       : [];
 
-  const managerRevenue = new Map<
-    string,
-    {
-      total: number;
-      month: number;
-    }
-  >();
+  const revenueByManager =
+    new Map<string, number>();
 
-  for (const payment of managerPaymentRows) {
-    const existing = managerRevenue.get(
-      payment.creatorId
-    ) ?? {
-      total: 0,
-      month: 0,
-    };
-
-    existing.total += payment.amountNgn;
-
-    if (payment.createdAt >= startOfMonth) {
-      existing.month += payment.amountNgn;
-    }
-
-    managerRevenue.set(payment.creatorId, existing);
+  for (const payment of pageRevenueRows) {
+    revenueByManager.set(
+      payment.creatorId,
+      (revenueByManager.get(
+        payment.creatorId
+      ) ?? 0) + payment.amountNgn
+    );
   }
 
-  /*
-   * ------------------------------------------------------------
-   * MANAGER TABLE SEARCH
-   * ------------------------------------------------------------
-   */
+  // ------------------------------------------------------------
+  // REVENUE SUMMARY
+  // ------------------------------------------------------------
 
-  const managerSearch = query.toLowerCase();
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  );
 
-  const visibleManagers = managers.filter((manager) => {
-    if (!managerSearch) return true;
+  const startOfYear = new Date(
+    now.getFullYear(),
+    0,
+    1
+  );
 
-    return [
-      manager.name,
-      manager.email,
-      manager.companyName,
-      manager.calendarAccountType,
-      manager.contentWorkspacePlan,
-      manager.calendarBillingStatus,
-      manager.contentWorkspaceBillingStatus,
-    ]
-      .filter(Boolean)
-      .some((value) =>
-        String(value)
-          .toLowerCase()
-          .includes(managerSearch)
-      );
-  });
+  const workspacePaymentTypes = [
+    "CALENDAR_SUBSCRIPTION_INITIAL",
+    "CALENDAR_SUBSCRIPTION_RENEWAL",
+    "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
+    "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
+  ] as const;
 
-  /*
-   * ------------------------------------------------------------
-   * PAGE URL HELPER
-   * ------------------------------------------------------------
-   */
+  const monthRevenue =
+    await db.paymentRecord.aggregate({
+      _sum: {
+        amountNgn: true,
+      },
+      where: {
+        type: {
+          in: [
+            ...workspacePaymentTypes,
+          ],
+        },
+        createdAt: {
+          gte: startOfMonth,
+        },
+      },
+    });
+
+  const yearRevenue =
+    await db.paymentRecord.aggregate({
+      _sum: {
+        amountNgn: true,
+      },
+      where: {
+        type: {
+          in: [
+            ...workspacePaymentTypes,
+          ],
+        },
+        createdAt: {
+          gte: startOfYear,
+        },
+      },
+    });
+
+  // ------------------------------------------------------------
+  // URL HELPERS
+  // ------------------------------------------------------------
 
   function pageHref(nextPage: number) {
-    const search = new URLSearchParams();
+    const search =
+      new URLSearchParams();
 
-    if (query) search.set("q", query);
+    if (query) {
+      search.set("q", query);
+    }
+
     if (billingFilter !== "ALL") {
-      search.set("billing", billingFilter);
-    }
-    if (planFilter !== "ALL") {
-      search.set("plan", planFilter);
-    }
-    if (statusFilter !== "ALL") {
-      search.set("status", statusFilter);
-    }
-    if (accountFilter !== "ALL") {
-      search.set("account", accountFilter);
-    }
-    if (connectionFilter !== "ALL") {
-      search.set("connection", connectionFilter);
+      search.set(
+        "billing",
+        billingFilter
+      );
     }
 
-    search.set("page", String(nextPage));
+    if (planFilter !== "ALL") {
+      search.set(
+        "plan",
+        planFilter
+      );
+    }
+
+    if (statusFilter !== "ALL") {
+      search.set(
+        "status",
+        statusFilter
+      );
+    }
+
+    if (accountFilter !== "ALL") {
+      search.set(
+        "account",
+        accountFilter
+      );
+    }
+
+    if (connectionFilter !== "ALL") {
+      search.set(
+        "connection",
+        connectionFilter
+      );
+    }
+
+    search.set(
+      "page",
+      String(nextPage)
+    );
 
     return `/admin/social-calendars?${search.toString()}`;
   }
@@ -969,9 +875,9 @@ export default async function AdminSocialCalendarsPage({
       }}
     >
       <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-        {/* -------------------------------------------------- */}
-        {/* HEADER */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            HEADER
+        ===================================================== */}
 
         <header className="mb-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -980,15 +886,18 @@ export default async function AdminSocialCalendarsPage({
                 <span
                   className="h-2 w-2 rounded-full"
                   style={{
-                    background: COLOR.gold,
+                    background:
+                      COLOR.gold,
                   }}
                 />
 
                 <p
-                  className="text-[11px] font-bold uppercase"
+                  className="text-[10px] font-bold uppercase"
                   style={{
-                    color: COLOR.gold,
-                    letterSpacing: "0.16em",
+                    color:
+                      COLOR.gold,
+                    letterSpacing:
+                      "0.16em",
                   }}
                 >
                   Admin / Content Workspace
@@ -1002,12 +911,16 @@ export default async function AdminSocialCalendarsPage({
               <p
                 className="mt-2 max-w-2xl text-sm leading-6"
                 style={{
-                  color: COLOR.muted,
+                  color:
+                    COLOR.muted,
                 }}
               >
-                Manage social media managers, client workspaces,
-                subscriptions, publishing connections, content,
-                collaboration and client activity from one place.
+                Manage client workspaces,
+                subscriptions,
+                publishing connections,
+                collaboration and
+                content operations from
+                one place.
               </p>
             </div>
 
@@ -1016,138 +929,91 @@ export default async function AdminSocialCalendarsPage({
                 href="/admin"
                 className="rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
                 style={{
-                  borderColor: COLOR.line,
-                  color: "rgba(255,255,255,0.72)",
+                  borderColor:
+                    COLOR.line,
+                  color:
+                    "rgba(255,255,255,0.72)",
                 }}
               >
-                ← Platform overview
+                ← Admin overview
               </Link>
 
               <Link
                 href="/dashboard/calendars"
                 className="rounded-xl px-4 py-2.5 text-sm font-semibold transition"
                 style={{
-                  background: COLOR.gold,
-                  color: COLOR.black,
+                  background:
+                    COLOR.gold,
+                  color:
+                    COLOR.black,
                 }}
               >
-                Open workspace manager
+                Workspace manager
               </Link>
             </div>
           </div>
         </header>
 
-        {/* -------------------------------------------------- */}
-        {/* TOP METRICS */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            METRICS
+        ===================================================== */}
 
         <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            {
-              label: "Managers",
-              value: totalManagers,
-              detail: `${workspacesCreatedLast7Days} workspaces this week`,
-            },
-            {
-              label: "Client workspaces",
-              value: totalWorkspaces,
-              detail: `${postsCreatedLast7Days} posts created this week`,
-            },
-            {
-              label: "Active billing",
-              value:
-                Math.max(
-                  activeCalendarBillingAccounts,
-                  activeWorkspaceBillingAccounts
-                ),
-              detail: `${trialAccounts} account${trialAccounts === 1 ? "" : "s"} on trial`,
-            },
-            {
-              label: "Client engagement",
-              value: totalClientViews,
-              detail: `${clientViewsLast7Days} views this week`,
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border p-4 sm:p-5"
-              style={{
-                background: COLOR.charcoal,
-                borderColor: COLOR.line,
-              }}
-            >
-              <p
-                className="text-[10px] font-bold uppercase"
-                style={{
-                  color: COLOR.faint,
-                  letterSpacing: "0.12em",
-                }}
-              >
-                {stat.label}
-              </p>
+          <MetricCard
+            label="Managers"
+            value={totalManagers}
+            detail={`${workspacesCreatedLast7Days} new workspaces this week`}
+          />
 
-              <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                {stat.value.toLocaleString()}
-              </p>
+          <MetricCard
+            label="Workspaces"
+            value={totalWorkspaces}
+            detail={`${postsCreatedLast7Days} posts this week`}
+          />
 
-              <p
-                className="mt-1 text-xs"
-                style={{
-                  color: COLOR.muted,
-                }}
-              >
-                {stat.detail}
-              </p>
-            </div>
-          ))}
+          <MetricCard
+            label="Posts"
+            value={totalPosts}
+            detail={`${totalCollaborators} collaborators`}
+          />
+
+          <MetricCard
+            label="Client views"
+            value={totalClientViews}
+            detail={`${clientViewsLast7Days} this week`}
+          />
         </section>
 
-        {/* -------------------------------------------------- */}
-        {/* OPERATIONAL HEALTH */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            HEALTH
+        ===================================================== */}
 
-        <section className="mb-6 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <section className="mb-6 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
           <div
             className="rounded-2xl border p-5 sm:p-6"
             style={{
-              background: COLOR.charcoal,
-              borderColor: COLOR.line,
+              background:
+                COLOR.charcoal,
+              borderColor:
+                COLOR.line,
             }}
           >
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <p
-                  className="text-[10px] font-bold uppercase"
-                  style={{
-                    color: COLOR.gold,
-                    letterSpacing: "0.12em",
-                  }}
-                >
-                  Operations
-                </p>
-
-                <h2 className="mt-1 text-lg font-semibold">
-                  Workspace health
-                </h2>
-              </div>
-
-              <span
-                className="rounded-full px-3 py-1 text-[10px] font-bold uppercase"
+            <div className="mb-5">
+              <p
+                className="text-[10px] font-bold uppercase"
                 style={{
                   color:
-                    offlineAccounts > 0
-                      ? COLOR.red
-                      : COLOR.green,
-                  background:
-                    offlineAccounts > 0
-                      ? "rgba(248,113,113,0.10)"
-                      : "rgba(74,222,128,0.10)",
+                    COLOR.gold,
+                  letterSpacing:
+                    "0.12em",
                 }}
               >
-                {offlineAccounts > 0
-                  ? `${offlineAccounts} offline`
-                  : "No offline accounts"}
-              </span>
+                Operations
+              </p>
+
+              <h2 className="mt-1 text-lg font-semibold">
+                Workspace activity
+              </h2>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -1158,39 +1024,52 @@ export default async function AdminSocialCalendarsPage({
 
               <HealthMetric
                 label="Collaborators"
-                value={totalCollaborators}
+                value={
+                  totalCollaborators
+                }
               />
 
               <HealthMetric
-                label="Invites"
-                value={totalInvites}
+                label="Client views"
+                value={
+                  totalClientViews
+                }
               />
 
               <HealthMetric
-                label="Knowledge files"
-                value={totalBusinessDocuments}
+                label="Knowledge"
+                value={
+                  totalDocuments
+                }
               />
             </div>
 
             <div
-              className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3"
+              className="mt-4 grid grid-cols-3 gap-3 border-t pt-4"
               style={{
-                borderColor: COLOR.line,
+                borderColor:
+                  COLOR.line,
               }}
             >
-              <SmallMetric
-                label="Documents / 30d"
-                value={documentsLast30Days}
-              />
-
-              <SmallMetric
-                label="Client views / 7d"
-                value={clientViewsLast7Days}
-              />
-
-              <SmallMetric
+              <HealthMetric
                 label="Workspaces / 7d"
-                value={workspacesCreatedLast7Days}
+                value={
+                  workspacesCreatedLast7Days
+                }
+              />
+
+              <HealthMetric
+                label="Posts / 7d"
+                value={
+                  postsCreatedLast7Days
+                }
+              />
+
+              <HealthMetric
+                label="Docs / 30d"
+                value={
+                  documentsLast30Days
+                }
               />
             </div>
           </div>
@@ -1200,42 +1079,42 @@ export default async function AdminSocialCalendarsPage({
             style={{
               background:
                 "linear-gradient(145deg, rgba(245,200,66,0.10), rgba(255,255,255,0.025))",
-              borderColor: "rgba(245,200,66,0.18)",
+              borderColor:
+                "rgba(245,200,66,0.18)",
             }}
           >
             <p
               className="text-[10px] font-bold uppercase"
               style={{
-                color: COLOR.gold,
-                letterSpacing: "0.12em",
+                color:
+                  COLOR.gold,
+                letterSpacing:
+                  "0.12em",
               }}
             >
               Revenue
             </p>
 
             <h2 className="mt-1 text-lg font-semibold">
-              Content Workspace revenue
+              Workspace revenue
             </h2>
 
-            <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <RevenueMetric
-                label="Month"
+                label="This month"
                 value={formatNgn(
-                  monthRevenue._sum.amountNgn ?? 0
+                  monthRevenue
+                    ._sum
+                    .amountNgn ?? 0
                 )}
               />
 
               <RevenueMetric
-                label="Year"
+                label="This year"
                 value={formatNgn(
-                  yearRevenue._sum.amountNgn ?? 0
-                )}
-              />
-
-              <RevenueMetric
-                label="All time"
-                value={formatNgn(
-                  allTimeRevenue._sum.amountNgn ?? 0
+                  yearRevenue
+                    ._sum
+                    .amountNgn ?? 0
                 )}
               />
             </div>
@@ -1243,24 +1122,30 @@ export default async function AdminSocialCalendarsPage({
             <p
               className="mt-4 text-xs leading-5"
               style={{
-                color: COLOR.muted,
+                color:
+                  COLOR.muted,
               }}
             >
-              Includes both current Content Workspace subscription
-              charges and historical calendar subscription records.
+              Includes historical
+              calendar subscription
+              payments and current
+              Content Workspace
+              subscription payments.
             </p>
           </div>
         </section>
 
-        {/* -------------------------------------------------- */}
-        {/* SEARCH + FILTERS */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            FILTERS
+        ===================================================== */}
 
         <section
           className="mb-8 rounded-2xl border p-4 sm:p-5"
           style={{
-            background: COLOR.charcoal,
-            borderColor: COLOR.line,
+            background:
+              COLOR.charcoal,
+            borderColor:
+              COLOR.line,
           }}
         >
           <form
@@ -1268,7 +1153,7 @@ export default async function AdminSocialCalendarsPage({
             className="space-y-4"
           >
             <div className="flex flex-col gap-3 lg:flex-row">
-              <div className="relative min-w-0 flex-1">
+              <div className="min-w-0 flex-1">
                 <input
                   type="search"
                   name="q"
@@ -1276,7 +1161,8 @@ export default async function AdminSocialCalendarsPage({
                   placeholder="Search manager, company, client workspace or slug..."
                   className="h-11 w-full rounded-xl border bg-black/20 px-4 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-white/20"
                   style={{
-                    borderColor: COLOR.line,
+                    borderColor:
+                      COLOR.line,
                   }}
                 />
               </div>
@@ -1285,20 +1171,26 @@ export default async function AdminSocialCalendarsPage({
                 type="submit"
                 className="h-11 rounded-xl px-5 text-sm font-semibold"
                 style={{
-                  background: COLOR.gold,
-                  color: COLOR.black,
+                  background:
+                    COLOR.gold,
+                  color:
+                    COLOR.black,
                 }}
               >
                 Search
               </button>
 
-              {(query || activeFilterCount > 0) && (
+              {(query ||
+                activeFilterCount >
+                  0) && (
                 <Link
                   href="/admin/social-calendars"
                   className="flex h-11 items-center justify-center rounded-xl border px-5 text-sm font-semibold"
                   style={{
-                    borderColor: COLOR.line,
-                    color: COLOR.muted,
+                    borderColor:
+                      COLOR.line,
+                    color:
+                      COLOR.muted,
                   }}
                 >
                   Clear
@@ -1309,61 +1201,131 @@ export default async function AdminSocialCalendarsPage({
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
               <FilterSelect
                 name="status"
-                label="Billing status"
-                value={statusFilter}
+                label="Status"
+                value={
+                  statusFilter
+                }
                 options={[
-                  ["ALL", "All statuses"],
-                  ["ACTIVE", "Active"],
-                  ["TRIAL", "Trial"],
-                  ["OFFLINE", "Offline"],
-                  ["PENDING_SETUP", "Not subscribed"],
+                  [
+                    "ALL",
+                    "All statuses",
+                  ],
+                  [
+                    "ACTIVE",
+                    "Active",
+                  ],
+                  [
+                    "TRIAL",
+                    "Trial",
+                  ],
+                  [
+                    "OFFLINE",
+                    "Offline",
+                  ],
+                  [
+                    "PENDING_SETUP",
+                    "Not subscribed",
+                  ],
                 ]}
               />
 
               <FilterSelect
                 name="plan"
-                label="Workspace plan"
-                value={planFilter}
+                label="Plan"
+                value={
+                  planFilter
+                }
                 options={[
-                  ["ALL", "All plans"],
-                  ["CREATOR", "Creator"],
-                  ["STUDIO", "Studio"],
+                  [
+                    "ALL",
+                    "All plans",
+                  ],
+                  [
+                    "CREATOR",
+                    "Creator",
+                  ],
+                  [
+                    "STUDIO",
+                    "Studio",
+                  ],
                 ]}
               />
 
               <FilterSelect
                 name="account"
-                label="Account type"
-                value={accountFilter}
+                label="Account"
+                value={
+                  accountFilter
+                }
                 options={[
-                  ["ALL", "All accounts"],
-                  ["INDIVIDUAL", "Individual"],
-                  ["COMPANY", "Company"],
+                  [
+                    "ALL",
+                    "All accounts",
+                  ],
+                  [
+                    "INDIVIDUAL",
+                    "Individual",
+                  ],
+                  [
+                    "COMPANY",
+                    "Company",
+                  ],
                 ]}
               />
 
               <FilterSelect
                 name="connection"
-                label="Social connection"
-                value={connectionFilter}
+                label="Social"
+                value={
+                  connectionFilter
+                }
                 options={[
-                  ["ALL", "All connections"],
-                  ["CONNECTED", "Any connected"],
-                  ["INSTAGRAM", "Instagram"],
-                  ["TIKTOK", "TikTok"],
-                  ["NONE", "Not connected"],
+                  [
+                    "ALL",
+                    "All connections",
+                  ],
+                  [
+                    "CONNECTED",
+                    "Any connected",
+                  ],
+                  [
+                    "INSTAGRAM",
+                    "Instagram",
+                  ],
+                  [
+                    "TIKTOK",
+                    "TikTok",
+                  ],
+                  [
+                    "NONE",
+                    "Not connected",
+                  ],
                 ]}
               />
 
               <FilterSelect
                 name="billing"
                 label="Billing"
-                value={billingFilter}
+                value={
+                  billingFilter
+                }
                 options={[
-                  ["ALL", "All billing"],
-                  ["PAID", "Paid"],
-                  ["TRIAL", "Trial"],
-                  ["OFFLINE", "Offline"],
+                  [
+                    "ALL",
+                    "All billing",
+                  ],
+                  [
+                    "PAID",
+                    "Paid",
+                  ],
+                  [
+                    "TRIAL",
+                    "Trial",
+                  ],
+                  [
+                    "OFFLINE",
+                    "Offline",
+                  ],
                 ]}
               />
             </div>
@@ -1376,43 +1338,58 @@ export default async function AdminSocialCalendarsPage({
           </form>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            {activeFilterCount > 0 && (
+            {activeFilterCount >
+              0 && (
               <span
                 className="rounded-full px-3 py-1 text-[10px] font-bold"
                 style={{
-                  background: "rgba(245,200,66,0.10)",
-                  color: COLOR.gold,
+                  background:
+                    "rgba(245,200,66,0.10)",
+                  color:
+                    COLOR.gold,
                 }}
               >
                 {activeFilterCount} filter
-                {activeFilterCount === 1 ? "" : "s"} active
+                {activeFilterCount ===
+                1
+                  ? ""
+                  : "s"}{" "}
+                active
               </span>
             )}
 
             <span
               className="text-xs"
               style={{
-                color: COLOR.faint,
+                color:
+                  COLOR.faint,
               }}
             >
-              {filteredWorkspaceCount.toLocaleString()} workspace
-              {filteredWorkspaceCount === 1 ? "" : "s"} found
+              {filteredWorkspaceCount.toLocaleString()}{" "}
+              workspace
+              {filteredWorkspaceCount ===
+              1
+                ? ""
+                : "s"}{" "}
+              found
             </span>
           </div>
         </section>
 
-        {/* -------------------------------------------------- */}
-        {/* WORKSPACE DIRECTORY */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            WORKSPACES
+        ===================================================== */}
 
-        <section className="mb-10">
+        <section>
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p
                 className="text-[10px] font-bold uppercase"
                 style={{
-                  color: COLOR.orange,
-                  letterSpacing: "0.12em",
+                  color:
+                    COLOR.orange,
+                  letterSpacing:
+                    "0.12em",
                 }}
               >
                 Client workspaces
@@ -1426,393 +1403,494 @@ export default async function AdminSocialCalendarsPage({
             <p
               className="text-xs"
               style={{
-                color: COLOR.faint,
+                color:
+                  COLOR.faint,
               }}
             >
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of{" "}
+              {totalPages}
             </p>
           </div>
 
-          {calendars.length === 0 ? (
+          {calendars.length ===
+          0 ? (
             <div
               className="rounded-2xl border px-6 py-16 text-center"
               style={{
-                background: COLOR.charcoal,
-                borderColor: COLOR.line,
+                background:
+                  COLOR.charcoal,
+                borderColor:
+                  COLOR.line,
               }}
             >
-              <div className="mx-auto max-w-md">
-                <p className="text-lg font-semibold">
-                  No workspaces found
-                </p>
+              <p className="text-lg font-semibold">
+                No workspaces found
+              </p>
 
-                <p
-                  className="mt-2 text-sm leading-6"
-                  style={{
-                    color: COLOR.muted,
-                  }}
-                >
-                  Try changing your search or filters. There are no
-                  workspaces matching the current criteria.
-                </p>
-              </div>
+              <p
+                className="mx-auto mt-2 max-w-md text-sm leading-6"
+                style={{
+                  color:
+                    COLOR.muted,
+                }}
+              >
+                Try changing the search
+                or filters. No client
+                workspace matches the
+                current criteria.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4 xl:grid-cols-2">
-              {calendars.map((calendar) => {
-                const plan = planMeta(
-                  calendar.manager.contentWorkspacePlan
-                );
+              {calendars.map(
+                (calendar) => {
+                  const plan =
+                    planMeta(
+                      calendar.manager
+                        .contentWorkspacePlan
+                    );
 
-                const billingStatus =
-                  calendar.manager
-                    .contentWorkspaceBillingStatus !==
+                  const billingStatus =
+                    calendar.manager
+                      .contentWorkspaceBillingStatus !==
                     "PENDING_SETUP"
-                    ? calendar.manager
-                        .contentWorkspaceBillingStatus
-                    : calendar.manager
-                        .calendarBillingStatus;
+                      ? calendar.manager
+                          .contentWorkspaceBillingStatus
+                      : calendar.manager
+                          .calendarBillingStatus;
 
-                const billing = statusMeta(
-                  billingStatus
-                );
+                  const billing =
+                    billingMeta(
+                      billingStatus
+                    );
 
-                const planStatus =
-                  workspacePlanStatusMeta(
-                    calendar.planStatus
-                  );
+                  const workflow =
+                    workflowMeta(
+                      calendar.planStatus
+                    );
 
-                const connection = connectionState(
-                  calendar.instagramAccountId,
-                  calendar.tikTokOpenId
-                );
+                  const connection =
+                    connectionMeta(
+                      calendar.instagramAccountId,
+                      calendar.tikTokOpenId
+                    );
 
-                const trialEndsAt =
-                  calendar.manager
-                    .contentWorkspaceTrialEndsAt ??
-                  calendar.manager.calendarTrialEndsAt;
+                  const trialEndsAt =
+                    calendar.manager
+                      .contentWorkspaceTrialEndsAt ??
+                    calendar.manager
+                      .calendarTrialEndsAt;
 
-                const renewalDate =
-                  calendar.manager
-                    .contentWorkspaceSubscriptionRenewsAt ??
-                  calendar.manager
-                    .calendarSubscriptionRenewsAt;
+                  const renewalDate =
+                    calendar.manager
+                      .contentWorkspaceSubscriptionRenewsAt ??
+                    calendar.manager
+                      .calendarSubscriptionRenewsAt;
 
-                const expired = isTrialExpired(
-                  billingStatus,
-                  trialEndsAt
-                );
+                  const expired =
+                    isTrialExpired(
+                      billingStatus,
+                      trialEndsAt
+                    );
 
-                return (
-                  <article
-                    key={calendar.id}
-                    className="group overflow-hidden rounded-2xl border transition hover:border-white/15"
-                    style={{
-                      background: COLOR.charcoal,
-                      borderColor: COLOR.line,
-                    }}
-                  >
-                    {/* Card header */}
-                    <div className="p-5 sm:p-6">
-                      <div className="flex items-start gap-4">
-                        <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border text-sm font-bold"
-                          style={{
-                            background:
-                              "rgba(255,255,255,0.04)",
-                            borderColor: COLOR.line,
-                          }}
-                        >
-                          {calendar.logoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={calendar.logoUrl}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            calendar.clientName
-                              .slice(0, 1)
-                              .toUpperCase()
-                          )}
-                        </div>
+                  const managerRevenue =
+                    revenueByManager.get(
+                      calendar.manager.id
+                    ) ?? 0;
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Link
-                              href={`/dashboard/calendars/${calendar.id}`}
-                              className="min-w-0 truncate text-base font-semibold text-white transition hover:text-white/70"
-                            >
-                              {calendar.clientName}
-                            </Link>
+                  return (
+                    <article
+                      key={
+                        calendar.id
+                      }
+                      className="overflow-hidden rounded-2xl border transition hover:border-white/15"
+                      style={{
+                        background:
+                          COLOR.charcoal,
+                        borderColor:
+                          COLOR.line,
+                      }}
+                    >
+                      {/* HEADER */}
 
-                            <span
-                              className="rounded-full px-2 py-1 text-[9px] font-bold"
+                      <div className="p-5 sm:p-6">
+                        <div className="flex items-start gap-4">
+                          <div
+                            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border text-sm font-bold"
+                            style={{
+                              background:
+                                "rgba(255,255,255,0.04)",
+                              borderColor:
+                                COLOR.line,
+                            }}
+                          >
+                            {calendar.logoUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={
+                                  calendar.logoUrl
+                                }
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              calendar.clientName
+                                .slice(0, 1)
+                                .toUpperCase()
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Link
+                                href={`/dashboard/calendars/${calendar.id}`}
+                                className="min-w-0 truncate text-base font-semibold text-white transition hover:text-white/70"
+                              >
+                                {
+                                  calendar.clientName
+                                }
+                              </Link>
+
+                              <span
+                                className="rounded-full px-2 py-1 text-[9px] font-bold"
+                                style={{
+                                  background:
+                                    billing.bg,
+                                  color:
+                                    expired
+                                      ? COLOR.red
+                                      : billing.color,
+                                }}
+                              >
+                                {expired
+                                  ? "Trial expired"
+                                  : billing.label}
+                              </span>
+                            </div>
+
+                            <p
+                              className="mt-1 truncate text-xs"
                               style={{
-                                background: billing.bg,
-                                color: billing.color,
+                                color:
+                                  COLOR.faint,
                               }}
                             >
-                              {expired
-                                ? "Trial expired"
-                                : billing.label}
+                              /{
+                                calendar.slug
+                              }
+                            </p>
+
+                            <Link
+                              href={`/admin/creators/${calendar.manager.id}`}
+                              className="mt-2 block truncate text-xs transition hover:text-white"
+                              style={{
+                                color:
+                                  COLOR.muted,
+                              }}
+                            >
+                              Managed by{" "}
+                              <span className="text-white/70">
+                                {calendar.manager
+                                  .name ||
+                                  calendar.manager
+                                    .email}
+                              </span>
+                            </Link>
+                          </div>
+                        </div>
+
+                        {/* STATUS */}
+
+                        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          <InfoPill
+                            label="Plan"
+                            value={
+                              plan.label
+                            }
+                            color={
+                              plan.color
+                            }
+                            bg={
+                              plan.bg
+                            }
+                          />
+
+                          <InfoPill
+                            label="Workflow"
+                            value={
+                              workflow.label
+                            }
+                            color={
+                              workflow.color
+                            }
+                            bg={
+                              workflow.bg
+                            }
+                          />
+
+                          <InfoPill
+                            label="Account"
+                            value={
+                              calendar
+                                .manager
+                                .calendarAccountType
+                                ? labelize(
+                                    calendar
+                                      .manager
+                                      .calendarAccountType
+                                  )
+                                : "Not set"
+                            }
+                            color={
+                              COLOR.muted
+                            }
+                            bg="rgba(255,255,255,0.05)"
+                          />
+
+                          <InfoPill
+                            label="Social"
+                            value={
+                              connection.label
+                            }
+                            color={
+                              connection.color
+                            }
+                            bg={
+                              connection.bg
+                            }
+                          />
+                        </div>
+
+                        {/* METRICS */}
+
+                        <div
+                          className="mt-5 grid grid-cols-2 gap-y-4 border-y py-4 sm:grid-cols-5"
+                          style={{
+                            borderColor:
+                              COLOR.line,
+                          }}
+                        >
+                          <DataPoint
+                            label="Posts"
+                            value={
+                              calendar
+                                ._count
+                                .posts
+                            }
+                          />
+
+                          <DataPoint
+                            label="Collabs"
+                            value={
+                              calendar
+                                ._count
+                                .collaborators
+                            }
+                          />
+
+                          <DataPoint
+                            label="Views"
+                            value={
+                              calendar
+                                ._count
+                                .viewerEmails
+                            }
+                          />
+
+                          <DataPoint
+                            label="Knowledge"
+                            value={
+                              calendar
+                                ._count
+                                .businessDocuments
+                            }
+                          />
+
+                          <DataPoint
+                            label="Revenue"
+                            value={formatNgn(
+                              managerRevenue
+                            )}
+                          />
+                        </div>
+
+                        {/* SOCIAL CONNECTIONS */}
+
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <ConnectionRow
+                            platform="Instagram"
+                            username={
+                              calendar
+                                .instagramUsername
+                            }
+                            connected={
+                              !!calendar.instagramAccountId
+                            }
+                            connectedAt={
+                              calendar.instagramConnectedAt
+                            }
+                            expiresAt={
+                              calendar.instagramTokenExpiresAt
+                            }
+                          />
+
+                          <ConnectionRow
+                            platform="TikTok"
+                            username={
+                              calendar.tikTokUsername
+                            }
+                            connected={
+                              !!calendar.tikTokOpenId
+                            }
+                            connectedAt={
+                              calendar.tikTokConnectedAt
+                            }
+                            expiresAt={
+                              calendar.tikTokAccessTokenExpiresAt
+                            }
+                          />
+                        </div>
+
+                        {/* DATES */}
+
+                        <div
+                          className="mt-4 grid gap-3 text-xs sm:grid-cols-3"
+                          style={{
+                            color:
+                              COLOR.faint,
+                          }}
+                        >
+                          <div>
+                            <span className="block text-[9px] uppercase tracking-wider text-white/20">
+                              Created
+                            </span>
+
+                            <span className="mt-1 block text-white/55">
+                              {formatDate(
+                                calendar.createdAt
+                              )}
                             </span>
                           </div>
 
-                          <p
-                            className="mt-1 truncate text-xs"
+                          <div>
+                            <span className="block text-[9px] uppercase tracking-wider text-white/20">
+                              Updated
+                            </span>
+
+                            <span className="mt-1 block text-white/55">
+                              {relativeTime(
+                                calendar.updatedAt
+                              )}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="block text-[9px] uppercase tracking-wider text-white/20">
+                              {billingStatus ===
+                              "TRIAL"
+                                ? "Trial ends"
+                                : "Renewal"}
+                            </span>
+
+                            <span
+                              className="mt-1 block"
+                              style={{
+                                color:
+                                  expired
+                                    ? COLOR.red
+                                    : "rgba(255,255,255,0.55)",
+                              }}
+                            >
+                              {billingStatus ===
+                              "TRIAL"
+                                ? formatDate(
+                                    trialEndsAt
+                                  )
+                                : formatDate(
+                                    renewalDate
+                                  )}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ACTIONS */}
+
+                      <div
+                        className="flex flex-col gap-2 border-t p-4 sm:flex-row sm:items-center sm:justify-between"
+                        style={{
+                          borderColor:
+                            COLOR.line,
+                          background:
+                            "rgba(255,255,255,0.015)",
+                        }}
+                      >
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/dashboard/calendars/${calendar.id}`}
+                            className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:bg-white/5"
                             style={{
-                              color: COLOR.faint,
+                              borderColor:
+                                COLOR.line,
+                              color:
+                                "rgba(255,255,255,0.75)",
                             }}
                           >
-                            /{calendar.slug}
-                          </p>
+                            Open workspace
+                          </Link>
 
                           <Link
                             href={`/admin/creators/${calendar.manager.id}`}
-                            className="mt-2 block truncate text-xs transition hover:text-white"
+                            className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:bg-white/5"
                             style={{
-                              color: COLOR.muted,
+                              borderColor:
+                                COLOR.line,
+                              color:
+                                "rgba(255,255,255,0.55)",
                             }}
                           >
-                            Managed by{" "}
-                            <span className="text-white/70">
-                              {calendar.manager.name ||
-                                calendar.manager.email}
-                            </span>
+                            Manager
                           </Link>
                         </div>
-                      </div>
 
-                      {/* Status row */}
-                      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <InfoPill
-                          label="Plan"
-                          value={plan.label}
-                          color={plan.color}
-                          bg={plan.bg}
-                        />
-
-                        <InfoPill
-                          label="Workflow"
-                          value={planStatus.label}
-                          color={planStatus.color}
-                          bg={planStatus.bg}
-                        />
-
-                        <InfoPill
-                          label="Account"
-                          value={
-                            calendar.manager
-                              .calendarAccountType
-                              ? labelize(
-                                  calendar.manager
-                                    .calendarAccountType
-                                )
-                              : "Not set"
-                          }
-                          color={COLOR.muted}
-                          bg="rgba(255,255,255,0.05)"
-                        />
-
-                        <InfoPill
-                          label="Social"
-                          value={connection.label}
-                          color={connection.color}
-                          bg={connection.bg}
-                        />
-                      </div>
-
-                      {/* Operational metrics */}
-                      <div
-                        className="mt-5 grid grid-cols-2 gap-y-4 border-y py-4 sm:grid-cols-4"
-                        style={{
-                          borderColor: COLOR.line,
-                        }}
-                      >
-                        <DataPoint
-                          label="Posts"
-                          value={calendar._count.posts}
-                        />
-
-                        <DataPoint
-                          label="Collaborators"
-                          value={
-                            calendar._count.collaborators
-                          }
-                        />
-
-                        <DataPoint
-                          label="Client views"
-                          value={
-                            calendar._count.viewerEmails
-                          }
-                        />
-
-                        <DataPoint
-                          label="Knowledge"
-                          value={
-                            calendar._count.businessDocuments
-                          }
-                        />
-                      </div>
-
-                      {/* Connections */}
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        <ConnectionRow
-                          platform="Instagram"
-                          username={
-                            calendar.instagramUsername
-                          }
-                          connected={
-                            !!calendar.instagramAccountId
-                          }
-                          connectedAt={
-                            calendar.instagramConnectedAt
-                          }
-                          expiresAt={
-                            calendar.instagramTokenExpiresAt
-                          }
-                        />
-
-                        <ConnectionRow
-                          platform="TikTok"
-                          username={
-                            calendar.tikTokUsername
-                          }
-                          connected={
-                            !!calendar.tikTokOpenId
-                          }
-                          connectedAt={
-                            calendar.tikTokConnectedAt
-                          }
-                          expiresAt={
-                            calendar.tikTokAccessTokenExpiresAt
-                          }
-                        />
-                      </div>
-
-                      {/* Dates */}
-                      <div
-                        className="mt-4 grid gap-3 text-xs sm:grid-cols-3"
-                        style={{
-                          color: COLOR.faint,
-                        }}
-                      >
-                        <div>
-                          <span className="block uppercase tracking-wider text-white/20">
-                            Created
-                          </span>
-
-                          <span className="mt-1 block text-white/55">
-                            {formatDate(
-                              calendar.createdAt
-                            )}
-                          </span>
-                        </div>
-
-                        <div>
-                          <span className="block uppercase tracking-wider text-white/20">
-                            Last updated
-                          </span>
-
-                          <span className="mt-1 block text-white/55">
-                            {relativeTime(
-                              calendar.updatedAt
-                            )}
-                          </span>
-                        </div>
-
-                        <div>
-                          <span className="block uppercase tracking-wider text-white/20">
-                            {billingStatus ===
-                            "TRIAL"
-                              ? "Trial ends"
-                              : "Renews"}
-                          </span>
-
-                          <span
-                            className="mt-1 block"
-                            style={{
-                              color:
-                                expired
-                                  ? COLOR.red
-                                  : "rgba(255,255,255,0.55)",
-                            }}
-                          >
-                            {billingStatus ===
-                            "TRIAL"
-                              ? formatDate(
-                                  trialEndsAt
-                                )
-                              : formatDate(
-                                  renewalDate
-                                )}
-                          </span>
+                        <div className="shrink-0">
+                          <CalendarRowActions
+                            calendarId={
+                              calendar.id
+                            }
+                            billingStatus={
+                              calendar
+                                .manager
+                                .contentWorkspaceBillingStatus
+                            }
+                          />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Card actions */}
-                    <div
-                      className="flex flex-col gap-2 border-t p-4 sm:flex-row sm:items-center sm:justify-between"
-                      style={{
-                        borderColor: COLOR.line,
-                        background:
-                          "rgba(255,255,255,0.015)",
-                      }}
-                    >
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/dashboard/calendars/${calendar.id}`}
-                          className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:bg-white/5"
-                          style={{
-                            borderColor: COLOR.line,
-                            color: "rgba(255,255,255,0.75)",
-                          }}
-                        >
-                          Open workspace
-                        </Link>
-
-                        <Link
-                          href={`/admin/creators/${calendar.manager.id}`}
-                          className="rounded-lg border px-3 py-2 text-xs font-semibold transition hover:bg-white/5"
-                          style={{
-                            borderColor: COLOR.line,
-                            color: "rgba(255,255,255,0.55)",
-                          }}
-                        >
-                          Manager
-                        </Link>
-                      </div>
-
-                      <div className="shrink-0">
-                        <CalendarRowActions
-                          calendarId={calendar.id}
-                          billingStatus={
-                            calendar.manager
-                              .contentWorkspaceBillingStatus
-                          }
-                        />
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+                    </article>
+                  );
+                }
+              )}
             </div>
           )}
 
-          {/* Pagination */}
+          {/* PAGINATION */}
+
           {totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between gap-4">
               <Link
                 href={pageHref(
-                  Math.max(1, currentPage - 1)
+                  Math.max(
+                    1,
+                    currentPage - 1
+                  )
                 )}
-                aria-disabled={currentPage <= 1}
+                aria-disabled={
+                  currentPage <= 1
+                }
                 className="rounded-xl border px-4 py-2.5 text-sm font-semibold"
                 style={{
-                  borderColor: COLOR.line,
+                  borderColor:
+                    COLOR.line,
                   color:
                     currentPage <= 1
                       ? COLOR.faint
@@ -1829,10 +1907,12 @@ export default async function AdminSocialCalendarsPage({
               <span
                 className="text-xs"
                 style={{
-                  color: COLOR.faint,
+                  color:
+                    COLOR.faint,
                 }}
               >
-                {currentPage} / {totalPages}
+                {currentPage} /{" "}
+                {totalPages}
               </span>
 
               <Link
@@ -1843,17 +1923,21 @@ export default async function AdminSocialCalendarsPage({
                   )
                 )}
                 aria-disabled={
-                  currentPage >= totalPages
+                  currentPage >=
+                  totalPages
                 }
                 className="rounded-xl border px-4 py-2.5 text-sm font-semibold"
                 style={{
-                  borderColor: COLOR.line,
+                  borderColor:
+                    COLOR.line,
                   color:
-                    currentPage >= totalPages
+                    currentPage >=
+                    totalPages
                       ? COLOR.faint
                       : "rgba(255,255,255,0.75)",
                   pointerEvents:
-                    currentPage >= totalPages
+                    currentPage >=
+                    totalPages
                       ? "none"
                       : undefined,
                 }}
@@ -1864,296 +1948,25 @@ export default async function AdminSocialCalendarsPage({
           )}
         </section>
 
-        {/* -------------------------------------------------- */}
-        {/* MANAGER DIRECTORY */}
-        {/* -------------------------------------------------- */}
-
-        <section>
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p
-                className="text-[10px] font-bold uppercase"
-                style={{
-                  color: COLOR.orange,
-                  letterSpacing: "0.12em",
-                }}
-              >
-                Accounts
-              </p>
-
-              <h2 className="mt-1 text-xl font-semibold">
-                Social media managers
-              </h2>
-            </div>
-
-            <p
-              className="text-xs"
-              style={{
-                color: COLOR.faint,
-              }}
-            >
-              {visibleManagers.length.toLocaleString()} shown
-            </p>
-          </div>
-
-          {visibleManagers.length === 0 ? (
-            <div
-              className="rounded-2xl border px-6 py-12 text-center"
-              style={{
-                background: COLOR.charcoal,
-                borderColor: COLOR.line,
-              }}
-            >
-              <p
-                className="text-sm"
-                style={{
-                  color: COLOR.muted,
-                }}
-              >
-                No social media manager accounts match your
-                search.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {visibleManagers.map((manager) => {
-                const plan = planMeta(
-                  manager.contentWorkspacePlan
-                );
-
-                const billingStatus =
-                  manager.contentWorkspaceBillingStatus !==
-                  "PENDING_SETUP"
-                    ? manager.contentWorkspaceBillingStatus
-                    : manager.calendarBillingStatus;
-
-                const billing =
-                  statusMeta(billingStatus);
-
-                const revenue =
-                  managerRevenue.get(manager.id) ?? {
-                    total: 0,
-                    month: 0,
-                  };
-
-                const trialEndsAt =
-                  manager.contentWorkspaceTrialEndsAt ??
-                  manager.calendarTrialEndsAt;
-
-                const renewal =
-                  manager.contentWorkspaceSubscriptionRenewsAt ??
-                  manager.calendarSubscriptionRenewsAt;
-
-                const aiStatus = statusMeta(
-                  manager.aiAssistantBillingStatus
-                );
-
-                return (
-                  <article
-                    key={manager.id}
-                    className="rounded-2xl border p-5"
-                    style={{
-                      background: COLOR.charcoal,
-                      borderColor: COLOR.line,
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                        style={{
-                          background:
-                            "rgba(245,200,66,0.10)",
-                          color: COLOR.gold,
-                        }}
-                      >
-                        {initials(
-                          manager.name,
-                          manager.email
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/admin/creators/${manager.id}`}
-                          className="block truncate text-sm font-semibold transition hover:text-white/70"
-                        >
-                          {manager.name ||
-                            manager.email}
-                        </Link>
-
-                        <p
-                          className="mt-1 truncate text-xs"
-                          style={{
-                            color: COLOR.faint,
-                          }}
-                        >
-                          {manager.email}
-                        </p>
-
-                        {manager.companyName && (
-                          <p
-                            className="mt-1 truncate text-xs"
-                            style={{
-                              color: COLOR.muted,
-                            }}
-                          >
-                            {manager.companyName}
-                          </p>
-                        )}
-                      </div>
-
-                      <span
-                        className="shrink-0 rounded-full px-2 py-1 text-[9px] font-bold"
-                        style={{
-                          color: billing.color,
-                          background: billing.bg,
-                        }}
-                      >
-                        {billing.label}
-                      </span>
-                    </div>
-
-                    <div className="mt-5 grid grid-cols-2 gap-2">
-                      <InfoPill
-                        label="Workspace plan"
-                        value={plan.label}
-                        color={plan.color}
-                        bg={plan.bg}
-                      />
-
-                      <InfoPill
-                        label="Account"
-                        value={
-                          manager.calendarAccountType
-                            ? labelize(
-                                manager.calendarAccountType
-                              )
-                            : "Not set"
-                        }
-                        color={COLOR.muted}
-                        bg="rgba(255,255,255,0.05)"
-                      />
-                    </div>
-
-                    <div
-                      className="mt-4 grid grid-cols-3 border-y py-4"
-                      style={{
-                        borderColor: COLOR.line,
-                      }}
-                    >
-                      <DataPoint
-                        label="Workspaces"
-                        value={
-                          manager._count.ownedCalendars
-                        }
-                      />
-
-                      <DataPoint
-                        label="Collabs"
-                        value={
-                          manager._count
-                            .calendarCollaborations
-                        }
-                      />
-
-                      <DataPoint
-                        label="Invites"
-                        value={
-                          manager._count
-                            .calendarInvitesSent
-                        }
-                      />
-                    </div>
-
-                    <div className="mt-4 space-y-2">
-                      <AccountRow
-                        label="AI Studio"
-                        value={aiStatus.label}
-                        valueColor={aiStatus.color}
-                      />
-
-                      <AccountRow
-                        label={
-                          billingStatus === "TRIAL"
-                            ? "Trial ends"
-                            : "Renewal"
-                        }
-                        value={
-                          billingStatus === "TRIAL"
-                            ? formatDate(
-                                trialEndsAt
-                              )
-                            : formatDate(renewal)
-                        }
-                      />
-
-                      <AccountRow
-                        label="Revenue"
-                        value={formatNgn(
-                          revenue.total
-                        )}
-                      />
-
-                      <AccountRow
-                        label="Last login"
-                        value={
-                          manager.lastLoginAt
-                            ? relativeTime(
-                                manager.lastLoginAt
-                              )
-                            : "Never"
-                        }
-                      />
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between gap-3">
-                      <span
-                        className="text-[10px]"
-                        style={{
-                          color: COLOR.faint,
-                        }}
-                      >
-                        Joined{" "}
-                        {formatDate(
-                          manager.createdAt
-                        )}
-                      </span>
-
-                      <Link
-                        href={`/admin/creators/${manager.id}`}
-                        className="rounded-lg border px-3 py-2 text-xs font-semibold"
-                        style={{
-                          borderColor: COLOR.line,
-                          color:
-                            "rgba(255,255,255,0.72)",
-                        }}
-                      >
-                        Manage account
-                      </Link>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* -------------------------------------------------- */}
-        {/* ADMIN NOTE */}
-        {/* -------------------------------------------------- */}
+        {/* ====================================================
+            FOOTER NOTE
+        ===================================================== */}
 
         <section
           className="mt-8 rounded-2xl border p-5"
           style={{
-            background: "rgba(255,255,255,0.025)",
-            borderColor: COLOR.line,
+            background:
+              "rgba(255,255,255,0.025)",
+            borderColor:
+              COLOR.line,
           }}
         >
           <div className="flex gap-3">
             <div
-              className="mt-0.5 h-2 w-2 shrink-0 rounded-full"
+              className="mt-1 h-2 w-2 shrink-0 rounded-full"
               style={{
-                background: COLOR.gold,
+                background:
+                  COLOR.gold,
               }}
             />
 
@@ -2165,15 +1978,19 @@ export default async function AdminSocialCalendarsPage({
               <p
                 className="mt-1 max-w-4xl text-xs leading-5"
                 style={{
-                  color: COLOR.muted,
+                  color:
+                    COLOR.muted,
                 }}
               >
-                Calendar and Content Workspace subscriptions are
-                account-level. A manager can own multiple client
-                workspaces under the same subscription. The dashboard
-                therefore reports billing at manager level while
-                showing operational information separately for each
-                client workspace.
+                Content Workspace billing is
+                managed at the creator account
+                level. A creator can therefore
+                manage multiple client workspaces
+                under the same subscription.
+                Workspace activity and billing are
+                shown separately so the admin can
+                understand both the account and
+                individual client workspace.
               </p>
             </div>
           </div>
@@ -2183,43 +2000,59 @@ export default async function AdminSocialCalendarsPage({
   );
 }
 
-/* ============================================================ */
-/* SMALL UI COMPONENTS                                          */
-/* ============================================================ */
+/* ============================================================
+   UI COMPONENTS
+============================================================ */
 
-function HealthMetric({
+function MetricCard({
   label,
   value,
+  detail,
 }: {
   label: string;
   value: number;
+  detail: string;
 }) {
   return (
     <div
-      className="rounded-xl border p-3"
+      className="rounded-2xl border p-4 sm:p-5"
       style={{
-        borderColor: COLOR.line,
-        background: "rgba(255,255,255,0.025)",
+        background:
+          COLOR.charcoal,
+        borderColor:
+          COLOR.line,
       }}
     >
       <p
-        className="text-[9px] font-bold uppercase"
+        className="text-[10px] font-bold uppercase"
         style={{
-          color: COLOR.faint,
-          letterSpacing: "0.08em",
+          color:
+            COLOR.faint,
+          letterSpacing:
+            "0.12em",
         }}
       >
         {label}
       </p>
 
-      <p className="mt-1 text-lg font-semibold">
+      <p className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
         {value.toLocaleString()}
+      </p>
+
+      <p
+        className="mt-1 text-xs"
+        style={{
+          color:
+            COLOR.muted,
+        }}
+      >
+        {detail}
       </p>
     </div>
   );
 }
 
-function SmallMetric({
+function HealthMetric({
   label,
   value,
 }: {
@@ -2231,14 +2064,16 @@ function SmallMetric({
       <p
         className="text-[9px] font-bold uppercase"
         style={{
-          color: COLOR.faint,
-          letterSpacing: "0.08em",
+          color:
+            COLOR.faint,
+          letterSpacing:
+            "0.08em",
         }}
       >
         {label}
       </p>
 
-      <p className="mt-1 text-sm font-semibold text-white/75">
+      <p className="mt-1 text-lg font-semibold">
         {value.toLocaleString()}
       </p>
     </div>
@@ -2253,45 +2088,27 @@ function RevenueMetric({
   value: string;
 }) {
   return (
-    <div>
+    <div
+      className="min-w-0 rounded-xl border p-3"
+      style={{
+        background:
+          "rgba(255,255,255,0.035)",
+        borderColor:
+          COLOR.line,
+      }}
+    >
       <p
         className="text-[9px] font-bold uppercase"
         style={{
-          color: COLOR.faint,
-          letterSpacing: "0.08em",
+          color:
+            COLOR.faint,
         }}
       >
         {label}
       </p>
 
-      <p className="mt-1 truncate text-sm font-semibold sm:text-base">
+      <p className="mt-1 truncate text-sm font-semibold">
         {value}
-      </p>
-    </div>
-  );
-}
-
-function DataPoint({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  return (
-    <div className="min-w-0">
-      <p
-        className="truncate text-[9px] font-bold uppercase"
-        style={{
-          color: COLOR.faint,
-          letterSpacing: "0.08em",
-        }}
-      >
-        {label}
-      </p>
-
-      <p className="mt-1 text-sm font-semibold text-white/75">
-        {value.toLocaleString()}
       </p>
     </div>
   );
@@ -2310,7 +2127,7 @@ function InfoPill({
 }) {
   return (
     <div
-      className="min-w-0 rounded-lg px-3 py-2"
+      className="min-w-0 rounded-xl px-3 py-2"
       style={{
         background: bg,
       }}
@@ -2318,15 +2135,17 @@ function InfoPill({
       <p
         className="truncate text-[8px] font-bold uppercase"
         style={{
-          color: "rgba(255,255,255,0.30)",
-          letterSpacing: "0.07em",
+          color:
+            COLOR.faint,
+          letterSpacing:
+            "0.08em",
         }}
       >
         {label}
       </p>
 
       <p
-        className="mt-1 truncate text-[11px] font-semibold"
+        className="mt-1 truncate text-[10px] font-semibold"
         style={{
           color,
         }}
@@ -2337,36 +2156,33 @@ function InfoPill({
   );
 }
 
-function AccountRow({
+function DataPoint({
   label,
   value,
-  valueColor,
 }: {
   label: string;
-  value: string;
-  valueColor?: string;
+  value: string | number;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span
-        className="text-xs"
+    <div className="min-w-0">
+      <p
+        className="truncate text-[8px] font-bold uppercase"
         style={{
-          color: COLOR.faint,
+          color:
+            COLOR.faint,
+          letterSpacing:
+            "0.08em",
         }}
       >
         {label}
-      </span>
+      </p>
 
-      <span
-        className="truncate text-right text-xs font-medium"
-        style={{
-          color:
-            valueColor ||
-            "rgba(255,255,255,0.68)",
-        }}
-      >
-        {value}
-      </span>
+      <p className="mt-1 truncate text-xs font-semibold text-white/70">
+        {typeof value ===
+        "number"
+          ? value.toLocaleString()
+          : value}
+      </p>
     </div>
   );
 }
@@ -2384,64 +2200,84 @@ function ConnectionRow({
   connectedAt: Date | null;
   expiresAt: Date | null;
 }) {
+  const expired =
+    !!expiresAt &&
+    expiresAt.getTime() <=
+      Date.now();
+
   return (
     <div
-      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border px-3 py-2.5"
+      className="min-w-0 rounded-xl border px-3 py-2.5"
       style={{
-        borderColor: COLOR.line,
-        background: "rgba(255,255,255,0.02)",
+        background:
+          "rgba(255,255,255,0.025)",
+        borderColor:
+          COLOR.line,
       }}
     >
-      <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-white/70">
+      <div className="flex items-center justify-between gap-3">
+        <p
+          className="text-[9px] font-bold uppercase"
+          style={{
+            color:
+              COLOR.faint,
+            letterSpacing:
+              "0.08em",
+          }}
+        >
           {platform}
         </p>
 
-        <p
-          className="mt-0.5 truncate text-[10px]"
-          style={{
-            color: COLOR.faint,
-          }}
-        >
-          {connected
-            ? username
-              ? `@${username.replace(/^@/, "")}`
-              : `Connected ${formatDate(
-                  connectedAt
-                )}`
-            : "Not connected"}
-        </p>
-      </div>
-
-      <div className="shrink-0 text-right">
         <span
-          className="inline-flex rounded-full px-2 py-1 text-[8px] font-bold"
+          className="rounded-full px-2 py-0.5 text-[8px] font-bold"
           style={{
-            color: connected
-              ? COLOR.green
-              : COLOR.faint,
-            background: connected
-              ? "rgba(74,222,128,0.10)"
-              : "rgba(255,255,255,0.05)",
+            color: !connected
+              ? COLOR.faint
+              : expired
+                ? COLOR.red
+                : COLOR.green,
+            background:
+              !connected
+                ? "rgba(255,255,255,0.05)"
+                : expired
+                  ? "rgba(248,113,113,0.10)"
+                  : "rgba(74,222,128,0.10)",
           }}
         >
-          {connected ? "Connected" : "Offline"}
+          {!connected
+            ? "Not connected"
+            : expired
+              ? "Token expired"
+              : "Connected"}
         </span>
-
-        {connected && expiresAt && (
-          <p
-            className="mt-1 text-[8px]"
-            style={{
-              color:
-                expiresAt.getTime() <= Date.now()
-                  ? COLOR.red
-                  : COLOR.faint,
-            }}
-          >
-            Token {formatDate(expiresAt)}
-          </p>
-        )}
       </div>
+
+      <p
+        className="mt-1 truncate text-[10px]"
+        style={{
+          color:
+            "rgba(255,255,255,0.62)",
+        }}
+      >
+        {username
+          ? `@${username}`
+          : "No account connected"}
+      </p>
+
+      {connectedAt && (
+        <p
+          className="mt-0.5 text-[9px]"
+          style={{
+            color:
+              COLOR.faint,
+          }}
+        >
+          Connected{" "}
+          {formatDate(
+            connectedAt
+          )}
+        </p>
+      )}
     </div>
   );
 }
@@ -2455,15 +2291,19 @@ function FilterSelect({
   name: string;
   label: string;
   value: string;
-  options: Array<[string, string]>;
+  options: Array<
+    [string, string]
+  >;
 }) {
   return (
     <label className="min-w-0">
       <span
-        className="mb-1.5 block text-[9px] font-bold uppercase"
+        className="mb-1 block text-[8px] font-bold uppercase"
         style={{
-          color: COLOR.faint,
-          letterSpacing: "0.08em",
+          color:
+            COLOR.faint,
+          letterSpacing:
+            "0.08em",
         }}
       >
         {label}
@@ -2472,23 +2312,25 @@ function FilterSelect({
       <select
         name={name}
         defaultValue={value}
-        className="h-10 w-full rounded-xl border bg-black/20 px-3 text-xs text-white outline-none"
+        className="h-10 w-full min-w-0 rounded-xl border bg-black/20 px-3 text-xs text-white outline-none"
         style={{
-          borderColor: COLOR.line,
+          borderColor:
+            COLOR.line,
         }}
       >
-        {options.map(([optionValue, optionLabel]) => (
-          <option
-            key={optionValue}
-            value={optionValue}
-            style={{
-              background: COLOR.black,
-              color: COLOR.white,
-            }}
-          >
-            {optionLabel}
-          </option>
-        ))}
+        {options.map(
+          ([optionValue, optionLabel]) => (
+            <option
+              key={optionValue}
+              value={
+                optionValue
+              }
+              className="bg-[#141414] text-white"
+            >
+              {optionLabel}
+            </option>
+          )
+        )}
       </select>
     </label>
   );
