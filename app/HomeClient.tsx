@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
-import FloatingStartButton from "@/components/FloatingStartButton";
+
 import Navbar from "@/components/Navbar";
 import PricingSection from "@/components/landing/PricingSection";
 
@@ -1551,7 +1551,7 @@ export default function HomeClient({
         background: COLOR.paper,
       }}
     >
-      <FloatingStartButton />
+   
 
       <Hero isLoggedIn={isLoggedIn} />
 
