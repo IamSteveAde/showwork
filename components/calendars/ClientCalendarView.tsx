@@ -339,12 +339,19 @@ function PostDetailPanel({
   const videoRef = useRef<HTMLVideoElement>(null);
   const meta = PLATFORM_META[post.platform];
   const approvalMeta = APPROVAL_META[post.approvalStatus];
-  const [activeAssetIdx, setActiveAssetIdx] = useState(0);
-  const [requestingRevision, setRequestingRevision] = useState(false);
-  const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [comments, setComments] = useState(post.videoComments);
+const [activeAssetIdx, setActiveAssetIdx] = useState(0);
+const [requestingRevision, setRequestingRevision] = useState(false);
+const [note, setNote] = useState("");
+const [submitting, setSubmitting] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [comments, setComments] = useState(post.videoComments);
+const [reviewStatus, setReviewStatus] = useState<ApprovalStatus>(
+  post.approvalStatus
+);
+
+useEffect(() => {
+  setReviewStatus(post.approvalStatus);
+}, [post.approvalStatus]);
   const activeAsset = post.assets[activeAssetIdx] ?? post.assets[0] ?? null;
 
   const addComment = async (commentNote: string, timestampSeconds: number) => {
@@ -360,25 +367,69 @@ function PostDetailPanel({
     }
   };
 
-  const respond = async (action: "approve" | "request_revision") => {
-    setSubmitting(true);
-    setError(null);
-    const res = await fetch(`/api/social-calendar/${slug}/posts/${post.id}/review`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, note }),
-    });
+  const respond = async (
+  action: "approve" | "request_revision"
+) => {
+  setSubmitting(true);
+  setError(null);
+
+  try {
+    const res = await fetch(
+      `/api/social-calendar/${slug}/posts/${post.id}/review`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+          note,
+        }),
+      }
+    );
+
     const data = await res.json();
-    if (res.ok) {
-      onUpdated(data.post);
-      router.refresh();
-      setRequestingRevision(false);
-      setNote("");
-    } else {
-      setError(data.error ?? "Something went wrong");
+
+    if (!res.ok) {
+      setError(
+        data.error ?? "Something went wrong"
+      );
+      return;
     }
+
+    const updatedPost = data.post as CalendarPostData;
+
+    const nextStatus: ApprovalStatus =
+      action === "approve"
+        ? "APPROVED"
+        : "NEEDS_REVISION";
+
+    // Update the review state immediately so the client
+    // never remains looking at the old action buttons while
+    // the page refreshes.
+    setReviewStatus(nextStatus);
+
+    onUpdated({
+      ...updatedPost,
+      assets: updatedPost.assets ?? [],
+      videoComments:
+        updatedPost.videoComments ?? [],
+      customFields:
+        updatedPost.customFields ?? [],
+    });
+
+    setRequestingRevision(false);
+    setNote("");
+
+    router.refresh();
+  } catch {
+    setError(
+      "Unable to submit your response. Please try again."
+    );
+  } finally {
     setSubmitting(false);
-  };
+  }
+};
 
   return (
   <div
@@ -634,6 +685,29 @@ function PostDetailPanel({
               </div>
             </section>
           )}
+          {/* ─────────────────────────────────────────
+              VIDEO COMMENTS
+          ───────────────────────────────────────── */}
+          {activeAsset?.mediaType === "VIDEO" && (
+            <section>
+              <CalendarVideoComments
+                comments={comments}
+                readOnly={false}
+                getCurrentTime={() =>
+                  videoRef.current?.currentTime ?? 0
+                }
+                onSeekTo={(seconds) => {
+                  const vid = videoRef.current;
+                  if (!vid) return;
+
+                  vid.currentTime = seconds;
+                  vid.play().catch(() => {});
+                }}
+                onAddComment={addComment}
+              />
+            </section>
+          )}
+
 
           {/* ─────────────────────────────────────────
               COPY / CONTENT
@@ -772,143 +846,207 @@ function PostDetailPanel({
             </section>
           )}
 
+          
           {/* ─────────────────────────────────────────
-              VIDEO COMMENTS
-          ───────────────────────────────────────── */}
-          {activeAsset?.mediaType === "VIDEO" && (
-            <section>
-              <CalendarVideoComments
-                comments={comments}
-                readOnly={false}
-                getCurrentTime={() =>
-                  videoRef.current?.currentTime ?? 0
-                }
-                onSeekTo={(seconds) => {
-                  const vid = videoRef.current;
-                  if (!vid) return;
+    APPROVAL ACTIONS
+───────────────────────────────────────── */}
+{post.assets.length > 0 && (
+  <section className="border-t border-white/[0.07] pt-5">
+    {reviewStatus === "APPROVED" ? (
+      <div className="rounded-2xl border border-green-400/15 bg-green-400/[0.06] p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-400/10 text-green-400">
+            <IconCheck className="h-4 w-4" />
+          </div>
 
-                  vid.currentTime = seconds;
-                  vid.play().catch(() => {});
-                }}
-                onAddComment={addComment}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-green-400">
+              Approved
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-white/40">
+              You approved this content. No further action is
+              required.
+            </p>
+          </div>
+        </div>
+      </div>
+    ) : reviewStatus === "NEEDS_REVISION" ? (
+      <div className="rounded-2xl border border-orange-400/15 bg-orange-400/[0.06] p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-400/10 text-orange-400">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-4 w-4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path
+                d="M12 20h9"
+                strokeLinecap="round"
               />
-            </section>
-          )}
+              <path
+                d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
 
-          {/* ─────────────────────────────────────────
-              APPROVAL ACTIONS
-          ───────────────────────────────────────── */}
-          {post.assets.length > 0 && (
-            <section className="border-t border-white/[0.07] pt-5">
-              {requestingRevision ? (
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">
-                      Request changes
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-white/35">
-                      Tell the creator exactly what needs to be changed.
-                    </p>
-                  </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-orange-400">
+              Changes requested
+            </p>
 
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={4}
-                    placeholder="e.g. Please update the headline, replace the second image and shorten the caption..."
-                    style={{ fontSize: "16px" }}
-                    className="w-full resize-none rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3.5 text-sm leading-6 text-white outline-none transition-all placeholder:text-white/20 focus:border-[#F97316]/50 focus:bg-white/[0.055] focus:ring-4 focus:ring-[#F97316]/[0.08]"
-                  />
+            <p className="mt-1 text-xs leading-5 text-white/40">
+              Your feedback has been sent to the creator.
+              They can update the content and submit it for
+              review again.
+            </p>
 
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <button
-                      onClick={() => respond("request_revision")}
-                      disabled={submitting || !note.trim()}
-                      className="flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
-                        boxShadow: "0 8px 24px rgba(249,115,22,0.18)",
-                      }}
-                    >
-                      {submitting ? "Sending feedback..." : "Send feedback"}
-                    </button>
+            {post.approvalNote && (
+              <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3.5 py-3">
+                <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/25">
+                  Your feedback
+                </p>
 
-                    <button
-                      onClick={() => setRequestingRevision(false)}
-                      className="min-h-11 rounded-xl border border-white/[0.08] px-5 py-3 text-sm font-medium text-white/50 transition-all hover:bg-white/[0.05] hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold text-white">
-                      Ready to review?
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-white/35">
-                      Approve the content or send feedback to the creator.
-                    </p>
-                  </div>
+                <p className="whitespace-pre-wrap break-words text-xs leading-5 text-white/55">
+                  {post.approvalNote}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ) : requestingRevision ? (
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-white">
+            Request changes
+          </p>
 
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    <button
-                      onClick={() => respond("approve")}
-                      disabled={submitting}
-                      className="group relative flex min-h-12 items-center justify-center overflow-hidden rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(36,120,255,0.22)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
-                      }}
-                    >
-                      <span className="relative z-10 flex items-center gap-2">
-                        <IconCheck className="h-4 w-4" />
-                        {submitting ? "Approving..." : "Approve content"}
-                      </span>
+          <p className="mt-1 text-xs leading-5 text-white/35">
+            Tell the creator exactly what needs to be changed.
+          </p>
+        </div>
 
-                      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                    </button>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={4}
+          placeholder="e.g. Please update the headline, replace the second image and shorten the caption..."
+          style={{ fontSize: "16px" }}
+          className="w-full resize-none rounded-2xl border border-white/[0.09] bg-white/[0.04] px-4 py-3.5 text-sm leading-6 text-white outline-none transition-all placeholder:text-white/20 focus:border-[#F97316]/50 focus:bg-white/[0.055] focus:ring-4 focus:ring-[#F97316]/[0.08]"
+        />
 
-                    <button
-                      onClick={() => setRequestingRevision(true)}
-                      className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white/65 transition-all hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-[0.98]"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="h-4 w-4"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path
-                          d="M12 20h9"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      Request changes
-                    </button>
-                  </div>
-                </div>
-              )}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button
+            onClick={() =>
+              respond("request_revision")
+            }
+            disabled={submitting || !note.trim()}
+            className="flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+            style={{
+              background:
+                "linear-gradient(135deg, #F97316 0%, #EA580C 100%)",
+              boxShadow:
+                "0 8px 24px rgba(249,115,22,0.18)",
+            }}
+          >
+            {submitting
+              ? "Sending feedback..."
+              : "Send feedback"}
+          </button>
 
-              {error && (
-                <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.07] px-3.5 py-3">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
-                  <p className="text-xs leading-5 text-red-300">
-                    {error}
-                  </p>
-                </div>
-              )}
-            </section>
-          )}
+          <button
+            onClick={() => {
+              setRequestingRevision(false);
+              setNote("");
+              setError(null);
+            }}
+            disabled={submitting}
+            className="min-h-11 rounded-xl border border-white/[0.08] px-5 py-3 text-sm font-medium text-white/50 transition-all hover:bg-white/[0.05] hover:text-white disabled:opacity-40"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div>
+        <div className="mb-4">
+          <p className="text-sm font-semibold text-white">
+            Ready to review?
+          </p>
 
+          <p className="mt-1 text-xs leading-5 text-white/35">
+            Approve the content or send feedback to the creator.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <button
+            onClick={() => respond("approve")}
+            disabled={submitting}
+            className="group relative flex min-h-12 items-center justify-center overflow-hidden rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(36,120,255,0.22)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{
+              background:
+                "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
+            }}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <IconCheck className="h-4 w-4" />
+              {submitting
+                ? "Approving..."
+                : "Approve content"}
+            </span>
+
+            <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          </button>
+
+          <button
+            onClick={() => {
+              setRequestingRevision(true);
+              setError(null);
+            }}
+            disabled={submitting}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-white/65 transition-all hover:border-white/[0.15] hover:bg-white/[0.07] hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-4 w-4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+            >
+              <path
+                d="M12 20h9"
+                strokeLinecap="round"
+              />
+              <path
+                d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            Request changes
+          </button>
+        </div>
+      </div>
+    )}
+
+    {error && (
+      <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.07] px-3.5 py-3">
+        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+
+        <p className="text-xs leading-5 text-red-300">
+          {error}
+        </p>
+      </div>
+    )}
+  </section>
+)}
           {/* Empty state */}
           {post.assets.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.09] bg-white/[0.02] px-6 py-12 text-center">
