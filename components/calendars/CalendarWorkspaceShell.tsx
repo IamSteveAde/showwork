@@ -285,132 +285,218 @@ export default function CalendarWorkspaceShell({
   return (
     <div className="min-h-screen bg-[#F5F7FB] text-[#101828]">
       {/* BLUE COMMAND HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#1768E8] text-white shadow-[0_12px_40px_rgba(23,104,232,0.22)]">
-        <div className="relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_-30%,rgba(255,255,255,0.24),transparent_31%),radial-gradient(circle_at_55%_120%,rgba(117,178,255,0.28),transparent_27%)]" />
-          <div className="relative mx-auto flex h-[72px] max-w-[1800px] items-center gap-3 px-4 sm:px-5 lg:px-6 xl:px-8">
-            <Link
-              href="/dashboard/calendars"
-              className="group hidden h-10 items-center gap-2 rounded-xl border border-white/12 bg-white/[0.08] px-3 text-[11px] font-semibold text-white/75 backdrop-blur transition hover:bg-white/[0.14] hover:text-white lg:flex"
+      {/* BLUE COMMAND HEADER */}
+<header className="sticky top-0 z-50 border-b border-white/10 bg-[#1768E8] text-white shadow-[0_12px_40px_rgba(23,104,232,0.22)]">
+  <div className="relative overflow-visible">
+    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_-30%,rgba(255,255,255,0.24),transparent_31%),radial-gradient(circle_at_55%_120%,rgba(117,178,255,0.28),transparent_27%)]" />
+
+    <div className="relative mx-auto flex min-h-[72px] max-w-[1800px] items-center gap-2.5 px-3.5 py-2.5 sm:gap-3 sm:px-5 lg:h-[72px] lg:px-6 xl:px-8 lg:py-0">
+
+      {/* BACK */}
+      <Link
+        href="/dashboard/calendars"
+        className="group flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.09] px-3 text-[11px] font-semibold text-white/85 transition-all duration-150 hover:border-white/25 hover:bg-white/[0.16] hover:text-white"
+        aria-label="Back to workspaces"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
+          aria-hidden="true"
+        >
+          <path
+            d="M19 12H5M11 6l-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+
+        <span className="hidden sm:inline">Workspaces</span>
+      </Link>
+
+      <div className="hidden h-7 w-px bg-white/15 sm:block" />
+
+      {/* WORKSPACE IDENTITY */}
+      <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-white/15 bg-white text-[#1768E8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
+          <span className="text-[13px] font-black tracking-[-0.04em]">
+            {clientName.slice(0, 2).toUpperCase()}
+          </span>
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-[13px] font-semibold tracking-[-0.015em] text-white sm:text-[15px]">
+              {clientName}
+            </p>
+
+            <span className="hidden shrink-0 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-white/65 md:inline-flex">
+              Client workspace
+            </span>
+          </div>
+
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-white/55">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#92FFC1] shadow-[0_0_10px_rgba(146,255,193,0.8)]" />
+            <span>{active.label}</span>
+            <span className="text-white/25">/</span>
+            <span className="hidden sm:inline">{active.eyebrow}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* DESKTOP ACTIONS */}
+      <div className="hidden items-center gap-2 lg:flex">
+        <button
+          type="button"
+          onClick={() => select(aiTarget)}
+          className="group flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.10] px-3 text-[11px] font-semibold text-white transition-all duration-150 hover:border-white/25 hover:bg-white/[0.17]"
+        >
+          <SparkMark className="h-3.5 w-3.5" />
+          AI Studio
+          <span className="text-white/45 transition-transform group-hover:translate-x-0.5">
+            →
+          </span>
+        </button>
+
+        <a
+          href={clientUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[11px] font-semibold text-[#1558BE] shadow-[0_8px_18px_rgba(7,39,92,0.16)] transition-all duration-150 hover:-translate-y-0.5"
+        >
+          Client view
+          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </a>
+
+        {settings}
+      </div>
+
+      {/* MOBILE ACTIONS */}
+      <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
+        {settings}
+
+        <button
+          type="button"
+          onClick={() => setMobileOpen((open) => !open)}
+          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-150 ${
+            mobileOpen
+              ? "border-white/30 bg-white/[0.18]"
+              : "border-white/15 bg-white/[0.10]"
+          }`}
+          aria-label={
+            mobileOpen
+              ? "Close workspace navigation"
+              : "Open workspace navigation"
+          }
+          aria-expanded={mobileOpen}
+        >
+          {mobileOpen ? (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-4.5 w-4.5"
+              aria-hidden="true"
             >
-              <span className="transition-transform group-hover:-translate-x-0.5">←</span>
-              Workspaces
-            </Link>
-
-            <div className="hidden h-7 w-px bg-white/15 lg:block" />
-
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-white/15 bg-white text-[#1768E8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
-                <span className="text-[13px] font-black tracking-[-0.04em]">
-                  {clientName.slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-semibold tracking-[-0.015em] text-white sm:text-[15px]">
-                    {clientName}
-                  </p>
-                  <span className="hidden rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-white/65 sm:inline-flex">
-                    Client workspace
-                  </span>
-                </div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-medium text-white/55">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#92FFC1] shadow-[0_0_10px_rgba(146,255,193,0.8)]" />
-                  <span>{active.label}</span>
-                  <span className="text-white/25">/</span>
-                  <span className="hidden sm:inline">{active.eyebrow}</span>
-                </div>
-              </div>
+              <path
+                d="m6 6 12 12M18 6 6 18"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          ) : (
+            <div className="space-y-1">
+              <span className="block h-[1.5px] w-4 bg-current" />
+              <span className="block h-[1.5px] w-4 bg-current" />
+              <span className="block h-[1.5px] w-4 bg-current" />
             </div>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
 
-            <div className="hidden items-center gap-2 lg:flex">
-              <button
-                type="button"
-                onClick={() => select(aiTarget)}
-                className="group flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.10] px-3 text-[11px] font-semibold text-white transition hover:bg-white/[0.17]"
-              >
-                <SparkMark className="h-3.5 w-3.5" />
-                AI Studio
-                <span className="text-white/45 transition-transform group-hover:translate-x-0.5">→</span>
-              </button>
+  {/* MOBILE WORKSPACE NAVIGATION */}
+  {mobileOpen && (
+    <div className="border-t border-white/10 bg-[#125FD6] px-3.5 pb-4 pt-3 lg:hidden">
+      <div className="rounded-[22px] border border-white/10 bg-white/[0.08] p-2 backdrop-blur-xl">
 
-              <a
-                href={clientUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[11px] font-semibold text-[#1558BE] shadow-[0_8px_18px_rgba(7,39,92,0.16)] transition hover:-translate-y-0.5"
-              >
-                Client view
-                <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </a>
+        <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5">
+          <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-white/45">
+            Current section
+          </p>
 
-              
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setMobileOpen((open) => !open)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white lg:hidden"
-              aria-label="Open workspace navigation"
-            >
-              <div className="space-y-1">
-                <span className="block h-[1.5px] w-4 bg-current" />
-                <span className="block h-[1.5px] w-4 bg-current" />
-                <span className="block h-[1.5px] w-4 bg-current" />
-              </div>
-            </button>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#92FFC1]" />
+            <span className="truncate text-[11px] font-semibold text-white">
+              {active.label}
+            </span>
           </div>
         </div>
 
-        {mobileOpen && (
-          <div className="border-t border-white/10 bg-[#125FD6] px-4 pb-4 pt-3 lg:hidden">
-            <div className="rounded-[22px] border border-white/10 bg-white/[0.08] p-2 backdrop-blur-xl">
-              {nav.map((cluster) => (
-                <div key={cluster.label} className="mb-2 last:mb-0">
-                  <p className="px-2.5 pb-1.5 pt-2 text-[8px] font-bold uppercase tracking-[0.16em] text-white/45">
-                    {cluster.label}
-                  </p>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {cluster.items.map((item) => {
-                      const selected = item.id === active.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => select(item.id)}
-                          className={`flex min-h-[52px] items-center gap-2.5 rounded-xl px-3 text-left text-[11px] font-semibold transition ${
-                            selected
-                              ? "bg-white text-[#1768E8]"
-                              : "bg-white/[0.06] text-white/80 hover:bg-white/[0.11]"
-                          }`}
-                        >
-                          <SectionIcon name={item.id} className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+        {nav.map((cluster) => (
+          <div key={cluster.label} className="mb-2 last:mb-0">
+            <p className="px-2.5 pb-1.5 pt-2 text-[8px] font-bold uppercase tracking-[0.16em] text-white/45">
+              {cluster.label}
+            </p>
 
-              <div className="mt-2 grid grid-cols-2 gap-1.5 border-t border-white/10 pt-2">
-                <a
-                  href={clientUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white text-[11px] font-semibold text-[#1768E8]"
-                >
-                  Client view <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-                <div className="flex min-h-[48px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]">
-                  {settings}
-                </div>
-              </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {cluster.items.map((item) => {
+                const selected = item.id === active.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => select(item.id)}
+                    className={`flex min-h-[52px] items-center gap-2.5 rounded-xl px-3 text-left text-[11px] font-semibold transition ${
+                      selected
+                        ? "bg-white text-[#1768E8]"
+                        : "bg-white/[0.06] text-white/80 hover:bg-white/[0.11]"
+                    }`}
+                  >
+                    <SectionIcon
+                      name={item.id}
+                      className="h-4 w-4 shrink-0"
+                    />
+
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
-      </header>
+        ))}
+
+        <div className="mt-2 grid grid-cols-2 gap-1.5 border-t border-white/10 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOpen(false);
+              select(aiTarget);
+            }}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] text-[11px] font-semibold text-white"
+          >
+            <SparkMark className="h-3.5 w-3.5" />
+            AI Studio
+          </button>
+
+          <a
+            href={clientUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white text-[11px] font-semibold text-[#1768E8]"
+          >
+            Client view
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
+    </div>
+  )}
+</header>
 
       <div className="mx-auto grid max-w-[1800px] lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]">
         {/* QUIET LEFT RAIL */}
