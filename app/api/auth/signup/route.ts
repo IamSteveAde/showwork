@@ -8,7 +8,15 @@ import { isValidNigerianPhone } from "@/lib/phone";
 // hold everything in PendingSignup. No Creator row exists yet — that
 // only happens once the code is confirmed in /api/auth/verify-otp.
 export async function POST(req: NextRequest) {
-    const { email, password, name, phone, companyName, accountType } = await req.json();
+  const {
+    email,
+    password,
+    name,
+    phone,
+    companyName,
+    accountType,
+    referralCode,
+  } = await req.json();
 
   if (!email || !password || password.length < 8) {
     return NextResponse.json(
@@ -25,6 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   const existingCreator = await db.creator.findUnique({ where: { email } });
+
   if (existingCreator) {
     return NextResponse.json(
       { error: "An account with this email already exists" },
@@ -34,31 +43,84 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await hashPassword(password);
   const otpCode = generateOtpCode();
-  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
   // Genuinely optional — trimmed to a real value or left undefined,
   // never stored as an empty string.
-  const trimmedCompanyName = typeof companyName === "string" && companyName.trim() ? companyName.trim() : null;
+  const trimmedCompanyName =
+    typeof companyName === "string" && companyName.trim()
+      ? companyName.trim()
+      : null;
+
+  // Only ever "AGENCY" if the form explicitly sent that — anything
+  // else (missing, malformed, tampered with) safely falls back to the
+  // default, ordinary account type rather than accidentally granting
+  // agency behavior.
+  const resolvedAccountType =
+    accountType === "AGENCY"
+      ? "AGENCY"
+      : accountType === "SOCIAL_MEDIA_MANAGER"
+        ? "SOCIAL_MEDIA_MANAGER"
+        : "CREATOR";
+
+  // Referral codes are optional. If one was supplied, verify on the
+  // server that it belongs to an active partner before storing it.
+  const normalizedReferralCode =
+    typeof referralCode === "string" && referralCode.trim()
+      ? referralCode.trim().toUpperCase()
+      : null;
+
+  let validReferralCode: string | null = null;
+
+  if (normalizedReferralCode) {
+    const partner = await db.partnerProfile.findUnique({
+      where: {
+        referralCode: normalizedReferralCode,
+      },
+      select: {
+        referralCode: true,
+        isActive: true,
+      },
+    });
+
+    if (partner?.isActive) {
+      validReferralCode = partner.referralCode;
+    }
+  }
 
   // upsert: if they already started signing up (e.g. didn't finish
   // verifying last time), this just refreshes their code instead of
   // erroring on the unique email constraint.
-    // Only ever "AGENCY" if the form explicitly sent that — anything
-  // else (missing, malformed, tampered with) safely falls back to the
-  // default, ordinary account type rather than accidentally granting
-  // agency behavior.
-    const resolvedAccountType =
-    accountType === "AGENCY" ? "AGENCY" : accountType === "SOCIAL_MEDIA_MANAGER" ? "SOCIAL_MEDIA_MANAGER" : "CREATOR";
-
   await db.pendingSignup.upsert({
     where: { email },
-    update: { name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt, accountType: resolvedAccountType },
-    create: { email, name, phone, companyName: trimmedCompanyName, passwordHash, otpCode, otpExpiresAt, accountType: resolvedAccountType },
+    update: {
+      name,
+      phone,
+      companyName: trimmedCompanyName,
+      passwordHash,
+      otpCode,
+      otpExpiresAt,
+      accountType: resolvedAccountType,
+      referralCode: validReferralCode,
+    },
+    create: {
+      email,
+      name,
+      phone,
+      companyName: trimmedCompanyName,
+      passwordHash,
+      otpCode,
+      otpExpiresAt,
+      accountType: resolvedAccountType,
+      referralCode: validReferralCode,
+    },
   });
 
   try {
     await sendOtpEmail(email, otpCode, name);
   } catch (err) {
     console.error("Failed to send OTP email:", err);
+
     return NextResponse.json(
       { error: "Couldn't send the verification email. Please try again." },
       { status: 502 }

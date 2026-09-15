@@ -119,6 +119,8 @@ model Creator {
   projects             Project[]
   paymentRecords       PaymentRecord[]
   passwordResetTokens  PasswordResetToken[]
+  partnerProfile       PartnerProfile?
+  referredBy           Referral[]            @relation("ReferredCreator")
   // Was Portfolio? (one-to-one) — now an array, matching the removal
   // of @unique on Portfolio.creatorId, so an agency account can hold
   // more than one.
@@ -259,6 +261,223 @@ model Creator {
 }
 
 // ─────────────────────────────────────────────
+// PARTNER PROFILE — identifies a creator as a
+// Showwork referral partner.
+//
+// A Creator can become a partner without changing
+// anything about their normal Showwork account.
+//
+// The referral code is permanent once created and
+// becomes the identifier used in referral URLs.
+// ─────────────────────────────────────────────
+model PartnerProfile {
+  id String @id @default(uuid())
+
+  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String  @unique
+
+  // Short, human-readable code used in referral URLs.
+  // Example: SHOWWORK.COM/?ref=STEPHEN
+  referralCode String @unique
+
+  // Allows Showwork to disable a partner without
+  // deleting their historical referral/commission data.
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  referrals Referral[]
+payouts PartnerPayout[]
+payoutAccount PartnerPayoutAccount?
+}
+
+// ─────────────────────────────────────────────
+// PARTNER PAYOUT — records a partner's request
+// to withdraw approved commission earnings.
+//
+// Payouts are separate financial records so the
+// commission history remains immutable and every
+// withdrawal can be audited independently.
+// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// PARTNER PAYOUT ACCOUNT — the bank account a
+// partner has registered to receive payouts.
+// ─────────────────────────────────────────────
+model PartnerPayoutAccount {
+  id String @id @default(uuid())
+
+  partner PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String @unique
+
+  bankName String
+  accountNumber String
+  accountName String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PartnerPayout {
+  id String @id @default(uuid())
+
+  partner   PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+
+  // Amount requested for this payout in Nigerian Naira.
+  amountNgn Int
+
+  status PartnerPayoutStatus @default(PENDING)
+
+  // When the partner submitted the payout request.
+  requestedAt DateTime @default(now())
+
+  // When an admin approved the payout.
+  approvedAt DateTime?
+
+  // When the payout was actually sent.
+  paidAt DateTime?
+
+  // Reference supplied by the payment provider or
+  // recorded by the admin after payment.
+  payoutReference String?
+
+  // Optional internal note for payout processing.
+  adminNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payoutCommissions PartnerPayoutCommission[]
+
+  @@index([partnerId])
+  @@index([status])
+  @@index([requestedAt])
+}
+// ─────────────────────────────────────────────
+// PARTNER PAYOUT COMMISSION — links an individual
+// commission to the payout in which it was settled.
+//
+// This prevents the same commission from being
+// withdrawn more than once and provides a complete
+// financial audit trail.
+// ─────────────────────────────────────────────
+model PartnerPayoutCommission {
+  id String @id @default(uuid())
+
+  payout   PartnerPayout @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  payoutId String
+
+  commission   ReferralCommission @relation(fields: [commissionId], references: [id], onDelete: Restrict)
+  commissionId String @unique
+
+  amountNgn Int
+
+  createdAt DateTime @default(now())
+
+  @@index([payoutId])
+  @@index([commissionId])
+}
+
+// ─────────────────────────────────────────────
+// REFERRAL — permanently connects a referred
+// Creator account to the Partner who introduced
+// them.
+//
+// Attribution is intentionally stored permanently.
+// The commission eligibility window is controlled
+// by `commissionEndsAt`, not by deleting the referral.
+// ─────────────────────────────────────────────
+model Referral {
+  id String @id @default(uuid())
+
+  partner   PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+
+  // The actual Showwork account that came through
+  // the partner's referral.
+  referredCreator   Creator @relation("ReferredCreator", fields: [referredCreatorId], references: [id], onDelete: Cascade)
+  referredCreatorId String  @unique
+
+  status PartnerReferralStatus @default(PENDING)
+
+  // When the referred account became eligible for
+  // commissions — normally the first successful
+  // qualifying subscription payment.
+  startedAt DateTime?
+
+  // The partner earns commissions only through this
+  // date. This is calculated from the referred
+  // customer's qualifying start date.
+  commissionEndsAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commissions ReferralCommission[]
+
+  @@index([partnerId])
+  @@index([referredCreatorId])
+  @@index([status])
+  @@index([commissionEndsAt])
+}
+
+// ─────────────────────────────────────────────
+// REFERRAL COMMISSION — one commission generated
+// by one qualifying payment from a referred Creator.
+//
+// This is an immutable financial record. We don't
+// simply maintain a running "partner balance" because
+// every commission needs to remain auditable.
+// ─────────────────────────────────────────────
+model ReferralCommission {
+  id String @id @default(uuid())
+
+  referral   Referral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  referralId String
+
+  // The payment that generated this commission.
+  // Kept as a plain reference rather than a hard
+  // Prisma relation so existing PaymentRecord
+  // behaviour remains untouched.
+  paymentRecordId String
+
+  // Original amount paid by the referred customer.
+  paymentAmountNgn Int
+
+  // Percentage awarded to the partner.
+  // Stored per commission so historical records
+  // remain accurate if the program percentage changes
+  // in the future.
+  commissionPercent Int
+
+  // Actual amount owed to the partner.
+  commissionAmountNgn Int
+
+  status PartnerCommissionStatus @default(PENDING)
+
+  // When the commission became eligible.
+  earnedAt DateTime @default(now())
+
+  approvedAt DateTime?
+  paidAt     DateTime?
+
+  // Optional reference when the commission is
+  // included in an actual partner payout.
+  payoutReference String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payoutAllocation PartnerPayoutCommission?
+
+  @@unique([paymentRecordId])
+  @@index([referralId])
+  @@index([status])
+  @@index([earnedAt])
+}
+
+// ─────────────────────────────────────────────
 // PROJECT — one client delivery (e.g. "Soundhous 2026")
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
@@ -273,6 +492,7 @@ enum DeliveryStatus {
   APPROVED
   PAID
 }
+
 
 model Project {
   id             String         @id @default(uuid())
@@ -493,6 +713,13 @@ enum ManagedProjectStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+enum PartnerPayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
 }
 
 enum TaskStatus {
@@ -909,11 +1136,15 @@ model ViewerEmail {
 // sits here so nothing is stored twice.
 // ─────────────────────────────────────────────
 model PendingSignup {
-  id           String      @id @default(uuid())
-  email        String      @unique
-  name         String?
-  phone        String?
-  companyName  String?
+  id          String  @id @default(uuid())
+  email       String  @unique
+  name        String?
+  phone       String?
+  companyName String?
+
+  // Optional partner referral code carried through the OTP signup flow.
+  referralCode String?
+
   // Carried through from the signup form so verify-otp can set it on
   // the real Creator row once the account is actually created.
   accountType  AccountType @default(CREATOR)
@@ -946,6 +1177,20 @@ enum PortfolioBillingStatus {
   OFFLINE
 }
 
+enum PartnerReferralStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  DISQUALIFIED
+}
+
+enum PartnerCommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  VOIDED
+}
+
 enum PaymentType {
   PROJECT_ONE_TIME
   SUBSCRIPTION_INITIAL
@@ -975,7 +1220,7 @@ model PaymentRecord {
   // Only set for CALENDAR_* payment types — which specific calendar
   // this charge was for, since one manager can have several clients.
   calendarId           String?
-  paystackReference    String?
+ paystackReference    String? @unique
   createdAt            DateTime              @default(now())
 
   @@index([creatorId])

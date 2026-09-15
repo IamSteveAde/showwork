@@ -151,7 +151,8 @@ function Progress({ step }: { step: "details" | "verify" }) {
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next");
+const next = searchParams.get("next");
+const referralCode = searchParams.get("ref");
 
   const [step, setStep] = useState<"details" | "verify">("details");
   const [accountType, setAccountType] = useState<AccountType>("CREATOR");
@@ -182,13 +183,14 @@ function SignupForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
-          password,
-          name: name.trim(),
-          phone: phone.trim(),
-          companyName: companyName.trim(),
-          accountType,
-        }),
+  email: email.trim(),
+  password,
+  name: name.trim(),
+  phone: phone.trim(),
+  companyName: companyName.trim(),
+  accountType,
+  referralCode,
+}),
       });
 
       if (res.ok) {
@@ -243,13 +245,14 @@ function SignupForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
-          password,
-          name: name.trim(),
-          phone: phone.trim(),
-          companyName: companyName.trim(),
-          accountType,
-        }),
+  email: email.trim(),
+  password,
+  name: name.trim(),
+  phone: phone.trim(),
+  companyName: companyName.trim(),
+  accountType,
+  referralCode,
+}),
       });
 
       setResendStatus(res.ok ? "New code sent" : "Couldn't resend");

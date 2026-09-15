@@ -904,30 +904,36 @@ export default async function AdminPage({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <AdminNavCard
-              href="/admin/activity"
-              title="Activity"
-              description="Review platform activity and account events."
-            />
+  <AdminNavCard
+    href="/admin/activity"
+    title="Activity"
+    description="Review platform activity and account events."
+  />
 
-            <AdminNavCard
-              href="/admin/social-calendars"
-              title="Content Workspaces"
-              description="Manage client workspaces and billing."
-            />
+  <AdminNavCard
+    href="/admin/social-calendars"
+    title="Content Workspaces"
+    description="Manage client workspaces and billing."
+  />
 
-            <AdminNavCard
-              href="/admin/creativo"
-              title="Creativo"
-              description="Manage the creator community."
-            />
+  <AdminNavCard
+    href="/admin/creativo"
+    title="Creativo"
+    description="Manage the creator community."
+  />
 
-            <AdminNavCard
-              href="/admin/blog"
-              title="Blog"
-              description="Manage editorial content."
-            />
-          </div>
+  <AdminNavCard
+    href="/admin/blog"
+    title="Blog"
+    description="Manage editorial content."
+  />
+
+  <AdminNavCard
+    href="/admin/partners"
+    title="Partner Program"
+    description="Manage partners, commissions and payouts."
+  />
+</div>
         </section>
 
         {/* =====================================================
