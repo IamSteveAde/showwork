@@ -1530,3 +1530,186 @@ export async function sendCalendarTrialEndedEmail({
     }),
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* PARTNER PROGRAM                                                             */
+/* -------------------------------------------------------------------------- */
+
+export async function sendPartnerReferralSignupEmail({
+  to,
+  partnerName,
+  referredCreatorName,
+}: {
+  to: string;
+  partnerName: string | null;
+  referredCreatorName: string | null;
+}) {
+  const partnerFirstName = firstNameOf(partnerName);
+  const creatorDisplayName =
+    referredCreatorName?.trim() || "A new creator";
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "You have a new Showwork referral",
+    html: emailShell({
+      eyebrow: "Partner Program · New referral",
+      headline: "Someone joined through your link.",
+      body: `
+        ${
+          partnerFirstName
+            ? `Hi ${escapeHtml(partnerFirstName)},`
+            : "Hi there,"
+        }
+        <br /><br />
+        Someone just created a Showwork account using your referral link.
+        Their account is now connected to your Partner Program profile.
+      `,
+      detailsHtml: `
+        ${infoBox("New referral", creatorDisplayName)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        <div style="padding:16px 18px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#344054;">
+            Their referral is currently pending. If they make a qualifying Showwork payment,
+            you'll earn your partner commission according to the Partner Program terms.
+          </p>
+        </div>
+      `,
+      ctaLabel: "View Partner Dashboard",
+      ctaUrl: `${APP_URL}/dashboard/partners`,
+      heroImage: true,
+      accent: "#2478FF",
+      footer:
+        "You can view your referrals and commission history from your Partner Dashboard.",
+    }),
+  });
+}
+
+export async function sendPartnerCommissionEarnedEmail({
+  to,
+  partnerName,
+  paymentAmountNgn,
+  commissionAmountNgn,
+  paymentType,
+}: {
+  to: string;
+  partnerName: string | null;
+  paymentAmountNgn: number;
+  commissionAmountNgn: number;
+  paymentType: string;
+}) {
+  const partnerFirstName = firstNameOf(partnerName);
+
+  const formatNgn = (amount: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(amount);
+
+  const paymentLabel =
+    paymentType === "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL"
+      ? "Content Workspace subscription"
+      : paymentType === "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL"
+        ? "Content Workspace renewal"
+        : paymentType === "SUBSCRIPTION_INITIAL"
+          ? "Showwork subscription"
+          : paymentType === "SUBSCRIPTION_RENEWAL"
+            ? "Showwork subscription renewal"
+            : "Qualifying Showwork payment";
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: `You earned ${formatNgn(commissionAmountNgn)} from a referral`,
+    html: emailShell({
+      eyebrow: "Partner Program · Commission earned",
+      headline: "Your referral just generated a commission.",
+      body: `
+        ${
+          partnerFirstName
+            ? `Hi ${escapeHtml(partnerFirstName)},`
+            : "Hi there,"
+        }
+        <br /><br />
+        A creator you referred just made a qualifying payment on Showwork.
+        Your commission has been recorded in your Partner Dashboard.
+      `,
+      detailsHtml: `
+        ${infoBox("Commission earned", formatNgn(commissionAmountNgn), "#16A34A")}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Customer payment", formatNgn(paymentAmountNgn))}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Payment", paymentLabel)}
+        <div style="margin-top:14px;padding:15px 17px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#166534;">
+            Your commission is now recorded and will follow the normal review and payout process.
+          </p>
+        </div>
+      `,
+      ctaLabel: "View Commission",
+      ctaUrl: `${APP_URL}/dashboard/partners`,
+      heroImage: true,
+      accent: "#16A34A",
+      footer:
+        "Your Partner Dashboard always shows the current status of your commissions.",
+    }),
+  });
+}
+
+export async function sendPartnerPayoutPaidEmail({
+  to,
+  partnerName,
+  amountNgn,
+  payoutReference,
+}: {
+  to: string;
+  partnerName: string | null;
+  amountNgn: number;
+  payoutReference: string;
+}) {
+  const partnerFirstName = firstNameOf(partnerName);
+
+  const formatNgn = (amount: number) =>
+    new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      maximumFractionDigits: 0,
+    }).format(amount);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: `Your ${formatNgn(amountNgn)} partner payout has been sent`,
+    html: emailShell({
+      eyebrow: "Partner Program · Payout sent",
+      headline: "Your payout has been sent.",
+      body: `
+        ${
+          partnerFirstName
+            ? `Hi ${escapeHtml(partnerFirstName)},`
+            : "Hi there,"
+        }
+        <br /><br />
+        Your approved Partner Program payout has been marked as paid.
+        The payment details are below for your records.
+      `,
+      detailsHtml: `
+        ${infoBox("Amount paid", formatNgn(amountNgn), "#16A34A")}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Payment reference", payoutReference)}
+        <div style="margin-top:14px;padding:15px 17px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#166534;">
+            Keep this reference for your records. Your Partner Dashboard has also been updated.
+          </p>
+        </div>
+      `,
+      ctaLabel: "View Partner Dashboard",
+      ctaUrl: `${APP_URL}/dashboard/partners`,
+      heroImage: true,
+      accent: "#16A34A",
+      footer:
+        "Thank you for growing Showwork with us.",
+    }),
+  });
+}

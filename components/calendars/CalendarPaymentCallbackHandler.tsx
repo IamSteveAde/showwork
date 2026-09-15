@@ -15,15 +15,13 @@ export default function CalendarPaymentCallbackHandler() {
     const isSubscriptionCallback =
       searchParams.get("subscriptionPayment") === "callback";
 
-    const calendarId = searchParams.get("calendarId");
-
-    if (!isSubscriptionCallback || !calendarId) {
+    if (!isSubscriptionCallback) {
       return;
     }
 
     setStatus("checking");
 
-    fetch(`/api/calendars/${calendarId}/verify-subscription`, {
+    fetch("/api/calendars/verify-subscription", {
       method: "POST",
     })
       .then((res) =>
@@ -59,7 +57,10 @@ export default function CalendarPaymentCallbackHandler() {
           status === "failed"
             ? "rgba(239,68,68,0.1)"
             : "rgba(74,222,128,0.1)",
-        color: status === "failed" ? "#F87171" : "#4ade80",
+        color:
+          status === "failed"
+            ? "#F87171"
+            : "#4ade80",
       }}
     >
       {status === "checking" &&

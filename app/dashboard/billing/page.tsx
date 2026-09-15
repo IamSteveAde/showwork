@@ -130,6 +130,13 @@ export default async function BillingPage({
       const match = planCode
         ? tierFromPlanCode(planCode)
         : null;
+        console.log("Showwork subscription callback verification:", {
+  reference: ref,
+  verificationStatus: verification?.data?.status ?? null,
+  planCode,
+  match,
+  customerCode: verification?.data?.customer?.customer_code ?? null,
+});
 
       const customerCode =
         verification?.data?.customer?.customer_code;

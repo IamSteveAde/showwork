@@ -11,9 +11,11 @@ import {
   type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
+import { processReferralCommission } from "@/lib/partnerCommissions";
 import {
   sendPortfolioPaymentFailedEmail,
   sendCalendarPaymentFailedEmail,
+  sendPartnerCommissionEarnedEmail,
 } from "@/lib/resend";
 
 const PORTFOLIO_PLAN_CODE =
@@ -157,6 +159,57 @@ export async function POST(
       { status: 401 }
     );
   }
+
+  async function sendPartnerCommissionEmailForPayment(
+  paymentRecordId: string
+) {
+  try {
+    const commission =
+      await db.referralCommission.findUnique({
+        where: {
+          paymentRecordId,
+        },
+        select: {
+          paymentAmountNgn: true,
+          commissionAmountNgn: true,
+          referral: {
+            select: {
+              partner: {
+                select: {
+                  creator: {
+                    select: {
+                      email: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+    if (!commission) {
+      return;
+    }
+
+    await sendPartnerCommissionEarnedEmail({
+      to: commission.referral.partner.creator.email,
+      partnerName:
+        commission.referral.partner.creator.name,
+      paymentAmountNgn:
+        commission.paymentAmountNgn,
+      commissionAmountNgn:
+        commission.commissionAmountNgn,
+      paymentType: "QUALIFYING_PAYMENT",
+    });
+  } catch (err) {
+    console.error(
+      `Failed to send partner commission email for payment ${paymentRecordId}:`,
+      err
+    );
+  }
+}
 
   let event: any;
 
@@ -397,31 +450,59 @@ export async function POST(
           });
 
         try {
-          await db.paymentRecord.create({
-            data: {
-              creatorId: updated.id,
+  const reference =
+    typeof data.reference === "string" && data.reference.trim()
+      ? data.reference.trim()
+      : null;
 
-              amountNgn: Math.round(
-                (data.amount ?? 0) / 100
-              ),
+  if (!reference) {
+    console.error(
+      `Paystack webhook: Content Workspace subscription.create for creator ${updated.id} has no payment reference — PaymentRecord not created`
+    );
+  } else {
+    const existingPaymentRecord =
+      await db.paymentRecord.findUnique({
+        where: {
+          paystackReference: reference,
+        },
+      });
 
-              type:
-                "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
+    if (existingPaymentRecord) {
+      console.log(
+        `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
+      );
+    } else {
+      const paymentRecord =
+        await db.paymentRecord.create({
+          data: {
+            creatorId: updated.id,
+            amountNgn: Math.round(
+              (data.amount ?? 0) / 100
+            ),
+            type:
+              "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
+            contentWorkspacePlan:
+              plan,
+            paystackReference:
+              reference,
+          },
+        });
 
-              contentWorkspacePlan:
-                plan,
+      await processReferralCommission(
+  paymentRecord
+);
 
-              paystackReference:
-                data.reference ?? null,
-            },
-          });
-        } catch (err) {
-          console.error(
-            `Paystack webhook: failed to create PaymentRecord for Content Workspace subscription.create (creator ${updated.id})`,
-            err
-          );
-        }
-
+await sendPartnerCommissionEmailForPayment(
+  paymentRecord.id
+);
+    }
+  }
+} catch (err) {
+  console.error(
+    `Paystack webhook: failed to create PaymentRecord for Content Workspace subscription.create (creator ${updated.id})`,
+    err
+  );
+}
         console.log(
           "Paystack webhook: Content Workspace subscription activated",
           {
@@ -785,26 +866,51 @@ export async function POST(
             });
 
           try {
-            await db.paymentRecord.create({
-              data: {
-                creatorId: updated.id,
-                amountNgn: Math.round(
-                  (data.amount ?? 0) / 100
-                ),
-                type:
-                  "SUBSCRIPTION_INITIAL",
-                tier,
-                cycle,
-                paystackReference:
-                  data.reference ?? null,
-              },
-            });
-          } catch (err) {
-            console.error(
-              `Paystack webhook: failed to create PaymentRecord for subscription.create (creator ${updated.id})`,
-              err
-            );
-          }
+  const reference =
+    typeof data.reference === "string" && data.reference.trim()
+      ? data.reference.trim()
+      : null;
+
+  if (!reference) {
+    console.error(
+      `Paystack webhook: subscription.create for creator ${updated.id} has no payment reference — PaymentRecord not created`
+    );
+  } else {
+    const existingPaymentRecord =
+      await db.paymentRecord.findUnique({
+        where: {
+          paystackReference: reference,
+        },
+      });
+
+    if (existingPaymentRecord) {
+      console.log(
+        `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
+      );
+    } else {
+      const paymentRecord =
+        await db.paymentRecord.create({
+          data: {
+            creatorId: updated.id,
+            amountNgn: Math.round(
+              (data.amount ?? 0) / 100
+            ),
+            type: "SUBSCRIPTION_INITIAL",
+            tier,
+            cycle,
+            paystackReference: reference,
+          },
+        });
+
+      await processReferralCommission(paymentRecord);
+    }
+  }
+} catch (err) {
+  console.error(
+    `Paystack webhook: failed to create PaymentRecord for subscription.create (creator ${updated.id})`,
+    err
+  );
+}
         }
       }
     }
@@ -865,28 +971,57 @@ export async function POST(
         });
 
         try {
-          await db.paymentRecord.create({
-            data: {
-              creatorId: creator.id,
-              amountNgn: Math.round(
-                (event.data.amount ?? 0) /
-                  100
-              ),
-              type:
-                "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
-              contentWorkspacePlan:
-                contentWorkspacePlan.plan,
-              paystackReference:
-                event.data.reference ??
-                null,
-            },
-          });
-        } catch (err) {
-          console.error(
-            `Paystack webhook: failed to create PaymentRecord for Content Workspace renewal (creator ${creator.id})`,
-            err
-          );
-        }
+  const reference =
+    typeof event.data.reference === "string" &&
+    event.data.reference.trim()
+      ? event.data.reference.trim()
+      : null;
+
+  if (!reference) {
+    console.error(
+      `Paystack webhook: Content Workspace renewal for creator ${creator.id} has no payment reference — PaymentRecord not created`
+    );
+  } else {
+    const existingPaymentRecord =
+      await db.paymentRecord.findUnique({
+        where: {
+          paystackReference: reference,
+        },
+      });
+
+    if (existingPaymentRecord) {
+      console.log(
+        `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
+      );
+    } else {
+      const paymentRecord =
+        await db.paymentRecord.create({
+          data: {
+            creatorId: creator.id,
+            amountNgn: Math.round(
+              (event.data.amount ?? 0) /
+                100
+            ),
+            type:
+              "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
+            contentWorkspacePlan:
+              contentWorkspacePlan.plan,
+            paystackReference:
+              reference,
+          },
+        });
+
+      await processReferralCommission(
+        paymentRecord
+      );
+    }
+  }
+} catch (err) {
+  console.error(
+    `Paystack webhook: failed to create PaymentRecord for Content Workspace renewal (creator ${creator.id})`,
+    err
+  );
+}
       }
     }
 
@@ -1142,28 +1277,57 @@ export async function POST(
             });
 
           try {
-            await db.paymentRecord.create({
-              data: {
-                creatorId: updated.id,
-                amountNgn: Math.round(
-                  (event.data.amount ?? 0) /
-                    100
-                ),
-                type:
-                  "SUBSCRIPTION_RENEWAL",
-                tier,
-                cycle,
-                paystackReference:
-                  event.data.reference ??
-                  null,
-              },
-            });
-          } catch (err) {
-            console.error(
-              `Paystack webhook: failed to create PaymentRecord for renewal (creator ${updated.id})`,
-              err
-            );
-          }
+  const reference =
+    typeof event.data.reference === "string" &&
+    event.data.reference.trim()
+      ? event.data.reference.trim()
+      : null;
+
+  if (!reference) {
+    console.error(
+      `Paystack webhook: renewal for creator ${updated.id} has no payment reference — PaymentRecord not created`
+    );
+  } else {
+    const existingPaymentRecord =
+      await db.paymentRecord.findUnique({
+        where: {
+          paystackReference: reference,
+        },
+      });
+
+    if (existingPaymentRecord) {
+      console.log(
+        `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
+      );
+    } else {
+      const paymentRecord =
+        await db.paymentRecord.create({
+          data: {
+            creatorId: updated.id,
+            amountNgn: Math.round(
+              (event.data.amount ?? 0) /
+                100
+            ),
+            type:
+              "SUBSCRIPTION_RENEWAL",
+            tier,
+            cycle,
+            paystackReference:
+              reference,
+          },
+        });
+
+      await processReferralCommission(
+        paymentRecord
+      );
+    }
+  }
+} catch (err) {
+  console.error(
+    `Paystack webhook: failed to create PaymentRecord for renewal (creator ${updated.id})`,
+    err
+  );
+}
         }
       }
     }

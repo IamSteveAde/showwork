@@ -354,13 +354,20 @@ export default async function DashboardPage() {
 
             <div className="hidden items-center gap-2 sm:flex">
               <Link
-                href="/dashboard/profile"
-                className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
-              >
-                Profile
-              </Link>
+  href="/dashboard/profile"
+  className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+>
+  Profile
+</Link>
 
-              {admin && (
+<Link
+  href="/dashboard/partners"
+  className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+>
+  Partner Program
+</Link>
+
+{admin && (
                 <Link
                   href="/admin"
                   className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
@@ -462,15 +469,24 @@ export default async function DashboardPage() {
                   {/* Navigation */}
                   <div className="py-1">
                     <Link
-                      href="/dashboard/profile"
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
-                    >
-                      <span>Profile</span>
+  href="/dashboard/profile"
+  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+>
+  <span>Profile</span>
 
-                      <ArrowUpRightIcon className="h-3.5 w-3.5 text-[#A0A5AD]" />
-                    </Link>
+  <ArrowUpRightIcon className="h-3.5 w-3.5 text-[#A0A5AD]" />
+</Link>
 
-                    {admin && (
+<Link
+  href="/dashboard/partners"
+  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+>
+  <span>Partner Program</span>
+
+  <ArrowUpRightIcon className="h-3.5 w-3.5 text-[#A0A5AD]" />
+</Link>
+
+{admin && (
                       <Link
                         href="/admin"
                         className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"

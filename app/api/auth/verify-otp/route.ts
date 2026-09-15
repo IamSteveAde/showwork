@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { createSessionToken, setSessionCookie } from "@/lib/auth";
-import { sendWelcomeEmail } from "@/lib/resend";
+import {
+  createSessionToken,
+  setSessionCookie,
+} from "@/lib/auth";
+import {
+  sendWelcomeEmail,
+  sendPartnerReferralSignupEmail,
+} from "@/lib/resend";
 
 // Step 2 of signup: confirms the code, then actually creates the
 // Creator row from whatever was held in PendingSignup.
@@ -9,70 +15,177 @@ export async function POST(req: NextRequest) {
   const { email, code } = await req.json();
 
   if (!email || !code) {
-    return NextResponse.json({ error: "Email and code are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Email and code are required" },
+      { status: 400 }
+    );
   }
 
-  const pending = await db.pendingSignup.findUnique({ where: { email } });
+  const pending = await db.pendingSignup.findUnique({
+    where: { email },
+  });
+
   if (!pending) {
     return NextResponse.json(
-      { error: "No signup in progress for this email. Please sign up again." },
+      {
+        error:
+          "No signup in progress for this email. Please sign up again.",
+      },
       { status: 404 }
     );
   }
 
   if (pending.otpExpiresAt < new Date()) {
     return NextResponse.json(
-      { error: "This code has expired. Please request a new one." },
+      {
+        error: "This code has expired. Please request a new one.",
+      },
       { status: 400 }
     );
   }
 
   if (pending.otpCode !== code.trim()) {
-    return NextResponse.json({ error: "Incorrect code" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Incorrect code" },
+      { status: 400 }
+    );
   }
 
-  const alreadyExists = await db.creator.findUnique({ where: { email } });
+  const alreadyExists = await db.creator.findUnique({
+    where: { email },
+  });
+
   if (alreadyExists) {
-    await db.pendingSignup.delete({ where: { email } });
+    await db.pendingSignup.delete({
+      where: { email },
+    });
+
     return NextResponse.json(
-      { error: "An account with this email already exists" },
+      {
+        error:
+          "An account with this email already exists",
+      },
       { status: 409 }
     );
   }
 
   const now = new Date();
-   const creator = await db.creator.create({
-    data: {
-      email: pending.email,
-      name: pending.name,
-      phone: pending.phone,
-      companyName: pending.companyName,
-      passwordHash: pending.passwordHash,
-      accountType: pending.accountType,
-      // The anchor point the whole lifecycle email sequence counts
-      // from — set right here at real account creation, not left for
-      // the daily cron job to fill in later, so "day 1" and "day 2"
-      // genuinely mean 1 and 2 days after this exact signup.
-      lifecycleSequenceStartedAt: now,
-    },
+
+  const result = await db.$transaction(async (tx) => {
+    const creator = await tx.creator.create({
+      data: {
+        email: pending.email,
+        name: pending.name,
+        phone: pending.phone,
+        companyName: pending.companyName,
+        passwordHash: pending.passwordHash,
+        accountType: pending.accountType,
+
+        lifecycleSequenceStartedAt: now,
+      },
+    });
+
+    let partnerForEmail: {
+      email: string;
+      name: string | null;
+    } | null = null;
+
+    if (pending.referralCode) {
+      const partner = await tx.partnerProfile.findUnique({
+        where: {
+          referralCode: pending.referralCode,
+        },
+        select: {
+          id: true,
+          creatorId: true,
+          isActive: true,
+          creator: {
+            select: {
+              email: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      // Only attribute the signup if the partner still exists,
+      // is active, and is not the newly created Creator.
+      if (
+        partner &&
+        partner.isActive &&
+        partner.creatorId !== creator.id
+      ) {
+        await tx.referral.create({
+          data: {
+            partnerId: partner.id,
+            referredCreatorId: creator.id,
+            status: "PENDING",
+          },
+        });
+
+        partnerForEmail = {
+          email: partner.creator.email,
+          name: partner.creator.name,
+        };
+      }
+    }
+
+    await tx.pendingSignup.delete({
+      where: { email: pending.email },
+    });
+
+    return {
+      creator,
+      partnerForEmail,
+    };
   });
 
-  await db.pendingSignup.delete({ where: { email } });
-
-  // Sent immediately rather than waiting for the next scheduled run —
-  // best-effort: a failure here shouldn't block the actual signup
-  // from succeeding. welcomeEmailSentAt intentionally isn't set here;
-  // the daily lifecycle check sees it's still null and sends it again
-  // as a safety net if this direct send ever fails.
+  // Welcome email — best effort.
   try {
-    await sendWelcomeEmail({ to: creator.email, name: creator.name });
-    await db.creator.update({ where: { id: creator.id }, data: { welcomeEmailSentAt: now } });
+    await sendWelcomeEmail({
+      to: result.creator.email,
+      name: result.creator.name,
+    });
+
+    await db.creator.update({
+      where: { id: result.creator.id },
+      data: {
+        welcomeEmailSentAt: now,
+      },
+    });
   } catch (err) {
-    console.error("Failed to send welcome email at signup:", err);
+    console.error(
+      "Failed to send welcome email at signup:",
+      err
+    );
   }
 
-  const token = createSessionToken(creator.id);
-  const response = NextResponse.json({ id: creator.id, email: creator.email });
+  // Partner referral notification — best effort.
+  // This is intentionally outside the transaction so an email
+  // provider failure can never undo the signup.
+  if (result.partnerForEmail) {
+    try {
+      await sendPartnerReferralSignupEmail({
+        to: result.partnerForEmail.email,
+        partnerName: result.partnerForEmail.name,
+        referredCreatorName: result.creator.name,
+      });
+    } catch (err) {
+      console.error(
+        "Failed to send partner referral signup email:",
+        err
+      );
+    }
+  }
+
+  const token = createSessionToken(result.creator.id);
+
+  const response = NextResponse.json({
+    id: result.creator.id,
+    email: result.creator.email,
+  });
+
   setSessionCookie(response, token);
+
   return response;
 }
