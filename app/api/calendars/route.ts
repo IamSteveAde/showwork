@@ -168,6 +168,7 @@ export async function POST(req: NextRequest) {
       contentWorkspacePendingSubscriptionRef: true,
 
       isComped: true,
+      compedUntil: true,
 
       // Kept temporarily because older accounts may still have this
       // value from the previous Calendar billing system.
@@ -238,6 +239,7 @@ export async function POST(req: NextRequest) {
   contentWorkspaceTrialUsedAt: creator.contentWorkspaceTrialUsedAt,
   contentWorkspaceTrialEndsAt: creator.contentWorkspaceTrialEndsAt,
   isComped: creator.isComped,
+  compedUntil: creator.compedUntil,
 };
 
   /*

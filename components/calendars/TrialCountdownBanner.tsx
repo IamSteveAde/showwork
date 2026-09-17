@@ -86,12 +86,35 @@ function formatNaira(amount: number): string {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 
+function getMonthsAndDaysRemaining(msLeft: number) {
+  const totalDays = Math.max(0, Math.ceil(msLeft / 86400000));
+
+  if (totalDays < 30) {
+    return {
+      months: 0,
+      days: totalDays,
+    };
+  }
+
+  const months = Math.floor(totalDays / 30);
+  const days = totalDays % 30;
+
+  return {
+    months,
+    days,
+  };
+}
+
 export default function TrialCountdownBanner({
   trialEndsAt,
   plan,
+  isComped = false,
+  compedUntil = null,
 }: {
   trialEndsAt: string;
   plan: ContentWorkspacePlan;
+  isComped?: boolean;
+  compedUntil?: string | null;
 }) {
   const [now, setNow] = useState(() => Date.now());
   const [billingCycle, setBillingCycle] =
@@ -100,6 +123,8 @@ export default function TrialCountdownBanner({
   const [error, setError] = useState<string | null>(null);
 
   const pricing = PLAN_PRICING[plan];
+
+  const complimentaryAccess = isComped;
 
   // Keep the countdown fresh without requiring a page refresh.
   useEffect(() => {
@@ -111,21 +136,30 @@ export default function TrialCountdownBanner({
     return () => window.clearInterval(timer);
   }, []);
 
-  const trialEnd = useMemo(
-    () => new Date(trialEndsAt).getTime(),
-    [trialEndsAt]
-  );
+  const expirationDate = useMemo(() => {
+    const value = complimentaryAccess ? compedUntil : trialEndsAt;
 
-  const msLeft = trialEnd - now;
-  const expired = msLeft <= 0;
-  const daysLeft = Math.max(
-    0,
-    Math.ceil(msLeft / 86400000)
-  );
-  const hoursLeft = Math.max(
-    0,
-    Math.ceil(msLeft / 3600000)
-  );
+    return value ? new Date(value).getTime() : null;
+  }, [complimentaryAccess, compedUntil, trialEndsAt]);
+
+  const msLeft =
+    expirationDate === null ? null : expirationDate - now;
+
+  const expired =
+    expirationDate !== null && msLeft !== null && msLeft <= 0;
+
+  const daysLeft =
+    msLeft === null
+      ? 0
+      : Math.max(0, Math.ceil(msLeft / 86400000));
+
+  const hoursLeft =
+    msLeft === null
+      ? 0
+      : Math.max(0, Math.ceil(msLeft / 3600000));
+
+  const { months: monthsLeft, days: remainingDays } =
+    getMonthsAndDaysRemaining(msLeft ?? 0);
 
   const planName = pricing.name;
 
@@ -145,18 +179,51 @@ export default function TrialCountdownBanner({
       ? "/ year"
       : "/ month";
 
-  const endDate = useMemo(
-    () =>
-      new Date(trialEndsAt).toLocaleDateString(
-        "en-NG",
-        {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }
-      ),
-    [trialEndsAt]
-  );
+  const endDate = useMemo(() => {
+    const value = complimentaryAccess ? compedUntil : trialEndsAt;
+
+    if (!value) return null;
+
+    return new Date(value).toLocaleDateString(
+      "en-NG",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }
+    );
+  }, [complimentaryAccess, compedUntil, trialEndsAt]);
+
+  const complimentaryDurationLabel = useMemo(() => {
+    if (!complimentaryAccess) return null;
+
+    if (compedUntil === null) {
+      return "No expiration";
+    }
+
+    if (expired) {
+      return "Complimentary access has ended";
+    }
+
+    if (monthsLeft >= 1) {
+      if (remainingDays === 0) {
+        return `${monthsLeft} month${monthsLeft === 1 ? "" : "s"} remaining`;
+      }
+
+      return `${monthsLeft} month${monthsLeft === 1 ? "" : "s"} ${remainingDays} day${
+        remainingDays === 1 ? "" : "s"
+      } remaining`;
+    }
+
+    return `${daysLeft} day${daysLeft === 1 ? "" : "s"} remaining`;
+  }, [
+    complimentaryAccess,
+    compedUntil,
+    expired,
+    monthsLeft,
+    remainingDays,
+    daysLeft,
+  ]);
 
   const subscribe = async () => {
     setLoading(true);
@@ -200,21 +267,37 @@ export default function TrialCountdownBanner({
     }
   };
 
-  const headline = expired
-    ? "Your trial has ended"
-    : daysLeft === 0
-      ? "Your trial ends today"
-      : `${daysLeft} day${
-          daysLeft === 1 ? "" : "s"
-        } left`;
+  const headline = complimentaryAccess
+    ? expired
+      ? "Your complimentary access has ended"
+      : compedUntil === null
+        ? "Complimentary access"
+        : complimentaryDurationLabel
+    : expired
+      ? "Your trial has ended"
+      : daysLeft === 0
+        ? "Your trial ends today"
+        : `${daysLeft} day${
+            daysLeft === 1 ? "" : "s"
+          } left`;
 
-  const supportingText = expired
-    ? "Subscribe to restore access to your client content workspaces."
-    : "Keep your workspaces active after your free trial ends.";
+  const supportingText = complimentaryAccess
+    ? expired
+      ? "Subscribe to restore access to your client content workspaces."
+      : compedUntil === null
+        ? `You have complimentary ${planName} access with no expiration date.`
+        : `You have complimentary ${planName} access until ${endDate}.`
+    : expired
+      ? "Subscribe to restore access to your client content workspaces."
+      : "Keep your workspaces active after your free trial ends.";
 
   return (
     <section
-      aria-label="Trial status"
+      aria-label={
+        complimentaryAccess
+          ? "Complimentary access status"
+          : "Trial status"
+      }
       aria-live="polite"
       className="relative mb-8 overflow-hidden rounded-[28px] border border-white/[0.09] bg-[#101318] shadow-[0_24px_70px_rgba(0,0,0,0.28)]"
     >
@@ -251,7 +334,13 @@ export default function TrialCountdownBanner({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="rounded-full border border-[#2478FF]/20 bg-[#2478FF]/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-[#78AEFF]">
-                  {expired ? "Trial ended" : "Free trial"}
+                  {complimentaryAccess
+                    ? expired
+                      ? "Complimentary ended"
+                      : "Complimentary access"
+                    : expired
+                      ? "Trial ended"
+                      : "Free trial"}
                 </span>
 
                 <span className="text-[10px] font-medium text-white/25">
@@ -275,10 +364,24 @@ export default function TrialCountdownBanner({
                   Client workspaces stay yours
                 </span>
 
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckIcon className="text-[#4ADE80]" />
-                  Trial ends {endDate}
-                </span>
+                {complimentaryAccess ? (
+                  compedUntil === null ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <CheckIcon className="text-[#4ADE80]" />
+                      No expiration date
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <CheckIcon className="text-[#4ADE80]" />
+                      Access ends {endDate}
+                    </span>
+                  )
+                ) : (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckIcon className="text-[#4ADE80]" />
+                    Trial ends {endDate}
+                  </span>
+                )}
               </div>
 
               {error && (
@@ -297,7 +400,9 @@ export default function TrialCountdownBanner({
           <div className="flex h-full flex-col justify-between gap-6">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">
-                Continue without interruption
+                {complimentaryAccess
+                  ? "Continue after complimentary access"
+                  : "Continue without interruption"}
               </p>
 
               {/* Billing cycle toggle */}
@@ -385,11 +490,17 @@ export default function TrialCountdownBanner({
                   </p>
                 )}
 
-                {!expired && (
+                {!complimentaryAccess && !expired && (
                   <p className="mt-2 text-[10px] text-white/25">
                     {hoursLeft <= 24
                       ? "Less than a day remaining"
                       : `${daysLeft} days remaining on your trial`}
+                  </p>
+                )}
+
+                {complimentaryAccess && !expired && (
+                  <p className="mt-2 text-[10px] text-white/25">
+                    {complimentaryDurationLabel}
                   </p>
                 )}
               </div>

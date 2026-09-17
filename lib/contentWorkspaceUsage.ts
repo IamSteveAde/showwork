@@ -17,6 +17,7 @@ export interface ContentWorkspaceAccount {
   contentWorkspaceTrialUsedAt?: Date | null;
   contentWorkspaceTrialEndsAt: Date | null;
   isComped: boolean;
+  compedUntil: Date | null;
 }
 
 export interface ContentWorkspaceUsage {
@@ -59,14 +60,31 @@ export function isContentWorkspaceTrialActive(
   );
 }
 
+export function isComplimentaryAccessActive(
+  account: Pick<ContentWorkspaceAccount, "isComped" | "compedUntil">
+): boolean {
+  if (!account.isComped) return false;
+
+  if (!account.compedUntil) return true;
+
+  return account.compedUntil.getTime() > Date.now();
+}
+
+
 export function canAccessContentWorkspace(
   account: Pick<
     ContentWorkspaceAccount,
     | "contentWorkspaceBillingStatus"
     | "contentWorkspaceTrialEndsAt"
     | "contentWorkspacePlan"
+    | "isComped"
+    | "compedUntil"
   >
 ): boolean {
+  if (isComplimentaryAccessActive(account)) {
+    return true;
+  }
+
   if (
     account.contentWorkspaceBillingStatus === "ACTIVE" &&
     !!account.contentWorkspacePlan
@@ -83,17 +101,18 @@ export function canAccessContentWorkspace(
 
   return false;
 }
-
 export function getContentWorkspacePlan(
-  account: Pick<ContentWorkspaceAccount, "contentWorkspacePlan" | "isComped">
+  account: Pick<
+    ContentWorkspaceAccount,
+    "contentWorkspacePlan" | "isComped" | "compedUntil"
+  >
 ): ContentWorkspacePlan | null {
-  if (account.isComped) {
+  if (isComplimentaryAccessActive(account)) {
     return "STUDIO";
   }
 
   return account.contentWorkspacePlan;
 }
-
 /**
  * Counts the creator's currently owned Content Workspaces.
  */
@@ -375,12 +394,13 @@ export async function reserveContentWorkspaceStorage(
 
   const creator = await db.creator.findUnique({
     where: { id: creatorId },
-    select: {
-      contentWorkspacePlan: true,
-      contentWorkspaceBillingStatus: true,
-      contentWorkspaceTrialEndsAt: true,
-      isComped: true,
-    },
+   select: {
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceTrialEndsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
   });
 
   if (!creator) {
@@ -839,12 +859,13 @@ export async function consumeAiGeneration(
 }> {
   const creator = await db.creator.findUnique({
     where: { id: creatorId },
-    select: {
-      contentWorkspacePlan: true,
-      contentWorkspaceBillingStatus: true,
-      contentWorkspaceTrialEndsAt: true,
-      isComped: true,
-    },
+  select: {
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceTrialEndsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
   });
 
   if (!creator) {
@@ -910,11 +931,12 @@ export async function consumeAiRegeneration(
   const creator = await db.creator.findUnique({
     where: { id: creatorId },
     select: {
-      contentWorkspacePlan: true,
-      contentWorkspaceBillingStatus: true,
-      contentWorkspaceTrialEndsAt: true,
-      isComped: true,
-    },
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceTrialEndsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
   });
 
   if (!creator) {

@@ -235,13 +235,15 @@ export default async function BillingPage({
       },
 
       select: {
-        contentWorkspacePlan: true,
-        contentWorkspaceBillingStatus: true,
-        contentWorkspaceBillingCycle: true,
-        contentWorkspaceTrialUsedAt: true,
-        contentWorkspaceTrialEndsAt: true,
-        contentWorkspaceSubscriptionRenewsAt: true,
-      },
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceBillingCycle: true,
+  contentWorkspaceTrialUsedAt: true,
+  contentWorkspaceTrialEndsAt: true,
+  contentWorkspaceSubscriptionRenewsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
     }),
 
     db.portfolio.count({

@@ -230,6 +230,8 @@ const calendarBilling = await db.creator.findUnique({
   contentWorkspaceBillingCycle: true,
   contentWorkspaceTrialEndsAt: true,
   contentWorkspaceSubscriptionRenewsAt: true,
+  isComped: true,
+  compedUntil: true,
 },
 });
 
@@ -445,12 +447,17 @@ const calendarBilling = await db.creator.findUnique({
 </div></div>
         </header>
 
-       {calendarBilling?.contentWorkspaceBillingStatus === "TRIAL" &&
-  calendarBilling.contentWorkspaceTrialEndsAt &&
-  calendarBilling.contentWorkspacePlan && (
+      {calendarBilling?.contentWorkspacePlan &&
+  ((calendarBilling.contentWorkspaceBillingStatus === "TRIAL" &&
+    calendarBilling.contentWorkspaceTrialEndsAt) ||
+    calendarBilling.isComped) && (
     <TrialCountdownBanner
-      trialEndsAt={calendarBilling.contentWorkspaceTrialEndsAt.toISOString()}
+      trialEndsAt={
+        calendarBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? ""
+      }
       plan={calendarBilling.contentWorkspacePlan}
+      isComped={calendarBilling.isComped}
+      compedUntil={calendarBilling.compedUntil?.toISOString() ?? null}
     />
   )}
 

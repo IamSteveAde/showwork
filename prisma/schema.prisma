@@ -108,8 +108,9 @@ model Creator {
   // everywhere access is gated. discountPercent (0-100) is applied the
   // next time this creator starts or switches a subscription — it
   // doesn't retroactively change an already-active one.
-  isComped              Boolean @default(false)
-  discountPercent       Int     @default(0)
+  isComped        Boolean   @default(false)
+compedUntil     DateTime?
+discountPercent Int       @default(0)
   // Overrides the standard Free-tier limit (normally 1/month) for this
   // specific creator, without granting them a paid tier or full comped
   // access — they stay on Free, just with a raised allowance. Null

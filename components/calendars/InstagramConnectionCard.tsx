@@ -16,11 +16,13 @@ export default function InstagramConnectionCard({
   calendarId,
   username,
   connectedAt,
+  isManager,
 }: {
   calendarId: string;
   username: string | null;
   connectedAt: string | null;
-}) {
+  isManager: boolean;
+}) {  
   const router = useRouter();
   const searchParams = useSearchParams();
   const [disconnecting, setDisconnecting] = useState(false);
@@ -122,67 +124,81 @@ export default function InstagramConnectionCard({
       </div>
 
       <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
-        {isConnected ? (
-          confirming ? (
-            <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] text-[#AAB4C3]">Disconnect @{username}? Already-published posts stay published.</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={disconnect}
-                  disabled={disconnecting}
-                  className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                >
-                  {disconnecting ? "Disconnecting..." : "Yes, disconnect"}
-                </button>
-                <button onClick={() => setConfirming(false)} className="text-xs text-white/40 underline">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
+  {isManager ? (
+    isConnected ? (
+      confirming ? (
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] text-[#AAB4C3]">
+            Disconnect @{username}? Already-published posts stay published.
+          </p>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setConfirming(true)}
-              className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10"
+              onClick={disconnect}
+              disabled={disconnecting}
+              className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
-              Disconnect Instagram
+              {disconnecting ? "Disconnecting..." : "Yes, disconnect"}
             </button>
-          )
-        ) : (
-         <a
-  href={`/api/calendars/${calendarId}/instagram/connect`}
-  target="_blank"
-  rel="noopener noreferrer"
-  className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
-  style={{
-    background:
-      "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
-  }}
->
-  Connect Instagram
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-xs text-white/40 underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10"
+        >
+          Disconnect Instagram
+        </button>
+      )
+    ) : (
+      <a
+        href={`/api/calendars/${calendarId}/instagram/connect`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
+        style={{
+          background:
+            "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+        }}
+      >
+        Connect Instagram
 
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    className="h-3.5 w-3.5 opacity-70"
-    aria-hidden="true"
-  >
-    <path
-      d="M14 5h5v5M19 5l-8 8"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M18 13v4.5A1.5 1.5 0 0 1 16.5 19h-10A1.5 1.5 0 0 1 5 17.5v-10A1.5 1.5 0 0 1 6.5 6H11"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-    />
-  </svg>
-</a>
-        )}
-      </div>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-3.5 w-3.5 opacity-70"
+          aria-hidden="true"
+        >
+          <path
+            d="M14 5h5v5M19 5l-8 8"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M18 13v4.5A1.5 1.5 0 0 1 16.5 19h-10A1.5 1.5 0 0 1 5 17.5v-10A1.5 1.5 0 0 1 6.5 6H11"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </a>
+    )
+  ) : (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center text-[11px] font-medium text-[#718096]">
+      {isConnected
+        ? "Connected — channel management is restricted to the workspace owner."
+        : "Channel connection is restricted to the workspace owner."}
+    </div>
+  )}
+</div>
     </div>
   );
 }

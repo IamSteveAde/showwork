@@ -75,15 +75,16 @@ export async function runScheduledAiBusinessResearch() {
       clientName: true,
       aiBusinessSummary: true,
       manager: {
-        select: {
-          id: true,
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          contentWorkspaceBillingCycle: true,
-          contentWorkspaceTrialEndsAt: true,
-          isComped: true,
-        },
-      },
+  select: {
+    id: true,
+    contentWorkspacePlan: true,
+    contentWorkspaceBillingStatus: true,
+    contentWorkspaceBillingCycle: true,
+    contentWorkspaceTrialEndsAt: true,
+    isComped: true,
+    compedUntil: true,
+  },
+},
     },
   });
 

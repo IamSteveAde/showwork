@@ -8,6 +8,7 @@ import {
   getCalendarRole,
   canAccessCalendar,
 } from "@/lib/calendarPermissions";
+import { isComplimentaryAccessActive } from "@/lib/contentWorkspaceUsage";
 
 import CalendarGrid from "@/components/calendars/CalendarGrid";
 import CalendarPlanStatus from "@/components/calendars/CalendarPlanStatus";
@@ -323,6 +324,7 @@ export default async function CalendarDetailPage({
           contentWorkspaceBillingCycle: true,
           contentWorkspaceTrialEndsAt: true,
           isComped: true,
+compedUntil: true,
           
         },
       },
@@ -360,7 +362,8 @@ export default async function CalendarDetailPage({
   }
 
   const isManager = calendar.managerId === creator.id;
-  const totalMembers = 1 + calendar._count.collaborators;
+const canEditWorkspace = userRole === "EDIT_CALENDAR";
+const totalMembers = 1 + calendar._count.collaborators;
 
   if (!canAccessCalendar(calendar.manager)) {
    const trialExpired =
@@ -429,12 +432,12 @@ export default async function CalendarDetailPage({
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
 
- const aiActive =
+const aiActive =
   calendar.manager.contentWorkspaceBillingStatus === "ACTIVE" ||
   (calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
     !!calendar.manager.contentWorkspaceTrialEndsAt &&
     calendar.manager.contentWorkspaceTrialEndsAt.getTime() > Date.now()) ||
-  calendar.manager.isComped;
+  isComplimentaryAccessActive(calendar.manager);
 
   const calendarPosts = calendar.posts.map((p) => ({
     id: p.id,
@@ -703,8 +706,8 @@ export default async function CalendarDetailPage({
         </div>
       ),
     },
-    ...(isManager
-      ? [
+    ...(canEditWorkspace
+  ? [
           {
   id: "team" as const,
   label: "People",
@@ -1095,8 +1098,8 @@ export default async function CalendarDetailPage({
         </div>
       ),
     },
-    ...(isManager
-      ? [
+    ...(canEditWorkspace
+  ? [
           {
             id: "channels" as const,
             label: "Channels",
@@ -1108,15 +1111,18 @@ export default async function CalendarDetailPage({
             content: (
               <div className="grid gap-5 xl:grid-cols-2">
                 <InstagramConnectionCard
-                  calendarId={calendar.id}
-                  username={calendar.instagramUsername}
-                  connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
-                />
-                <TikTokConnectionCard
-                  calendarId={calendar.id}
-                  username={calendar.tikTokUsername}
-                  connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
-                />
+  calendarId={calendar.id}
+  username={calendar.instagramUsername}
+  connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
+  isManager={isManager}
+/>
+
+<TikTokConnectionCard
+  calendarId={calendar.id}
+  username={calendar.tikTokUsername}
+  connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
+  isManager={isManager}
+/>
               </div>
             ),
           },
@@ -1209,13 +1215,13 @@ export default async function CalendarDetailPage({
           isManager={isManager}
         />
       }
-      publishAction={
-        isManager ? (
-          <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
-            Publish workspace <span aria-hidden>→</span>
-          </PublishTrigger>
-        ) : undefined
-      }
+     publishAction={
+  canEditWorkspace ? (
+    <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
+      Publish workspace <span aria-hidden>→</span>
+    </PublishTrigger>
+  ) : undefined
+}
       sections={sections}
     />
   );
