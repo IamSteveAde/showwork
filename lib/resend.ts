@@ -1713,3 +1713,262 @@ export async function sendPartnerPayoutPaidEmail({
     }),
   });
 }
+export async function sendPartnerApplicationReceivedEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "Your Showwork Partner Program application is in",
+    html: emailShell({
+      eyebrow: "Partner Program · Application received",
+      headline: "We've received your application.",
+      body: `
+        Hi ${escapeHtml(firstName ?? "there")},<br /><br />
+        Thanks for your interest in becoming a Showwork Partner.
+        We've received your application and our team will review it shortly.
+        <br /><br />
+        If your application is approved, we'll send you everything you need to get started.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:16px;">
+          <p style="margin:0 0 7px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">
+            What happens next
+          </p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            Our team will review your application. You'll receive another email once a decision has been made.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Open Showwork",
+      ctaUrl: `${APP_URL}/dashboard`,
+      accent: "#2478FF",
+      footer:
+        "Thanks for your interest in the Showwork Partner Program.",
+    }),
+  });
+}
+
+
+export async function sendPartnerApplicationNotificationEmail({
+  name,
+  email,
+}: {
+  name: string;
+  email: string;
+}) {
+  await sendEmail({
+    from: FROM,
+    to: "hello@useshowwork.com",
+    replyTo: email,
+    subject: `New Showwork Partner Program application — ${name}`,
+    html: emailShell({
+      eyebrow: "Partner Program · New application",
+      headline: `${name} wants to become a Showwork Partner.`,
+      body:
+        "A creator has submitted an application to join the Showwork Partner Program. Review their account and decide whether to activate their partner access.",
+      detailsHtml: `
+        ${infoBox("Applicant", name)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Email", email)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        <div style="padding:16px 18px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.65;color:#344054;">
+            The application is now waiting for review in the Showwork Admin Partner Program dashboard.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Review application",
+      ctaUrl: `${APP_URL}/admin/partners`,
+      accent: "#2478FF",
+      footer:
+        "Reply directly to this email to contact the applicant.",
+    }),
+  });
+}
+
+
+export async function sendPartnerApplicationApprovedEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "Your Showwork Partner Program application was approved 🎉",
+    html: emailShell({
+      eyebrow: "Partner Program · Approved",
+      headline: "You're officially a Showwork Partner.",
+      body: `
+        Hi ${escapeHtml(firstName ?? "there")},<br /><br />
+        Your application to join the Showwork Partner Program has been approved.
+        Welcome to the program.
+        <br /><br />
+        We've also added your complimentary access and prepared your partner onboarding details below.
+      `,
+      detailsHtml: `
+        <div style="padding:20px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:16px;">
+          <p style="margin:0 0 8px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#15803D;">
+            You're in
+          </p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.7;color:#166534;">
+            Your Partner Dashboard is now available and your partner benefits are active.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Open Partner Dashboard",
+      ctaUrl: `${APP_URL}/dashboard/partners`,
+      heroImage: true,
+      accent: "#16A34A",
+      footer:
+        "Welcome to the Showwork Partner Program.",
+    }),
+  });
+}
+
+
+export async function sendPartnerApplicationDeclinedEmail({
+  to,
+  name,
+}: {
+  to: string;
+  name: string | null;
+}) {
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "Update on your Showwork Partner Program application",
+    html: emailShell({
+      eyebrow: "Partner Program · Application update",
+      headline: "We've reviewed your application.",
+      body: `
+        Hi ${escapeHtml(firstName ?? "there")},<br /><br />
+        Thank you for your interest in the Showwork Partner Program.
+        <br /><br />
+        After reviewing your application, we're unable to approve your Partner Program access at this time.
+        We appreciate you taking the time to apply and you're welcome to continue using Showwork as normal.
+      `,
+      detailsHtml: `
+        <div style="padding:18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:16px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.7;color:#475467;">
+            If you believe there's additional information our team should consider, you can reply directly to this email.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Open Showwork",
+      ctaUrl: `${APP_URL}/dashboard`,
+      accent: "#667085",
+      footer:
+        "Thank you for your interest in partnering with Showwork.",
+    }),
+  });
+}
+
+
+export async function sendPartnerWelcomeEmail({
+  to,
+  name,
+  partnerManagerName,
+  partnerManagerEmail,
+}: {
+  to: string;
+  name: string | null;
+  partnerManagerName: string;
+  partnerManagerEmail: string;
+}) {
+  const firstName = firstNameOf(name);
+
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: "Welcome to the Showwork Partner Program 🎉",
+    html: emailShell({
+      eyebrow: "Showwork Partner Program",
+      headline: "Welcome to the partnership.",
+      body: `
+        Hi ${escapeHtml(firstName ?? "there")},<br /><br />
+
+        We're excited to officially welcome you to the Showwork Partner Program.
+        <br /><br />
+
+        Your partner access is now active. You can find your unique referral link anytime from your Partner Dashboard and start sharing Showwork with creators and businesses in your network.
+        <br /><br />
+
+        Here's what your partnership includes:
+      `,
+      detailsHtml: `
+        <div style="padding:20px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:16px;">
+          <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">
+            Your partner benefits
+          </p>
+
+          <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            <strong>10% commission</strong> on qualifying payments made by each customer you refer.
+          </p>
+
+          <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            <strong>12-month commission window</strong> for each referred customer, beginning with their first qualifying payment.
+          </p>
+
+          <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            <strong>₦5,000 minimum payout</strong> before you can request a payout.
+          </p>
+
+          <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            <strong>1 month complimentary Showwork access</strong> has been added to your account.
+          </p>
+
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
+            <strong>More qualifying customers can unlock additional complimentary months</strong>, up to 12 additional months.
+          </p>
+        </div>
+
+        <div style="height:14px;line-height:14px;">&nbsp;</div>
+
+        ${infoBox(
+          "Your referral link",
+          "Available from your Partner Dashboard"
+        )}
+
+        <div style="height:14px;line-height:14px;">&nbsp;</div>
+
+        ${infoBox(
+          "Your Partner Manager",
+          `${partnerManagerName} · ${partnerManagerEmail}`
+        )}
+
+        <div style="margin-top:18px;padding:16px 18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.7;color:#475467;">
+            Your Partnership Agreement is attached to this email for your records.
+            Please review it carefully and keep a copy for your records.
+          </p>
+        </div>
+      `,
+      ctaLabel: "Open Partner Dashboard",
+      ctaUrl: `${APP_URL}/dashboard/partners`,
+      heroImage: true,
+      accent: "#2478FF",
+      footer:
+        "We're looking forward to growing with you. Reply to this email if you need anything.",
+    }),
+       attachments: [
+  {
+    filename: "Showwork_Partner_Program_Agreement.pdf",
+    path: `${APP_URL}/pdfs/Showwork_Partner_Program_Agreement.pdf`,
+  },
+],
+  });
+}

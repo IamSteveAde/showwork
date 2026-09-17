@@ -23,6 +23,7 @@ export async function GET() {
       },
       select: {
         id: true,
+        status: true,
         payoutAccount: {
           select: {
             id: true,
@@ -41,6 +42,16 @@ export async function GET() {
         {
           error:
             "You need to join the Partner Program first.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (partner.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          error:
+            "You do not currently have access to the Partner Program.",
         },
         { status: 403 }
       );
@@ -82,6 +93,7 @@ export async function PUT(request: Request) {
       },
       select: {
         id: true,
+        status: true,
       },
     });
 
@@ -90,6 +102,16 @@ export async function PUT(request: Request) {
         {
           error:
             "You need to join the Partner Program first.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (partner.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          error:
+            "You do not currently have access to the Partner Program.",
         },
         { status: 403 }
       );

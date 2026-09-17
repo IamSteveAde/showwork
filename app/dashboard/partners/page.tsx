@@ -212,6 +212,7 @@ const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
 const [copied, setCopied] = useState(false);
 const [enrolling, setEnrolling] = useState(false);
+const [applicationSubmitted, setApplicationSubmitted] = useState(false);
 const [requestingPayout, setRequestingPayout] = useState(false);
 const [payoutMessage, setPayoutMessage] = useState("");
 const [payoutError, setPayoutError] = useState("");
@@ -374,23 +375,12 @@ loadPayoutAccount();
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result?.error || "Failed to join the Partner Program");
-    }
-
-    const dashboardResponse = await fetch("/api/partners/dashboard", {
-      method: "GET",
-      cache: "no-store",
-    });
-
-    const dashboardResult = await dashboardResponse.json();
-
-    if (!dashboardResponse.ok) {
       throw new Error(
-        dashboardResult?.error || "Failed to refresh partner dashboard"
+        result?.error || "Failed to join the Partner Program"
       );
     }
 
-    setData(dashboardResult);
+    setApplicationSubmitted(true);
   } catch (err) {
     console.error("Failed to enroll as partner:", err);
 
@@ -595,53 +585,113 @@ loadPayoutAccount();
   }
 
   if (!data?.enrolled) {
-    return (
-      <main className="min-h-screen bg-[#F7F8FA] text-[#101114]">
-        <div className="mx-auto max-w-[900px] px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#747B85] transition-colors hover:text-[#101114]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to dashboard
-          </Link>
+  return (
+    <main className="min-h-screen bg-[#F7F8FA] text-[#101114]">
+      <div className="mx-auto max-w-[900px] px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#747B85] transition-colors hover:text-[#101114]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to dashboard
+        </Link>
 
-          <section className="mt-10 overflow-hidden rounded-[30px] border border-[#CFE0FF] bg-[#EEF5FF]">
-            <div className="relative p-7 sm:p-10 lg:p-14">
-              <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(36,120,255,.20),transparent_68%)]" />
+        <section className="mt-10 overflow-hidden rounded-[30px] border border-[#CFE0FF] bg-[#EEF5FF]">
+          <div className="relative p-7 sm:p-10 lg:p-14">
+            <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(36,120,255,.20),transparent_68%)]" />
 
-              <div className="relative max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
-                  <HandCoins className="h-3.5 w-3.5" />
-                  Partner Program
-                </div>
+            <div className="relative max-w-2xl">
+              {applicationSubmitted ? (
+                <>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#2478FF] shadow-sm">
+                    <Check className="h-5 w-5" strokeWidth={2} />
+                  </div>
 
-                <h1 className="mt-6 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">
-                  Grow with Showwork.
-                </h1>
+                  <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    Application under review
+                  </div>
 
-                <p className="mt-5 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
-                  Share Showwork with people in your network and earn
-                  commissions when your referrals make qualifying payments.
-                </p>
+                  <h1 className="mt-6 text-[38px] font-semibold leading-[1.02] tracking-[-0.055em] sm:text-[52px]">
+                    Application received.
+                  </h1>
 
-                <button
-  type="button"
-  onClick={handleEnroll}
-  disabled={enrolling}
-  className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#2478FF] px-5 py-3 text-xs font-bold text-white shadow-[0_12px_30px_-15px_rgba(36,120,255,0.65)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#0052FF] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
->
-  {enrolling ? "Joining..." : "Become a partner"}
-  <ArrowUpRight className="h-3.5 w-3.5" />
-</button>
-              </div>
+                  <p className="mt-5 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
+                    Thanks for your interest in the Showwork Partner Program.
+                    Your application has been received and is now being reviewed
+                    by our team.
+                  </p>
+
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
+                    We&apos;ll send you an email once a decision has been made.
+                    You don&apos;t need to do anything else for now.
+                  </p>
+
+                  <div className="mt-8 rounded-[20px] border border-white bg-white/80 p-5 sm:p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F1F6FF] text-[#2478FF]">
+                        <Clock3 className="h-4 w-4" strokeWidth={1.8} />
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#969CA5]">
+                          Status
+                        </p>
+
+                        <p className="mt-1.5 text-sm font-semibold text-[#101114]">
+                          Application under review
+                        </p>
+
+                        <p className="mt-1 text-[11px] leading-5 text-[#737A84]">
+                          Our team will review your application and contact you
+                          by email with the outcome.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    className="mt-8 inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-white px-5 py-3 text-xs font-bold text-[#2478FF] transition-colors hover:border-[#BFD4FF] hover:bg-[#F8FBFF]"
+                  >
+                    Back to dashboard
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-white/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
+                    <HandCoins className="h-3.5 w-3.5" />
+                    Partner Program
+                  </div>
+
+                  <h1 className="mt-6 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">
+                    Grow with Showwork.
+                  </h1>
+
+                  <p className="mt-5 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
+                    Share Showwork with people in your network and earn
+                    commissions when your referrals make qualifying payments.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#2478FF] px-5 py-3 text-xs font-bold text-white shadow-[0_12px_30px_-15px_rgba(36,120,255,0.65)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-[#0052FF] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+                  >
+                    {enrolling ? "Submitting..." : "Become a partner"}
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </button>
+                </>
+              )}
             </div>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
   const referrals = data.referrals!;
   const commissions = data.commissions!;
   const history = data.commissionHistory ?? [];

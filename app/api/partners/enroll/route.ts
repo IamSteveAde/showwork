@@ -1,39 +1,8 @@
 import { NextResponse } from "next/server";
-import { randomBytes } from "crypto";
 
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-
-const REFERRAL_CODE_LENGTH = 10;
-
-function generateReferralCode(): string {
-  return randomBytes(8)
-    .toString("base64url")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, REFERRAL_CODE_LENGTH)
-    .toUpperCase();
-}
-
-async function createUniqueReferralCode(): Promise<string> {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const code = generateReferralCode();
-
-    const existing = await db.partnerProfile.findUnique({
-      where: {
-        referralCode: code,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!existing) {
-      return code;
-    }
-  }
-
-  throw new Error("Unable to generate a unique referral code");
-}
+import { sendPartnerApplicationNotificationEmail, sendPartnerApplicationReceivedEmail } from "@/lib/resend";
 
 export async function POST() {
   const session = await getCurrentCreator();
@@ -51,10 +20,13 @@ export async function POST() {
     },
     select: {
       id: true,
+      email: true,
+      name: true,
       isDeactivated: true,
       partnerProfile: {
         select: {
           id: true,
+          status: true,
           referralCode: true,
           isActive: true,
           createdAt: true,
@@ -78,44 +50,114 @@ export async function POST() {
   }
 
   /*
-   * If the creator is already a partner, enrollment is idempotent.
-   * We return the existing profile instead of creating another one.
+   * A creator can only have one PartnerProfile because
+   * creatorId is unique in the database.
    */
   if (creator.partnerProfile) {
-    return NextResponse.json({
-      ok: true,
-      alreadyEnrolled: true,
-      partner: {
-        id: creator.partnerProfile.id,
-        referralCode: creator.partnerProfile.referralCode,
-        isActive: creator.partnerProfile.isActive,
-        createdAt: creator.partnerProfile.createdAt,
-      },
-    });
+    if (creator.partnerProfile.status === "ACTIVE") {
+      return NextResponse.json(
+        {
+          error: "You are already an active Showwork partner",
+          status: "ACTIVE",
+        },
+        { status: 409 }
+      );
+    }
+
+    if (creator.partnerProfile.status === "PENDING") {
+      return NextResponse.json(
+        {
+          error: "Your Partner Program application is already under review",
+          status: "PENDING",
+        },
+        { status: 409 }
+      );
+    }
+
+    if (creator.partnerProfile.status === "SUSPENDED") {
+      return NextResponse.json(
+        {
+          error: "Your Partner Program access has been suspended",
+          status: "403",
+        },
+        { status: 403 }
+      );
+    }
+
+    /*
+     * A previously rejected application can be submitted again.
+     * We reuse the existing PartnerProfile rather than creating
+     * another record.
+     */
+    if (creator.partnerProfile.status === "REJECTED") {
+      await db.partnerProfile.update({
+        where: {
+          id: creator.partnerProfile.id,
+        },
+       data: {
+  status: "PENDING",
+  isActive: false,
+},
+      });
+
+      await Promise.all([
+        sendPartnerApplicationReceivedEmail({
+          to: creator.email,
+          name: creator.name,
+        }),
+        sendPartnerApplicationNotificationEmail({
+  name: creator.name ?? "Unknown",
+  email: creator.email,
+})
+      ]);
+
+      return NextResponse.json({
+        ok: true,
+        status: "PENDING",
+        resubmitted: true,
+      });
+    }
   }
 
-  const referralCode = await createUniqueReferralCode();
-
+  /*
+   * First-time application.
+   *
+   * No referral code is generated here.
+   * The profile remains inactive until an admin approves it.
+   */
   const partner = await db.partnerProfile.create({
     data: {
       creatorId: creator.id,
-      referralCode,
-      isActive: true,
+      referralCode: `PENDING-${creator.id}`,
+      status: "PENDING",
+      isActive: false,
     },
     select: {
       id: true,
-      referralCode: true,
+      status: true,
       isActive: true,
       createdAt: true,
     },
   });
 
+  await Promise.all([
+    sendPartnerApplicationReceivedEmail({
+      to: creator.email,
+      name: creator.name,
+    }),
+   sendPartnerApplicationNotificationEmail({
+  name: creator.name ?? "Unknown",
+  email: creator.email,
+})
+  ]);
+
   return NextResponse.json({
     ok: true,
-    alreadyEnrolled: false,
-    partner: {
+    status: partner.status,
+    resubmitted: false,
+    application: {
       id: partner.id,
-      referralCode: partner.referralCode,
+      status: partner.status,
       isActive: partner.isActive,
       createdAt: partner.createdAt,
     },

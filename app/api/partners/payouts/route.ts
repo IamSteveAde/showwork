@@ -21,6 +21,7 @@ export async function POST() {
       },
       select: {
         id: true,
+        status: true,
         isActive: true,
       },
     });
@@ -30,6 +31,26 @@ export async function POST() {
         {
           error:
             "You need to join the Partner Program before requesting a payout.",
+        },
+        { status: 403 }
+      );
+    }
+
+    /*
+     * Only partners who have been accepted into the Partner
+     * Program can access payout functionality.
+     *
+     * This is separate from isActive.
+     *
+     * An ACTIVE partner may later have isActive set to false
+     * to stop new referrals, while still being allowed to
+     * withdraw commissions that were already earned.
+     */
+    if (partner.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          error:
+            "You do not currently have access to the Partner Program.",
         },
         { status: 403 }
       );

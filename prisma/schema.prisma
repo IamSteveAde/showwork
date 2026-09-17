@@ -109,8 +109,8 @@ model Creator {
   // next time this creator starts or switches a subscription — it
   // doesn't retroactively change an already-active one.
   isComped        Boolean   @default(false)
-compedUntil     DateTime?
-discountPercent Int       @default(0)
+  compedUntil     DateTime?
+  discountPercent Int       @default(0)
   // Overrides the standard Free-tier limit (normally 1/month) for this
   // specific creator, without granting them a paid tier or full comped
   // access — they stay on Free, just with a raised allowance. Null
@@ -271,6 +271,14 @@ discountPercent Int       @default(0)
 // The referral code is permanent once created and
 // becomes the identifier used in referral URLs.
 // ─────────────────────────────────────────────
+
+enum PartnerStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
 model PartnerProfile {
   id String @id @default(uuid())
 
@@ -281,8 +289,11 @@ model PartnerProfile {
   // Example: SHOWWORK.COM/?ref=STEPHEN
   referralCode String @unique
 
+  status PartnerStatus @default(PENDING)
+
   // Allows Showwork to disable a partner without
   // deleting their historical referral/commission data.
+  
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())

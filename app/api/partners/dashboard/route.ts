@@ -21,6 +21,7 @@ export async function GET() {
       },
       select: {
         id: true,
+        status: true,
         referralCode: true,
         isActive: true,
         createdAt: true,
@@ -102,6 +103,19 @@ export async function GET() {
     if (!partner) {
       return NextResponse.json({
         enrolled: false,
+      });
+    }
+
+    /*
+     * Partner Program access is controlled by status.
+     *
+     * Only ACTIVE partners can access referral,
+     * commission, and payout information.
+     */
+    if (partner.status !== "ACTIVE") {
+      return NextResponse.json({
+        enrolled: false,
+        access: partner.status,
       });
     }
 
@@ -200,6 +214,7 @@ export async function GET() {
 
       partner: {
         id: partner.id,
+        status: partner.status,
         referralCode: partner.referralCode,
         isActive: partner.isActive,
         createdAt: partner.createdAt,
