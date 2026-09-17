@@ -15,12 +15,14 @@ export default function TikTokConnectionCard({
   calendarId,
   username,
   connectedAt,
+  isManager,
 }: {
   calendarId: string;
   username: string | null;
   connectedAt: string | null;
+  isManager: boolean;
 }) {
-  const router = useRouter();
+    const router = useRouter();
   const searchParams = useSearchParams();
   const [disconnecting, setDisconnecting] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -119,40 +121,53 @@ export default function TikTokConnectionCard({
       </div>
 
       <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
-        {isConnected ? (
-          confirming ? (
-            <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] text-[#AAB4C3]">Disconnect this TikTok account? Already-published posts stay published.</p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={disconnect}
-                  disabled={disconnecting}
-                  className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                >
-                  {disconnecting ? "Disconnecting..." : "Yes, disconnect"}
-                </button>
-                <button onClick={() => setConfirming(false)} className="text-xs text-white/40 underline">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
+  {isManager ? (
+    isConnected ? (
+      confirming ? (
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] text-[#AAB4C3]">
+            Disconnect this TikTok account? Already-published posts stay published.
+          </p>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setConfirming(true)}
-              className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10"
+              onClick={disconnect}
+              disabled={disconnecting}
+              className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
-              Disconnect TikTok
+              {disconnecting ? "Disconnecting..." : "Yes, disconnect"}
             </button>
-          )
-        ) : (
-          <a
-            href={`/api/calendars/${calendarId}/tiktok/connect`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
-          >
-            Connect TikTok
-          </a>
-        )}
-      </div>
+            <button
+              onClick={() => setConfirming(false)}
+              className="text-xs text-white/40 underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10"
+        >
+          Disconnect TikTok
+        </button>
+      )
+    ) : (
+      <a
+        href={`/api/calendars/${calendarId}/tiktok/connect`}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
+      >
+        Connect TikTok
+      </a>
+    )
+  ) : (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center text-[11px] font-medium text-[#718096]">
+      {isConnected
+        ? "Connected — channel management is restricted to the workspace owner."
+        : "Channel connection is restricted to the workspace owner."}
+    </div>
+  )}
+</div>
     </div>
   );
 }

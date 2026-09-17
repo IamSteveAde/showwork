@@ -83,13 +83,14 @@ export async function POST(
       id: calendar.managerId,
     },
     select: {
-      id: true,
-      contentWorkspacePlan: true,
-      contentWorkspaceBillingStatus: true,
-      contentWorkspaceBillingCycle: true,
-      contentWorkspaceTrialEndsAt: true,
-      isComped: true,
-    },
+  id: true,
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceBillingCycle: true,
+  contentWorkspaceTrialEndsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
   });
 
   if (!owner) {

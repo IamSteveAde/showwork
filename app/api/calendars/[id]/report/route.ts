@@ -262,15 +262,16 @@ export async function GET(
     include: {
       manager: {
   select: {
-    name: true,
-    email: true,
-    id: true,
-    contentWorkspacePlan: true,
-    contentWorkspaceBillingStatus: true,
-    contentWorkspaceBillingCycle: true,
-    contentWorkspaceTrialEndsAt: true,
-    isComped: true,
-  },
+  name: true,
+  email: true,
+  id: true,
+  contentWorkspacePlan: true,
+  contentWorkspaceBillingStatus: true,
+  contentWorkspaceBillingCycle: true,
+  contentWorkspaceTrialEndsAt: true,
+  isComped: true,
+  compedUntil: true,
+},
 },
       
       posts: { orderBy: { postDate: "asc" } },

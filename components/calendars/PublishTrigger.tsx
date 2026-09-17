@@ -20,6 +20,7 @@ export default function PublishTrigger({
 
     const publishButton = candidates.find((button) => {
       const text = (button.textContent || "").trim().toLowerCase();
+
       return (
         text.includes("publish") ||
         text.includes("go live") ||
@@ -36,8 +37,10 @@ export default function PublishTrigger({
     const interactive = Array.from(
       container.querySelectorAll<HTMLElement>("a, [role='button']")
     );
+
     const publishControl = interactive.find((element) => {
       const text = (element.textContent || "").trim().toLowerCase();
+
       return (
         text.includes("publish") ||
         text.includes("go live") ||

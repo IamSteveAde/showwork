@@ -83,15 +83,16 @@ export async function canAccessCalendarById(
     where: { id: calendarId },
     select: {
       manager: {
-        select: {
-          id: true,
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          contentWorkspaceBillingCycle: true,
-          contentWorkspaceTrialEndsAt: true,
-          isComped: true,
-        },
-      },
+  select: {
+    id: true,
+    contentWorkspacePlan: true,
+    contentWorkspaceBillingStatus: true,
+    contentWorkspaceBillingCycle: true,
+    contentWorkspaceTrialEndsAt: true,
+    isComped: true,
+    compedUntil: true,
+  },
+},
     },
   });
 

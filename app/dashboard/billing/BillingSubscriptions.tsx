@@ -42,13 +42,15 @@ usage: {
 };
 
   workspaceBilling: {
-    contentWorkspacePlan: ContentWorkspacePlan | null;
-    contentWorkspaceBillingStatus: WorkspaceBillingStatus;
-    contentWorkspaceBillingCycle: BillingCycle | null;
-    contentWorkspaceTrialUsedAt: Date | null;
-    contentWorkspaceTrialEndsAt: Date | null;
-    contentWorkspaceSubscriptionRenewsAt: Date | null;
-  } | null;
+  contentWorkspacePlan: ContentWorkspacePlan | null;
+  contentWorkspaceBillingStatus: WorkspaceBillingStatus;
+  contentWorkspaceBillingCycle: BillingCycle | null;
+  contentWorkspaceTrialUsedAt: Date | null;
+  contentWorkspaceTrialEndsAt: Date | null;
+  contentWorkspaceSubscriptionRenewsAt: Date | null;
+  isComped: boolean;
+  compedUntil: Date | null;
+} | null;
 
   portfolioCount: number;
 
@@ -256,6 +258,61 @@ function PortfolioIcon({
 
 function formatNaira(value: number) {
   return `₦${value.toLocaleString("en-NG")}`;
+}
+
+function getComplimentaryPeriod(
+  compedUntil: Date | null
+): {
+  label: string;
+  detail: string;
+} {
+  if (!compedUntil) {
+    return {
+      label: "Complimentary access",
+      detail: "No expiration date",
+    };
+  }
+
+  const end = new Date(compedUntil);
+  const now = new Date();
+
+  if (end.getTime() <= now.getTime()) {
+    return {
+      label: "Complimentary access ended",
+      detail: `Access ended ${formatDate(end)}`,
+    };
+  }
+
+  let months =
+    (end.getFullYear() - now.getFullYear()) * 12 +
+    (end.getMonth() - now.getMonth());
+
+  const monthAnchor = new Date(now);
+  monthAnchor.setMonth(monthAnchor.getMonth() + months);
+
+  if (monthAnchor.getTime() > end.getTime()) {
+    months -= 1;
+  }
+
+  if (months >= 1) {
+    return {
+      label: `${months} month${months === 1 ? "" : "s"} remaining`,
+      detail: `Complimentary access ends ${formatDate(end)}`,
+    };
+  }
+
+  const days = Math.max(
+    0,
+    Math.ceil(
+      (end.getTime() - now.getTime()) /
+        86400000
+    )
+  );
+
+  return {
+    label: `${days} day${days === 1 ? "" : "s"} remaining`,
+    detail: `Complimentary access ends ${formatDate(end)}`,
+  };
 }
 
 function formatDate(value: Date | string | null) {
@@ -870,9 +927,22 @@ function ContentWorkspaceSubscription({
     workspaceBilling?.contentWorkspaceBillingCycle ??
     selectedCycle;
 
-  const status = getWorkspaceStatus(
-    billingStatus
-  );
+  const status = workspaceBilling?.isComped
+  ? {
+      label: "Complimentary access",
+      dot: "#2478FF",
+      text: "#175CD3",
+      bg: "#EFF8FF",
+      border: "#D1E9FF",
+    }
+  : getWorkspaceStatus(billingStatus);
+
+  const complimentaryPeriod =
+  workspaceBilling?.isComped
+    ? getComplimentaryPeriod(
+        workspaceBilling.compedUntil
+      )
+    : null;
 
   /*
    * If the account has not created a Content Workspace
@@ -1096,49 +1166,59 @@ function ContentWorkspaceSubscription({
 
         <div className="flex flex-col gap-3 border-t border-[#EAECF0] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div>
-            {billingStatus === "TRIAL" &&
-              workspaceBilling?.contentWorkspaceTrialEndsAt ? (
-              <>
-                <p className="text-xs font-semibold text-[#175CD3]">
-                  Your free trial is active
-                </p>
+  {workspaceBilling?.isComped && complimentaryPeriod ? (
+    <>
+      <p className="text-xs font-semibold text-[#175CD3]">
+        {complimentaryPeriod.label}
+      </p>
 
-                <p className="mt-1 text-[11px] text-[#667085]">
-                  Trial ends{" "}
-                  {formatDate(
-                    workspaceBilling.contentWorkspaceTrialEndsAt
-                  )}
-                </p>
-              </>
-            ) : billingStatus === "ACTIVE" &&
-              workspaceBilling?.contentWorkspaceSubscriptionRenewsAt ? (
-              <>
-                <p className="text-xs font-semibold text-[#101828]">
-                  Next renewal
-                </p>
+      <p className="mt-1 text-[11px] text-[#667085]">
+        {complimentaryPeriod.detail}
+      </p>
+    </>
+  ) : billingStatus === "TRIAL" &&
+    workspaceBilling?.contentWorkspaceTrialEndsAt ? (
+    <>
+      <p className="text-xs font-semibold text-[#175CD3]">
+        Your free trial is active
+      </p>
 
-                <p className="mt-1 text-[11px] text-[#667085]">
-                  {formatDate(
-                    workspaceBilling.contentWorkspaceSubscriptionRenewsAt
-                  )}
-                  {" · "}
-                  {billingCycle === "ANNUAL"
-                    ? "Annual"
-                    : "Monthly"}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-xs font-semibold text-[#101828]">
-                  Workspace billing
-                </p>
+      <p className="mt-1 text-[11px] text-[#667085]">
+        Trial ends{" "}
+        {formatDate(
+          workspaceBilling.contentWorkspaceTrialEndsAt
+        )}
+      </p>
+    </>
+  ) : billingStatus === "ACTIVE" &&
+    workspaceBilling?.contentWorkspaceSubscriptionRenewsAt ? (
+    <>
+      <p className="text-xs font-semibold text-[#101828]">
+        Next renewal
+      </p>
 
-                <p className="mt-1 text-[11px] text-[#667085]">
-                  Manage your plan and access.
-                </p>
-              </>
-            )}
-          </div>
+      <p className="mt-1 text-[11px] text-[#667085]">
+        {formatDate(
+          workspaceBilling.contentWorkspaceSubscriptionRenewsAt
+        )}
+        {" · "}
+        {billingCycle === "ANNUAL"
+          ? "Annual"
+          : "Monthly"}
+      </p>
+    </>
+  ) : (
+    <>
+      <p className="text-xs font-semibold text-[#101828]">
+        Workspace billing
+      </p>
+
+      <p className="mt-1 text-[11px] text-[#667085]">
+        Manage your plan and access.
+      </p>
+    </>
+  )}
+</div>
 
           <Link
             href="/dashboard/calendars"
