@@ -155,11 +155,12 @@ export async function GET() {
         createdAt: "desc",
       },
       select: {
-        id: true,
-        referralCode: true,
-        isActive: true,
-        createdAt: true,
-        creator: {
+  id: true,
+  referralCode: true,
+  status: true,
+  isActive: true,
+  createdAt: true,
+  creator: {
           select: {
             id: true,
             email: true,

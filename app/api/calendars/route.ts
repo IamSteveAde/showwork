@@ -305,6 +305,27 @@ export async function POST(req: NextRequest) {
   });
 
   /*
+ * COMPLIMENTARY ACCESS:
+ *
+ * If the creator has active complimentary access, the new
+ * Content Workspace is already covered.
+ *
+ * Do not start the trial.
+ * Do not initialize Paystack.
+ */
+if (
+  creator.isComped &&
+  (!creator.compedUntil ||
+    creator.compedUntil.getTime() > Date.now())
+) {
+  return NextResponse.json({
+    calendarId: calendar.id,
+    complimentary: true,
+    plan,
+  });
+}
+
+  /*
    * FIRST-EVER CONTENT WORKSPACE:
    *
    * Start the 3-day free trial.

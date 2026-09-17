@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 type Partner = {
   id: string;
   referralCode: string;
+  status: "PENDING" | "ACTIVE" | "REJECTED" | "SUSPENDED";
   isActive: boolean;
   createdAt: string;
   creator: {
@@ -81,9 +82,10 @@ type ApiResponse =
     };
 
 export default function AdminPartnersPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const [data, setData] = useState<DashboardData | null>(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +134,60 @@ export default function AdminPartnersPage() {
       cancelled = true;
     };
   }, []);
+
+    async function handlePartnerAction(
+    partnerId: string,
+    action: "approve" | "reject"
+  ) {
+    try {
+      setProcessingId(partnerId);
+      setError("");
+
+      const response = await fetch(`/api/admin/partners/${partnerId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action,
+        }),
+      });
+
+      const result = (await response.json()) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            `Failed to ${action === "approve" ? "approve" : "reject"} partner.`
+        );
+      }
+
+      const refreshResponse = await fetch("/api/admin/partners", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const refreshedData = (await refreshResponse.json()) as ApiResponse;
+
+      if (!refreshResponse.ok || "error" in refreshedData) {
+        throw new Error(
+          "Partner action succeeded, but the partner list could not be refreshed."
+        );
+      }
+
+      setData(refreshedData);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${action === "approve" ? "approve" : "reject"} partner.`
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] px-5 py-8 text-[#101828] sm:px-8 lg:px-10">
@@ -517,17 +573,23 @@ export default function AdminPartnersPage() {
                       </th>
 
                       <th className="px-5 py-4 text-right text-[10px] font-semibold uppercase tracking-[0.08em] text-[#98A2B3]">
-                        Joined
-                      </th>
+  Joined
+</th>
+
+<th className="px-5 py-4 text-right text-[10px] font-semibold uppercase tracking-[0.08em] text-[#98A2B3]">
+  Actions
+</th>
                     </tr>
                   </thead>
 
                   <tbody>
                     {data?.partners.map((partner) => (
                       <PartnerRow
-                        key={partner.id}
-                        partner={partner}
-                      />
+  key={partner.id}
+  partner={partner}
+  onAction={handlePartnerAction}
+  processing={processingId === partner.id}
+/>
                     ))}
                   </tbody>
                 </table>
@@ -712,12 +774,40 @@ function CommissionRow({
 
 function PartnerRow({
   partner,
+  onAction,
+  processing,
 }: {
   partner: Partner;
+  onAction: (
+    partnerId: string,
+    action: "approve" | "reject"
+  ) => Promise<void>;
+  processing: boolean;
 }) {
   const displayName =
     partner.creator.name?.trim() ||
     partner.creator.email;
+
+  const statusConfig = {
+    PENDING: {
+      label: "Pending",
+      className: "bg-[#FFF7E6] text-[#B54708]",
+    },
+    ACTIVE: {
+      label: "Active",
+      className: "bg-[#ECFDF3] text-[#027A48]",
+    },
+    REJECTED: {
+      label: "Rejected",
+      className: "bg-[#FEF3F2] text-[#B42318]",
+    },
+    SUSPENDED: {
+      label: "Suspended",
+      className: "bg-[#F2F4F7] text-[#667085]",
+    },
+  } as const;
+
+  const status = statusConfig[partner.status];
 
   return (
     <tr className="border-b border-[#F2F4F7] last:border-b-0">
@@ -747,13 +837,9 @@ function PartnerRow({
 
       <td className="px-5 py-4">
         <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-            partner.isActive
-              ? "bg-[#ECFDF3] text-[#027A48]"
-              : "bg-[#F2F4F7] text-[#667085]"
-          }`}
+          className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${status.className}`}
         >
-          {partner.isActive ? "Active" : "Inactive"}
+          {status.label}
         </span>
       </td>
 
@@ -761,6 +847,50 @@ function PartnerRow({
         <span className="text-xs text-[#667085]">
           {formatDate(partner.createdAt)}
         </span>
+      </td>
+
+      <td className="px-5 py-4 text-right">
+        {partner.status === "PENDING" ? (
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={processing}
+             onClick={() => {
+  const confirmed = window.confirm(
+    "Reject this Partner Program application?\n\nThe creator will be notified by email and will need to submit a new application."
+  );
+
+  if (confirmed) {
+    void onAction(partner.id, "reject");
+  }
+}}
+              className="rounded-lg border border-[#E4E7EC] bg-white px-3 py-2 text-xs font-semibold text-[#B42318] transition hover:border-[#FECACA] hover:bg-[#FEF2F2] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {processing ? "Processing..." : "Reject"}
+            </button>
+
+            <button
+              type="button"
+              disabled={processing}
+              onClick={() => {
+  const confirmed = window.confirm(
+    "Approve this Partner Program application?\n\nThis will activate Partner Program access, generate their referral link, grant one complimentary month, and send the onboarding email."
+  );
+
+  if (confirmed) {
+    void onAction(partner.id, "approve");
+  }
+}}
+              className="rounded-lg bg-[#2478FF] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1769E0] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {processing ? "Processing..." : "Approve"}
+            </button>
+          </div>
+        ) : (
+          <span className="text-xs text-[#98A2B3]">
+            —
+          </span>
+        )}
       </td>
     </tr>
   );
