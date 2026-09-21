@@ -151,12 +151,16 @@ export async function POST(
   }
 
   const {
-    startDate,
-    endDate,
-    postsPerWeek,
-    platforms,
-    customInstructions,
-  } = await req.json();
+  startDate,
+  endDate,
+  postsPerWeek,
+  platforms,
+  customInstructions,
+  contentStrategy,
+  contentGroups,
+  scheduleStrategy,
+  platformSchedules,
+} = await req.json();
 
   if (!startDate || !endDate) {
     await db.contentWorkspaceUsage.updateMany({
@@ -217,19 +221,23 @@ export async function POST(
   let ideas;
 
   try {
-    ideas = await generateContentCalendar({
-      clientName: calendar.clientName,
-      businessSummary: calendar.aiBusinessSummary,
-      startDate,
-      endDate,
-      postsPerWeek: targetPostsPerWeek,
-      platforms: validPlatforms,
-      customInstructions:
-        typeof customInstructions === "string" &&
-        customInstructions.trim()
-          ? customInstructions.trim()
-          : undefined,
-    });
+   ideas = await generateContentCalendar({
+  clientName: calendar.clientName,
+  businessSummary: calendar.aiBusinessSummary,
+  startDate,
+  endDate,
+  postsPerWeek: targetPostsPerWeek,
+  platforms: validPlatforms,
+  customInstructions:
+    typeof customInstructions === "string" &&
+    customInstructions.trim()
+      ? customInstructions.trim()
+      : undefined,
+  contentStrategy,
+  contentGroups,
+  scheduleStrategy,
+  platformSchedules,
+});
   } catch (error) {
     /*
      * The AI request failed, so return the consumed generation to
@@ -278,27 +286,48 @@ export async function POST(
     );
   }
 
-  const created = await Promise.all(
-    ideas.map((idea) =>
-      db.calendarPost.create({
-        data: {
-          calendarId: id,
-          postDate: new Date(
-            `${idea.postDate}T09:00:00`
-          ),
-          platform: idea.platform,
-          postType: idea.postType || null,
-          category: idea.category || null,
-          caption: idea.caption || null,
-          contentIdea: idea.contentIdea || null,
-          cta: idea.cta || null,
-          hashtags: idea.hashtags || null,
-          isAiDraft: true,
-        },
-      })
-    )
-  );
+const created = await Promise.all(
+  ideas.map((idea) => {
+    const selectedSchedule = platformSchedules?.[idea.platform];
+    const postTime = selectedSchedule?.time ?? "09:00";
 
+    if (
+      typeof idea.postDate !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(idea.postDate)
+    ) {
+      throw new Error(
+        `The AI returned an invalid post date for ${idea.platform}. Please try generating again.`
+      );
+    }
+
+    const postDate = new Date(
+      `${idea.postDate}T${postTime}:00`
+    );
+
+    if (Number.isNaN(postDate.getTime())) {
+      throw new Error(
+        `The AI returned an invalid post date for ${idea.platform}. Please try generating again.`
+      );
+    }
+
+    return db.calendarPost.create({
+      data: {
+        calendarId: id,
+        postDate,
+        platform: idea.platform,
+        postType: idea.postType || null,
+        category: idea.category || null,
+        hook: idea.hook || null,
+        script: idea.script || null,
+        caption: idea.caption || null,
+        contentIdea: idea.contentIdea || null,
+        cta: idea.cta || null,
+        hashtags: idea.hashtags || null,
+        isAiDraft: true,
+      },
+    });
+  })
+);
   return NextResponse.json({
     created: created.length,
     posts: created,

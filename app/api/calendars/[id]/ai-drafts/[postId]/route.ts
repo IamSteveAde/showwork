@@ -69,6 +69,49 @@ async function getDraftAccess(
   return { post };
 }
 
+async function getAiEditAccess(
+  creatorId: string,
+  calendarId: string,
+  postId: string
+) {
+  const hasPermission = await hasCalendarPermission(
+    creatorId,
+    calendarId,
+    "EDIT_CALENDAR"
+  );
+
+  if (!hasPermission) {
+    return {
+      error: "You don't have permission to edit this post with AI.",
+      status: 403,
+    };
+  }
+
+  const post = await db.calendarPost.findFirst({
+    where: {
+      id: postId,
+      calendarId,
+    },
+  });
+
+  if (!post) {
+    return {
+      error: "Post not found",
+      status: 404,
+    };
+  }
+
+  if (post.approvalStatus === "APPROVED") {
+    return {
+      error:
+        "Approved posts are locked and cannot be edited with AI. Ask the client to request a revision.",
+      status: 403,
+    };
+  }
+
+  return { post };
+}
+
 /**
  * GET
  *
@@ -97,18 +140,14 @@ export async function GET(
 
   const { id, postId } = await params;
 
-  const access = await getDraftAccess(
-    creator.id,
-    id,
-    postId
-  );
+const access = await getDraftAccess(creator.id, id, postId);
 
-  if ("error" in access) {
-    return NextResponse.json(
-      { error: access.error },
-      { status: access.status }
-    );
-  }
+if ("error" in access) {
+  return NextResponse.json(
+    { error: access.error },
+    { status: access.status }
+  );
+}
 
   const generations =
     await db.calendarPostAiGeneration.findMany({
@@ -158,11 +197,11 @@ export async function POST(
 
   const { id, postId } = await params;
 
-  const access = await getDraftAccess(
-    creator.id,
-    id,
-    postId
-  );
+  const access = await getAiEditAccess(
+  creator.id,
+  id,
+  postId
+);
 
   if ("error" in access) {
     return NextResponse.json(
@@ -273,9 +312,10 @@ export async function POST(
    * If no instruction is supplied, the AI will improve the
    * current version using the existing strategy and brand voice.
    */
-  let body: {
-    instruction?: string;
-  } = {};
+ let body: {
+  instruction?: string;
+  fields?: string[];
+} = {};
 
   try {
     body = await req.json();
@@ -293,8 +333,14 @@ export async function POST(
     postType:
       access.post.postType ?? "",
 
-    category:
+        category:
       access.post.category ?? "",
+
+    hook:
+      access.post.hook ?? "",
+
+    script:
+      access.post.script ?? "",
 
     caption:
       access.post.caption ?? "",
@@ -313,15 +359,20 @@ export async function POST(
 
   try {
     generated = await regeneratePost({
-      clientName: calendar.clientName,
-      businessSummary: calendar.aiBusinessSummary,
-      currentPost: current,
-      instruction:
-        typeof body.instruction === "string" &&
-        body.instruction.trim()
-          ? body.instruction.trim()
-          : undefined,
-    });
+  clientName: calendar.clientName,
+  businessSummary: calendar.aiBusinessSummary,
+  currentPost: current,
+  instruction:
+    typeof body.instruction === "string" &&
+    body.instruction.trim()
+      ? body.instruction.trim()
+      : undefined,
+  fields:
+    Array.isArray(body.fields) &&
+    body.fields.every((field) => typeof field === "string")
+      ? body.fields as Parameters<typeof regeneratePost>[0]["fields"]
+      : undefined,
+});
   } catch (error) {
     /*
      * The AI request failed, so return the consumed regeneration
@@ -435,8 +486,14 @@ export async function POST(
         postType:
           generated.postType || null,
 
-        category:
+          category:
           generated.category || null,
+
+        hook:
+          generated.hook || null,
+
+        script:
+          generated.script || null,
 
         caption:
           generated.caption || null,
@@ -471,8 +528,14 @@ export async function POST(
       postType:
         generation.postType,
 
-      category:
+           category:
         generation.category,
+
+      hook:
+        generation.hook,
+
+      script:
+        generation.script,
 
       caption:
         generation.caption,
@@ -596,6 +659,8 @@ export async function PATCH(
 
       data: {
         isAiDraft: false,
+        hook: body.hook !== undefined ? body.hook : undefined,
+        script: body.script !== undefined ? body.script : undefined,
 
         caption:
           body.caption !== undefined

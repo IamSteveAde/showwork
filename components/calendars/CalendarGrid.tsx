@@ -42,8 +42,10 @@ interface CalendarPostData {
   platform: Platform;
   postType: string | null;
   category: string | null;
-  caption: string | null;
-  contentIdea: string | null;
+hook: string | null;
+script: string | null;
+caption: string | null;
+contentIdea: string | null;
   cta: string | null;
   hashtags: string | null;
   taggedAccounts: string | null;
@@ -3135,15 +3137,22 @@ function PostDetailPanel({
 
   const isApproved = post.approvalStatus === "APPROVED";
   const [editingDetails, setEditingDetails] = useState(false);
+  const [editingWithAI, setEditingWithAI] = useState(false);
+const [aiInstruction, setAiInstruction] = useState("");
+const [aiEditing, setAiEditing] = useState(false);
+const [aiEditError, setAiEditError] = useState("");
+const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
 
   const [draftDetails, setDraftDetails] = useState({
-    postDate: "",
-    platform: post.platform,
-    postType: post.postType ?? "",
-    category: post.category ?? "",
-    caption: post.caption ?? "",
+  postDate: "",
+  platform: post.platform,
+  postType: post.postType ?? "",
+  category: post.category ?? "",
+  hook: post.hook ?? "",
+  script: post.script ?? "",
+  caption: post.caption ?? "",
     contentIdea: post.contentIdea ?? "",
     cta: post.cta ?? "",
     hashtags: post.hashtags ?? "",
@@ -3151,6 +3160,79 @@ function PostDetailPanel({
     linkUrl: post.linkUrl ?? "",
   });
 
+  const handleAiEdit = async () => {
+  const instruction = aiInstruction.trim();
+
+  if (!instruction || aiEditing) {
+    return;
+  }
+
+  setAiEditing(true);
+  setAiEditError("");
+
+  try {
+    const response = await fetch(
+      `/api/calendars/${calendarId}/ai-drafts/${post.id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+  instruction,
+  fields: aiEditFields.length > 0 ? aiEditFields : undefined,
+}),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        typeof result?.error === "string"
+          ? result.error
+          : "Unable to edit this post with AI."
+      );
+    }
+
+    const generation = result?.generation;
+
+    if (!generation) {
+      throw new Error(
+        "AI updated the post, but the updated post could not be loaded."
+      );
+    }
+
+    const updatedPost: CalendarPostData = {
+      ...post,
+      postDate: generation.postDate,
+      platform: generation.platform,
+      postType: generation.postType ?? null,
+      category: generation.category ?? null,
+      hook: generation.hook ?? null,
+      script: generation.script ?? null,
+      caption: generation.caption ?? null,
+      contentIdea: generation.contentIdea ?? null,
+      cta: generation.cta ?? null,
+      hashtags: generation.hashtags ?? null,
+      taggedAccounts: post.taggedAccounts,
+      linkUrl: post.linkUrl,
+    };
+
+    onUpdated(updatedPost);
+
+    setEditingWithAI(false);
+    setAiInstruction("");
+  } catch (error) {
+    setAiEditError(
+      error instanceof Error
+        ? error.message
+        : "Unable to edit this post with AI."
+    );
+  } finally {
+    setAiEditing(false);
+  }
+};
   const startEditingDetails = () => {
     if (isApproved) return;
 
@@ -3161,12 +3243,14 @@ function PostDetailPanel({
       .toISOString()
       .slice(0, 16);
 
-    setDraftDetails({
-      postDate: localDateTime,
-      platform: post.platform,
-      postType: post.postType ?? "",
-      category: post.category ?? "",
-      caption: post.caption ?? "",
+   setDraftDetails({
+  postDate: localDateTime,
+  platform: post.platform,
+  postType: post.postType ?? "",
+  category: post.category ?? "",
+  hook: post.hook ?? "",
+  script: post.script ?? "",
+  caption: post.caption ?? "",
       contentIdea: post.contentIdea ?? "",
       cta: post.cta ?? "",
       hashtags: post.hashtags ?? "",
@@ -3202,9 +3286,11 @@ function PostDetailPanel({
               ? new Date(draftDetails.postDate).toISOString()
               : undefined,
             platform: draftDetails.platform,
-            postType: draftDetails.postType,
-            category: draftDetails.category,
-            caption: draftDetails.caption,
+postType: draftDetails.postType,
+category: draftDetails.category,
+hook: draftDetails.hook,
+script: draftDetails.script,
+caption: draftDetails.caption,
             contentIdea: draftDetails.contentIdea,
             cta: draftDetails.cta,
             hashtags: draftDetails.hashtags,
@@ -4373,21 +4459,32 @@ function PostDetailPanel({
                   </p>
                 </div>
 
-                {!isApproved && !editingDetails && (
-                  <button
-                    type="button"
-                    onClick={startEditingDetails}
-                    className="flex flex-shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-[10px] font-semibold transition-all active:scale-[0.98]"
-                    style={{
-                      background: "rgba(36,120,255,0.08)",
-                      borderColor: "rgba(36,120,255,0.18)",
-                      color: "#2478FF",
-                    }}
-                  >
-                    <span className="text-sm">✎</span>
-                    Edit details
-                  </button>
-                )}
+               {!isApproved && !editingDetails && (
+  <div className="flex items-center gap-2">
+    <button
+      type="button"
+      onClick={startEditingDetails}
+      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+    >
+      <span className="text-sm">✎</span>
+      Edit details
+    </button>
+
+    <button
+  type="button"
+  onClick={() => {
+  setEditingWithAI(true);
+  setAiInstruction("");
+  setAiEditError("");
+  setAiEditFields([]);
+}}
+  className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+>
+  <span className="text-sm">✦</span>
+  Edit with AI
+</button>
+  </div>
+)}
               </div>
 
               {isApproved && (
@@ -4430,7 +4527,109 @@ function PostDetailPanel({
                 </div>
               )}
 
-              {editingDetails ? (
+              
+{editingWithAI ? (
+  <div className="space-y-5">
+    <div>
+      <h3 className="text-base font-semibold">Edit with AI</h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Tell AI what you want to change about this post.
+      </p>
+    </div>
+
+    <div>
+  <p className="mb-2 text-sm font-semibold text-gray-900">
+    What would you like to edit?
+  </p>
+
+  <div className="flex flex-wrap gap-2">
+    {[
+      { value: "hook", label: "Hook" },
+      { value: "script", label: "Script" },
+      { value: "caption", label: "Caption" },
+      { value: "contentIdea", label: "Creative direction" },
+      { value: "cta", label: "CTA" },
+      { value: "hashtags", label: "Hashtags" },
+    ].map((field) => {
+      const selected = aiEditFields.includes(field.value);
+
+      return (
+        <button
+          key={field.value}
+          type="button"
+          onClick={() => {
+            setAiEditFields((current) =>
+              current.includes(field.value)
+                ? current.filter((value) => value !== field.value)
+                : [...current, field.value]
+            );
+            setAiEditError("");
+          }}
+          disabled={aiEditing}
+          className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            selected
+              ? "border-purple-600 bg-purple-50 text-purple-700"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+          } disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          {selected ? "✓ " : ""}
+          {field.label}
+        </button>
+      );
+    })}
+  </div>
+
+  <p className="mt-2 text-xs text-gray-400">
+    Select one or more fields. Leave everything unselected to edit the entire post.
+  </p>
+</div>
+
+    <textarea
+      value={aiInstruction}
+      onChange={(e) => {
+        setAiInstruction(e.target.value);
+        setAiEditError("");
+      }}
+      placeholder="e.g. Make the hook more attention-grabbing and shorten the caption."
+      rows={5}
+      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+      disabled={aiEditing}
+    />
+
+    {aiEditError && (
+      <p className="text-sm text-red-600">
+        {aiEditError}
+      </p>
+    )}
+
+    <div className="flex items-center justify-end gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          setEditingWithAI(false);
+          setAiInstruction("");
+          setAiEditError("");
+        }}
+        disabled={aiEditing}
+        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Cancel
+      </button>
+
+      <button
+  type="button"
+  onClick={handleAiEdit}
+  disabled={
+  aiEditing ||
+  (!aiInstruction.trim() && aiEditFields.length === 0)
+}
+  className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {aiEditing ? "AI is editing..." : "Generate changes"}
+</button>
+    </div>
+  </div>
+) : editingDetails ? (
                 <div
                   className="rounded-2xl border p-4 sm:p-5"
                   style={{
@@ -4570,6 +4769,64 @@ function PostDetailPanel({
                         ))}
                       </datalist>
                     </label>
+
+                    <label className="block sm:col-span-2">
+  <span
+    className="mb-1.5 block text-[10px] font-bold uppercase"
+    style={{
+      color: t.textFaint,
+      letterSpacing: "0.08em",
+    }}
+  >
+    Hook
+  </span>
+  <textarea
+    value={draftDetails.hook}
+    onChange={(e) =>
+      setDraftDetails((prev) => ({
+        ...prev,
+        hook: e.target.value,
+      }))
+    }
+    rows={3}
+    placeholder="Write the opening hook..."
+    className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
+    style={{
+      background: t.modalBg,
+      borderColor: t.inputBorder,
+      color: t.text,
+    }}
+  />
+</label>
+
+<label className="block sm:col-span-2">
+  <span
+    className="mb-1.5 block text-[10px] font-bold uppercase"
+    style={{
+      color: t.textFaint,
+      letterSpacing: "0.08em",
+    }}
+  >
+    Script
+  </span>
+  <textarea
+    value={draftDetails.script}
+    onChange={(e) =>
+      setDraftDetails((prev) => ({
+        ...prev,
+        script: e.target.value,
+      }))
+    }
+    rows={8}
+    placeholder="Write the words to say for this video..."
+    className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
+    style={{
+      background: t.modalBg,
+      borderColor: t.inputBorder,
+      color: t.text,
+    }}
+  />
+</label>
 
                     <label className="block sm:col-span-2">
                       <span
@@ -4805,6 +5062,59 @@ function PostDetailPanel({
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
+                  {post.hook && (
+  <div
+    className="rounded-2xl border p-4"
+    style={{
+      background: t.inputBg,
+      borderColor: t.inputBorder,
+    }}
+  >
+    <p
+      className="mb-2 text-[10px] font-bold uppercase"
+      style={{
+        color: t.textFaint,
+        letterSpacing: "0.08em",
+      }}
+    >
+      Hook
+    </p>
+
+    <p
+      className="whitespace-pre-wrap break-words text-sm leading-relaxed"
+      style={{ color: t.textMuted }}
+    >
+      {post.hook}
+    </p>
+  </div>
+)}
+
+{post.script && (
+  <div
+    className="rounded-2xl border p-4"
+    style={{
+      background: t.inputBg,
+      borderColor: t.inputBorder,
+    }}
+  >
+    <p
+      className="mb-2 text-[10px] font-bold uppercase"
+      style={{
+        color: t.textFaint,
+        letterSpacing: "0.08em",
+      }}
+    >
+      Script
+    </p>
+
+    <p
+      className="whitespace-pre-wrap break-words text-sm leading-relaxed"
+      style={{ color: t.textMuted }}
+    >
+      {post.script}
+    </p>
+  </div>
+)}
                   {post.caption && (
                     <div className="rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
                       <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>
@@ -4854,10 +5164,12 @@ function PostDetailPanel({
                     </div>
                   )}
 
-                  {!post.caption &&
-                    !post.contentIdea &&
-                    !post.cta &&
-                    !post.hashtags && (
+                  {!post.hook &&
+  !post.script &&
+  !post.caption &&
+  !post.contentIdea &&
+  !post.cta &&
+  !post.hashtags && (
                       <div
                         className="rounded-2xl border border-dashed p-5 text-center"
                         style={{

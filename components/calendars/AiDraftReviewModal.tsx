@@ -9,6 +9,8 @@ interface DraftPost {
   platform: string;
   postType: string | null;
   category: string | null;
+  hook: string | null;
+  script: string | null;
   caption: string | null;
   contentIdea: string | null;
   cta: string | null;
@@ -20,7 +22,13 @@ interface Generation extends DraftPost {
   createdAt: string;
 }
 
-type EditableKey = "caption" | "contentIdea" | "cta" | "hashtags";
+type EditableKey =
+  | "hook"
+  | "script"
+  | "caption"
+  | "contentIdea"
+  | "cta"
+  | "hashtags";
 
 const PLATFORMS = ["INSTAGRAM", "TIKTOK", "YOUTUBE", "FACEBOOK", "X", "LINKEDIN"];
 
@@ -130,7 +138,9 @@ export default function AiDraftReviewModal({
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+  void discardAllDrafts();
+}
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -150,13 +160,15 @@ export default function AiDraftReviewModal({
       const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          caption: selected.caption,
-          contentIdea: selected.contentIdea,
-          cta: selected.cta,
-          hashtags: selected.hashtags,
-          postDate: selected.postDate,
-        }),
+       body: JSON.stringify({
+  hook: selected.hook,
+  script: selected.script,
+  caption: selected.caption,
+  contentIdea: selected.contentIdea,
+  cta: selected.cta,
+  hashtags: selected.hashtags,
+  postDate: selected.postDate,
+}),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error ?? "Failed to save edits");
@@ -195,6 +207,8 @@ export default function AiDraftReviewModal({
                 platform: generation.platform,
                 postType: generation.postType,
                 category: generation.category,
+                hook: generation.hook,
+                script: generation.script,
                 caption: generation.caption,
                 contentIdea: generation.contentIdea,
                 cta: generation.cta,
@@ -270,13 +284,15 @@ export default function AiDraftReviewModal({
       const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          caption: draft.caption,
-          contentIdea: draft.contentIdea,
-          cta: draft.cta,
-          hashtags: draft.hashtags,
-          postDate: draft.postDate,
-        }),
+       body: JSON.stringify({
+  hook: draft.hook,
+  script: draft.script,
+  caption: draft.caption,
+  contentIdea: draft.contentIdea,
+  cta: draft.cta,
+  hashtags: draft.hashtags,
+  postDate: draft.postDate,
+}),
       });
 
       const data = await readJson(res);
@@ -318,6 +334,50 @@ export default function AiDraftReviewModal({
     }
   }
 
+  async function discardAllDrafts() {
+  if (!drafts?.length || saving) {
+    onClose();
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Remove all ${drafts.length} AI drafts?\n\nThese drafts will be deleted and will not be added to your calendar.`
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setError(null);
+
+  try {
+    const res = await fetch(`/api/calendars/${calendarId}/ai-drafts`, {
+      method: "DELETE",
+    });
+
+    const data = await readJson(res);
+
+    if (!res.ok) {
+      throw new Error(data.error ?? "Failed to remove all drafts");
+    }
+
+    setDrafts([]);
+    setSelectedId(null);
+    setGenerations([]);
+    setGenerationIndex(-1);
+
+    router.refresh();
+    onClose();
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Failed to remove all drafts"
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
   async function confirmAll() {
     if (!drafts?.length || saving) return;
 
@@ -327,13 +387,15 @@ export default function AiDraftReviewModal({
         const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${draft.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            caption: draft.caption,
-            contentIdea: draft.contentIdea,
-            cta: draft.cta,
-            hashtags: draft.hashtags,
-            postDate: draft.postDate,
-          }),
+       body: JSON.stringify({
+  hook: draft.hook,
+  script: draft.script,
+  caption: draft.caption,
+  contentIdea: draft.contentIdea,
+  cta: draft.cta,
+  hashtags: draft.hashtags,
+  postDate: draft.postDate,
+}),
         });
         const data = await readJson(res);
         if (!res.ok) throw new Error(data.error ?? `Failed to confirm ${draft.id}`);
@@ -367,8 +429,10 @@ export default function AiDraftReviewModal({
     <div
       className="fixed inset-0 z-[100] bg-[#07101C]/80 backdrop-blur-md"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+  if (e.target === e.currentTarget) {
+    void discardAllDrafts();
+  }
+}}
     >
       <div className="mx-auto flex h-[100dvh] w-full max-w-[1440px] flex-col overflow-hidden bg-[#F5F7FB] shadow-2xl lg:my-6 lg:h-[calc(100dvh-48px)] lg:rounded-[28px]">
         <header className="flex shrink-0 items-center justify-between border-b border-[#E4E9F1] bg-white px-5 py-4 lg:px-8">
@@ -386,7 +450,7 @@ export default function AiDraftReviewModal({
           </div>
 
           <button
-            onClick={onClose}
+            onClick={() => void discardAllDrafts()}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E4E9F1] bg-white text-xl text-[#667085] hover:bg-[#F5F7FB]"
             aria-label="Close AI Studio"
           >
@@ -528,17 +592,26 @@ export default function AiDraftReviewModal({
               })}
             </div>
 
-            {remaining > 0 && (
-              <div className="border-t border-[#EEF2F6] p-4">
-                <button
-                  onClick={confirmAll}
-                  disabled={saving}
-                  className="w-full rounded-xl bg-[#101828] px-4 py-3 text-xs font-bold text-white hover:bg-[#1D2939] disabled:opacity-50"
-                >
-                  {saving ? "Saving…" : `Confirm all ${remaining} drafts`}
-                </button>
-              </div>
-            )}
+           {remaining > 0 && (
+  <div className="border-t border-[#EEF2F6] p-4">
+    <button
+      onClick={confirmAll}
+      disabled={saving}
+      className="w-full rounded-xl bg-[#101828] px-4 py-3 text-xs font-bold text-white hover:bg-[#1D2939] disabled:opacity-50"
+    >
+      {saving ? "Saving…" : `Confirm all ${remaining} drafts`}
+    </button>
+
+    <button
+      type="button"
+      onClick={() => void discardAllDrafts()}
+      disabled={saving}
+      className="mt-2 w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      Remove all drafts
+    </button>
+  </div>
+)}
           </aside>
 
           <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
@@ -586,12 +659,14 @@ export default function AiDraftReviewModal({
 
                   <div className="space-y-5 p-5 lg:p-7">
                     {(
-                      [
-                        ["caption", "Caption", "Write the final words your audience will see."],
-                        ["contentIdea", "Creative direction", "Describe what the visual or video should show."],
-                        ["cta", "Call to action", "What should the audience do next?"],
-                        ["hashtags", "Hashtags", "Add relevant hashtags, separated by spaces."],
-                      ] as [EditableKey, string, string][]
+                     [
+                      ["hook", "Hook", "The opening line or idea that grabs attention."],
+                      ["script", "Script", "The words to say for any spoken or narrated video."],
+                      ["caption", "Caption", "Write the final words your audience will see."],
+                      ["contentIdea", "Creative direction", "Describe what the visual or video should show."],
+                      ["cta", "Call to action", "What should the audience do next?"],
+                      ["hashtags", "Hashtags", "Add relevant hashtags, separated by spaces."],
+                    ] as [EditableKey, string, string][]
                     ).map(([field, label, hint]) => (
                       <label key={field} className="block">
                         <span className="text-xs font-bold text-[#101828]">{label}</span>
