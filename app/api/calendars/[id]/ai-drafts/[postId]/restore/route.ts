@@ -46,16 +46,18 @@ export async function POST(
 
   const updated = await db.calendarPost.update({
     where: { id: postId },
-    data: {
-      postDate: generation.postDate,
-      platform: generation.platform,
-      postType: generation.postType,
-      category: generation.category,
-      caption: generation.caption,
-      contentIdea: generation.contentIdea,
-      cta: generation.cta,
-      hashtags: generation.hashtags,
-    },
+   data: {
+  postDate: generation.postDate,
+  platform: generation.platform,
+  postType: generation.postType,
+  category: generation.category,
+  hook: generation.hook,
+  script: generation.script,
+  caption: generation.caption,
+  contentIdea: generation.contentIdea,
+  cta: generation.cta,
+  hashtags: generation.hashtags,
+},
   });
 
   return NextResponse.json({ post: updated });

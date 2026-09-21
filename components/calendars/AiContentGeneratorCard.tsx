@@ -60,18 +60,59 @@ export default function AiContentGeneratorCard({
   const [endDate, setEndDate] = useState(defaultEnd);
   const [postsPerWeek, setPostsPerWeek] = useState(3);
   const [customInstructions, setCustomInstructions] = useState("");
-  const [platforms, setPlatforms] = useState<string[]>(["INSTAGRAM"]);
-  const [generating, setGenerating] = useState(false);
+ const [platforms, setPlatforms] = useState<string[]>(["INSTAGRAM"]);
+const [contentStrategy, setContentStrategy] = useState<
+  "SAME_CONTENT" | "DIFFERENT_CONTENT" | "CUSTOM_GROUPS"
+>("SAME_CONTENT");
+const [contentGroups, setContentGroups] = useState<string[][]>([]);
+const [scheduleStrategy, setScheduleStrategy] = useState<
+  "SAME_TIME" | "SAME_DAY" | "CUSTOM"
+>("SAME_TIME");
+const [platformSchedules, setPlatformSchedules] = useState<
+  Record<string, { date: string; time: string }>
+>(() =>
+  Object.fromEntries(
+    ["INSTAGRAM"].map((platform) => [
+      platform,
+      {
+        date: defaultStart,
+        time: "10:00",
+      },
+    ])
+  )
+);
+const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
 
-  const togglePlatform = (platform: string) => {
-    setPlatforms((previous) =>
-      previous.includes(platform)
-        ? previous.filter((value) => value !== platform)
-        : [...previous, platform]
-    );
-  };
+const togglePlatform = (platform: string) => {
+  setPlatforms((previous) => {
+    const next = previous.includes(platform)
+      ? previous.filter((value) => value !== platform)
+      : [...previous, platform];
+
+    if (contentStrategy === "CUSTOM_GROUPS") {
+      setContentGroups(next.length > 0 ? [next] : []);
+    }
+
+    setPlatformSchedules((currentSchedules) => {
+      const nextSchedules = { ...currentSchedules };
+
+      if (!next.includes(platform)) {
+        delete nextSchedules[platform];
+      } else if (!nextSchedules[platform]) {
+        nextSchedules[platform] = {
+          date: defaultStart,
+          time: "10:00",
+        };
+      }
+
+      return nextSchedules;
+    });
+
+    return next;
+  });
+};
 
   const generate = async () => {
     if (platforms.length === 0) {
@@ -96,13 +137,17 @@ export default function AiContentGeneratorCard({
       const res = await fetch(`/api/calendars/${calendarId}/ai-generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          postsPerWeek,
-          platforms,
-          customInstructions,
-        }),
+       body: JSON.stringify({
+  startDate,
+  endDate,
+  postsPerWeek,
+  platforms,
+  customInstructions,
+  contentStrategy,
+  contentGroups,
+  scheduleStrategy,
+  platformSchedules,
+}),
       });
 
       const data = await res.json();
@@ -425,6 +470,465 @@ export default function AiContentGeneratorCard({
                   })}
                 </div>
               </div>
+
+                            {platforms.length > 1 && (
+  <div className="mt-5 rounded-[22px] border border-[#E4E7EC] bg-[#F8FAFC] p-4 sm:p-5">
+    <div>
+      <p className="text-xs font-semibold text-[#101828]">
+        Content strategy
+      </p>
+      <p className="mt-1 text-[10px] leading-5 text-[#667085]">
+        Choose how AI should create content across your selected platforms.
+      </p>
+    </div>
+
+    <div className="mt-3 grid gap-2">
+      {[
+        {
+          value: "SAME_CONTENT" as const,
+          title: "Same content for all platforms",
+          description:
+            "Create one content concept and adapt it for every selected platform.",
+        },
+        {
+          value: "DIFFERENT_CONTENT" as const,
+          title: "Different content for each platform",
+          description:
+            "Create a separate content concept for every selected platform.",
+        },
+        {
+          value: "CUSTOM_GROUPS" as const,
+          title: "Customize content groups",
+          description:
+            "Choose which platforms should share the same content.",
+        },
+      ].map((option) => {
+        const selected = contentStrategy === option.value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => {
+              setContentStrategy(option.value);
+
+              if (
+                option.value === "CUSTOM_GROUPS" &&
+                contentGroups.length === 0
+              ) {
+                setContentGroups([platforms]);
+              }
+            }}
+            aria-pressed={selected}
+            className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+              selected
+                ? "border-[#B9D2FA] bg-[#F3F8FF] shadow-[0_5px_16px_rgba(36,120,255,0.07)]"
+                : "border-[#E4E7EC] bg-white hover:border-[#CBD5E1] hover:bg-[#FAFBFC]"
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                selected
+                  ? "border-[#2478FF] bg-[#2478FF]"
+                  : "border-[#D0D5DD] bg-white"
+              }`}
+            >
+              {selected && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
+            </span>
+
+            <span className="min-w-0">
+              <span
+                className={`block text-[11px] font-semibold ${
+                  selected ? "text-[#175CD3]" : "text-[#344054]"
+                }`}
+              >
+                {option.title}
+              </span>
+
+              <span className="mt-1 block text-[10px] leading-5 text-[#667085]">
+                {option.description}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+
+    {scheduleStrategy === "CUSTOM" && (
+  <div className="mt-4 rounded-2xl border border-[#DCE3EC] bg-white p-4">
+    <div>
+      <p className="text-[11px] font-semibold text-[#101828]">
+        Platform schedules
+      </p>
+      <p className="mt-1 text-[10px] leading-5 text-[#667085]">
+        Set when each platform should publish. Platforms can use different
+        dates and times.
+      </p>
+    </div>
+
+    <div className="mt-3 space-y-2">
+      {platforms.map((platform) => {
+        const meta = PLATFORMS.find(
+          (item) => item.value === platform
+        );
+
+        if (!meta) return null;
+
+        const schedule = platformSchedules[platform] ?? {
+          date: startDate,
+          time: "10:00",
+        };
+
+        return (
+          <div
+            key={platform}
+            className="rounded-xl border border-[#E4E7EC] bg-[#F8FAFC] p-3"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EEF5FF] text-[8px] font-bold text-[#2478FF]">
+                {meta.short}
+              </span>
+
+              <span className="text-[10px] font-semibold text-[#344054]">
+                {meta.label}
+              </span>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="mb-1.5 block text-[8px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
+                  Date
+                </span>
+
+                <input
+                  type="date"
+                  value={schedule.date}
+                  min={startDate}
+                  max={endDate}
+                  onChange={(event) => {
+                    const date = event.target.value;
+
+                    setPlatformSchedules((previous) => ({
+                      ...previous,
+                      [platform]: {
+                        ...schedule,
+                        date,
+                      },
+                    }));
+                  }}
+                  className="h-9 w-full rounded-lg border border-[#D9E2EC] bg-white px-2.5 text-[10px] font-medium text-[#344054] outline-none focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/10"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[8px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
+                  Time
+                </span>
+
+                <input
+                  type="time"
+                  value={schedule.time}
+                  onChange={(event) => {
+                    const time = event.target.value;
+
+                    setPlatformSchedules((previous) => ({
+                      ...previous,
+                      [platform]: {
+                        ...schedule,
+                        time,
+                      },
+                    }));
+                  }}
+                  className="h-9 w-full rounded-lg border border-[#D9E2EC] bg-white px-2.5 text-[10px] font-medium text-[#344054] outline-none focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/10"
+                />
+              </label>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+    {contentStrategy === "CUSTOM_GROUPS" && (
+      <div className="mt-4 rounded-2xl border border-[#DCE3EC] bg-white p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold text-[#101828]">
+              Content groups
+            </p>
+            <p className="mt-1 text-[10px] leading-5 text-[#667085]">
+              Platforms in the same group will receive the same content.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {contentGroups.map((group, groupIndex) => (
+  <div
+    key={`content-group-${groupIndex}`}
+    className="rounded-xl border border-[#E4E7EC] bg-[#F8FAFC] p-3"
+  >
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
+        Group {groupIndex + 1}
+      </p>
+
+      {contentGroups.length > 1 && (
+        <button
+          type="button"
+          onClick={() => {
+            setContentGroups((previous) => {
+              const next = previous.filter(
+                (_, index) => index !== groupIndex
+              );
+
+              const removedPlatforms = group;
+
+              if (next.length === 0) {
+                return [removedPlatforms];
+              }
+
+              return [
+                ...next.slice(0, -1),
+                [...next[next.length - 1], ...removedPlatforms],
+              ];
+            });
+          }}
+          className="text-[9px] font-semibold text-[#667085] transition-colors hover:text-[#B42318]"
+        >
+          Remove group
+        </button>
+      )}
+    </div>
+
+    <div className="mt-2 flex flex-wrap gap-2">
+      {group.map((platform) => {
+  const meta = PLATFORMS.find(
+    (item) => item.value === platform
+  );
+
+  if (!meta) return null;
+
+  return (
+    <div
+      key={platform}
+      className="flex items-center gap-1.5 rounded-lg border border-[#D9E2EC] bg-white px-2 py-1.5"
+    >
+      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#EEF5FF] text-[7px] font-bold text-[#2478FF]">
+        {meta.short}
+      </span>
+
+      <span className="text-[9px] font-semibold text-[#344054]">
+        {meta.label}
+      </span>
+
+      {contentGroups.length > 1 && (
+        <select
+          value={groupIndex}
+          onChange={(event) => {
+            const targetGroupIndex = Number(event.target.value);
+
+            if (targetGroupIndex === groupIndex) {
+              return;
+            }
+
+            setContentGroups((previous) => {
+              const next = previous.map((currentGroup) => [
+                ...currentGroup,
+              ]);
+
+              next[groupIndex] = next[groupIndex].filter(
+                (value) => value !== platform
+              );
+
+              next[targetGroupIndex] = [
+                ...next[targetGroupIndex],
+                platform,
+              ];
+
+              return next.filter((currentGroup) => currentGroup.length > 0);
+            });
+          }}
+          className="max-w-[90px] rounded-md border border-[#E4E7EC] bg-white px-1.5 py-1 text-[8px] font-medium text-[#667085] outline-none focus:border-[#2478FF]"
+          aria-label={`Move ${meta.label} to another content group`}
+        >
+          {contentGroups.map((_, index) => (
+            <option key={index} value={index}>
+              {index === groupIndex
+                ? "This group"
+                : `Group ${index + 1}`}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+})}
+    </div>
+    <button
+  type="button"
+  onClick={() => {
+    const groupedPlatforms = new Set(contentGroups.flat());
+
+    const ungroupedPlatform = platforms.find(
+      (platform) => !groupedPlatforms.has(platform)
+    );
+
+    if (ungroupedPlatform) {
+      setContentGroups((previous) => [
+        ...previous,
+        [ungroupedPlatform],
+      ]);
+      return;
+    }
+
+    setContentGroups((previous) => [...previous, []]);
+  }}
+  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-dashed border-[#CBD5E1] bg-white px-3 py-2 text-[9px] font-semibold text-[#475467] transition-colors hover:border-[#2478FF] hover:bg-[#F8FAFC] hover:text-[#175CD3]"
+>
+  <span className="text-sm leading-none">+</span>
+  Add content group
+</button>
+  </div>
+))}
+        </div>
+
+        <p className="mt-3 text-[9px] leading-4 text-[#98A2B3]">
+          We&apos;ll add the controls to split and move platforms between
+          groups next.
+        </p>
+      </div>
+    )}
+  </div>
+)}
+
+{platforms.length > 1 && (
+  <div className="mt-5 rounded-[22px] border border-[#E4E7EC] bg-[#F8FAFC] p-4 sm:p-5">
+    <div>
+      <p className="text-xs font-semibold text-[#101828]">
+        Publishing schedule
+      </p>
+      <p className="mt-1 text-[10px] leading-5 text-[#667085]">
+        Choose how AI should schedule posts across your selected platforms.
+      </p>
+    </div>
+
+    <div className="mt-3 grid gap-2">
+      {[
+        {
+          value: "SAME_TIME" as const,
+          title: "Same date & time",
+          description:
+            "Publish all platform posts at the same date and time.",
+        },
+        {
+          value: "SAME_DAY" as const,
+          title: "Same day, different times",
+          description:
+            "Publish on the same day but let AI choose the best time for each platform.",
+        },
+        {
+          value: "CUSTOM" as const,
+          title: "Customize the schedule",
+          description:
+            "Choose different dates and times for different platforms.",
+        },
+      ].map((option) => {
+        const selected = scheduleStrategy === option.value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => {
+  setScheduleStrategy(option.value);
+
+  if (option.value === "SAME_TIME") {
+    setPlatformSchedules(
+      Object.fromEntries(
+        platforms.map((platform) => [
+          platform,
+          {
+            date: startDate,
+            time: "10:00",
+          },
+        ])
+      )
+    );
+  }
+
+  if (option.value === "SAME_DAY") {
+    setPlatformSchedules(
+      Object.fromEntries(
+        platforms.map((platform, index) => [
+          platform,
+          {
+            date: startDate,
+            time: `${String(10 + index).padStart(2, "0")}:00`,
+          },
+        ])
+      )
+    );
+  }
+
+  if (option.value === "CUSTOM") {
+    setPlatformSchedules((previous) => {
+      const next = { ...previous };
+
+      platforms.forEach((platform) => {
+        if (!next[platform]) {
+          next[platform] = {
+            date: startDate,
+            time: "10:00",
+          };
+        }
+      });
+
+      return next;
+    });
+  }
+}}
+            aria-pressed={selected}
+            className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all ${
+              selected
+                ? "border-[#B9D2FA] bg-[#F3F8FF] shadow-[0_5px_16px_rgba(36,120,255,0.07)]"
+                : "border-[#E4E7EC] bg-white hover:border-[#CBD5E1] hover:bg-[#FAFBFC]"
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                selected
+                  ? "border-[#2478FF] bg-[#2478FF]"
+                  : "border-[#D0D5DD] bg-white"
+              }`}
+            >
+              {selected && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
+            </span>
+
+            <span className="min-w-0">
+              <span
+                className={`block text-[11px] font-semibold ${
+                  selected ? "text-[#175CD3]" : "text-[#344054]"
+                }`}
+              >
+                {option.title}
+              </span>
+
+              <span className="mt-1 block text-[10px] leading-5 text-[#667085]">
+                {option.description}
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)}
 
               <label className="mt-5 block">
                 <div className="flex items-end justify-between gap-4">

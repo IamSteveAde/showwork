@@ -1843,6 +1843,8 @@ model CalendarPost {
   // content's actual purpose or theme.
   category       String?        @db.Text
   caption        String?        @db.Text
+  hook           String?        @db.Text
+script         String?        @db.Text
   contentIdea    String?        @db.Text
   // What the post is actually asking the viewer to do — "Link in
   // bio," "Comment below," etc. Free text with presets in the UI.
@@ -1929,6 +1931,8 @@ model CalendarPostAiGeneration {
   postType    String?        @db.Text
   category    String?        @db.Text
   caption     String?        @db.Text
+  hook           String?        @db.Text
+script         String?        @db.Text
   contentIdea String?        @db.Text
   cta         String?        @db.Text
   hashtags    String?        @db.Text

@@ -67,18 +67,20 @@ export async function PATCH(
     );
   }
 
-  const {
-    postDate,
-    platform,
-    postType,
-    category,
-    caption,
-    contentIdea,
-    cta,
-    hashtags,
-    taggedAccounts,
-    linkUrl,
-  } = await req.json();
+ const {
+  postDate,
+  platform,
+  postType,
+  category,
+  hook,
+  script,
+  caption,
+  contentIdea,
+  cta,
+  hashtags,
+  taggedAccounts,
+  linkUrl,
+} = await req.json();
 
   if (
     platform &&
@@ -101,14 +103,22 @@ export async function PATCH(
         postType !== undefined
           ? postType?.trim() || null
           : undefined,
-      category:
-        category !== undefined
-          ? category?.trim() || null
-          : undefined,
-      caption:
-        caption !== undefined
-          ? caption?.trim() || null
-          : undefined,
+     category:
+  category !== undefined
+    ? category?.trim() || null
+    : undefined,
+hook:
+  hook !== undefined
+    ? hook?.trim() || null
+    : undefined,
+script:
+  script !== undefined
+    ? script?.trim() || null
+    : undefined,
+caption:
+  caption !== undefined
+    ? caption?.trim() || null
+    : undefined,
       contentIdea:
         contentIdea !== undefined
           ? contentIdea?.trim() || null

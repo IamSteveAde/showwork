@@ -13,23 +13,86 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const creator = await getCurrentCreator();
-  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!creator) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { id } = await params;
+
   if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
-    return NextResponse.json({ error: "You don't have permission to view drafts on this calendar" }, { status: 403 });
+    return NextResponse.json(
+      {
+        error:
+          "You don't have permission to view drafts on this calendar",
+      },
+      { status: 403 }
+    );
   }
 
   const drafts = await db.calendarPost.findMany({
-    where: { calendarId: id, isAiDraft: true },
-    orderBy: { postDate: "asc" },
-    include: { assets: { orderBy: { displayOrder: "asc" } } },
+    where: {
+      calendarId: id,
+      isAiDraft: true,
+    },
+    orderBy: {
+      postDate: "asc",
+    },
+    include: {
+      assets: {
+        orderBy: {
+          displayOrder: "asc",
+        },
+      },
+    },
   });
 
   return NextResponse.json({
     drafts: drafts.map((d) => ({
       ...d,
-      assets: d.assets.map((a) => ({ ...a, contentUrl: publicUrlFor(a.fileKey) })),
+      assets: d.assets.map((a) => ({
+        ...a,
+        contentUrl: publicUrlFor(a.fileKey),
+      })),
     })),
+  });
+}
+
+// DELETE — permanently removes all AI drafts still awaiting review
+// on this calendar in one database operation.
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await getCurrentCreator();
+
+  if (!creator) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  const { id } = await params;
+
+  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+    return NextResponse.json(
+      {
+        error:
+          "You don't have permission to remove drafts on this calendar",
+      },
+      { status: 403 }
+    );
+  }
+
+  const result = await db.calendarPost.deleteMany({
+    where: {
+      calendarId: id,
+      isAiDraft: true,
+    },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    deletedCount: result.count,
   });
 }
