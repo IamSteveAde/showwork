@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import WorkspaceTour from "@/components/calendars/WorkspaceTour";
 
 type WorkspaceSectionId =
   | "overview"
@@ -701,7 +702,11 @@ export default function CalendarWorkspaceShell({
             </div>
           </div>
         </main>
-      </div>
+           </div>
+
+      <WorkspaceTour
+        availableSections={visibleSections.map((section) => section.id)}
+      />
 
       <style jsx global>{`
         @keyframes workspaceEnter {

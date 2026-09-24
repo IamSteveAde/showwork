@@ -9,6 +9,7 @@ import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
 import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
 import AiAssistantBillingSettings from "@/components/calendars/AiAssistantBillingSettings";
 import CalendarCard from "@/components/calendars/CalendarCard";
+import WorkspaceOnboarding from "@/components/calendars/WorkspaceOnboarding";
 
 function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -214,7 +215,10 @@ function Pagination({
 export default async function CalendarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+  page?: string;
+  onboarding?: string;
+}>;
 }) {
   const creator = await getCurrentCreator();
 
@@ -235,8 +239,10 @@ const calendarBilling = await db.creator.findUnique({
 },
 });
 
-  const params = await searchParams;
-  const currentPage = getPageNumber(params?.page);
+ const params = await searchParams;
+const currentPage = getPageNumber(params?.page);
+
+const onboardingTestMode = params?.onboarding === "test";
 
   const totalCalendars = await db.socialCalendar.count({
     where: {
@@ -499,7 +505,10 @@ const calendarBilling = await db.creator.findUnique({
         {/* ─────────────────────────────────────────
             CREATE CALENDAR
         ───────────────────────────────────────── */}
-        <section className="mb-12">
+        <section
+  className="mb-12"
+  data-onboarding="create-workspace"
+>
           <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025]">
             <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
               <div className="flex items-center gap-3">
@@ -524,7 +533,15 @@ const calendarBilling = await db.creator.findUnique({
 />
             </div>
           </div>
-        </section>
+                </section>
+
+        <WorkspaceOnboarding
+          isFirstWorkspace={totalCalendars === 0}
+          hasExistingPlan={Boolean(
+            calendarBilling?.contentWorkspacePlan,
+          )}
+          testMode={onboardingTestMode}
+        />
 
         {/* ─────────────────────────────────────────
             CALENDAR LIST HEADER

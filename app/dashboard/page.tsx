@@ -525,9 +525,9 @@ export default async function DashboardPage() {
       {/* ------------------------------------------------------------------ */}
 
       <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
-        {/* Compact orientation header */}
+        {/* Compact orientation header + tutorial */}
         <section className="pt-10 sm:pt-14 lg:pt-16">
-          <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-[#F1F6FF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
                 <SparkIcon className="h-3.5 w-3.5" />
@@ -545,23 +545,83 @@ export default async function DashboardPage() {
                 Everything you use to run your creative work, in one place.
                 Pick an app and get straight to work.
               </p>
+
+              <div className="mt-6 flex items-center gap-2 text-xs text-[#7B828D]">
+                <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
+
+                <span>
+                  {projectCount}{" "}
+                  {projectCount === 1 ? "project" : "projects"}
+                </span>
+
+                <span className="text-[#C4C8CE]">·</span>
+
+                <span>
+                  {calendar
+                    ? "Content workspace ready"
+                    : "No content workspace yet"}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-[#7B828D]">
-              <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
+            {/* Must-watch tutorial */}
+            <div className="w-full shrink-0 lg:w-[330px] xl:w-[360px]">
+              <div className="overflow-hidden rounded-[22px] border border-[#DCE2EA] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.11)]">
+                <div className="flex items-center justify-between px-4 py-3.5">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EEF5FF] text-[#2478FF]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        className="h-3.5 w-3.5"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M8 5.5v13l10-6.5L8 5.5Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </span>
 
-              <span>
-                {projectCount}{" "}
-                {projectCount === 1 ? "project" : "projects"}
-              </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em] text-[#2478FF]">
+                          Must watch
+                        </p>
+                        <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[9px] font-semibold text-[#7B828D]">
+                          Quick tour
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[11px] text-[#858C96]">
+                        Content Workspace for social media managers
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-              <span className="text-[#C4C8CE]">·</span>
+                <div className="bg-[#0B0D11] p-2.5">
+                  <div className="relative aspect-video overflow-hidden rounded-[15px] bg-black ring-1 ring-white/10">
+                    <iframe
+                      className="absolute inset-0 h-full w-full"
+                      src="https://www.youtube.com/embed/2UFJNWqFnxQ?si=diogQGUi6AR2MxPr"
+                      title="Showwork Content Workspace tutorial"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
 
-              <span>
-                {calendar
-                  ? "Content workspace ready"
-                  : "No content workspace yet"}
-              </span>
+                <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+                  <p className="text-[10px] leading-4 text-[#7B828D]">
+                    Learn how to plan, create, approve and publish client content.
+                  </p>
+
+                  <span className="shrink-0 rounded-full bg-[#101114] px-2.5 py-1 text-[9px] font-bold text-white">
+                    Start here →
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
