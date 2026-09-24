@@ -51,6 +51,20 @@ const [loading, setLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
 
 const hasExistingPlan = Boolean(contentWorkspacePlan);
+const emitOnboardingEvent = (
+  name: string,
+  detail?: Record<string, unknown>,
+) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(name, {
+      detail,
+    }),
+  );
+};
 
 const openForm = () => {
 setStep(hasExistingPlan ? "form" : "choose-plan");
@@ -89,16 +103,18 @@ try {
 
   const data = await res.json();
 
-  if (res.ok) {
-    if (data.authorizationUrl) {
-      window.location.href = data.authorizationUrl;
-    } else {
-      window.location.href = `/dashboard/calendars/${data.calendarId}`;
-    }
+if (res.ok) {
+  emitOnboardingEvent("showwork:workspace-created");
+
+  if (data.authorizationUrl) {
+    window.location.href = data.authorizationUrl;
   } else {
-    setError(data.error ?? "Failed to create workspace");
-    setLoading(false);
+    window.location.href = `/dashboard/calendars/${data.calendarId}`;
   }
+} else {
+  setError(data.error ?? "Failed to create workspace");
+  setLoading(false);
+}
 } catch {
   setError("Something went wrong. Please try again.");
   setLoading(false);
@@ -114,6 +130,7 @@ const activePlanInfo = CONTENT_WORKSPACE_PLANS.find(
 if (step === "closed") {
 return ( <button
      type="button"
+     data-onboarding="create-trigger"
      onClick={openForm}
      className="group relative w-full overflow-hidden rounded-[24px] border border-[#D9E4F3] bg-[linear-gradient(135deg,#F7FAFF_0%,#EEF5FF_100%)] p-5 text-left shadow-[0_10px_35px_rgba(36,120,255,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#BCD1F2] hover:shadow-[0_18px_45px_rgba(36,120,255,0.10)] sm:p-6"
    > <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#2478FF]/10 blur-[45px]" /> <div className="pointer-events-none absolute bottom-0 left-0 h-px w-1/2 bg-gradient-to-r from-[#2478FF] to-transparent" />
@@ -165,7 +182,7 @@ if (step === "choose-plan") {
 return ( <div className="relative overflow-hidden rounded-[28px] border border-[#202630] bg-[#0D1117] p-6 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:p-8"> <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#2478FF]/15 blur-[75px]" />
 
 
-    <div className="relative mb-7 flex items-start justify-between gap-5">
+    <div data-onboarding="plan" className="relative mb-7 flex items-start justify-between gap-5">
       <div>
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#79AEFF]">
           One-time setup
@@ -197,9 +214,13 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
           key={plan.value}
           type="button"
           onClick={() => {
-            setChosenPlan(plan.value);
-            setStep("form");
-          }}
+  setChosenPlan(plan.value);
+  setStep("form");
+
+  emitOnboardingEvent(
+    "showwork:workspace-plan-selected",
+  );
+}}
           className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.035] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#2478FF]/40 hover:bg-white/[0.055]"
         >
           {plan.value === "STUDIO" && (
@@ -306,12 +327,22 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
         </label>
 
         <input
+        data-onboarding="client-name"
           type="text"
           value={clientName}
           onChange={(event) => {
-            setClientName(event.target.value);
-            setError(null);
-          }}
+  const value = event.target.value;
+
+  setClientName(value);
+  setError(null);
+
+  emitOnboardingEvent(
+    "showwork:client-name-changed",
+    {
+      hasValue: Boolean(value.trim()),
+    },
+  );
+}}
           placeholder="e.g. Chuchin Ultimate Productions"
           autoComplete="organization"
           className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3.5 text-base text-white outline-none transition-all placeholder:text-white/20 focus:border-[#2478FF]/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#2478FF]/10"
@@ -339,6 +370,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
     <div className="mt-7 flex flex-col gap-3 sm:flex-row">
       <button
         type="button"
+        data-onboarding="submit"
         onClick={submit}
         disabled={loading}
         className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#2478FF] to-[#0052FF] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.20)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(36,120,255,0.28)] disabled:cursor-not-allowed disabled:opacity-50"
