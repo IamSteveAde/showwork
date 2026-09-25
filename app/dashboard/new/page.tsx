@@ -14,8 +14,9 @@ const jakarta = Plus_Jakarta_Sans({
 
 const COLOR = {
   black: "#0A0A0A",
-  gold: "#F5C842",
-  orange: "#E8881A",
+  blue: "#2478FF",
+  blueSoft: "#5B9BFF",
+  blueDeep: "#0F5FE8",
   charcoal: "#1A1A1A",
   midGray: "#888786",
   green: "#22C55E",
@@ -745,7 +746,7 @@ export default function NewProjectPage() {
         <div className="w-full max-w-lg">
           <UploadPatienceBanner active={phase === "uploading"} />
           <div className="mb-8 mt-4 text-center">
-            <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
+            <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
               {phase === "done" ? "All set" : "Uploading your project"}
             </p>
             <h1 className="text-2xl font-bold text-white md:text-3xl">
@@ -763,7 +764,7 @@ export default function NewProjectPage() {
                 className="h-full rounded-full transition-all duration-300 ease-out"
                 style={{
                   width: `${phase === "done" ? 100 : overallPercent}%`,
-                  background: phase === "done" ? COLOR.green : COLOR.gold,
+                  background: phase === "done" ? COLOR.green : COLOR.blue,
                 }}
               />
             </div>
@@ -797,7 +798,7 @@ export default function NewProjectPage() {
                         className="h-full rounded-full transition-all duration-200 ease-out"
                         style={{
                           width: `${isDone ? 100 : isError ? 100 : percent}%`,
-                          background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.gold,
+                          background: isDone ? COLOR.green : isError ? "#f87171" : COLOR.blue,
                         }}
                       />
                     </div>
@@ -816,7 +817,7 @@ export default function NewProjectPage() {
                   <div className="flex flex-col gap-2">{section.files.map(renderFileRow)}</div>
 
                   {section.subSections.map((sub) => (
-                    <div key={sub.subSectionLocalId} className="mt-3 border-l-2 pl-3" style={{ borderColor: "rgba(245,200,66,0.25)" }}>
+                    <div key={sub.subSectionLocalId} className="mt-3 border-l-2 pl-3" style={{ borderColor: "rgba(36,120,255,0.25)" }}>
                       <p className="mb-1.5 text-[11px] font-semibold uppercase text-white/30">{sub.name}</p>
                       <div className="flex flex-col gap-2">{sub.files.map(renderFileRow)}</div>
                     </div>
@@ -842,9 +843,9 @@ export default function NewProjectPage() {
     >
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -left-48 -top-48 h-[620px] w-[620px] rounded-full blur-[150px]"
-          style={{ background: "rgba(245,200,66,0.07)" }} />
+          style={{ background: "rgba(36,120,255,0.07)" }} />
         <div className="absolute -right-56 top-[28%] h-[520px] w-[520px] rounded-full blur-[150px]"
-          style={{ background: "rgba(232,136,26,0.055)" }} />
+          style={{ background: "rgba(36,120,255,0.055)" }} />
         <div className="absolute inset-0 opacity-[0.045]"
           style={{
             backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)",
@@ -863,13 +864,13 @@ export default function NewProjectPage() {
         <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-end lg:gap-14">
           <div>
             <div className="mb-5 flex items-center gap-3">
-              <span className="h-[2px] w-8" style={{ background: COLOR.gold }} />
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: COLOR.gold }}>
+              <span className="h-[2px] w-8" style={{ background: COLOR.blue }} />
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: COLOR.blue }}>
                 New delivery
               </p>
             </div>
             <h1 className="max-w-3xl font-semibold tracking-[-0.055em] text-white"
-              style={{ fontSize: "clamp(2.8rem, 7vw, 6.5rem)", lineHeight: 0.92 }}>
+              style={{ fontSize: "clamp(1.8rem, 3vw, 3.5rem)", lineHeight: 0.92 }}>
               Build the delivery
               <br />
               <span className="text-white/30">your client remembers.</span>
@@ -883,25 +884,49 @@ export default function NewProjectPage() {
             className="group hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5 backdrop-blur-xl transition hover:border-white/15 hover:bg-white/[0.055] lg:block">
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">Account</p>
             <p className="mt-2 text-sm font-semibold text-white/65">View your plan</p>
-            <span className="mt-5 inline-flex items-center gap-2 text-xs font-semibold" style={{ color: COLOR.gold }}>
+            <span className="mt-5 inline-flex items-center gap-2 text-xs font-semibold" style={{ color: COLOR.blue }}>
               Billing & usage
               <span className="transition-transform group-hover:translate-x-1">→</span>
             </span>
           </Link>
         </div>
 
+        <div className="mb-8 overflow-hidden rounded-[22px] border border-white/[0.07] bg-white/[0.025] shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+          <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.06] sm:grid-cols-4 sm:divide-y-0">
+            {[
+              ["01", "Project", "Name the delivery"],
+              ["02", "Access", "Set the client code"],
+              ["03", "Content", "Organise the work"],
+              ["04", "Present", "Choose the banner"],
+            ].map(([number, label, note], index) => (
+              <div key={number} className="group relative flex items-center gap-3 px-4 py-4 sm:px-5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#2478FF]/20 bg-[#2478FF]/[0.08] text-[9px] font-bold text-[#78AEFF] transition group-hover:border-[#2478FF]/40 group-hover:bg-[#2478FF]/[0.13]">
+                  {number}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/60">{label}</p>
+                  <p className="mt-0.5 truncate text-[10px] text-white/25">{note}</p>
+                </div>
+                {index < 3 && (
+                  <span className="absolute -right-1.5 top-1/2 z-10 hidden -translate-y-1/2 text-[10px] text-white/20 sm:block">→</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {usage && usage.nextTier && (usage.nearCap || usage.atCap) && (
           <div
             className="mb-8 flex flex-col gap-4 rounded-xl p-5 sm:flex-row sm:items-center sm:justify-between"
             style={{
-              background: usage.atCap ? "rgba(249,115,22,0.1)" : "rgba(245,200,66,0.08)",
-              border: usage.atCap ? "1px solid rgba(249,115,22,0.3)" : "1px solid rgba(245,200,66,0.25)",
+              background: usage.atCap ? "rgba(249,115,22,0.10)" : "rgba(36,120,255,0.08)",
+              border: usage.atCap ? "1px solid rgba(249,115,22,0.30)" : "1px solid rgba(36,120,255,0.25)",
             }}
           >
             <div>
               <p
                 className="text-xs font-semibold uppercase"
-                style={{ color: usage.atCap ? "#fdba74" : COLOR.gold, letterSpacing: "0.08em" }}
+                style={{ color: usage.atCap ? "#fdba74" : COLOR.blue, letterSpacing: "0.08em" }}
               >
                 {usage.atCap ? "You've reached your limit" : "Almost there"}
               </p>
@@ -918,7 +943,7 @@ export default function NewProjectPage() {
             <Link
               href="/dashboard/billing"
               className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
-              style={{ background: COLOR.gold, color: COLOR.black }}
+              style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
             >
               Upgrade to {usage.nextTier.name}
               <span aria-hidden>→</span>
@@ -927,8 +952,8 @@ export default function NewProjectPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
-            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018))" }}>
+            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.blueSoft }} aria-hidden />
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Client name
             </label>
@@ -937,19 +962,19 @@ export default function NewProjectPage() {
               required
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="e.g. Soundhous"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+              placeholder="e.g. Showwork"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/15"
             />
           </div>
 
           <div
             className="rounded-xl p-6"
-            style={{ background: "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.25)" }}
+            style={{ background: "rgba(36,120,255,0.06)", border: "1px solid rgba(36,120,255,0.25)" }}
           >
             <div className="mb-3 flex items-center gap-2">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke={COLOR.gold} strokeWidth="1.4" />
-                <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke={COLOR.gold} strokeWidth="1.4" strokeLinecap="round" />
+                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke={COLOR.blue} strokeWidth="1.4" />
+                <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" stroke={COLOR.blue} strokeWidth="1.4" strokeLinecap="round" />
               </svg>
               <h2 className="text-sm font-semibold text-white">Client access code</h2>
             </div>
@@ -968,21 +993,21 @@ export default function NewProjectPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="e.g. sunrise42"
                 style={{ fontSize: "16px" }}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/15"
               />
               <button
                 type="button"
                 onClick={() => setPassword(suggestCode())}
                 className="flex-shrink-0 whitespace-nowrap rounded-lg px-3.5 py-3 text-xs font-semibold transition-colors hover:opacity-80"
-                style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+                style={{ background: "rgba(36,120,255,0.15)", color: COLOR.blue }}
               >
                 🎲 Suggest
               </button>
             </div>
           </div>
 
-          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
-            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018))" }}>
+            <div className="mb-5 h-[3px] w-8" style={{ background: COLOR.blueSoft }} aria-hidden />
             <label className="mb-1.5 block text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
               Banner headline <span className="normal-case text-white/25">(optional)</span>
             </label>
@@ -992,14 +1017,14 @@ export default function NewProjectPage() {
               onChange={(e) => setTagline(e.target.value)}
               placeholder="e.g. Three months of work. One night to remember."
               maxLength={80}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-white/25"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/15"
             />
           </div>
 
           {/* SECTIONS — replaces the old single flat dropzone */}
-          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
+          <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018))" }}>
             <div className="mb-5 flex items-center gap-2">
-              <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+              <div className="h-[3px] w-8" style={{ background: COLOR.blueSoft }} aria-hidden />
               <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
                 Sections{sections.length > 0 ? ` (${sections.length})` : ""}
               </label>
@@ -1053,7 +1078,7 @@ export default function NewProjectPage() {
                           type="button"
                           onClick={() => triggerAddMoreFiles(section.sectionLocalId)}
                           className="text-xs font-semibold"
-                          style={{ color: COLOR.gold }}
+                          style={{ color: COLOR.blue }}
                         >
                           + Add files
                         </button>
@@ -1105,7 +1130,7 @@ export default function NewProjectPage() {
                       <div
                         key={sub.subSectionLocalId}
                         className="mt-3 border-l-2 pl-3"
-                        style={{ borderColor: "rgba(245,200,66,0.3)" }}
+                        style={{ borderColor: "rgba(36,120,255,0.30)" }}
                       >
                         <div className="mb-2 flex items-center justify-between">
                           <span className="text-xs font-semibold uppercase text-white/50" style={{ letterSpacing: "0.05em" }}>
@@ -1148,7 +1173,7 @@ export default function NewProjectPage() {
                     {addingSubSectionTo === section.sectionLocalId ? (
                       <div
                         className="mt-3 flex flex-col gap-2.5 rounded-lg p-3"
-                        style={{ background: "rgba(245,200,66,0.05)", border: "1px solid rgba(245,200,66,0.2)" }}
+                        style={{ background: "rgba(36,120,255,0.05)", border: "1px solid rgba(36,120,255,0.20)" }}
                       >
                         <input
                           type="text"
@@ -1157,7 +1182,7 @@ export default function NewProjectPage() {
                           placeholder="e.g. Sonos Campaign"
                           autoFocus
                           style={{ fontSize: "16px" }}
-                          className="w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white outline-none focus:border-white/25"
+                          className="w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white outline-none focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/15"
                         />
                         <button
                           type="button"
@@ -1173,7 +1198,7 @@ export default function NewProjectPage() {
                             type="button"
                             onClick={confirmSubSection}
                             className="rounded-md px-3 py-1.5 text-[11px] font-semibold"
-                            style={{ background: COLOR.gold, color: COLOR.black }}
+                            style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
                           >
                             Create sub-section
                           </button>
@@ -1187,7 +1212,7 @@ export default function NewProjectPage() {
                         type="button"
                         onClick={() => startAddingSubSection(section.sectionLocalId)}
                         className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2 text-[11px] font-semibold transition-colors hover:bg-white/5"
-                        style={{ borderColor: "rgba(245,200,66,0.3)", color: COLOR.gold }}
+                        style={{ borderColor: "rgba(36,120,255,0.30)", color: COLOR.blue }}
                       >
                         + Add sub-section
                       </button>
@@ -1206,10 +1231,10 @@ export default function NewProjectPage() {
               <button
                 type="button"
                 onClick={startBuilder}
-                className="flex w-full flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-6 text-center transition-colors hover:border-white/30"
-                style={{ borderColor: "rgba(245,200,66,0.3)", background: "rgba(245,200,66,0.04)" }}
+                className="flex w-full flex-col items-center gap-1.5 rounded-lg border-2 border-dashed px-6 py-6 text-center transition-all hover:border-[#2478FF]/35 hover:bg-[#2478FF]/[0.035]"
+                style={{ borderColor: "rgba(36,120,255,0.30)", background: "rgba(36,120,255,0.04)" }}
               >
-                <span className="text-sm font-semibold" style={{ color: COLOR.gold }}>
+                <span className="text-sm font-semibold" style={{ color: COLOR.blue }}>
                   + Add your first section
                 </span>
                 <span className="max-w-sm text-xs text-white/40">
@@ -1242,7 +1267,7 @@ export default function NewProjectPage() {
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("PHOTO")}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
                     <span className="text-2xl">🖼️</span>
@@ -1252,7 +1277,7 @@ export default function NewProjectPage() {
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("VIDEO")}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
                     <span className="text-2xl">🎬</span>
@@ -1262,7 +1287,7 @@ export default function NewProjectPage() {
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("DOCUMENT")}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
                     <span className="text-2xl">📄</span>
@@ -1272,7 +1297,7 @@ export default function NewProjectPage() {
                   <button
                     type="button"
                     onClick={() => chooseBuilderType("PDF")}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+                    className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
                     <span className="text-2xl">📕</span>
@@ -1345,7 +1370,7 @@ export default function NewProjectPage() {
                     type="button"
                     onClick={confirmSection}
                     className="rounded-lg px-4 py-2.5 text-sm font-semibold"
-                    style={{ background: COLOR.gold, color: COLOR.black }}
+                    style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
                   >
                     ✓ Save section
                   </button>
@@ -1359,9 +1384,9 @@ export default function NewProjectPage() {
 
           {/* CHOOSE YOUR BANNER — its own dedicated, unmissable card */}
           {bannerEligibleSections.flatMap((s) => s.files).length > 0 && (
-            <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))" }}>
+            <div className="group relative overflow-hidden rounded-[24px] border border-white/[0.075] p-5 shadow-2xl sm:p-6" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.065), rgba(255,255,255,0.018))" }}>
               <div className="mb-2 flex items-center gap-2">
-                <div className="h-[3px] w-8" style={{ background: COLOR.orange }} aria-hidden />
+                <div className="h-[3px] w-8" style={{ background: COLOR.blueSoft }} aria-hidden />
                 <label className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
                   Choose your banner
                 </label>
@@ -1386,8 +1411,8 @@ export default function NewProjectPage() {
                           onClick={() => setHeroLocalId(f.localId)}
                           className="relative aspect-square w-full overflow-hidden rounded-lg bg-black/40 transition-all disabled:cursor-not-allowed disabled:opacity-30"
                           style={{
-                            border: isSelected ? `2px solid ${COLOR.gold}` : "2px solid rgba(255,255,255,0.08)",
-                            boxShadow: isSelected ? "0 0 0 3px rgba(245,200,66,0.2)" : undefined,
+                            border: isSelected ? `2px solid ${COLOR.blue}` : "2px solid rgba(255,255,255,0.08)",
+                            boxShadow: isSelected ? "0 0 0 3px rgba(36,120,255,0.20)" : undefined,
                           }}
                         >
                           {previewUrl && (
@@ -1407,7 +1432,7 @@ export default function NewProjectPage() {
                             <div className="absolute inset-0 flex items-center justify-center bg-black/25">
                               <span
                                 className="rounded-full px-2 py-1 text-[10px] font-bold"
-                                style={{ background: COLOR.gold, color: COLOR.black }}
+                                style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
                               >
                                 ✓ Banner
                               </span>
@@ -1447,7 +1472,7 @@ export default function NewProjectPage() {
           <button
             type="submit"
             className="group relative overflow-hidden rounded-2xl py-4 text-sm font-bold transition-all hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0 sm:py-5"
-            style={{ background: COLOR.gold, color: COLOR.black }}
+            style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
           >
             Create project
           </button>

@@ -11,15 +11,16 @@ import SectionHeader from "@/components/SectionHeader";
 import DeliveryStatusControl from "@/components/DeliveryStatusControl";
 import EditableField from "@/components/EditableField";
 import CollaboratorsPanel from "@/components/CollaboratorsPanel";
+import ProjectTabController from "@/components/ProjectTabController";
 import type { CSSProperties, ReactNode } from "react";
 
 const MAX_ADDITIONAL_UPLOAD_BATCHES = 3;
 
 const COLOR = {
-  black: "#08090B",
-  gold: "#F5C842",
-  goldSoft: "#FFE28A",
-  orange: "#E8881A",
+  black: "#123EA8",
+  gold: "#2563EB",
+  goldSoft: "#1D4ED8",
+  orange: "#EA580C",
   panel: "#121419",
 };
 
@@ -146,6 +147,42 @@ function IconRevision({ className = "" }: { className?: string }) {
   );
 }
 
+function IconLock({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="5" y="10" width="14" height="10" rx="2.5" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      <path d="M12 14v2" />
+    </svg>
+  );
+}
+
+function IconShield({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3 20 6v5.5c0 4.7-3.2 7.9-8 9.5-4.8-1.6-8-4.8-8-9.5V6l8-3Z" />
+      <path d="m8.5 12 2.2 2.2 4.8-5" />
+    </svg>
+  );
+}
+
+function IconSpark({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z" />
+      <path d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16Z" />
+    </svg>
+  );
+}
+
+function IconChevronDown({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
 function SectionIntro({
   eyebrow,
   title,
@@ -164,19 +201,19 @@ function SectionIntro({
       <div className="flex items-start gap-4">
         <div
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-          style={{ background: "rgba(245,200,66,0.09)", color: COLOR.goldSoft }}
+          style={{ background: "rgba(37,99,235,0.08)", color: "#2563EB" }}
         >
           {icon}
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#FFE28A]/70">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1D4ED8]/70">
             {eyebrow}
           </p>
-          <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white sm:text-2xl">
+          <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-slate-900 sm:text-2xl">
             {title}
           </h2>
           {description ? (
-            <p className="mt-1.5 max-w-xl text-sm leading-6 text-white/30">
+            <p className="mt-1.5 max-w-xl text-sm leading-6 text-slate-500">
               {description}
             </p>
           ) : null}
@@ -198,15 +235,15 @@ function Stat({
 }) {
   const toneClass =
     tone === "success"
-      ? "text-emerald-300"
+      ? "text-emerald-600"
       : tone === "warning"
-        ? "text-orange-300"
-        : "text-white";
+        ? "text-orange-600"
+        : "text-slate-900";
 
   return (
-    <div className="rounded-[22px] border border-white/[0.055] bg-white/[0.032] p-5">
+    <div className="showwork-lift rounded-[22px] border border-slate-200 bg-slate-50 p-5">
       <p className={`text-2xl font-semibold tracking-[-0.03em] ${toneClass}`}>{value}</p>
-      <p className="mt-1.5 text-[10px] uppercase tracking-[0.12em] text-white/25">{label}</p>
+      <p className="mt-1.5 text-[10px] uppercase tracking-[0.12em] text-slate-500">{label}</p>
     </div>
   );
 }
@@ -227,19 +264,17 @@ function WorkspaceNavItem({
   badge?: string | number;
 }) {
   return (
-    <Link
-      href={href}
-      scroll={false}
-      className={`group flex items-center gap-3 rounded-2xl border px-3 py-3 transition-all ${
-        active
-          ? "border-[#F5C842]/16 bg-[#F5C842]/[0.08] text-white"
-          : "border-transparent text-white/42 hover:border-white/[0.05] hover:bg-white/[0.035] hover:text-white/75"
-      }`}
+   <Link
+  href={href}
+  scroll={false}
+  data-workspace-tab={href.split("view=")[1] ?? "overview"}
+  data-workspace-nav={href.split("view=")[1] ?? "overview"}
+      data-active={active ? "true" : "false"}
+      aria-current={active ? "page" : "false"}
+      className="showwork-nav-link group flex items-center gap-3 rounded-2xl border border-transparent px-3 py-3 text-white/72 transition-all"
     >
       <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
-          active ? "bg-[#F5C842]/10 text-[#FFE28A]" : "bg-white/[0.035] text-white/30 group-hover:text-white/55"
-        }`}
+        className="showwork-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/75 transition-colors"
       >
         {icon}
       </span>
@@ -248,12 +283,12 @@ function WorkspaceNavItem({
         <span className="flex items-center justify-between gap-2">
           <span className="truncate text-[13px] font-semibold">{label}</span>
           {badge !== undefined ? (
-            <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${active ? "bg-[#F5C842]/10 text-[#FFE28A]" : "bg-white/[0.045] text-white/28"}`}>
+            <span className="showwork-nav-badge rounded-full bg-white/[0.045] px-2 py-0.5 text-[9px] font-semibold text-white/65">
               {badge}
             </span>
           ) : null}
         </span>
-        <span className="mt-0.5 block truncate text-[10px] text-white/23">{description}</span>
+        <span className="mt-0.5 block truncate text-[10px] text-white/65">{description}</span>
       </span>
     </Link>
   );
@@ -272,14 +307,218 @@ function MobileNavItem({
     <Link
       href={href}
       scroll={false}
-      className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-semibold transition ${
-        active
-          ? "border-[#F5C842]/20 bg-[#F5C842]/10 text-[#FFE28A]"
-          : "border-white/[0.06] bg-white/[0.025] text-white/38"
-      }`}
+      data-workspace-tab={href.split("view=")[1] ?? "overview"}
+      data-workspace-nav={href.split("view=")[1] ?? "overview"}
+      data-active={active ? "true" : "false"}
+      aria-current={active ? "page" : "false"}
+      className="showwork-mobile-nav shrink-0 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2.5 text-xs font-semibold text-white/65 transition"
     >
       {label}
     </Link>
+  );
+}
+
+function PaymentReleasePanel({
+  projectId,
+  status,
+}: {
+  projectId: string;
+  status: "DELIVERED" | "APPROVED" | "PAID";
+}) {
+  const paid = status === "PAID";
+  const approved = status === "APPROVED" || paid;
+
+  return (
+    <section
+  className={[
+    "relative mb-16 mt-10 overflow-hidden rounded-[32px] border bg-white",
+    "shadow-[0_28px_80px_-44px_rgba(37,99,235,0.32)]",
+    paid
+      ? "border-emerald-200/80"
+      : "border-blue-100/90",
+  ].join(" ")}
+>
+  {/* Ambient background */}
+  <div
+    aria-hidden
+    className={[
+      "pointer-events-none absolute -right-28 -top-28 h-80 w-80 rounded-full blur-3xl",
+      paid ? "bg-emerald-300/10" : "bg-blue-400/10",
+    ].join(" ")}
+  />
+
+  <div
+    aria-hidden
+    className="pointer-events-none absolute -bottom-32 left-[35%] h-72 w-72 rounded-full bg-indigo-300/10 blur-3xl"
+  />
+
+  <div className="relative">
+    {/* ─────────────────────────────────────────
+        HEADER
+    ───────────────────────────────────────── */}
+    <div className="border-b border-blue-50/90 px-6 py-6 sm:px-8 sm:py-7 lg:px-9">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-start gap-4">
+          {/* Icon */}
+          <div
+            className={[
+              "relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl",
+              "shadow-[0_10px_30px_-16px_rgba(37,99,235,0.55)]",
+              paid
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-blue-50 text-blue-600",
+            ].join(" ")}
+          >
+            {paid ? (
+              <IconShield className="h-6 w-6" />
+            ) : (
+              <IconLock className="h-6 w-6" />
+            )}
+
+            <span
+              className={[
+                "absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white",
+                paid ? "bg-emerald-500" : "bg-blue-500",
+              ].join(" ")}
+            />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                Delivery & payment
+              </p>
+
+              <span
+                className={[
+                  "rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em]",
+                  paid
+                    ? "bg-emerald-50 text-emerald-700"
+                    : approved
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-blue-50 text-blue-700",
+                ].join(" ")}
+              >
+                {paid
+                  ? "Downloads unlocked"
+                  : approved
+                    ? "Payment required"
+                    : "Awaiting approval"}
+              </span>
+            </div>
+
+            <h2 className="mt-2 text-xl font-bold tracking-[-0.035em] text-slate-950 sm:text-2xl">
+              {paid
+                ? "Your delivery is complete."
+                : approved
+                  ? "The client has approved the delivery."
+                  : "Keep the delivery moving."}
+            </h2>
+
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-500">
+              {paid
+                ? "Payment has been confirmed and your client can now download the delivered files."
+                : approved
+                  ? "The work has been approved. Downloads remain locked until you confirm that payment has been received."
+                  : "Move the project through delivery, approval and payment. Downloads remain locked until payment is confirmed."}
+            </p>
+          </div>
+        </div>
+
+        {/* Current state */}
+        <div
+          className={[
+            "flex shrink-0 items-center gap-3 rounded-2xl border px-4 py-3",
+            paid
+              ? "border-emerald-100 bg-emerald-50/70"
+              : "border-blue-100 bg-blue-50/50",
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "flex h-9 w-9 items-center justify-center rounded-xl",
+              paid
+                ? "bg-white text-emerald-600 shadow-sm"
+                : "bg-white text-blue-600 shadow-sm",
+            ].join(" ")}
+          >
+            {paid ? (
+              <IconShield className="h-4.5 w-4.5" />
+            ) : (
+              <IconLock className="h-4.5 w-4.5" />
+            )}
+          </div>
+
+          <div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+              Current state
+            </p>
+
+            <p
+              className={[
+                "mt-0.5 text-xs font-bold",
+                paid ? "text-emerald-700" : "text-blue-700",
+              ].join(" ")}
+            >
+              {paid
+                ? "Paid · Downloads unlocked"
+                : status === "APPROVED"
+                  ? "Approved · Payment pending"
+                  : "Delivered · Awaiting approval"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* ─────────────────────────────────────────
+        JOURNEY / STEPPER
+    ───────────────────────────────────────── */}
+    
+
+    {/* ─────────────────────────────────────────
+        STATUS CONTROL
+    ───────────────────────────────────────── */}
+    <div className="border-t border-blue-50/90 bg-slate-50/30 px-6 py-7 sm:px-8 lg:px-9">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+            Manage delivery
+          </p>
+
+          <p className="mt-1 text-xs text-slate-500">
+            Update the status as the client moves through the workflow.
+          </p>
+        </div>
+
+        {!paid && (
+          <div className="hidden items-center gap-1.5 rounded-full border border-blue-100 bg-white px-3 py-1.5 sm:flex">
+            <IconLock className="h-3 w-3 text-blue-500" />
+
+            <span className="text-[9px] font-semibold text-slate-500">
+              Downloads remain locked
+            </span>
+          </div>
+        )}
+
+        {paid && (
+          <div className="hidden items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 sm:flex">
+            <IconShield className="h-3 w-3 text-emerald-600" />
+
+            <span className="text-[9px] font-semibold text-emerald-700">
+              Downloads unlocked
+            </span>
+          </div>
+        )}
+      </div>
+
+      <DeliveryStatusControl
+        projectId={projectId}
+        currentStatus={status}
+      />
+    </div>
+  </div>
+</section>
   );
 }
 
@@ -352,6 +591,7 @@ export default async function ProjectDetailPage({
   });
 
   const isLive = true;
+  const isPaid = project.deliveryStatus === "PAID";
   const liveUrl = `${appUrl()}/${project.slug}`;
   const totalFiles = project.media.length;
   const approvedCount = project.media.filter((m) => m.approvalStatus === "APPROVED").length;
@@ -414,31 +654,142 @@ export default async function ProjectDetailPage({
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#08090B] text-white">
-      {/* Atmosphere */}
+    <main className="min-h-screen overflow-x-hidden bg-[#F5F8FD] text-slate-900" data-theme-root>
+      {/* Minimal ambient background */}
       <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute -left-52 -top-52 h-[700px] w-[700px] rounded-full blur-[170px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(245,200,66,0.065), transparent 68%)",
-          }}
-        />
-        <div
-          className="absolute right-[-250px] top-[22%] h-[680px] w-[680px] rounded-full blur-[180px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(232,136,26,0.035), transparent 70%)",
-          }}
-        />
+        <div className="absolute -left-48 -top-48 h-[520px] w-[520px] rounded-full bg-blue-100/40 blur-[120px]" />
+        <div className="absolute right-[-180px] top-[28%] h-[420px] w-[420px] rounded-full bg-sky-100/40 blur-[130px]" />
       </div>
 
+      <style>{`
+        .showwork-lift {
+          transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, border-color .22s ease, background-color .22s ease;
+        }
+        .showwork-lift:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 22px 55px -34px rgba(15,23,42,.42);
+        }
+        .showwork-nav-link {
+          transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .showwork-nav-link:hover {
+          transform: translateX(3px);
+        }
+        @keyframes showworkPulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(37,99,235,.18); }
+          50% { box-shadow: 0 0 0 7px rgba(37,99,235,0); }
+        }
+        .showwork-live-dot { animation: showworkPulse 2.2s ease-out infinite; }
+        .theme-content [class*="border-"] {
+          border-color: rgba(37,99,235,.20) !important;
+        }
+        .theme-content .border-blue-100,
+        .theme-content .border-blue-200,
+        .theme-content .border-blue-300 {
+          border-color: rgba(37,99,235,.28) !important;
+        }
+        .showwork-nav-link[data-active="true"] {
+          border-color: rgba(255,255,255,.22) !important;
+          background: rgba(255,255,255,.18) !important;
+          color: #fff !important;
+          box-shadow: 0 14px 34px -22px rgba(0,0,0,.5);
+        }
+        .showwork-nav-link[data-active="true"] .showwork-nav-icon {
+          background: #fff;
+          color: #1d4ed8;
+          box-shadow: 0 10px 25px -15px rgba(0,0,0,.5);
+        }
+        .showwork-nav-link[data-active="true"] .showwork-nav-badge {
+          background: rgba(255,255,255,.18);
+          color: #fff;
+        }
+        .showwork-nav-link:not([data-active="true"]):hover {
+          transform: translateX(3px);
+          border-color: rgba(255,255,255,.16);
+          background: rgba(255,255,255,.09);
+          color: #fff;
+        }
+        .showwork-mobile-nav[data-active="true"] {
+          border-color: rgba(255,255,255,.35);
+          background: rgba(255,255,255,.18);
+          color: #fff;
+          box-shadow: 0 10px 25px -18px rgba(0,0,0,.55);
+        }
+        [data-workspace-panel][hidden],
+        [data-workspace-title][hidden] {
+          display: none !important;
+        }
+
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content {
+          background: #080b12;
+          color: #f8fafc;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-white {
+          background-color: #101722 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-slate-50 {
+          background-color: #141c28 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-slate-100 {
+          background-color: #1a2432 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="border-slate-"] {
+          border-color: rgba(96,165,250,.28) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="text-slate-900"] {
+          color: #f8fafc !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="text-slate-700"],
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="text-slate-600"],
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="text-slate-500"] {
+          color: #94a3b8 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content [class*="text-slate-400"] {
+          color: #64748b !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .text-blue-700 {
+          color: #93c5fd !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-blue-50 {
+          background-color: rgba(37,99,235,.16) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .border-blue-200 {
+          border-color: rgba(96,165,250,.25) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .text-emerald-600 {
+          color: #6ee7b7 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .text-orange-600 {
+          color: #fdba74 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+          border-color: rgba(96,165,250,.28) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-blue-50 {
+          background-color: rgba(37,99,235,.14) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-emerald-100 {
+          background-color: rgba(16,185,129,.14) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-amber-100 {
+          background-color: rgba(245,158,11,.14) !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-slate-100 {
+          background-color: #1a2432 !important;
+        }
+        [data-theme-root]:has(#theme-toggle:checked) .theme-content .bg-white\/75 {
+          background-color: rgba(16,23,34,.75) !important;
+        }
+      `}</style>
+
+      <ProjectTabController initialView={activeView} />
+
       {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.045] bg-[#08090B]/88 backdrop-blur-2xl">
+      <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/15 bg-gradient-to-r from-[#123EA8] via-[#2563EB] to-[#4F8CFF] shadow-[0_18px_55px_-28px_rgba(20,68,180,.9)]">
         <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
             href="/dashboard/projects"
-            className="group inline-flex items-center gap-2.5 text-sm text-white/35 transition hover:text-white"
+            className="group inline-flex items-center gap-2.5 text-sm text-white/80 transition hover:text-white"
           >
             <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             <span className="hidden sm:inline">All projects</span>
@@ -447,14 +798,14 @@ export default async function ProjectDetailPage({
 
           <div className="flex min-w-0 items-center gap-3">
             <div className="hidden min-w-0 items-center gap-3 md:flex">
-              <span className="max-w-[260px] truncate text-xs font-medium text-white/55">
+              <span className="max-w-[260px] truncate text-xs font-medium text-white/90">
                 {project.clientName}
               </span>
-              <span className="h-3 w-px bg-white/[0.07]" />
+              <span className="h-3 w-px bg-white/25" />
             </div>
 
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-400/[0.055] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 bg-emerald-300/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-100">
+              <span className="showwork-live-dot h-1.5 w-1.5 rounded-full bg-emerald-400" />
               {isLive ? "Live" : "Offline"}
             </span>
 
@@ -462,20 +813,32 @@ export default async function ProjectDetailPage({
               href={liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.035] px-3.5 py-2 text-[11px] font-semibold text-white/55 transition hover:bg-white/[0.07] hover:text-white sm:inline-flex"
+              className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-white/15 sm:inline-flex"
             >
               Client view
               <IconExternal className="h-3.5 w-3.5" />
             </a>
+
+            <label
+              htmlFor="theme-toggle"
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/15"
+              title="Toggle dark mode"
+            >
+              <input id="theme-toggle" type="checkbox" className="sr-only" />
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+            </label>
           </div>
         </div>
       </header>
 
       {/* Mobile project identity */}
-      <div className="relative z-20 border-b border-white/[0.04] px-4 pb-4 pt-5 lg:hidden sm:px-6">
+      <div className="relative z-20 border-b border-blue-800 bg-[#2563EB] px-4 pb-4 pt-[88px] text-white lg:hidden sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#FFE28A]/55">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/65">
               Project workspace
             </p>
             <h1 className="mt-1 truncate text-xl font-semibold tracking-[-0.03em]">
@@ -483,8 +846,8 @@ export default async function ProjectDetailPage({
             </h1>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-lg font-semibold text-[#FFE28A]">{progressPercent}%</p>
-            <p className="text-[9px] uppercase tracking-[0.1em] text-white/20">approved</p>
+            <p className="text-lg font-semibold text-white">{progressPercent}%</p>
+            <p className="text-[9px] uppercase tracking-[0.1em] text-slate-400">approved</p>
           </div>
         </div>
 
@@ -499,11 +862,15 @@ export default async function ProjectDetailPage({
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex max-w-[1600px]">
-        {/* Desktop sidebar */}
-        <aside className="sticky top-[68px] hidden h-[calc(100vh-68px)] w-[286px] shrink-0 border-r border-white/[0.045] lg:flex lg:flex-col">
-          <div className="border-b border-white/[0.045] p-5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#FFE28A]/50">
+      <div className="relative z-10 min-h-screen lg:pl-[292px]">
+        {/* Desktop sidebar — fixed independently from the document scroll */}
+        <aside className="fixed bottom-0 left-0 top-[68px] z-[90] hidden w-[292px] border-r border-white/15 bg-gradient-to-b from-[#123EA8] via-[#2563EB] to-[#17398F] text-white shadow-[22px_0_60px_-36px_rgba(18,62,168,.9)] lg:flex lg:flex-col">
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -left-24 top-20 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+            <div className="absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-indigo-950/25 blur-3xl" />
+          </div>
+          <div className="relative border-b border-white/15 border-white/15 p-5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[white]">
               Project workspace
             </p>
 
@@ -513,31 +880,31 @@ export default async function ProjectDetailPage({
                 field="clientName"
                 value={project.clientName}
                 displayClassName="block max-w-full truncate text-xl font-semibold tracking-[-0.03em] text-white"
-                inputClassName="w-full rounded-xl px-3 py-2 text-base font-semibold text-white"
+                inputClassName="w-full rounded-xl bg-white/10 px-3 py-2 text-base font-semibold text-white"
                 confirmMessage="Renaming this project will also change its link. Any link you've already sent your client will stop working. Continue?"
               />
             </div>
 
-            <div className="mt-5 rounded-2xl border border-white/[0.05] bg-white/[0.025] p-4">
+            <div className="mt-5 rounded-2xl border border-white/20 bg-white/[0.12] p-4 shadow-[0_18px_45px_-28px_rgba(0,0,0,.45)] backdrop-blur-xl">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-white/30">Approval progress</span>
-                <span className="text-xs font-semibold text-[#FFE28A]">{progressPercent}%</span>
+                <span className="text-[10px] font-medium text-white/65">Approval progress</span>
+                <span className="text-xs font-semibold text-white">{progressPercent}%</span>
               </div>
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15">
                 <div
                   className="h-full rounded-full"
                   style={{ width: `${progressPercent}%`, background: COLOR.gold }}
                 />
               </div>
-              <div className="mt-3 flex items-center justify-between text-[9px] text-white/20">
+              <div className="mt-3 flex items-center justify-between text-[9px] text-white/50">
                 <span>{approvedCount} approved</span>
                 <span>{totalFiles} files</span>
               </div>
             </div>
           </div>
 
-          <nav className="flex-1 overflow-y-auto p-3">
-            <p className="px-3 pb-2 pt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/16">
+          <nav className="relative flex-1 overflow-y-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <p className="px-3 pb-2 pt-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/45">
               Workspace
             </p>
 
@@ -559,7 +926,7 @@ export default async function ProjectDetailPage({
               />
             </div>
 
-            <p className="px-3 pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/16">
+            <p className="px-3 pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/45">
               Client
             </p>
 
@@ -581,7 +948,7 @@ export default async function ProjectDetailPage({
               />
             </div>
 
-            <p className="px-3 pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/16">
+            <p className="px-3 pb-2 pt-6 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/45">
               Collaboration
             </p>
 
@@ -594,12 +961,12 @@ export default async function ProjectDetailPage({
             />
           </nav>
 
-          <div className="border-t border-white/[0.045] p-3">
+          <div className="relative border-t border-white/15 p-3">
             <a
               href={liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center justify-between rounded-2xl border border-white/[0.055] bg-white/[0.028] px-4 py-3 text-xs font-semibold text-white/52 transition hover:bg-white/[0.06] hover:text-white"
+              className="group flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-xs font-semibold text-white transition hover:bg-white/15"
             >
               <span>Open client portal</span>
               <IconExternal className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -608,7 +975,7 @@ export default async function ProjectDetailPage({
             <a
               href={`/api/projects/${project.id}/report`}
               download
-              className="mt-2 flex items-center gap-2 rounded-xl px-4 py-2.5 text-[11px] font-medium text-white/25 transition hover:bg-white/[0.025] hover:text-white/55"
+              className="mt-2 flex items-center gap-2 rounded-xl px-4 py-2.5 text-[11px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
             >
               <IconDownload className="h-3.5 w-3.5" />
               Download project report
@@ -617,25 +984,32 @@ export default async function ProjectDetailPage({
         </aside>
 
         {/* Main content */}
-        <section className="min-w-0 flex-1">
+        <section className="theme-content min-h-screen min-w-0 pt-[68px]">
           <div className="mx-auto max-w-[1120px] px-4 pb-24 pt-8 sm:px-6 md:pt-10 lg:px-10 lg:pb-28 lg:pt-12">
             {/* Page title */}
-            <div className="mb-9 border-b border-white/[0.045] pb-8">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#FFE28A]/65">
-                {pageMeta[activeView].eyebrow}
-              </p>
-              <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-[1.02] tracking-[-0.045em] text-white sm:text-4xl md:text-[46px]">
-                {pageMeta[activeView].title}
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/30">
-                {pageMeta[activeView].description}
-              </p>
+            <div className="mb-9 border-b border-blue-200/70 pb-8">
+              {(Object.keys(pageMeta) as WorkspaceView[]).map((viewKey) => {
+                const meta = pageMeta[viewKey];
+                return (
+                  <div key={viewKey} data-workspace-title={viewKey} hidden={viewKey !== activeView}>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#1D4ED8]/70">
+                      {meta.eyebrow}
+                    </p>
+                    <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-[1.02] tracking-[-0.045em] text-slate-900 sm:text-4xl md:text-[46px]">
+                      {meta.title}
+                    </h1>
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-500">
+                      {meta.description}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
 
             {/* =====================================================
                 OVERVIEW
             ====================================================== */}
-            {activeView === "overview" && (
+            <div data-workspace-panel="overview" hidden={activeView !== "overview"}>
               <div>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <Stat value={totalFiles} label="Files" />
@@ -644,28 +1018,26 @@ export default async function ProjectDetailPage({
                   <Stat value={viewerEmails.length} label="Client visits" />
                 </div>
 
-                <div className="mt-6">
-                  <DeliveryStatusControl
-                    projectId={project.id}
-                    currentStatus={project.deliveryStatus}
-                  />
-                </div>
+                <PaymentReleasePanel
+                  projectId={project.id}
+                  status={project.deliveryStatus}
+                />
 
                 {/* Project health */}
                 <div className="mt-8 grid gap-4 xl:grid-cols-[1.25fr_.75fr]">
-                  <div className="overflow-hidden rounded-[28px] border border-white/[0.05] bg-[#111318]">
-                    <div className="border-b border-white/[0.045] p-6 sm:p-7">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-white/24">
+                  <div className="showwork-lift overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_55px_-38px_rgba(15,23,42,.32)]">
+                    <div className="border-b border-slate-200 p-6 sm:p-7">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-400">
                         Delivery health
                       </p>
                       <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                          <p className="text-4xl font-semibold tracking-[-0.05em] text-white">
+                          <p className="text-4xl font-semibold tracking-[-0.05em] text-slate-900">
                             {progressPercent}%
                           </p>
-                          <p className="mt-1 text-sm text-white/28">of files approved</p>
+                          <p className="mt-1 text-sm text-slate-500">of files approved</p>
                         </div>
-                        <p className="max-w-sm text-xs leading-5 text-white/28">
+                        <p className="max-w-sm text-xs leading-5 text-slate-500">
                           {totalFiles === 0
                             ? "Add the first files to begin this delivery."
                             : needsRevisionCount > 0
@@ -678,7 +1050,7 @@ export default async function ProjectDetailPage({
                     </div>
 
                     <div className="p-6 sm:p-7">
-                      <div className="h-2.5 overflow-hidden rounded-full bg-white/[0.05]">
+                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{ width: `${progressPercent}%`, background: COLOR.gold }}
@@ -687,40 +1059,44 @@ export default async function ProjectDetailPage({
 
                       <div className="mt-5 grid grid-cols-3 gap-3">
                         <div>
-                          <p className="text-lg font-semibold text-emerald-300">{approvedCount}</p>
-                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-white/20">Approved</p>
+                          <p className="text-lg font-semibold text-emerald-600">{approvedCount}</p>
+                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">Approved</p>
                         </div>
                         <div>
-                          <p className="text-lg font-semibold text-orange-300">{needsRevisionCount}</p>
-                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-white/20">Revisions</p>
+                          <p className="text-lg font-semibold text-orange-600">{needsRevisionCount}</p>
+                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">Revisions</p>
                         </div>
                         <div>
-                          <p className="text-lg font-semibold text-white/70">{pendingCount}</p>
-                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-white/20">Pending</p>
+                          <p className="text-lg font-semibold text-slate-700">{pendingCount}</p>
+                          <p className="mt-1 text-[9px] uppercase tracking-[0.1em] text-slate-400">Pending</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-[28px] border border-white/[0.05] bg-white/[0.025] p-6 sm:p-7">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-white/24">
+                  <div className="showwork-lift rounded-[28px] border border-slate-200 bg-slate-50 p-6 sm:p-7 shadow-[0_18px_50px_-40px_rgba(15,23,42,.3)]">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-400">
                       Quick actions
                     </p>
 
                     <div className="mt-5 space-y-2">
                       <Link
-                        href={viewHref("work")}
+  data-workspace-tab="work"
+  data-workspace-nav="work"
+  href={viewHref("work")}
                         scroll={false}
-                        className="group flex items-center justify-between rounded-2xl bg-white/[0.035] px-4 py-3.5 text-sm font-medium text-white/60 transition hover:bg-white/[0.065] hover:text-white"
+                        className="group flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
                       >
                         <span>Manage project files</span>
                         <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </Link>
 
                       <Link
+                        data-workspace-tab
+                        data-workspace-nav="access"
                         href={viewHref("access")}
                         scroll={false}
-                        className="group flex items-center justify-between rounded-2xl bg-white/[0.035] px-4 py-3.5 text-sm font-medium text-white/60 transition hover:bg-white/[0.065] hover:text-white"
+                        className="group flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
                       >
                         <span>Manage client access</span>
                         <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -730,7 +1106,7 @@ export default async function ProjectDetailPage({
                         href={liveUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex items-center justify-between rounded-2xl bg-white px-4 py-3.5 text-sm font-semibold text-black transition hover:bg-white/90"
+                        className="group flex items-center justify-between rounded-2xl bg-[#2563EB] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_-18px_rgba(37,99,235,.7)] transition hover:bg-[#1D4ED8]"
                       >
                         <span>Open client portal</span>
                         <IconExternal className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -740,16 +1116,16 @@ export default async function ProjectDetailPage({
                 </div>
 
                 {/* Next attention */}
-                <div className="mt-5 rounded-[28px] border border-white/[0.05] bg-white/[0.022] p-6 sm:p-7">
+                <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50 p-6 sm:p-7">
                   <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-start gap-4">
                       <div
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
                           needsRevisionCount > 0
-                            ? "bg-orange-400/10 text-orange-300"
+                            ? "bg-orange-400/10 text-orange-600"
                             : allApproved
-                              ? "bg-emerald-400/10 text-emerald-300"
-                              : "bg-[#F5C842]/10 text-[#FFE28A]"
+                              ? "bg-emerald-400/10 text-emerald-600"
+                              : "bg-[#2563EB]/10 text-[#1D4ED8]"
                         }`}
                       >
                         {needsRevisionCount > 0 ? (
@@ -762,7 +1138,7 @@ export default async function ProjectDetailPage({
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-sm font-semibold text-slate-900">
                           {needsRevisionCount > 0
                             ? "Revisions need your attention."
                             : allApproved
@@ -771,7 +1147,7 @@ export default async function ProjectDetailPage({
                                 ? "Start by adding the work."
                                 : "The project is waiting on client review."}
                         </p>
-                        <p className="mt-1 max-w-xl text-xs leading-5 text-white/28">
+                        <p className="mt-1 max-w-xl text-xs leading-5 text-slate-500">
                           {needsRevisionCount > 0
                             ? "Open Work to review the notes attached to the affected files."
                             : allApproved
@@ -784,9 +1160,11 @@ export default async function ProjectDetailPage({
                     </div>
 
                     <Link
+                      data-workspace-tab
+                      data-workspace-nav="work"
                       href={viewHref("work")}
                       scroll={false}
-                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.035] px-4 py-3 text-xs font-semibold text-white/55 transition hover:bg-white/[0.07] hover:text-white"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
                     >
                       Open work
                       <IconArrowRight className="h-3.5 w-3.5" />
@@ -794,20 +1172,20 @@ export default async function ProjectDetailPage({
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* =====================================================
                 WORK
             ====================================================== */}
-            {activeView === "work" && (
+            <div data-workspace-panel="work" hidden={activeView !== "work"}>
               <div>
-                <div className="mb-7 rounded-[28px] border border-[#F5C842]/10 bg-[#171518] p-6 sm:p-7">
+                <div className="mb-7 rounded-[28px] border border-[#2563EB]/10 bg-[#F8FAFD] p-6 sm:p-7">
                   <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-[#FFE28A]">
+                      <p className="text-sm font-semibold text-[#1D4ED8]">
                         Keep the project moving.
                       </p>
-                      <p className="mt-2 max-w-xl text-xs leading-5 text-white/32">
+                      <p className="mt-2 max-w-xl text-xs leading-5 text-slate-500">
                         Add new files or sections whenever the work evolves. Your
                         client will always see the latest version in their delivery.
                       </p>
@@ -825,7 +1203,7 @@ export default async function ProjectDetailPage({
                 {needsRevisionCount > 0 && (
                   <div className="mb-7 rounded-[22px] border border-orange-400/10 bg-orange-400/[0.06] px-5 py-5">
                     <div className="flex items-start gap-4">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-400/10 text-orange-300">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-400/10 text-orange-600">
                         <IconRevision className="h-4 w-4" />
                       </div>
                       <div>
@@ -845,7 +1223,7 @@ export default async function ProjectDetailPage({
                 {allApproved && needsRevisionCount === 0 && (
                   <div className="mb-7 rounded-[22px] border border-emerald-400/10 bg-emerald-400/[0.055] px-5 py-5">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-300">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-emerald-600">
                         <IconCheck className="h-4 w-4" />
                       </div>
                       <div>
@@ -859,6 +1237,11 @@ export default async function ProjectDetailPage({
                     </div>
                   </div>
                 )}
+
+                <PaymentReleasePanel
+                  projectId={project.id}
+                  status={project.deliveryStatus}
+                />
 
                 <SectionIntro
                   eyebrow="Project files"
@@ -874,10 +1257,10 @@ export default async function ProjectDetailPage({
                   action={
                     totalFiles > 0 ? (
                       <div className="hidden items-center gap-3 sm:flex">
-                        <span className="text-xs text-white/20">
+                        <span className="text-xs text-slate-400">
                           {sectionsWithFiles} section{sectionsWithFiles === 1 ? "" : "s"}
                         </span>
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.07]">
+                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-100">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{ width: `${progressPercent}%`, background: COLOR.gold }}
@@ -889,14 +1272,14 @@ export default async function ProjectDetailPage({
                 />
 
                 {totalFiles === 0 ? (
-                  <div className="rounded-[28px] border border-white/[0.05] bg-[#121419] px-6 py-20 text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
-                      <IconFiles className="h-6 w-6 text-white/25" />
+                  <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-20 text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                      <IconFiles className="h-6 w-6 text-slate-500" />
                     </div>
-                    <h3 className="mt-5 text-base font-semibold text-white">
+                    <h3 className="mt-5 text-base font-semibold text-slate-900">
                       Nothing here yet.
                     </h3>
-                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/25">
+                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
                       Add your first section and start uploading the work you want
                       your client to see.
                     </p>
@@ -961,14 +1344,14 @@ export default async function ProjectDetailPage({
                         {section.folders.map((folder) => (
                           <div
                             key={folder.id}
-                            className="mt-8 rounded-[24px] border border-white/[0.04] bg-white/[0.022] p-5 sm:p-6"
+                            className="mt-8 rounded-[24px] border border-slate-200 bg-slate-50 p-5 sm:p-6"
                           >
                             <div className="mb-5 flex items-center justify-between gap-4">
                               <div>
-                                <p className="text-sm font-semibold text-white/70">
+                                <p className="text-sm font-semibold text-slate-700">
                                   {folder.name}
                                 </p>
-                                <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-white/20">
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-slate-400">
                                   {folder.media.length} file{folder.media.length === 1 ? "" : "s"}
                                 </p>
                               </div>
@@ -1011,8 +1394,8 @@ export default async function ProjectDetailPage({
                     {ungroupedMedia.length > 0 && (
                       <div>
                         <div className="mb-5">
-                          <p className="text-sm font-semibold text-white/70">Other files</p>
-                          <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-white/20">
+                          <p className="text-sm font-semibold text-slate-700">Other files</p>
+                          <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-slate-400">
                             {ungroupedMedia.length} file{ungroupedMedia.length === 1 ? "" : "s"}
                           </p>
                         </div>
@@ -1051,12 +1434,12 @@ export default async function ProjectDetailPage({
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
             {/* =====================================================
                 CLIENT ACCESS
             ====================================================== */}
-            {activeView === "access" && (
+            <div data-workspace-panel="access" hidden={activeView !== "access"}>
               <div>
                 <SectionIntro
                   eyebrow="Client portal"
@@ -1065,28 +1448,33 @@ export default async function ProjectDetailPage({
                   icon={<IconGlobe className="h-5 w-5" />}
                 />
 
-                <div className="overflow-hidden rounded-[30px] border border-white/[0.05] bg-[#121419]">
-                  <div className="border-b border-white/[0.045] p-6 sm:p-8">
+                <div className="mb-5 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-blue-900 shadow-[0_12px_35px_-28px_rgba(37,99,235,.4)]">
+                  <IconLock className="h-4 w-4 shrink-0 text-blue-600" />
+                  <p className="text-xs leading-5"><span className="font-bold">Client downloads:</span> {isPaid ? "unlocked because payment is confirmed." : "locked until you confirm the project has been paid."}</p>
+                </div>
+
+                <div className="showwork-lift overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_22px_65px_-42px_rgba(15,23,42,.34)]">
+                  <div className="border-b border-slate-200 p-6 sm:p-8">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-white">Client portal</span>
+                          <span className="text-sm font-semibold text-slate-900">Client portal</span>
                           <span className="inline-flex items-center gap-1.5 text-[10px] font-medium text-emerald-400">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                             Live
                           </span>
                         </div>
-                        <p className="mt-2 max-w-lg text-xs leading-5 text-white/30">
+                        <p className="mt-2 max-w-lg text-xs leading-5 text-slate-500">
                           Share this link with your client. It opens the polished,
                           client-facing version of this delivery.
                         </p>
 
-                        <div className="mt-5 flex min-w-0 items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.025] px-4 py-3">
+                        <div className="mt-5 flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                           <a
                             href={liveUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="min-w-0 flex-1 truncate text-xs font-medium text-[#FFE28A]"
+                            className="min-w-0 flex-1 truncate text-xs font-medium text-[#1D4ED8]"
                           >
                             {liveUrl}
                           </a>
@@ -1098,7 +1486,7 @@ export default async function ProjectDetailPage({
                         href={liveUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-white/90"
+                        className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-3 text-xs font-semibold text-white shadow-[0_12px_30px_-18px_rgba(37,99,235,.7)] transition hover:bg-[#1D4ED8]"
                       >
                         Open client portal
                         <IconExternal className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -1107,13 +1495,13 @@ export default async function ProjectDetailPage({
                   </div>
 
                   <div className="p-6 sm:p-8">
-                    <div className="rounded-[22px] border border-white/[0.045] bg-white/[0.025] p-5">
+                    <div className="showwork-lift rounded-[22px] border border-slate-200 bg-slate-50 p-5">
                       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/25">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                             Client access code
                           </p>
-                          <p className="mt-1.5 text-xs leading-5 text-white/25">
+                          <p className="mt-1.5 text-xs leading-5 text-slate-500">
                             Your client uses this code to unlock the delivery.
                           </p>
                         </div>
@@ -1124,23 +1512,23 @@ export default async function ProjectDetailPage({
                               projectId={project.id}
                               field="accessCode"
                               value={project.accessCode}
-                              displayClassName="rounded-xl bg-white/[0.06] px-4 py-2.5 font-mono text-sm font-semibold tracking-[0.12em] text-white"
+                              displayClassName="rounded-xl bg-white/[0.06] px-4 py-2.5 font-mono text-sm font-semibold tracking-[0.12em] text-slate-900"
                               displayStyle={{ background: "rgba(255,255,255,0.06)" }}
-                              inputClassName="rounded-xl px-4 py-2.5 font-mono text-sm font-semibold text-white"
+                              inputClassName="rounded-xl px-4 py-2.5 font-mono text-sm font-semibold text-slate-900"
                               monospace
                             />
                             <CopyLinkButton url={project.accessCode} />
                           </div>
                         ) : (
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="text-xs text-white/25">No access code set</span>
+                            <span className="text-xs text-slate-500">No access code set</span>
                             <EditableField
                               projectId={project.id}
                               field="accessCode"
                               value=""
-                              displayClassName="rounded-xl bg-[#F5C842]/10 px-4 py-2.5 text-xs font-semibold text-[#F5C842]"
+                              displayClassName="rounded-xl bg-[#2563EB]/10 px-4 py-2.5 text-xs font-semibold text-[#2563EB]"
                               displayStyle={{ background: "rgba(245,200,66,0.10)", color: COLOR.gold }}
-                              inputClassName="rounded-xl px-4 py-2.5 font-mono text-sm font-semibold text-white"
+                              inputClassName="rounded-xl px-4 py-2.5 font-mono text-sm font-semibold text-slate-900"
                               monospace
                             />
                           </div>
@@ -1150,21 +1538,21 @@ export default async function ProjectDetailPage({
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-[24px] border border-white/[0.045] bg-white/[0.022] p-5 sm:p-6">
-                  <p className="text-xs font-semibold text-white/60">A cleaner client experience</p>
-                  <p className="mt-2 max-w-2xl text-xs leading-5 text-white/25">
+                <div className="mt-5 rounded-[24px] border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                  <p className="text-xs font-semibold text-slate-700">A cleaner client experience</p>
+                  <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
                     The client portal is intentionally separate from this workspace.
                     Your team gets the controls; your client gets only the presentation,
                     review and approval experience they need.
                   </p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* =====================================================
                 TEAM
             ====================================================== */}
-            {activeView === "team" && (
+            <div data-workspace-panel="team" hidden={activeView !== "team"}>
               <div>
                 <SectionIntro
                   eyebrow="Team"
@@ -1173,16 +1561,16 @@ export default async function ProjectDetailPage({
                   icon={<IconUsers className="h-5 w-5" />}
                 />
 
-                <div className="rounded-[28px] border border-white/[0.045] bg-white/[0.02] p-1">
+                <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-1">
                   <CollaboratorsPanel projectId={project.id} />
                 </div>
               </div>
-            )}
+            </div>
 
             {/* =====================================================
                 ACTIVITY
             ====================================================== */}
-            {activeView === "activity" && (
+            <div data-workspace-panel="activity" hidden={activeView !== "activity"}>
               <div>
                 <SectionIntro
                   eyebrow="Client activity"
@@ -1192,52 +1580,52 @@ export default async function ProjectDetailPage({
                 />
 
                 {viewerEmails.length === 0 ? (
-                  <div className="rounded-[28px] border border-white/[0.045] bg-white/[0.022] px-6 py-16 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.035] text-white/25">
+                  <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-6 py-16 text-center">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
                       <IconActivity className="h-5 w-5" />
                     </div>
-                    <p className="mt-4 text-sm font-medium text-white/40">
+                    <p className="mt-4 text-sm font-medium text-slate-500">
                       No client activity yet.
                     </p>
-                    <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-white/22">
+                    <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-slate-400">
                       Once someone opens the delivery, their visit will appear here.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-hidden rounded-[28px] border border-white/[0.045] bg-white/[0.022]">
-                    <div className="border-b border-white/[0.04] px-5 py-4 sm:px-6">
+                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+                    <div className="border-b border-slate-200 px-5 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-white/50">
+                        <p className="text-xs font-semibold text-slate-600">
                           Recent visitors
                         </p>
-                        <span className="rounded-full bg-white/[0.04] px-2.5 py-1 text-[9px] font-semibold text-white/25">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-semibold text-slate-500">
                           {viewerEmails.length}
                         </span>
                       </div>
                     </div>
 
-                    <div className="divide-y divide-white/[0.04]">
+                    <div className="divide-y divide-slate-200">
                       {viewerEmails.map((viewer) => (
                         <div
                           key={viewer.id}
-                          className="flex flex-col gap-2 px-5 py-4 transition hover:bg-white/[0.018] sm:flex-row sm:items-center sm:justify-between sm:px-6"
+                          className="flex flex-col gap-2 px-5 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:px-6"
                         >
                           <div className="min-w-0">
                             {viewer.name ? (
-                              <p className="truncate text-sm font-medium text-white/72">
+                              <p className="truncate text-sm font-medium text-slate-700">
                                 {viewer.name}
                               </p>
                             ) : null}
                             <p
                               className={`truncate text-xs ${
-                                viewer.name ? "mt-0.5 text-white/30" : "text-white/65"
+                                viewer.name ? "mt-0.5 text-slate-500" : "text-slate-900/65"
                               }`}
                             >
                               {viewer.email}
                             </p>
                           </div>
 
-                          <span className="shrink-0 text-[10px] text-white/20">
+                          <span className="shrink-0 text-[10px] text-slate-400">
                             {new Date(viewer.viewedAt).toLocaleDateString("en-NG", {
                               day: "numeric",
                               month: "short",
@@ -1252,13 +1640,13 @@ export default async function ProjectDetailPage({
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
-            <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/[0.04] pt-7 text-center sm:flex-row sm:text-left">
-              <p className="text-xs text-white/18">{project.clientName} · Showwork</p>
+            <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-7 text-center sm:flex-row sm:text-left">
+              <p className="text-xs text-slate-400">{project.clientName} · Showwork</p>
               <Link
                 href="/dashboard/projects"
-                className="text-xs text-white/24 transition hover:text-white/55"
+                className="text-xs text-slate-400 transition hover:text-slate-600"
               >
                 Back to all projects
               </Link>

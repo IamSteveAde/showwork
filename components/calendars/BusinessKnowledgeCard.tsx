@@ -176,7 +176,32 @@ export default function BusinessKnowledgeCard({
       }
     );
 
-    const presignData = await presignRes.json();
+    const presignContentType = presignRes.headers.get("content-type") ?? "";
+
+let presignData: {
+  uploadUrl?: string;
+  fileKey?: string;
+  fileSize?: number;
+  reservationId?: string;
+  error?: string;
+};
+
+if (presignContentType.includes("application/json")) {
+  presignData = await presignRes.json();
+} else {
+  const rawResponse = await presignRes.text();
+
+  console.error("Business document presign returned non-JSON:", {
+    status: presignRes.status,
+    statusText: presignRes.statusText,
+    contentType: presignContentType,
+    response: rawResponse.slice(0, 1000),
+  });
+
+  throw new Error(
+    `Upload preparation failed (${presignRes.status}). The server returned an unexpected response.`
+  );
+}
 
     if (!presignRes.ok) {
       throw new Error(

@@ -1,360 +1,541 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  Camera,
   Check,
-  Layers3,
+  Play,
   Sparkles,
   Users,
-  Workflow,
+  WandSparkles,
 } from "lucide-react";
 
 const COLOR = {
-  black: "#07080A",
+  black: "#101828",
   white: "#FFFFFF",
-  blue: "#2478FF",
-  blueSoft: "#AFC9FF",
-  orange: "#E8881A",
+  blue: "#1768E8",
+  blueSoft: "#EEF5FF",
+  border: "#E4E7EC",
+  muted: "#667085",
+  subtle: "#98A2B3",
 };
 
 const COMMUNITY_URL =
   "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
 
+const SOCIAL_TUTORIAL_URL =
+  "https://youtu.be/2UFJNWqFnxQ?si=3M8DOLyCvLhKaukN";
+
 const ROUTES = [
   {
-    key: "portfolio",
+    key: "creator",
     number: "01",
-    eyebrow: "YOUR PRESENCE",
-    title: "Build your portfolio.",
+    eyebrow: "FOR CREATORS",
+    title: "You make the work.",
     description:
-      "Create one beautiful link for your work, your story and the clients you want to reach.",
+      "For videographers, photographers, designers and creative professionals who need a better way to present and deliver their work.",
+    href: "/dashboard/portfolio",
+    icon: Camera,
+    tag: "Portfolio + delivery",
+  },
+  {
+    key: "social",
+    number: "02",
+    eyebrow: "FOR SOCIAL MEDIA TEAMS",
+    title: "You manage the content.",
+    description:
+      "Build client workspaces, give AI the business context, generate content calendars and manage the entire social media workflow in one place.",
+    href: "/dashboard/calendars",
+    icon: WandSparkles,
+    tag: "AI-powered client workspaces",
+    tutorial: true,
+  },
+  {
+    key: "portfolio",
+    number: "03",
+    eyebrow: "FOR YOUR PROFESSIONAL PRESENCE",
+    title: "You need a portfolio.",
+    description:
+      "Create a polished portfolio that gives your work one professional home and makes it easier for people to discover what you do.",
     href: "/dashboard/portfolio",
     icon: BriefcaseBusiness,
-    accent: "blue",
-    meta: "Free forever",
-  },
-  {
-    key: "delivery",
-    number: "02",
-    eyebrow: "YOUR PROJECTS",
-    title: "Deliver a project.",
-    description:
-      "Give every client a professional place to receive work, review files, give feedback and approve.",
-    href: "/dashboard/new",
-    icon: Workflow,
-    accent: "dark",
-    meta: "For project delivery",
-  },
-  {
-    key: "workspace",
-    number: "03",
-    eyebrow: "YOUR SOCIAL MEDIA CALENDAR",
-    title: "Create a client content calendar.",
-    description:
-      "Build an ongoing space where you and your client can plan, present and approve content together.",
-    href: "/dashboard/calendars",
-    icon: Layers3,
-    accent: "light",
-    meta: "For ongoing work",
+    tag: "Free portfolio",
   },
 ];
 
 export default function WelcomePage() {
+  const router = useRouter();
+
+  const handleCardClick = (href: string) => {
+    router.push(href);
+  };
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#07080A] text-white">
+    <main className="min-h-screen bg-white text-[#101828]">
       {/* =========================================================
-          BACKGROUND
+          HEADER
       ========================================================== */}
 
-      {/* Base image */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/images/hero1.png"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{
-          opacity: 0.14,
-          filter: "saturate(0.7)",
-        }}
-      />
-
-      {/* Main atmosphere */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 25%, rgba(36,120,255,0.16), transparent 34%), radial-gradient(circle at 85% 75%, rgba(36,120,255,0.08), transparent 28%), linear-gradient(180deg, rgba(7,8,10,0.72) 0%, rgba(7,8,10,0.94) 55%, #07080A 100%)",
-        }}
-      />
-
-      {/* Fine grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
-          maskImage:
-            "radial-gradient(ellipse at center, black 0%, transparent 72%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at center, black 0%, transparent 72%)",
-        }}
-      />
-
-      {/* Architectural rings */}
-      <div className="pointer-events-none absolute left-1/2 top-[38%] h-[760px] w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.035]" />
-      <div className="pointer-events-none absolute left-1/2 top-[38%] h-[570px] w-[570px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.035]" />
-      <div className="pointer-events-none absolute left-1/2 top-[38%] h-[390px] w-[390px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-400/[0.08]" />
-
-      {/* Small blue light */}
-      <motion.div
-        animate={{
-          scale: [1, 1.12, 1],
-          opacity: [0.25, 0.4, 0.25],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="pointer-events-none absolute left-1/2 top-[30%] h-40 w-40 -translate-x-1/2 rounded-full bg-blue-500/20 blur-3xl"
-      />
-
-      {/* =========================================================
-          CONTENT
-      ========================================================== */}
-
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-7 sm:px-8 sm:py-10 lg:px-12">
-        {/* TOP BAR */}
-        <motion.header
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center justify-between"
-        >
-          <Link href="/dashboard" className="group flex items-center">
-  <img
-    src="/images/logo/swwhite.svg"
-    alt="Showwork"
-    className="h-8 w-auto transition-opacity duration-300 group-hover:opacity-80"
-  />
-</Link>
+      <header className="border-b border-[#EAECF0] bg-white">
+        <div className="mx-auto flex h-[72px] w-full max-w-[1320px] items-center justify-between px-5 sm:px-8 lg:px-10">
+          <Link
+            href="/dashboard"
+            className="group flex items-center"
+            aria-label="Showwork"
+          >
+            <img
+              src="/images/logo/swwhite.svg"
+              alt="Showwork"
+              className="h-7 w-auto brightness-0"
+            />
+          </Link>
 
           <Link
             href="/dashboard"
-            className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] font-medium text-white/50 backdrop-blur-md transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+            className="group inline-flex items-center gap-2 rounded-full border border-[#E4E7EC] bg-white px-4 py-2 text-[11px] font-semibold text-[#475467] transition hover:border-[#CBD5E1] hover:bg-[#F9FAFB] hover:text-[#101828]"
           >
             Skip for now
             <ArrowRight
-              size={12}
+              size={13}
               className="transition-transform group-hover:translate-x-0.5"
             />
           </Link>
-        </motion.header>
+        </div>
+      </header>
 
-        {/* HERO COPY */}
-        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center py-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.8,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="text-center"
-          >
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/[0.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-300">
-              <Sparkles size={11} />
-              Welcome to Showwork
-            </div>
+      {/* =========================================================
+          MAIN
+      ========================================================== */}
 
-            <h1 className="text-[clamp(3rem,7vw,5.8rem)] font-semibold leading-[0.91] tracking-[-0.075em] text-white">
-              Your work has
-              <br />
-              <span className="text-blue-400">a new home.</span>
-            </h1>
+      <div className="mx-auto w-full max-w-[1320px] px-5 pb-10 pt-14 sm:px-8 sm:pb-14 sm:pt-20 lg:px-10 lg:pt-24">
+        {/* HERO */}
 
-            <p className="mx-auto mt-7 max-w-xl text-sm leading-7 text-white/45 sm:text-base">
-              Showwork gives you the tools to present your work, deliver
-              projects and work with clients — all in one place.
-            </p>
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.7,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="mx-auto max-w-3xl text-center"
+        >
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#DDE9FF] bg-[#F5F8FF] px-3.5 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-[#1768E8]">
+            <Sparkles size={11} />
+            Welcome to Showwork
+          </div>
 
-            <div className="mt-7 flex items-center justify-center gap-5 text-[10px] font-medium uppercase tracking-[0.14em] text-white/25">
-              <span>Portfolio</span>
-              <span className="h-1 w-1 rounded-full bg-white/20" />
-              <span>Delivery</span>
-              <span className="h-1 w-1 rounded-full bg-white/20" />
-              <span>Workspace</span>
-            </div>
-          </motion.div>
+          <h1 className="mt-7 text-[clamp(2.8rem,6vw,5.4rem)] font-semibold leading-[0.94] tracking-[-0.07em] text-[#101828]">
+            What are you
+            <br />
+            <span className="text-[#1768E8]">building?</span>
+          </h1>
 
-          {/* =====================================================
-              OPTIONS
-          ====================================================== */}
+          <p className="mx-auto mt-6 max-w-[590px] text-[14px] leading-7 text-[#667085] sm:text-[15px]">
+            Showwork gives creative professionals the tools to present their
+            work, deliver projects and manage ongoing client content — all in
+            one place.
+          </p>
+        </motion.section>
 
-          <div className="mt-16 grid gap-4 md:grid-cols-3">
+        {/* =========================================================
+            OPTIONS
+        ========================================================== */}
+
+        <section className="mt-14 sm:mt-16">
+          <div className="grid gap-4 lg:grid-cols-3">
             {ROUTES.map((route, index) => {
               const Icon = route.icon;
+              const isSocial = route.key === "social";
 
               return (
-                <Link
+                <motion.div
                   key={route.key}
-                  href={route.href}
-                  className="group block h-full"
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.65,
+                    delay: 0.12 + index * 0.09,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
+                  className="group"
                 >
-                  <motion.div
-                    initial={{
-                      opacity: 0,
-                      y: 30,
+                  <div
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => handleCardClick(route.href)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleCardClick(route.href);
+                      }
                     }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                    }}
-                    transition={{
-                      duration: 0.65,
-                      delay: 0.25 + index * 0.1,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    whileHover={{
-                      y: -7,
-                    }}
-                    className="relative flex h-full min-h-[335px] flex-col overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.055] p-6 text-left backdrop-blur-xl transition-colors duration-300 group-hover:border-white/20 group-hover:bg-white/[0.08] sm:p-7"
+                    className={`
+                      relative
+                      flex
+                      min-h-[390px]
+                      h-full
+                      cursor-pointer
+                      flex-col
+                      overflow-hidden
+                      rounded-[28px]
+                      border
+                      p-6
+                      shadow-[0_2px_8px_rgba(16,24,40,0.025)]
+                      transition-all
+                      duration-300
+                      hover:-translate-y-1
+                      sm:p-7
+                      focus:outline-none
+                      focus:ring-2
+                      focus:ring-[#1768E8]
+                      focus:ring-offset-2
+                      ${
+                        isSocial
+                          ? "border-[#1768E8] bg-[#1768E8] text-white shadow-[0_18px_50px_rgba(23,104,232,0.18)] hover:border-[#0F5ACF] hover:shadow-[0_24px_60px_rgba(23,104,232,0.24)]"
+                          : "border-[#E4E7EC] bg-white hover:border-[#C9D8F2] hover:shadow-[0_18px_50px_rgba(16,24,40,0.08)]"
+                      }
+                    `}
                   >
-                    {/* Card glow */}
-                    <div
-                      className={`pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full blur-3xl transition-opacity duration-500 ${
-                        route.accent === "blue"
-                          ? "bg-blue-500/20 opacity-50 group-hover:opacity-100"
-                          : route.accent === "dark"
-                          ? "bg-white/10 opacity-20 group-hover:opacity-50"
-                          : "bg-blue-300/10 opacity-30 group-hover:opacity-80"
-                      }`}
-                    />
+                    {/* =================================================
+                        BLUE CARD DECORATIVE LINES
+                    ================================================== */}
 
-                    {/* Number */}
-                    <div className="relative flex items-center justify-between">
-                      <span className="text-[10px] font-bold tracking-[0.18em] text-white/20">
+                    {isSocial && (
+                      <>
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute -right-20 -top-24 h-[280px] w-[280px] rounded-full border border-white/10"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute -right-10 -top-14 h-[220px] w-[220px] rounded-full border border-white/[0.08]"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute right-[-80px] top-[130px] h-px w-[340px] rotate-[-32deg] bg-white/10"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute right-[-100px] top-[170px] h-px w-[360px] rotate-[-32deg] bg-white/[0.07]"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute bottom-[-80px] left-[-70px] h-[220px] w-[220px] rounded-full border border-white/[0.08]"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute bottom-10 left-[-90px] h-px w-[300px] rotate-[28deg] bg-white/[0.08]"
+                        />
+
+                        <div
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 opacity-[0.045]"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+                            backgroundSize: "34px 34px",
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {/* =================================================
+                        TOP
+                    ================================================== */}
+
+                    <div className="relative z-10 flex items-center justify-between">
+                      <span
+                        className={`text-[9px] font-bold tracking-[0.18em] ${
+                          isSocial ? "text-white/55" : "text-[#98A2B3]"
+                        }`}
+                      >
                         {route.number}
                       </span>
 
-                      <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-white/25">
-                        {route.meta}
+                      <span
+                        className={`rounded-full px-3 py-1.5 text-[8px] font-bold uppercase tracking-[0.12em] ${
+                          isSocial
+                            ? "bg-white/12 text-white/80"
+                            : "bg-[#F8FAFC] text-[#667085]"
+                        }`}
+                      >
+                        {route.tag}
                       </span>
                     </div>
 
-                    {/* Icon */}
-                    <div className="relative mt-9 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] transition duration-300 group-hover:border-blue-400/30 group-hover:bg-blue-400/10">
-                      <Icon
-                        size={19}
-                        className="text-white/60 transition group-hover:text-blue-300"
-                      />
+                    {/* =================================================
+                        ICON
+                    ================================================== */}
+
+                    <div
+                      className={`relative z-10 mt-9 flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 ${
+                        isSocial
+                          ? "bg-white text-[#1768E8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
+                          : "bg-[#F5F8FF] text-[#1768E8] group-hover:bg-[#1768E8] group-hover:text-white"
+                      }`}
+                    >
+                      <Icon size={20} strokeWidth={1.8} />
                     </div>
 
-                    {/* Text */}
-                    <div className="relative mt-7">
-                      <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-blue-300/70">
+                    {/* =================================================
+                        COPY
+                    ================================================== */}
+
+                    <div className="relative z-10 mt-7">
+                      <p
+                        className={`text-[9px] font-bold uppercase tracking-[0.18em] ${
+                          isSocial ? "text-white/65" : "text-[#1768E8]"
+                        }`}
+                      >
                         {route.eyebrow}
                       </p>
 
-                      <h2 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-white">
+                      <h2
+                        className={`mt-2 text-[24px] font-semibold tracking-[-0.045em] ${
+                          isSocial ? "text-white" : "text-[#101828]"
+                        }`}
+                      >
                         {route.title}
                       </h2>
 
-                      <p className="mt-3 text-[13px] leading-6 text-white/40">
+                      <p
+                        className={`mt-3 max-w-[350px] text-[13px] leading-6 ${
+                          isSocial ? "text-white/75" : "text-[#667085]"
+                        }`}
+                      >
                         {route.description}
                       </p>
                     </div>
 
-                    {/* CTA */}
-                    <div className="relative mt-auto flex items-center justify-between pt-7">
-                      <span className="text-xs font-semibold text-white/70 transition group-hover:text-white">
+                    {/* =================================================
+                        SOCIAL MEDIA TUTORIAL
+                    ================================================== */}
+
+                    {route.tutorial && (
+                      <a
+                        href={SOCIAL_TUTORIAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Watch the Showwork social media workflow tutorial on YouTube"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                        className="
+                          group/tutorial
+                          relative
+                          z-20
+                          mt-5
+                          flex
+                          items-center
+                          gap-3
+                          rounded-2xl
+                          border
+                          border-white/15
+                          bg-white/10
+                          p-3
+                          backdrop-blur-sm
+                          transition
+                          hover:border-white/25
+                          hover:bg-white/15
+                        "
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#1768E8] shadow-[0_4px_12px_rgba(0,0,0,0.12)]">
+                          <Play
+                            size={13}
+                            fill="currentColor"
+                            strokeWidth={0}
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-white">
+                            New to Showwork?
+                          </p>
+
+                          <p className="mt-0.5 text-[9px] leading-4 text-white/60">
+                            Watch the quick social media workflow tutorial
+                          </p>
+                        </div>
+
+                        <ArrowRight
+                          size={13}
+                          className="ml-auto shrink-0 text-white/50 transition-transform group-hover/tutorial:translate-x-0.5 group-hover/tutorial:text-white"
+                        />
+                      </a>
+                    )}
+
+                    {/* =================================================
+                        CTA
+                    ================================================== */}
+
+                    <div className="relative z-10 mt-auto flex items-center justify-between pt-7">
+                      <span
+                        className={`text-[11px] font-bold ${
+                          isSocial
+                            ? "text-white"
+                            : "text-[#344054] group-hover:text-[#1768E8]"
+                        }`}
+                      >
                         Get started
                       </span>
 
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition duration-300 group-hover:border-blue-400/30 group-hover:bg-blue-500 group-hover:text-white">
-                        <ArrowRight
-                          size={13}
-                          className="text-white/40 transition group-hover:text-white"
-                        />
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 ${
+                          isSocial
+                            ? "border border-white/20 bg-white text-[#1768E8] group-hover:bg-white/90"
+                            : "border border-[#E4E7EC] bg-white text-[#98A2B3] group-hover:border-[#1768E8] group-hover:bg-[#1768E8] group-hover:text-white"
+                        }`}
+                      >
+                        <ArrowRight size={14} />
                       </div>
                     </div>
 
-                    {/* Bottom accent */}
-                    <div
-                      className="absolute bottom-0 left-7 right-7 h-px origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
-                      style={{
-                        background:
-                          "linear-gradient(90deg, #2478FF, transparent)",
-                      }}
-                    />
-                  </motion.div>
-                </Link>
+                    {/* =================================================
+                        BOTTOM ACCENT
+                    ================================================== */}
+
+                    {!isSocial && (
+                      <div className="absolute bottom-0 left-7 right-7 h-[2px] origin-left scale-x-0 rounded-full bg-[#1768E8] transition-transform duration-500 group-hover:scale-x-100" />
+                    )}
+
+                    {isSocial && (
+                      <div className="absolute bottom-0 left-7 right-7 h-[2px] origin-left scale-x-0 rounded-full bg-white transition-transform duration-500 group-hover:scale-x-100" />
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
           </div>
+        </section>
 
-          {/* =====================================================
-              COMMUNITY
-          ====================================================== */}
+        {/* =========================================================
+            SIMPLE VALUE STRIP
+        ========================================================== */}
 
-          <motion.a
-            href={COMMUNITY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.75, duration: 0.7 }}
-            className="group mx-auto mt-5 flex w-full max-w-md items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.025] px-5 py-4 transition hover:border-white/15 hover:bg-white/[0.05]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/10">
-                <Users size={15} className="text-emerald-400" />
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: 0.55,
+            duration: 0.65,
+          }}
+          className="mx-auto mt-8 max-w-[920px]"
+        >
+          <div className="grid overflow-hidden rounded-2xl border border-[#EAECF0] bg-[#FCFCFD] sm:grid-cols-3">
+            <div className="flex items-center gap-3 border-b border-[#EAECF0] px-5 py-4 sm:border-b-0 sm:border-r">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF5FF] text-[#1768E8]">
+                <Check size={14} strokeWidth={2.5} />
               </div>
 
-              <div>
-                <p className="text-[11px] font-semibold text-white/80">
-                  Join Creativo Community
-                </p>
-
-                <p className="mt-0.5 text-[9px] text-white/30">
-                  Meet other people building creative businesses.
-                </p>
-              </div>
+              <span className="text-[10px] font-semibold text-[#475467]">
+                One place for your client work
+              </span>
             </div>
 
-            <ArrowRight
-              size={14}
-              className="text-white/25 transition-transform group-hover:translate-x-1 group-hover:text-white/70"
-            />
-          </motion.a>
-        </div>
+            <div className="flex items-center gap-3 border-b border-[#EAECF0] px-5 py-4 sm:border-b-0 sm:border-r">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF5FF] text-[#1768E8]">
+                <Sparkles size={14} />
+              </div>
+
+              <span className="text-[10px] font-semibold text-[#475467]">
+                AI built into your workflow
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 px-5 py-4">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EEF5FF] text-[#1768E8]">
+                <Users size={14} />
+              </div>
+
+              <span className="text-[10px] font-semibold text-[#475467]">
+                Built for working with clients
+              </span>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* =========================================================
+            COMMUNITY
+        ========================================================== */}
+
+        <motion.a
+          href={COMMUNITY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.7 }}
+          className="
+            group
+            mx-auto
+            mt-7
+            flex
+            w-full
+            max-w-[430px]
+            items-center
+            justify-between
+            rounded-2xl
+            border
+            border-[#EAECF0]
+            bg-white
+            px-5
+            py-4
+            shadow-[0_2px_8px_rgba(16,24,40,0.025)]
+            transition
+            hover:border-[#D0D5DD]
+            hover:shadow-[0_8px_25px_rgba(16,24,40,0.05)]
+          "
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0FDF4]">
+              <Users size={15} className="text-[#16A34A]" />
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold text-[#344054]">
+                Join the Creativo Community
+              </p>
+
+              <p className="mt-0.5 text-[9px] text-[#98A2B3]">
+                Meet other people building creative businesses.
+              </p>
+            </div>
+          </div>
+
+          <ArrowRight
+            size={14}
+            className="text-[#98A2B3] transition-transform group-hover:translate-x-1 group-hover:text-[#344054]"
+          />
+        </motion.a>
 
         {/* =========================================================
             FOOTER
         ========================================================== */}
 
-        <motion.div
+        <motion.footer
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.9, duration: 0.8 }}
-          className="flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-5 text-[10px] text-white/25 sm:flex-row"
+          transition={{ delay: 0.85, duration: 0.8 }}
+          className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#EAECF0] pt-5 text-[10px] text-[#98A2B3] sm:flex-row"
         >
-          <p>
-            You can change your mind anytime. Everything is available from
-            your dashboard.
-          </p>
+          <p>You can change your choice anytime from your dashboard.</p>
 
           <Link
             href="/dashboard"
-            className="font-medium text-white/40 underline underline-offset-4 transition hover:text-white"
+            className="font-semibold text-[#667085] underline underline-offset-4 transition hover:text-[#1768E8]"
           >
             Go to dashboard
           </Link>
-        </motion.div>
+        </motion.footer>
       </div>
     </main>
   );
