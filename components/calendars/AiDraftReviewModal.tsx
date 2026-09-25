@@ -458,10 +458,8 @@ export default function AiDraftReviewModal({
           </button>
         </header>
 
-        {/* Mobile draft navigation.
-            The desktop queue is intentionally hidden on small screens, so mobile
-            needs its own first-class way to move between generated drafts. */}
-        <div className="shrink-0 border-b border-[#E4E9F1] bg-white px-4 py-3 lg:hidden">
+               {/* Mobile draft navigation + bulk action */}
+        <div className="sticky top-0 z-30 shrink-0 border-b border-[#E4E9F1] bg-white/95 px-4 py-3 backdrop-blur-md lg:hidden">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -470,7 +468,11 @@ export default function AiDraftReviewModal({
                 const index = drafts.findIndex((draft) => draft.id === selectedId);
                 if (index > 0) setSelectedId(drafts[index - 1].id);
               }}
-              disabled={!drafts.length || !selectedId || drafts.findIndex((draft) => draft.id === selectedId) <= 0}
+              disabled={
+                !drafts.length ||
+                !selectedId ||
+                drafts.findIndex((draft) => draft.id === selectedId) <= 0
+              }
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Previous draft"
             >
@@ -482,9 +484,13 @@ export default function AiDraftReviewModal({
                 <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
                   AI draft queue
                 </p>
+
                 <span className="shrink-0 text-[10px] font-semibold text-[#667085]">
                   {selectedId
-                    ? `${Math.max(1, drafts.findIndex((draft) => draft.id === selectedId) + 1)} of ${drafts.length}`
+                    ? `${Math.max(
+                        1,
+                        drafts.findIndex((draft) => draft.id === selectedId) + 1
+                      )} of ${drafts.length}`
                     : `0 of ${drafts.length}`}
                 </span>
               </div>
@@ -496,6 +502,7 @@ export default function AiDraftReviewModal({
                       label: draft.platform,
                       mark: "•",
                     };
+
                   const active = draft.id === selectedId;
 
                   return (
@@ -526,18 +533,49 @@ export default function AiDraftReviewModal({
               type="button"
               onClick={() => {
                 if (!drafts.length || !selectedId) return;
-                const index = drafts.findIndex((draft) => draft.id === selectedId);
-                if (index < drafts.length - 1) setSelectedId(drafts[index + 1].id);
+
+                const index = drafts.findIndex(
+                  (draft) => draft.id === selectedId
+                );
+
+                if (index < drafts.length - 1) {
+                  setSelectedId(drafts[index + 1].id);
+                }
               }}
-              disabled={!drafts.length || !selectedId || drafts.findIndex((draft) => draft.id === selectedId) >= drafts.length - 1}
+              disabled={
+                !drafts.length ||
+                !selectedId ||
+                drafts.findIndex((draft) => draft.id === selectedId) >=
+                  drafts.length - 1
+              }
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Next draft"
             >
               →
             </button>
           </div>
-        </div>
 
+          {/* Mobile bulk confirmation */}
+          {drafts.length > 0 && (
+            <div className="mt-3 border-t border-[#EEF2F6] pt-3">
+              <button
+                type="button"
+                onClick={confirmAll}
+                disabled={saving}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#101828] px-4 py-3 text-xs font-bold text-white shadow-[0_8px_20px_rgba(16,24,40,0.12)] transition hover:bg-[#1D2939] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span>
+                  {saving
+                    ? "Confirming drafts…"
+                    : `Confirm all ${drafts.length} drafts`}
+                </span>
+                {!saving && (
+                  <span className="text-white/50">→</span>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
         <div className="flex min-h-0 flex-1">
           <aside className="hidden w-[310px] shrink-0 border-r border-[#E4E9F1] bg-white lg:flex lg:flex-col">
             <div className="border-b border-[#EEF2F6] px-5 py-4">
