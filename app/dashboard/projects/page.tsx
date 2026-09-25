@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
+
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
@@ -8,8 +9,6 @@ import DashboardProjectList from "@/components/DashboardProjectList";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
 import {
   TIERS,
-  PaidTier,
-  Tier,
   PLAN_DISPLAY_NAME,
   NEXT_TIER,
 } from "@/lib/subscriptionTiers";
@@ -21,10 +20,6 @@ const COLOR = {
   blueBright: "#4C91FF",
   gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)",
   accent: "#FFCC00",
-  warmWhite: "#F8F7F4",
-  charcoal: "#141619",
-  charcoalLight: "#1B1E23",
-  midGray: "#888C94",
 };
 
 const PAGE_SIZE = 12;
@@ -34,26 +29,11 @@ const SHARED_DISPLAY_LIMIT = 12;
    ICONS
 ───────────────────────────────────────────── */
 
-function IconArrowLeft({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M19 12H5M11 18l-6-6 6-6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconArrowUpRight({ className = "" }: { className?: string }) {
+function IconArrowUpRight({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -72,7 +52,11 @@ function IconArrowUpRight({ className = "" }: { className?: string }) {
   );
 }
 
-function IconPlus({ className = "" }: { className?: string }) {
+function IconPlus({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -83,14 +67,18 @@ function IconPlus({ className = "" }: { className?: string }) {
       <path
         d="M12 5v14M5 12h14"
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="1.7"
         strokeLinecap="round"
       />
     </svg>
   );
 }
 
-function IconCheck({ className = "" }: { className?: string }) {
+function IconCheck({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -164,7 +152,11 @@ function IconGrid({
   );
 }
 
-function IconUsers({ className = "" }: { className?: string }) {
+function IconUsers({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -195,7 +187,11 @@ function IconUsers({ className = "" }: { className?: string }) {
   );
 }
 
-function IconEye({ className = "" }: { className?: string }) {
+function IconEye({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -220,7 +216,11 @@ function IconEye({ className = "" }: { className?: string }) {
   );
 }
 
-function IconLayers({ className = "" }: { className?: string }) {
+function IconLayers({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -239,11 +239,36 @@ function IconLayers({ className = "" }: { className?: string }) {
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   );
 }
+
+function IconMenu({
+  className = "",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M5 7h14M5 12h14M5 17h14"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
 
 function initials(name: string | null, email: string) {
   const source = name?.trim() || email;
@@ -281,7 +306,7 @@ export default async function ProjectDeliveryPage() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(totalCount / PAGE_SIZE)
+    Math.ceil(totalCount / PAGE_SIZE),
   );
 
   const ownedProjects = await db.project.findMany({
@@ -424,7 +449,7 @@ export default async function ProjectDeliveryPage() {
   ].sort(
     (a, b) =>
       b.createdAt.getTime() -
-      a.createdAt.getTime()
+      a.createdAt.getTime(),
   );
 
   /* ─────────────────────────────────────────
@@ -451,12 +476,12 @@ export default async function ProjectDeliveryPage() {
 
   const totalViews = allProjectsForStats.reduce(
     (sum, p) => sum + p.viewCount,
-    0
+    0,
   );
 
   const totalEmails = allProjectsForStats.reduce(
     (sum, p) => sum + p._count.viewerEmails,
-    0
+    0,
   );
 
   const firstName = creator.name?.split(" ")[0];
@@ -474,7 +499,7 @@ export default async function ProjectDeliveryPage() {
     usage.remaining <=
       Math.max(
         1,
-        Math.ceil(usage.limit * 0.2)
+        Math.ceil(usage.limit * 0.2),
       );
 
   const atCap =
@@ -488,225 +513,415 @@ export default async function ProjectDeliveryPage() {
           100,
           Math.max(
             0,
-            (usage.used / usage.limit) * 100
-          )
+            (usage.used / usage.limit) * 100,
+          ),
         );
-
-  /* ─────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────── */
 
   return (
     <main
-      className="min-h-screen overflow-x-hidden"
-      style={{
-        background: COLOR.black,
-      }}
+      className="min-h-screen overflow-x-hidden bg-[#08090B] text-white"
     >
       {/* ═══════════════════════════════════════
           HERO
       ═══════════════════════════════════════ */}
 
-      {/* ─────────────────────────────────────────
-    HERO
-───────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden bg-[#05070A]">
+        {/* Hero image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/hero1.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{
+            objectPosition: "center 42%",
+          }}
+        />
 
-<section className="relative isolate overflow-hidden bg-[#05070A]">
-  {/* eslint-disable-next-line @next/next/no-img-element */}
-  <img
-    src="/images/hero1.png"
-    alt=""
-    className="absolute inset-0 h-full w-full object-cover"
-    style={{ objectPosition: "center 42%" }}
-  />
-  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,5,8,.96)_0%,rgba(3,5,8,.82)_30%,rgba(3,5,8,.38)_65%,rgba(3,5,8,.70)_100%)]" />
-  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.78)_0%,rgba(3,5,8,.10)_30%,rgba(3,5,8,.25)_60%,#08090B_100%)]" />
-  <div className="pointer-events-none absolute -left-48 top-1/3 h-[520px] w-[520px] rounded-full bg-[#2478FF]/15 blur-[140px]" />
-  <div className="pointer-events-none absolute -right-40 top-1/4 h-[420px] w-[420px] rounded-full bg-[#4C91FF]/10 blur-[130px]" />
-  <div
-    className="pointer-events-none absolute inset-0 opacity-[0.075]"
-    style={{
-      backgroundImage:
-        "linear-gradient(rgba(255,255,255,.20) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.20) 1px,transparent 1px)",
-      backgroundSize: "72px 72px",
-      maskImage: "linear-gradient(to bottom,black 0%,black 35%,transparent 86%)",
-      WebkitMaskImage: "linear-gradient(to bottom,black 0%,black 35%,transparent 86%)",
-    }}
-  />
-  <div className="pointer-events-none absolute inset-x-3 top-3 bottom-3 rounded-[26px] border border-white/[0.07] sm:inset-x-5 sm:top-5 sm:bottom-5 md:inset-x-8 md:top-8 md:bottom-8" />
+        {/* Image treatment */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,5,8,.97)_0%,rgba(3,5,8,.84)_28%,rgba(3,5,8,.42)_64%,rgba(3,5,8,.72)_100%)]" />
 
-  {/* Header — floating safely inside the hero frame */}
-  <div className="relative z-30 px-5 pt-8 sm:px-6 sm:pt-9 md:px-10 md:pt-11 lg:px-16 lg:pt-12">
-    <div className="mx-auto max-w-[1400px]">
-      <div className="flex items-center justify-between rounded-[18px] border border-white/[0.09] bg-[#05070A]/35 px-2.5 py-2.5 shadow-[0_20px_70px_rgba(0,0,0,.18)] backdrop-blur-2xl sm:px-3 sm:py-3">
-        <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
-          <Link
-            href="/dashboard"
-            className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-semibold text-white/65 backdrop-blur-xl transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white sm:px-3.5 sm:py-2.5 sm:text-sm"
-          >
-            <IconArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>All apps</span>
-          </Link>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.9)_0%,rgba(3,5,8,.18)_35%,rgba(3,5,8,.3)_62%,#08090B_100%)]" />
 
-          <div className="hidden h-5 w-px bg-white/10 sm:block" />
+        <div className="pointer-events-none absolute -left-48 top-1/3 h-[520px] w-[520px] rounded-full bg-[#2478FF]/15 blur-[140px]" />
 
-          {/* Compact Showwork wordmark — “work” carries the brand gradient. */}
-          <Link
-            href="/dashboard"
-            aria-label="Showwork home"
-            className="hidden items-center whitespace-nowrap text-[15px] font-bold tracking-[-0.045em] sm:inline-flex md:text-base"
-          >
-            <span className="text-white/90">Show</span>
-            <span
-              className="bg-gradient-to-r from-[#2478FF] via-[#4C91FF] to-[#78B0FF] bg-clip-text text-transparent"
-            >
-              work
-            </span>
-          </Link>
-        </div>
+        <div className="pointer-events-none absolute -right-40 top-1/4 h-[420px] w-[420px] rounded-full bg-[#4C91FF]/10 blur-[130px]" />
 
-      <div className="flex items-center gap-1.5 sm:gap-2.5 md:gap-4">
-        {isAdminEmail(creator.email) && (
-          <Link href="/admin" className="hidden rounded-full px-3 py-2 text-xs font-semibold text-white/40 transition hover:bg-white/5 hover:text-white sm:inline-flex">
-            Admin
-          </Link>
-        )}
-        <a href="mailto:hello@useshowwork.com?subject=Showwork%20support" className="hidden rounded-full px-3 py-2 text-xs font-medium text-white/40 transition hover:bg-white/5 hover:text-white sm:inline-flex">
-          Support
-        </a>
-        <Link href="/dashboard/billing" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3.5 py-2 text-xs font-semibold text-white/70 backdrop-blur-xl transition hover:bg-white/10 sm:flex">
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: atCap ? "#F97316" : COLOR.blue }} />
-          <span>{planName}</span><span className="text-white/25">·</span>
-          <span className="text-white/40">{usage.limit === Infinity ? "Unlimited" : `${usage.used}/${usage.limit}`}</span>
-        </Link>
-        <Link href="/dashboard/profile" className="group flex items-center gap-2.5" aria-label="View profile">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 text-[11px] font-bold text-white backdrop-blur-xl transition-transform group-hover:scale-105 sm:h-10 sm:w-10">
-            {creator.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={creator.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : initials(creator.name, creator.email)}
-          </div>
-          <span className="hidden max-w-[150px] truncate text-sm font-medium text-white/65 transition group-hover:text-white sm:inline">
-            {creator.name || creator.email}
-          </span>
-        </Link>
-        <LogoutButton />
-      </div>
-      </div>
-    </div>
-  </div>
+        {/* Grid texture */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.055]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.20) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.20) 1px,transparent 1px)",
+            backgroundSize: "72px 72px",
+            maskImage:
+              "linear-gradient(to bottom,black 0%,black 35%,transparent 86%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom,black 0%,black 35%,transparent 86%)",
+          }}
+        />
 
-  {/* Content */}
-  <div className="relative z-10 px-4 pb-10 pt-24 sm:px-5 sm:pb-12 sm:pt-28 md:px-10 md:pb-16 md:pt-32 lg:px-16 lg:pb-20 lg:pt-36">
-    <div className="mx-auto max-w-[1400px]">
-      <div className="grid items-end gap-10 lg:grid-cols-[minmax(0,1fr)_390px] lg:gap-20">
-        <div className="min-w-0 max-w-[920px]">
-          <div className="mb-6 flex items-center gap-3 md:mb-8">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_18px_rgba(36,120,255,.95)]" />
-            <span className="text-[9px] font-bold uppercase tracking-[.22em] text-white/55 sm:text-[10px]">
-              Project Delivery
-            </span>
-          </div>
-          <h1
-            className="max-w-[900px] font-semibold tracking-[-.065em] text-white"
-            style={{ fontSize: "clamp(3.15rem,9vw,8.25rem)", lineHeight: .88 }}
-          >
-            Deliver the work.
-            <br />
-            <span className="text-white/40">Without the chaos.</span>
-          </h1>
-          <div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10">
-            <Link
-              href="/dashboard/start"
-              className="group inline-flex min-h-[52px] items-center gap-3 rounded-xl px-5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 sm:min-h-14 sm:px-6"
-              style={{ background: COLOR.gradient, boxShadow: "0 18px 55px rgba(36,120,255,.28)" }}
-            >
-              <IconPlus className="h-4 w-4" /><span>New project</span>
-              <IconArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-            <a href="#projects" className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-5 py-3.5 text-xs font-semibold text-white/45 backdrop-blur-xl transition hover:border-white/20 hover:bg-white/[.07] hover:text-white sm:inline-flex">
-              Explore projects <span aria-hidden="true">↓</span>
-            </a>
-          </div>
-        </div>
+        {/* Hero frame */}
+        <div className="pointer-events-none absolute inset-x-3 top-3 bottom-3 rounded-[28px] border border-white/[0.07] sm:inset-x-5 sm:top-5 sm:bottom-5 md:inset-x-8 md:top-8 md:bottom-8" />
 
-        <div className="w-full max-w-[390px] lg:ml-auto">
-          <div className="relative">
-            <div className="pointer-events-none absolute -inset-10 rounded-[40px] bg-[#2478FF]/10 blur-[70px]" />
-            <div className="relative overflow-hidden rounded-[24px] border border-white/15 bg-[#090C11]/80 p-4 shadow-2xl backdrop-blur-2xl sm:p-5 md:rounded-[26px] md:p-6">
-              <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#2478FF]/10 blur-3xl" />
-              <div className="relative flex items-start justify-between">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/35">Overview</p>
-                  <p className="mt-2 text-sm font-medium text-white/65">Your delivery activity</p>
-                </div>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#2478FF]/20 bg-[#2478FF]/10">
-                  <IconGrid className="h-4 w-4" style={{ color: COLOR.blueBright }} />
+        {/* ═══════════════════════════════════════
+            SIMPLE FLOATING NAV
+        ═══════════════════════════════════════ */}
+
+        <div className="relative z-40 px-4 pt-5 sm:px-6 sm:pt-7 md:px-10 lg:px-16">
+          <div className="mx-auto max-w-[1400px]">
+            <header className="sticky top-4">
+              <div className="flex items-center justify-between gap-3 rounded-[20px] border border-white/[0.10] bg-[#080A0E]/70 p-2 shadow-[0_24px_70px_rgba(0,0,0,.24)] backdrop-blur-2xl">
+                {/* Brand */}
+                <Link
+                  href="/dashboard"
+                  aria-label="Showwork"
+                  className="group flex shrink-0 items-center gap-2.5 rounded-[14px] px-2.5 py-2 transition hover:bg-white/[0.05] sm:px-3"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white text-[11px] font-black text-[#08090B] shadow-sm sm:h-9 sm:w-9">
+                    S
+                  </span>
+
+                  <span className="hidden text-[15px] font-bold tracking-[-0.045em] sm:block">
+                    <span className="text-white">
+                      Show
+                    </span>
+                    <span className="bg-gradient-to-r from-[#2478FF] via-[#4C91FF] to-[#78B0FF] bg-clip-text text-transparent">
+                      work
+                    </span>
+                  </span>
+                </Link>
+
+                {/* Primary page navigation */}
+                <nav
+                  aria-label="Page navigation"
+                  className="hidden items-center gap-1 md:flex"
+                >
+                  <a
+                    href="#projects"
+                    className="rounded-xl bg-white/[0.09] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-white/[0.13]"
+                  >
+                    Projects
+                  </a>
+
+                  {managedProjects.length > 0 && (
+                    <a
+                      href="#managed"
+                      className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+                    >
+                      Managed
+                    </a>
+                  )}
+
+                  <a
+                    href="#guide"
+                    className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+                  >
+                    Guide
+                  </a>
+                </nav>
+
+                {/* Right side */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Plan */}
+                  <Link
+                    href="/dashboard/billing"
+                    className="hidden items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3.5 py-2.5 text-[10px] font-semibold text-white/65 transition hover:border-white/[0.15] hover:bg-white/[0.08] hover:text-white lg:flex"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{
+                        background: atCap
+                          ? "#F97316"
+                          : COLOR.blue,
+                      }}
+                    />
+
+                    <span>{planName}</span>
+
+                    <span className="text-white/20">
+                      ·
+                    </span>
+
+                    <span className="text-white/35">
+                      {usage.limit === Infinity
+                        ? "Unlimited"
+                        : `${usage.used}/${usage.limit}`}
+                    </span>
+                  </Link>
+
+                  {/* New project */}
+                  <Link
+                    href="/dashboard/start"
+                    className="group inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[11px] font-bold text-white shadow-[0_10px_30px_rgba(36,120,255,.24)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(36,120,255,.32)] sm:px-4"
+                    style={{
+                      background: COLOR.gradient,
+                    }}
+                  >
+                    <IconPlus className="h-3.5 w-3.5" />
+
+                    <span className="hidden sm:inline">
+                      New project
+                    </span>
+
+                    <span className="sm:hidden">
+                      New
+                    </span>
+                  </Link>
+
+                  {/* Profile */}
+                  <Link
+                    href="/dashboard/profile"
+                    aria-label="View profile"
+                    className="group flex items-center rounded-xl p-1 transition hover:bg-white/[0.06]"
+                  >
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 text-[10px] font-bold text-white backdrop-blur-xl transition group-hover:border-white/25 group-hover:scale-[1.03]">
+                      {creator.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={creator.avatarUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials(
+                          creator.name,
+                          creator.email,
+                        )
+                      )}
+                    </div>
+                  </Link>
+
+                  {/* Logout */}
+                  <div className="hidden sm:block">
+                    <LogoutButton />
+                  </div>
+
+                  {/* Mobile menu visual */}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-white/50 md:hidden">
+                    <IconMenu className="h-4 w-4" />
+                  </div>
                 </div>
               </div>
+            </header>
+          </div>
+        </div>
 
-              <div className="relative mt-7">
-                <p className="text-[10px] font-medium text-white/30">Projects</p>
-                <div className="mt-1 flex items-end justify-between gap-4">
-                  <p className="text-4xl font-semibold tracking-[-.055em] text-white sm:text-5xl">{totalCount}</p>
-                  <span className="mb-1.5 flex items-center gap-1.5 text-right text-[9px] font-semibold text-white/35 sm:text-[10px]">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,.75)]" />
-                    Active workspace
+        {/* ═══════════════════════════════════════
+            HERO CONTENT
+        ═══════════════════════════════════════ */}
+
+        <div className="relative z-10 px-5 pb-12 pt-24 sm:px-6 sm:pb-14 sm:pt-28 md:px-10 md:pb-16 md:pt-32 lg:px-16 lg:pb-20 lg:pt-36">
+          <div className="mx-auto max-w-[1400px]">
+            <div className="grid items-end gap-12 lg:grid-cols-[minmax(0,1fr)_370px] lg:gap-20">
+              {/* Copy */}
+              <div className="min-w-0 max-w-[900px]">
+                <div className="mb-6 flex items-center gap-3 md:mb-8">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_18px_rgba(36,120,255,.95)]" />
+
+                  <span className="text-[9px] font-bold uppercase tracking-[.22em] text-white/55 sm:text-[10px]">
+                    Project Delivery
                   </span>
                 </div>
+
+                <h1
+                  className="font-semibold tracking-[-.065em] text-white"
+                  style={{
+                    fontSize:
+                      "clamp(2.15rem,5vw,5.25rem)",
+                    lineHeight: 0.88,
+                  }}
+                >
+                  Deliver the work.
+                  <br />
+                  <span className="text-white/40">
+                    Without the chaos.
+                  </span>
+                </h1>
+
+                <div className="mt-8 flex flex-wrap items-center gap-3 md:mt-10">
+                  <Link
+                    href="/dashboard/start"
+                    className="group inline-flex min-h-[52px] items-center gap-3 rounded-xl px-5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-0.5 sm:min-h-14 sm:px-6"
+                    style={{
+                      background: COLOR.gradient,
+                      boxShadow:
+                        "0 18px 55px rgba(36,120,255,.28)",
+                    }}
+                  >
+                    <IconPlus className="h-4 w-4" />
+
+                    <span>New project</span>
+
+                    <IconArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </Link>
+
+                  <a
+                    href="#projects"
+                    className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-5 py-3.5 text-xs font-semibold text-white/45 backdrop-blur-xl transition hover:border-white/20 hover:bg-white/[.07] hover:text-white sm:inline-flex"
+                  >
+                    View projects
+
+                    <span
+                      aria-hidden="true"
+                      className="transition-transform group-hover:translate-y-0.5"
+                    >
+                      ↓
+                    </span>
+                  </a>
+                </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-2.5">
-                <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
-                  <div className="flex items-center gap-2"><IconEye className="h-3.5 w-3.5 text-white/35" /><span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">Views</span></div>
-                  <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">{totalViews}</p>
-                </div>
-                <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
-                  <div className="flex items-center gap-2"><IconUsers className="h-3.5 w-3.5 text-white/35" /><span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">Contacts</span></div>
-                  <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">{totalEmails}</p>
-                </div>
-              </div>
+              {/* Overview card */}
+              <div className="w-full max-w-[370px] lg:ml-auto">
+                <div className="relative">
+                  <div className="pointer-events-none absolute -inset-10 rounded-[40px] bg-[#2478FF]/10 blur-[70px]" />
 
-              <div className="mt-2.5 rounded-xl border border-white/[.07] bg-white/[.025] p-3.5 sm:p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[.12em] text-white/25">{planName}</p>
-                    <p className="mt-1 text-xs text-white/45">Project usage</p>
+                  <div className="relative overflow-hidden rounded-[26px] border border-white/15 bg-[#090C11]/80 p-5 shadow-2xl backdrop-blur-2xl md:p-6">
+                    <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#2478FF]/10 blur-3xl" />
+
+                    <div className="relative flex items-start justify-between">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/35">
+                          Overview
+                        </p>
+
+                        <p className="mt-2 text-sm font-medium text-white/65">
+                          Your delivery activity
+                        </p>
+                      </div>
+
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#2478FF]/20 bg-[#2478FF]/10">
+                        <IconGrid
+                          className="h-4 w-4"
+                          style={{
+                            color: COLOR.blueBright,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="relative mt-7">
+                      <p className="text-[10px] font-medium text-white/30">
+                        Projects
+                      </p>
+
+                      <div className="mt-1 flex items-end justify-between gap-4">
+                        <p className="text-4xl font-semibold tracking-[-.055em] text-white sm:text-5xl">
+                          {totalCount}
+                        </p>
+
+                        <span className="mb-1.5 flex items-center gap-1.5 text-right text-[9px] font-semibold text-white/35 sm:text-[10px]">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,.75)]" />
+
+                          Active workspace
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-2 gap-2.5">
+                      <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
+                        <div className="flex items-center gap-2">
+                          <IconEye className="h-3.5 w-3.5 text-white/35" />
+
+                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">
+                            Views
+                          </span>
+                        </div>
+
+                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                          {totalViews}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
+                        <div className="flex items-center gap-2">
+                          <IconUsers className="h-3.5 w-3.5 text-white/35" />
+
+                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">
+                            Contacts
+                          </span>
+                        </div>
+
+                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                          {totalEmails}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 rounded-xl border border-white/[.07] bg-white/[.025] p-3.5 sm:p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-[.12em] text-white/25">
+                            {planName}
+                          </p>
+
+                          <p className="mt-1 text-xs text-white/45">
+                            Project usage
+                          </p>
+                        </div>
+
+                        <p className="text-xs font-semibold text-white/55">
+                          {usage.limit === Infinity
+                            ? "Unlimited"
+                            : `${usage.used} / ${usage.limit}`}
+                        </p>
+                      </div>
+
+                      {usage.limit !== Infinity && (
+                        <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${usagePercentage}%`,
+                              background: atCap
+                                ? "#F97316"
+                                : COLOR.blue,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <Link
+                      href="/dashboard/billing"
+                      className="mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold text-white/30 transition hover:text-white/70"
+                    >
+                      <span>
+                        Manage plan
+                      </span>
+
+                      <IconArrowUpRight className="h-3.5 w-3.5" />
+                    </Link>
                   </div>
-                  <p className="text-xs font-semibold text-white/55">{usage.limit === Infinity ? "Unlimited" : `${usage.used} / ${usage.limit}`}</p>
                 </div>
-                {usage.limit !== Infinity && (
-                  <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${usagePercentage}%`, background: atCap ? "#F97316" : COLOR.blue }} />
-                  </div>
-                )}
               </div>
-              <Link href="/dashboard/billing" className="mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold text-white/30 transition hover:text-white/70">
-                <span>Manage plan</span><IconArrowUpRight className="h-3.5 w-3.5" />
-              </Link>
+            </div>
+
+            <div className="mt-10 flex items-center justify-between border-t border-white/10 pt-5">
+              <span className="text-[8px] font-semibold uppercase tracking-[.18em] text-white/25 sm:text-[9px]">
+                Showwork · Project Delivery
+              </span>
+
+              <span className="text-[8px] font-medium text-white/20 sm:text-[9px]">
+                {firstName
+                  ? `Welcome back, ${firstName}`
+                  : "Your workspace"}
+              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-9 flex items-center justify-between border-t border-white/10 pt-5 sm:mt-10">
-        <span className="text-[8px] font-semibold uppercase tracking-[.18em] text-white/25 sm:text-[9px]">Showwork · Project Delivery</span>
-        <span className="text-[8px] font-medium text-white/20 sm:text-[9px]">{firstName ? `Welcome back, ${firstName}` : "Your workspace"}</span>
-      </div>
-    </div>
-  </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(to_top,#08090B_0%,rgba(8,9,11,.72)_32%,transparent_100%)]" />
+      </section>
 
-  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(to_top,#08090B_0%,rgba(8,9,11,.72)_32%,transparent_100%)]" />
-</section>
       {/* ═══════════════════════════════════════
           PROJECTS
       ═══════════════════════════════════════ */}
 
       <section
         id="projects"
-        className="relative mx-auto max-w-[1400px] px-5 py-16 md:px-10 md:py-20 lg:px-16"
+        className="relative mx-auto max-w-[1400px] scroll-mt-28 px-5 py-16 md:px-10 md:py-20 lg:px-16"
       >
-        {/* Ambient background */}
         <div
           className="pointer-events-none absolute -right-60 top-0 h-[500px] w-[500px] rounded-full blur-[150px]"
           style={{
@@ -716,6 +931,7 @@ export default async function ProjectDeliveryPage() {
         />
 
         <div className="relative">
+          {/* Section header */}
           <div className="mb-9 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
@@ -752,7 +968,9 @@ export default async function ProjectDeliveryPage() {
                 className="group flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-white/55 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
               >
                 <IconPlus className="h-3.5 w-3.5" />
+
                 New project
+
                 <span className="transition-transform group-hover:translate-x-0.5">
                   →
                 </span>
@@ -771,7 +989,7 @@ export default async function ProjectDeliveryPage() {
                     p.createdAt.toISOString(),
                   viewCount: p.viewCount,
                   _count: p._count,
-                })
+                }),
               ),
 
               totalCount,
@@ -799,7 +1017,10 @@ export default async function ProjectDeliveryPage() {
           ═════════════════════════════════════ */}
 
           {managedProjects.length > 0 && (
-            <div className="mt-24">
+            <div
+              id="managed"
+              className="mt-24 scroll-mt-28"
+            >
               <div className="mb-9">
                 <div className="flex items-center gap-3">
                   <span
@@ -834,7 +1055,7 @@ export default async function ProjectDeliveryPage() {
                 {managedProjects.map((mp) => {
                   const doneCount =
                     mp.tasks.filter(
-                      (t) => t.status === "DONE"
+                      (t) => t.status === "DONE",
                     ).length;
 
                   const taskCount =
@@ -854,7 +1075,7 @@ export default async function ProjectDeliveryPage() {
                       ? Math.round(
                           (doneCount /
                             taskCount) *
-                            100
+                            100,
                         )
                       : 0;
 
@@ -864,7 +1085,6 @@ export default async function ProjectDeliveryPage() {
                       href={href}
                       className="group relative flex min-h-[250px] flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111316] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-[#15181C]"
                     >
-                      {/* Hover glow */}
                       <div
                         className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
                         style={{
@@ -1003,11 +1223,13 @@ export default async function ProjectDeliveryPage() {
           )}
 
           {/* ═════════════════════════════════════
-              QUICK GUIDE
+              GUIDE
           ═════════════════════════════════════ */}
 
-          <div className="relative mt-24 overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#111316]">
-            {/* Decorative glow */}
+          <div
+            id="guide"
+            className="relative mt-24 scroll-mt-28 overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#111316]"
+          >
             <div
               className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full blur-[100px]"
               style={{
@@ -1056,6 +1278,7 @@ export default async function ProjectDeliveryPage() {
                   }}
                 >
                   Start a project
+
                   <IconArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               </div>
@@ -1082,7 +1305,8 @@ export default async function ProjectDeliveryPage() {
                         style={{
                           background:
                             "rgba(36,120,255,0.10)",
-                          color: COLOR.blueBright,
+                          color:
+                            COLOR.blueBright,
                         }}
                       >
                         <IconCheck className="h-3.5 w-3.5" />
@@ -1118,11 +1342,15 @@ export default async function ProjectDeliveryPage() {
               className="group flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/60 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
             >
               Contact support
+
               <span className="transition-transform group-hover:translate-x-1">
                 →
               </span>
             </a>
           </div>
+
+          {/* Bottom spacing */}
+          <div className="h-10" />
         </div>
       </section>
     </main>

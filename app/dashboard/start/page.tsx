@@ -256,7 +256,7 @@ export default async function StartProjectPage() {
           <h1
             className="font-semibold tracking-[-0.06em] text-white"
             style={{
-              fontSize: "clamp(3.1rem, 8vw, 7.5rem)",
+              fontSize: "clamp(1.1rem, 3vw, 3.5rem)",
               lineHeight: 0.91,
             }}
           >

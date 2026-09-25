@@ -10,7 +10,7 @@ function slugify(input: string) {
 
 /**
  * Turns a client name into a URL-safe, unique slug.
- * e.g. "Soundhous" -> "soundhous", or "soundhous-2" if taken.
+ * e.g. "Showwork" -> "Showwork", or "Showwork-2" if taken.
  */
 export async function generateUniqueSlug(clientName: string) {
   const base = slugify(clientName) || "project";

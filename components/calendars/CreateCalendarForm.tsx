@@ -343,7 +343,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
     },
   );
 }}
-          placeholder="e.g. Chuchin Ultimate Productions"
+          placeholder="e.g. MTN"
           autoComplete="organization"
           className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3.5 text-base text-white outline-none transition-all placeholder:text-white/20 focus:border-[#2478FF]/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#2478FF]/10"
         />

@@ -1592,7 +1592,7 @@ export default function StartPage() {
                   onChange={(event) =>
                     setClientName(event.target.value)
                   }
-                  placeholder="e.g. Soundhous"
+                  placeholder="e.g. Showwork"
                   className="w-full rounded-2xl border border-black/10 bg-[#F7F7F5] px-5 py-4 text-base font-semibold outline-none transition-colors placeholder:text-black/25 focus:border-black/30"
                 />
               </div>

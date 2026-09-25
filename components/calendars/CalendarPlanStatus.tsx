@@ -165,7 +165,7 @@ if (variant === "desktop") {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Chuchin — September content"
+                placeholder="e.g. Showwork — September content"
                 style={{ fontSize: "16px" }}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-white/25"
               />

@@ -264,7 +264,7 @@ export default function NewManagedProjectPage() {
                   </span>
                 </div>
 
-                <h1 className="text-[clamp(3.25rem,7vw,6.9rem)] font-semibold leading-[0.9] tracking-[-0.055em] text-white">
+                <h1 className="text-[clamp(1.25rem,3vw,3.9rem)] font-semibold leading-[0.9] tracking-[-0.055em] text-white">
                   Give the work
                   <br />
                   <span
@@ -312,7 +312,7 @@ export default function NewManagedProjectPage() {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Soundhous — Q3 Campaign"
+                      placeholder="e.g. Showwork — Q3 Campaign"
                       required
                       className={inputClass}
                     />

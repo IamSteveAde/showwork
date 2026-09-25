@@ -490,7 +490,7 @@ model ReferralCommission {
 }
 
 // ─────────────────────────────────────────────
-// PROJECT — one client delivery (e.g. "Soundhous 2026")
+// PROJECT — one client delivery (e.g. "Showwork 2026")
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
 // DELIVERY STATUS — the real, creator-controlled workflow state of a
