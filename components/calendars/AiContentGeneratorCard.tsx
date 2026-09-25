@@ -134,7 +134,9 @@ const togglePlatform = (platform: string) => {
     setError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/ai-generate`, {
+     const res = await fetch(
+  `/api/calendars/${encodeURIComponent(calendarId)}/ai-generate`,
+  {
         method: "POST",
         headers: { "Content-Type": "application/json" },
        body: JSON.stringify({
