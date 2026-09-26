@@ -131,11 +131,13 @@ export async function POST(
       ...(shouldScheduleInstagram
         ? {
             instagramPublishStatus: "SCHEDULED",
+            publishWorkerStartedAt: null,
           }
         : {}),
       ...(shouldScheduleTikTok
         ? {
             tikTokPublishStatus: "SCHEDULED",
+            publishWorkerStartedAt: null,
           }
         : {}),
     },

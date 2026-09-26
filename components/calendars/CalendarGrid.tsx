@@ -33,8 +33,8 @@ interface CalendarPostCustomFieldData {
   value: string;
 }
 
-type InstagramPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHED" | "FAILED";
-type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+type InstagramPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
+type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
 type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 
 interface CalendarPostData {
@@ -518,7 +518,9 @@ function PostTile({
         ? { text: "Live on Instagram", color: "#E1306C" }
         : post.instagramPublishStatus === "SCHEDULED"
           ? { text: "Scheduled to publish", color: "#2478FF" }
-          : { text: "Publish failed", color: "#EF4444" }
+          : post.instagramPublishStatus === "PUBLISHING"
+            ? { text: "Publishing now", color: "#2478FF" }
+            : { text: "Publish failed", color: "#EF4444" }
       : null;
   // A post is only ever one platform, so at most one of these two
   // is ever non-null at the same time — safe to just combine them.
@@ -528,7 +530,9 @@ function PostTile({
         ? { text: "Published to TikTok", color: "#00F2EA" }
         : post.tikTokPublishStatus === "SCHEDULED"
           ? { text: "Scheduled to publish", color: "#2478FF" }
-          : { text: "Publish failed", color: "#EF4444" }
+          : post.tikTokPublishStatus === "PUBLISHING"
+            ? { text: "Publishing now", color: "#2478FF" }
+            : { text: "Publish failed", color: "#EF4444" }
       : null;
   const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? approvalMeta;
 
@@ -3881,6 +3885,12 @@ caption: draftDetails.caption,
                       </>
                     )}
 
+                    {post.instagramPublishStatus === "PUBLISHING" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        Instagram is processing this post now. Its status will update when publishing is confirmed.
+                      </p>
+                    )}
+
                     {post.instagramPublishStatus === "FAILED" && (
                       <p className="text-sm leading-relaxed text-red-400">
                         {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
@@ -3938,6 +3948,12 @@ caption: draftDetails.caption,
                     {post.tikTokPublishStatus === "PUBLISHED" && (
                       <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
                         Published to TikTok. TikTok doesn&apos;t provide a direct link back to the post, and it&apos;s currently private-only pending this app&apos;s content audit — check the TikTok app directly to view it.
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "PUBLISHING" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        TikTok is processing this post now. Its status will update when publishing is confirmed.
                       </p>
                     )}
 
