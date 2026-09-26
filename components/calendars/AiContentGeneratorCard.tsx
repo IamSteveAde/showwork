@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AiDraftReviewModal from "@/components/calendars/AiDraftReviewModal";
 
 const PLATFORMS = [
@@ -81,9 +81,16 @@ const [platformSchedules, setPlatformSchedules] = useState<
     ])
   )
 );
-const [generating, setGenerating] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [hasBusinessSummaryState, setHasBusinessSummaryState] = useState(hasBusinessSummary);
   const [error, setError] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (window.sessionStorage.getItem(`calendar:${calendarId}:has-business-summary`) === "true") {
+      setHasBusinessSummaryState(true);
+    }
+  }, [calendarId]);
 
 const togglePlatform = (platform: string) => {
   setPlatforms((previous) => {
@@ -203,7 +210,7 @@ const togglePlatform = (platform: string) => {
             </div>
           </div>
 
-          {!hasBusinessSummary ? (
+          {!hasBusinessSummaryState ? (
             <div className="relative mt-6 overflow-hidden rounded-[22px] border border-[#E4E7EC] bg-[#F8FAFC] p-5 sm:p-6">
               <div className="flex items-start gap-4">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#98A2B3] shadow-sm ring-1 ring-[#E4E7EC]">

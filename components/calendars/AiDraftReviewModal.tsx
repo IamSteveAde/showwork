@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 interface DraftPost {
   id: string;
@@ -60,8 +59,6 @@ export default function AiDraftReviewModal({
   calendarId: string;
   onClose: () => void;
 }) {
-  const router = useRouter();
-
   const [drafts, setDrafts] = useState<DraftPost[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -174,7 +171,6 @@ export default function AiDraftReviewModal({
       if (!res.ok) throw new Error(data.error ?? "Failed to save edits");
       setError(null);
       await loadGenerations(selected.id);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save edits");
     } finally {
@@ -304,7 +300,7 @@ export default function AiDraftReviewModal({
         const remaining = drafts?.filter((item) => item.id !== id) ?? [];
         return remaining[0]?.id ?? null;
       });
-      router.refresh();
+      window.dispatchEvent(new Event("showwork-calendar-posts-sync"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to confirm draft");
     } finally {
@@ -365,7 +361,6 @@ export default function AiDraftReviewModal({
     setGenerations([]);
     setGenerationIndex(-1);
 
-    router.refresh();
     onClose();
   } catch (err) {
     setError(
@@ -402,7 +397,7 @@ export default function AiDraftReviewModal({
       }
 
       setDrafts([]);
-      router.refresh();
+      window.dispatchEvent(new Event("showwork-calendar-posts-sync"));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to confirm all drafts");
     } finally {
@@ -699,9 +694,9 @@ export default function AiDraftReviewModal({
                     {(
                      [
                       ["hook", "Hook", "The opening line or idea that grabs attention."],
-                      ["script", "Script", "The words to say for any spoken or narrated video."],
+                      ["script", "Script", "A timed shoot-and-edit script with visuals, spoken lines, text and audio cues."],
                       ["caption", "Caption", "Write the final words your audience will see."],
-                      ["contentIdea", "Creative direction", "Describe what the visual or video should show."],
+                      ["contentIdea", "Creative direction", "A detailed shot, styling and editing brief for the designer or video editor."],
                       ["cta", "Call to action", "What should the audience do next?"],
                       ["hashtags", "Hashtags", "Add relevant hashtags, separated by spaces."],
                     ] as [EditableKey, string, string][]
@@ -712,7 +707,15 @@ export default function AiDraftReviewModal({
                         <textarea
                           value={selected[field] ?? ""}
                           onChange={(e) => updateField(field, e.target.value)}
-                          rows={field === "caption" ? 8 : 4}
+                          rows={
+                            field === "script"
+                              ? 16
+                              : field === "contentIdea"
+                                ? 12
+                                : field === "caption"
+                                  ? 8
+                                  : 4
+                          }
                           className="mt-2 w-full resize-y rounded-2xl border border-[#D9E1EA] bg-[#FBFCFE] px-4 py-3 text-sm leading-relaxed text-[#101828] outline-none transition focus:border-[#2478FF] focus:bg-white focus:ring-4 focus:ring-[#2478FF]/10"
                         />
                       </label>
