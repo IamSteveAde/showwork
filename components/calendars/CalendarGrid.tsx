@@ -5580,6 +5580,16 @@ export default function CalendarGrid({
       null
     );
 
+  useEffect(() => {
+    const refreshedPosts = initialPosts.map(normalize);
+    setPosts(refreshedPosts);
+    setSelectedPost((current) =>
+      current
+        ? refreshedPosts.find((post) => post.id === current.id) ?? null
+        : null
+    );
+  }, [initialPosts]);
+
   // =========================================================
   // SMART FILTERS
   // =========================================================
