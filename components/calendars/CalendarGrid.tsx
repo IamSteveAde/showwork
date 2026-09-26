@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, {
   type CalendarVideoCommentData,
@@ -5544,6 +5544,15 @@ export default function CalendarGrid({
   const [viewMode, setViewMode] = useState<
     "calendar" | "instagram" | "tiktok"
   >("calendar");
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateLayout = () => setIsMobileLayout(mediaQuery.matches);
+    updateLayout();
+    mediaQuery.addEventListener("change", updateLayout);
+    return () => mediaQuery.removeEventListener("change", updateLayout);
+  }, []);
 
   const [currentMonth, setCurrentMonth] =
     useState(() => {
@@ -5582,13 +5591,69 @@ export default function CalendarGrid({
 
   useEffect(() => {
     const refreshedPosts = initialPosts.map(normalize);
-    setPosts(refreshedPosts);
-    setSelectedPost((current) =>
-      current
-        ? refreshedPosts.find((post) => post.id === current.id) ?? null
-        : null
+    setPosts((current) =>
+      JSON.stringify(current) === JSON.stringify(refreshedPosts)
+        ? current
+        : refreshedPosts
     );
+    setSelectedPost((current) => {
+      if (!current) return current;
+      const refreshed = refreshedPosts.find((post) => post.id === current.id);
+      if (!refreshed) return null;
+      return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
+    });
   }, [initialPosts]);
+
+  useEffect(() => {
+    let inFlight = false;
+    let cancelled = false;
+
+    const syncPosts = async () => {
+      if (cancelled || inFlight || document.visibilityState !== "visible") return;
+      const focused = document.activeElement;
+      if (
+        focused instanceof HTMLElement &&
+        (focused.isContentEditable || focused.matches("input, textarea, select"))
+      ) return;
+
+      inFlight = true;
+      try {
+        const response = await fetch(`/api/calendars/${calendarId}/posts`, {
+          cache: "no-store",
+        });
+        if (!response.ok || cancelled) return;
+        const data = (await response.json()) as { posts?: CalendarPostData[] };
+        if (!Array.isArray(data.posts)) return;
+
+        const refreshedPosts = data.posts.map(normalize);
+        setPosts((current) =>
+          JSON.stringify(current) === JSON.stringify(refreshedPosts)
+            ? current
+            : refreshedPosts
+        );
+        setSelectedPost((current) => {
+          if (!current) return current;
+          const refreshed = refreshedPosts.find((post) => post.id === current.id);
+          if (!refreshed) return null;
+          return JSON.stringify(current) === JSON.stringify(refreshed) ? current : refreshed;
+        });
+      } catch {
+        // Keep the current workspace usable if a background sync temporarily fails.
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const interval = window.setInterval(syncPosts, 15_000);
+    window.addEventListener("focus", syncPosts);
+    document.addEventListener("visibilitychange", syncPosts);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", syncPosts);
+      document.removeEventListener("visibilitychange", syncPosts);
+    };
+  }, [calendarId]);
 
   // =========================================================
   // SMART FILTERS
@@ -5620,7 +5685,7 @@ export default function CalendarGrid({
     )
   ).sort();
 
-  const filteredPosts = posts.filter((post) => {
+  const filteredPosts = useMemo(() => posts.filter((post) => {
     const query = searchQuery.trim().toLowerCase();
 
     const searchable = [
@@ -5646,7 +5711,7 @@ export default function CalendarGrid({
     if (contentFilter === "EMPTY" && post.assets.length > 0) return false;
 
     return true;
-  });
+  }), [posts, searchQuery, platformFilter, statusFilter, typeFilter, categoryFilter, contentFilter]);
 
   const activeFilterCount = [
     platformFilter !== "ALL",
@@ -5744,33 +5809,31 @@ export default function CalendarGrid({
     cells.push(null);
   }
 
-  const postsForDate = (
-    date: Date
-  ) =>
-    filteredPosts
-      .filter((p) => {
-        const pd = new Date(
-          p.postDate
-        );
-
-        return (
-          pd.getFullYear() ===
-          date.getFullYear() &&
-          pd.getMonth() ===
-          date.getMonth() &&
-          pd.getDate() ===
-          date.getDate()
-        );
-      })
-      .sort(
-        (a, b) =>
-          new Date(
-            a.postDate
-          ).getTime() -
-          new Date(
-            b.postDate
-          ).getTime()
+  const postsByDate = useMemo(() => {
+    const grouped = new Map<number, CalendarPostData[]>();
+    for (const post of filteredPosts) {
+      const postDate = new Date(post.postDate);
+      const dayKey = new Date(
+        postDate.getFullYear(),
+        postDate.getMonth(),
+        postDate.getDate(),
+      ).getTime();
+      const dayPosts = grouped.get(dayKey) ?? [];
+      dayPosts.push(post);
+      grouped.set(dayKey, dayPosts);
+    }
+    for (const dayPosts of grouped.values()) {
+      dayPosts.sort(
+        (a, b) => new Date(a.postDate).getTime() - new Date(b.postDate).getTime(),
       );
+    }
+    return grouped;
+  }, [filteredPosts]);
+
+  const postsForDate = (date: Date) =>
+    postsByDate.get(
+      new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime(),
+    ) ?? [];
 
   const goToMonth = (
     delta: number
@@ -6446,9 +6509,8 @@ export default function CalendarGrid({
           DESKTOP / TABLET CALENDAR
           ===================================================== */}
 
-          <div className="
-        hidden
-        sm:grid
+          {!isMobileLayout && <div className="
+        grid
         sm:grid-cols-7
         sm:gap-1.5
         lg:gap-2
@@ -6673,17 +6735,16 @@ export default function CalendarGrid({
                 </div>
               );
             })}
-          </div>
+          </div>}
 
           {/* =====================================================
           MOBILE AGENDA
           ===================================================== */}
 
-          <div className="
+          {isMobileLayout && <div className="
         flex
         flex-col
         gap-3
-        sm:hidden
       ">
             {visibleDays.map((date) => {
               const dayPosts =
@@ -6989,7 +7050,7 @@ export default function CalendarGrid({
                 </section>
               );
             })}
-          </div>
+          </div>}
         </>
       )}
 
