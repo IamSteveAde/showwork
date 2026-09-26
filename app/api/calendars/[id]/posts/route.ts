@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { hasCalendarPermission } from "@/lib/calendarPermissions";
+import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
+import { isAdminEmail } from "@/lib/admin";
+import { publicUrlFor } from "@/lib/r2";
 import type { SocialPlatform, TikTokPrivacyLevel } from "@prisma/client";
 
 const VALID_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "YOUTUBE", "FACEBOOK", "X", "LINKEDIN"];
@@ -11,6 +13,79 @@ const VALID_TIKTOK_PRIVACY_LEVELS: TikTokPrivacyLevel[] = [
   "FOLLOWER_OF_CREATOR",
   "SELF_ONLY",
 ];
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  if (!(await hasCalendarPermission(creator.id, id, "VIEW_ONLY"))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!isAdminEmail(creator.email) && !(await canAccessCalendarById(id))) {
+    return NextResponse.json({ error: "This calendar isn't active" }, { status: 403 });
+  }
+
+  const posts = await db.calendarPost.findMany({
+    where: { calendarId: id },
+    orderBy: { postDate: "asc" },
+    include: {
+      assets: { orderBy: { displayOrder: "asc" } },
+      videoComments: { orderBy: { videoTimestampSeconds: "asc" } },
+      customFields: true,
+    },
+  });
+
+  return NextResponse.json(
+    {
+      posts: posts.map((post) => ({
+        id: post.id,
+        postDate: post.postDate.toISOString(),
+        platform: post.platform,
+        postType: post.postType,
+        category: post.category,
+        hook: post.hook,
+        script: post.script,
+        caption: post.caption,
+        contentIdea: post.contentIdea,
+        cta: post.cta,
+        hashtags: post.hashtags,
+        taggedAccounts: post.taggedAccounts,
+        linkUrl: post.linkUrl,
+        approvalStatus: post.approvalStatus,
+        approvalNote: post.approvalNote,
+        instagramPublishStatus: post.instagramPublishStatus,
+        instagramPermalink: post.instagramPermalink,
+        instagramPublishError: post.instagramPublishError,
+        tikTokPublishStatus: post.tikTokPublishStatus,
+        tikTokPrivacyLevel: post.tikTokPrivacyLevel,
+        tikTokPublishError: post.tikTokPublishError,
+        assets: post.assets.map((asset) => ({
+          id: asset.id,
+          fileKey: asset.fileKey,
+          mediaType: asset.mediaType,
+          contentUrl: publicUrlFor(asset.fileKey),
+        })),
+        videoComments: post.videoComments.map((comment) => ({
+          id: comment.id,
+          authorName: comment.authorName,
+          authorEmail: comment.authorEmail,
+          note: comment.note,
+          videoTimestampSeconds: comment.videoTimestampSeconds,
+        })),
+        customFields: post.customFields.map((field) => ({
+          id: field.id,
+          label: field.label,
+          value: field.value,
+        })),
+      })),
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
 
 function isSocialPlatform(value: unknown): value is SocialPlatform {
   return typeof value === "string" && (VALID_PLATFORMS as string[]).includes(value);

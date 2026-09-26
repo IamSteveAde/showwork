@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import WorkspaceTour from "@/components/calendars/WorkspaceTour";
@@ -178,7 +177,6 @@ export default function CalendarWorkspaceShell({
   publishAction?: ReactNode;
   sections: WorkspaceSection[];
 }) {
-  const router = useRouter();
   const [activeId, setActiveId] = useState<WorkspaceSectionId>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -202,28 +200,6 @@ export default function CalendarWorkspaceShell({
   }, []);
 
   const visibleSections = useMemo(() => sections.filter(Boolean), [sections]);
-
-  useEffect(() => {
-    const refreshWhenSafe = () => {
-      if (document.visibilityState !== "visible") return;
-
-      const focused = document.activeElement;
-      const editing =
-        focused instanceof HTMLElement &&
-        (focused.isContentEditable || focused.matches("input, textarea, select"));
-      if (!editing) router.refresh();
-    };
-
-    const interval = window.setInterval(refreshWhenSafe, 15_000);
-    window.addEventListener("focus", refreshWhenSafe);
-    document.addEventListener("visibilitychange", refreshWhenSafe);
-
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("focus", refreshWhenSafe);
-      document.removeEventListener("visibilitychange", refreshWhenSafe);
-    };
-  }, [router]);
 
   useEffect(() => {
     const handlePopState = () => {
