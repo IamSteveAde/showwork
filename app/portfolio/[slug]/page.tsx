@@ -29,10 +29,10 @@ export async function generateMetadata({
     return { title: "Portfolio not found — Showwork" };
   }
 
-  const title = `${portfolio.companyName} — Portfolio | Showwork`;
-  const description = portfolio.heroTagline
-    ? `${portfolio.heroTagline} — See ${portfolio.companyName}'s work, delivered and showcased with Showwork.`
-    : `Explore ${portfolio.companyName}'s work — a branded creative portfolio built with Showwork.`;
+  const title = `${portfolio.companyName.slice(0, 45)} Portfolio | Showwork`;
+  const description = (portfolio.heroTagline
+    ? `${portfolio.heroTagline} Explore ${portfolio.companyName}'s creative portfolio, selected work and services.`
+    : `Explore ${portfolio.companyName}'s creative portfolio, featured work and services. View projects and get in touch.`).replace(/\s+/g, " ").trim().slice(0, 160);
 
     // Any real photo from this creator's portfolio, picked at random —
   // not a generic Showwork graphic. Only falls back to the generic
@@ -44,12 +44,13 @@ export async function generateMetadata({
     : null;
   const image = randomPhoto
     ? publicUrlFor(randomPhoto.fileKey)
-    : `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+    : "/images/shwk.jpg";
 
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
+    alternates: { canonical: `/portfolio/${slug}` },
+    openGraph: { type: "website", title, description, url: `/portfolio/${slug}`, siteName: "Showwork", images: [{ url: image, width: 1200, height: 630, alt: `${portfolio.companyName} creative portfolio` }] },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }

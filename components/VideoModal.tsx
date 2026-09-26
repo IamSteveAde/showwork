@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { MediaItem } from "@/app/[slug]/DeliveryPage";
 import { downloadFile } from "@/lib/download";
 import VideoComments, { type VideoCommentEntry } from "@/components/VideoComments";
+import { pauseAutoplayVideos, resumeVisibleAutoplayVideo } from "@/components/portfolio/PortfolioAutoplayVideo";
 
 export default function VideoModal({
   video,
@@ -52,6 +53,7 @@ export default function VideoModal({
   };
 
   useEffect(() => {
+    pauseAutoplayVideos();
     const vid = videoRef.current;
     if (!vid) return;
     vid.currentTime = 0;
@@ -60,6 +62,10 @@ export default function VideoModal({
       vid.muted = true;
       vid.play().catch(() => {});
     });
+    return () => {
+      vid.pause();
+      resumeVisibleAutoplayVideo();
+    };
   }, [video.id]);
 
   useEffect(() => {
@@ -149,7 +155,7 @@ export default function VideoModal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] max-w-[92vw] flex-col overflow-hidden rounded-2xl bg-black"
+        className="flex max-h-[92vh] max-w-[92vw] flex-col overflow-hidden bg-black"
       >
         <video
           ref={videoRef}

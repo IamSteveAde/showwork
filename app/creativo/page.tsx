@@ -2,14 +2,16 @@ import { Metadata } from "next";
 import { db } from "@/lib/db";
 import CreativoContent from "@/components/creativo/CreativoContent";
 
-const CREATIVO_TITLE = "Creativo — Community for Photographers, Videographers & Creators | Showwork";
+const CREATIVO_TITLE = "Creativo: Community for Photographers & Creators | Showwork";
 const CREATIVO_DESCRIPTION =
-  "Join Creativo, the free community for photographers, videographers, editors, and motion designers who want better clients, better pay, and real visibility. Real feedback, referrals, monthly challenges, and live webinars — powered by Showwork.";
-const CREATIVO_IMAGE = `${process.env.NEXT_PUBLIC_APP_URL}/images/create.jpg`;
+  "Join Creativo, Showwork's community for photographers, videographers, editors and motion designers. Get peer feedback, referrals, monthly creative challenges and practical webinars.";
+const CREATIVO_IMAGE = "/images/create.jpg";
 
 export const metadata: Metadata = {
   title: CREATIVO_TITLE,
   description: CREATIVO_DESCRIPTION,
+  alternates: { canonical: "/creativo" },
+  keywords: ["creative community Nigeria", "photographer community", "videographer community", "creative networking", "Creativo Showwork"],
   openGraph: {
     title: CREATIVO_TITLE,
     description: CREATIVO_DESCRIPTION,

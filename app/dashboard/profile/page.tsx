@@ -687,7 +687,7 @@ export default async function ProfilePage() {
 
                           <p className="mt-1 truncate text-[11px] font-semibold text-[#344054]">
                             {portfolio
-                              ? `/p/${portfolio.slug}`
+                              ? `/portfolio/${portfolio.slug}`
                               : "—"}
                           </p>
                         </div>
@@ -1197,4 +1197,3 @@ export default async function ProfilePage() {
     </main>
   );
 }
-

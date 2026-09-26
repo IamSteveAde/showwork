@@ -4,6 +4,9 @@ export const metadata: Metadata = {
   title: "Privacy Policy | Showwork",
   description:
     "Showwork's Privacy Policy explains how we collect, use, store, and protect information when you use the Showwork platform.",
+  alternates: { canonical: "/privacy" },
+  openGraph: { type: "website", siteName: "Showwork", title: "Privacy Policy | Showwork", description: "Learn how Showwork collects, uses, stores and protects information across its creator platform.", url: "/privacy" },
+  robots: { index: true, follow: true },
 };
 
 export default function PrivacyPolicyPage() {

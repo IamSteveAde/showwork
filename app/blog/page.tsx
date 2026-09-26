@@ -7,9 +7,13 @@ import BlogFooter from "@/components/blog/BlogFooter";
 const COLOR = { black: "#080808", offWhite: "#F7F4EC", blue: "#2478FF" };
 
 export const metadata: Metadata = {
-  title: "Blog | Showwork",
+  title: "Creative Business Blog: Pricing, Clients & Growth | Showwork",
   description:
-    "Pricing, positioning, and client delivery advice for photographers, videographers, and creative professionals — from the team behind Showwork.",
+    "Practical advice on creative business pricing, client experience, portfolios and social media workflows for photographers, videographers and creative professionals.",
+  alternates: { canonical: "/blog" },
+  keywords: ["creative business advice", "photography business pricing", "videography business tips", "client management for creatives", "creative portfolio advice"],
+  openGraph: { type: "website", siteName: "Showwork", title: "Creative Business Blog | Showwork", description: "Practical advice on creative business pricing, client experience, portfolios and social media workflows.", url: "/blog", images: ["/images/work.jpg"] },
+  twitter: { card: "summary_large_image", title: "Creative Business Blog | Showwork", description: "Advice on pricing, clients, portfolios and growing a creative business.", images: ["/images/work.jpg"] },
 };
 
 // Without this, Next.js can treat this page as fully static (no

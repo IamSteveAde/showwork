@@ -440,7 +440,7 @@ export default function AgencyPortfolioList({
                           </div>
 
                           <p className="mt-1 text-xs text-slate-400">
-                            /p/{portfolio.slug}
+                            /portfolio/{portfolio.slug}
                           </p>
                         </div>
                       </div>
