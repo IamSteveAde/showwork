@@ -41,6 +41,7 @@ export async function POST(
       managerId: true,
       clientName: true,
       aiBusinessSummary: true,
+      aiBusinessSummaryUpdatedAt: true,
     },
   });
 
@@ -603,11 +604,12 @@ export async function POST(
         documentText: extractedText,
       });
 
+    const summaryUpdatedAt = new Date();
     await db.socialCalendar.update({
       where: { id },
       data: {
         aiBusinessSummary: updatedSummary,
-        aiBusinessSummaryUpdatedAt: new Date(),
+        aiBusinessSummaryUpdatedAt: summaryUpdatedAt,
       },
     });
 
@@ -618,6 +620,8 @@ export async function POST(
 
 return NextResponse.json({
   document: serializedDocument,
+  businessSummary: updatedSummary,
+  summaryUpdatedAt: summaryUpdatedAt.toISOString(),
   summaryUpdated: true,
 });
   } catch (error) {
@@ -633,6 +637,8 @@ return NextResponse.json({
 
 return NextResponse.json({
   document: serializedDocument,
+  businessSummary: calendar.aiBusinessSummary,
+  summaryUpdatedAt: calendar.aiBusinessSummaryUpdatedAt?.toISOString() ?? null,
   summaryUpdated: false,
 });
   }

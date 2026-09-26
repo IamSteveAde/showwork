@@ -2224,15 +2224,15 @@ function AddPostPanel({
                         e.target.value
                       )
                     }
-                    rows={3}
-                    placeholder="Describe the idea, mood or direction..."
+                    rows={8}
+                    placeholder="For a video, give the designer/editor a clear production brief: concept, audience takeaway, format, shot sequence, b-roll or screen recordings, framing, lighting, graphics, pacing, sound and subtitle direction."
                     style={{
                       fontSize: "16px",
                       ...inputStyle,
                     }}
                     className="
                       w-full
-                      resize-none
+                      resize-y
                       rounded-xl
                       border
                       px-4 py-3
@@ -4826,8 +4826,8 @@ caption: draftDetails.caption,
         script: e.target.value,
       }))
     }
-    rows={8}
-    placeholder="Write the words to say for this video..."
+    rows={16}
+    placeholder="Build a timecoded shoot-and-edit script: runtime, format, visual/action, exact dialogue, on-screen text and audio/edit cues for every beat."
     className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
     style={{
       background: t.modalBg,
@@ -4884,8 +4884,8 @@ caption: draftDetails.caption,
                             contentIdea: e.target.value,
                           }))
                         }
-                        rows={5}
-                        placeholder="Describe the visual or creative direction..."
+                        rows={12}
+                        placeholder="Give the designer/editor a production-ready brief: concept, audience takeaway, format, duration, shot list, screen recordings or b-roll, framing, lighting, graphics, pacing, transitions, sound, subtitles and safe-area notes."
                         className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
                         style={{
                           background: t.modalBg,
@@ -5661,11 +5661,14 @@ export default function CalendarGrid({
     };
 
     const interval = window.setInterval(syncPosts, 15_000);
+    void syncPosts();
+    window.addEventListener("showwork-calendar-posts-sync", syncPosts);
     window.addEventListener("focus", syncPosts);
     document.addEventListener("visibilitychange", syncPosts);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.removeEventListener("showwork-calendar-posts-sync", syncPosts);
       window.removeEventListener("focus", syncPosts);
       document.removeEventListener("visibilitychange", syncPosts);
     };

@@ -260,7 +260,7 @@
 
   Every Reel or Video MUST have both:
   1. A strong opening hook.
-  2. A complete, natural, ready-to-record script.
+  2. A production-ready, timecoded script with visuals and spoken lines.
 
   There are NO exceptions.
 
@@ -268,7 +268,9 @@
 
   The hook should be attention-grabbing and appropriate for the target audience.
 
-  The script must contain the actual words the speaker or narrator should say. Do not describe what should be said. Write the actual spoken words.
+  The script must be a usable shoot-and-edit document, not a paragraph of dialogue. Break it into timecoded beats that fit the total runtime. For every beat, specify the visual/action, on-screen text when useful, exact voiceover/dialogue, and relevant sound or edit cue. Write the actual words to speak; never use placeholders such as "explain the benefit here." Include the opening hook and a clear ending/CTA, and keep the spoken word count realistic for the duration.
+
+  Creative direction must be a separate, detailed handoff for a designer or editor. Specify the concept and intended audience reaction, target aspect ratio and duration, visual style, presenter/product footage, shot list or storyboard, screen recordings or b-roll to capture, framing and movement, lighting/color/graphics, pacing/transitions, music/SFX, subtitle treatment, and any important safe-area or export notes. Be concrete enough that a creator can produce the video without guessing. Never invent product features, statistics, testimonials, or business claims that are not supported by the business context.
 
   The hook and script must be specific to the business, audience, topic, and creative direction.
 
@@ -818,11 +820,17 @@ There are NO exceptions.
 For every Reel or Video:
 
 - hook must be a strong opening hook.
-- script must be a complete, natural, ready-to-record spoken script.
-- script must contain the actual words the speaker or narrator should say.
+- script must be a complete, production-ready, timecoded shoot-and-edit script, not dialogue alone.
+- script must give a plausible target duration and platform-appropriate format/aspect ratio.
+- divide the script into timed beats that add up to the total duration; use clear labels such as HOOK, PROBLEM, SOLUTION, PAYOFF and CTA where they fit.
+- for each beat, include VISUAL / ACTION, ON-SCREEN TEXT (when useful), VOICEOVER / DIALOGUE with the exact words to say, and AUDIO / SFX / EDIT cues when relevant.
+- make the spoken word count realistic for the run time; do not cram a long script into a short video.
+- include an attention-grabbing opening, a coherent progression, and a specific ending/CTA.
 - hook and script must fit the business, audience, topic, and content idea.
-- the AI decides the execution style.
-- the manager does not need to specify talking-head, voiceover, interview, presenter, or another format.
+- the separate contentIdea field is a detailed production brief for the designer/editor: concept and audience takeaway, format/aspect ratio, duration, visual style, scene-by-scene shot plan, presenter/product footage, screen recordings or b-roll to capture, framing/movement, lighting/color/graphics, pacing/transitions, music/SFX, subtitles, and safe-area/export notes.
+- keep the script and production brief consistent while ensuring the brief gives additional practical direction rather than repeating the dialogue.
+- make all shots, UI actions, claims, and product features specific to and supported by the business context. Never invent capabilities, data, customer results, or testimonials.
+- adapt the format to the selected platform. For Reels, TikTok, and Facebook Reels, default to vertical 9:16 short-form unless the concept says otherwise. For YouTube, clearly identify Shorts (9:16) or standard video (16:9).
 
 For image posts and carousels, hook and script may be empty strings unless the concept specifically requires them.
 
@@ -835,7 +843,7 @@ CONTENT QUALITY:
 - Follow the manager's specific instructions when provided.
 - Make every content unit meaningfully different from the previous content unit.
 
-Return ONLY the JSON array.
+Return one JSON object with a "posts" array containing the required canonical content objects.
 
 Do not return markdown.
 Do not return code fences.
@@ -928,27 +936,34 @@ ${customInstructions.trim()}`
     input,
     maxOutputTokens: Math.min(
       30000,
-      Math.max(4096, expectedCanonicalPosts * 900 + 1024)
+      Math.max(4096, expectedCanonicalPosts * 1500 + 1024)
     ),
     jsonSchema: {
       name: "content_calendar",
       schema: {
-        type: "array",
-        items: {
-          type: "object",
-          additionalProperties: false,
-          required: ["contentUnit", "platform", "postType", "category", "hook", "script", "caption", "contentIdea", "cta", "hashtags"],
-          properties: {
-            contentUnit: { type: "integer" },
-            platform: { type: "string", enum: [...new Set(streams.map((stream) => stream.platforms[0]))] },
-            postType: { type: "string" },
-            category: { type: "string" },
-            hook: { type: "string" },
-            script: { type: "string" },
-            caption: { type: "string" },
-            contentIdea: { type: "string" },
-            cta: { type: "string" },
-            hashtags: { type: "string" },
+        type: "object",
+        additionalProperties: false,
+        required: ["posts"],
+        properties: {
+          posts: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["contentUnit", "platform", "postType", "category", "hook", "script", "caption", "contentIdea", "cta", "hashtags"],
+              properties: {
+                contentUnit: { type: "integer" },
+                platform: { type: "string", enum: [...new Set(streams.map((stream) => stream.platforms[0]))] },
+                postType: { type: "string" },
+                category: { type: "string" },
+                hook: { type: "string" },
+                script: { type: "string" },
+                caption: { type: "string" },
+                contentIdea: { type: "string" },
+                cta: { type: "string" },
+                hashtags: { type: "string" },
+              },
+            },
           },
         },
       },
@@ -970,7 +985,12 @@ ${customInstructions.trim()}`
     );
   }
 
-  if (!Array.isArray(parsed)) {
+  if (
+    !parsed ||
+    typeof parsed !== "object" ||
+    Array.isArray(parsed) ||
+    !Array.isArray((parsed as Record<string, unknown>).posts)
+  ) {
     throw new Error(
       "The AI's response wasn't in the expected format — try generating again."
     );
@@ -981,7 +1001,7 @@ ${customInstructions.trim()}`
    * It is removed before the final GeneratedPostIdea
    * objects are returned.
    */
-  const canonicalPosts = parsed as Array<
+  const canonicalPosts = (parsed as { posts: unknown[] }).posts as Array<
     GeneratedPostIdea & {
       contentUnit: number;
     }
@@ -1242,7 +1262,7 @@ VIDEO RULE:
 
 Every Reel or Video MUST have both:
 - a strong hook
-- a complete, ready-to-record spoken script
+- a complete, production-ready, timecoded script
 
 There are NO exceptions.
 
@@ -1250,7 +1270,11 @@ If the selected fields do not include hook or script, preserve the existing hook
 
 If the selected fields include hook or script, improve them while keeping them consistent with the post.
 
-The script must contain the actual words the speaker or narrator should say.
+For a Reel or Video, the script must be a formatted production document, not dialogue alone. Include a title, plausible total duration, format/aspect ratio and platform; then break the runtime into timecoded beats. For each beat, give the visual/action, exact voiceover/dialogue, useful on-screen text, and relevant sound/edit cues. Include a strong opening, coherent progression and specific ending/CTA. Keep spoken words realistic for the duration and never use placeholder dialogue.
+
+When "contentIdea" is selected for a Reel or Video, write a detailed designer/editor brief covering the concept and intended audience reaction, format/aspect ratio, duration, visual style, scene-by-scene shot plan, presenter/product footage, screen recordings or b-roll, framing/movement, lighting/color/graphics, pacing/transitions, music/SFX, subtitles and safe-area/export notes. It must be concrete enough to produce without guessing, and consistent with the script.
+
+Use only product capabilities, facts, claims, statistics and testimonials supported by the business context or current draft. Do not invent any.
 
 For image and carousel content, preserve hook and script unless they are explicitly selected for editing.
 

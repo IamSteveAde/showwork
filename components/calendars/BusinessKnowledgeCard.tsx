@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 interface BusinessDocumentData {
@@ -145,9 +144,11 @@ export default function BusinessKnowledgeCard({
   lastResearchedAt,
   documents,
 }: BusinessKnowledgeCardProps) {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [businessSummaryState, setBusinessSummaryState] = useState(businessSummary);
+  const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
+  const [documentsState, setDocumentsState] = useState(documents);
   const [uploading, setUploading] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -278,6 +279,20 @@ if (presignContentType.includes("application/json")) {
       for (const file of Array.from(files)) {
         const result = await uploadOne(file);
 
+        if (result?.document) {
+          const uploadedDocument = result.document as BusinessDocumentData;
+          setDocumentsState((current) => [
+            ...current.filter((document) => document.id !== uploadedDocument.id),
+            uploadedDocument,
+          ]);
+        }
+
+        if (result?.summaryUpdated && typeof result.businessSummary === "string") {
+          setBusinessSummaryState(result.businessSummary);
+          setSummaryUpdatedAtState(result.summaryUpdatedAt ?? new Date().toISOString());
+          window.sessionStorage.setItem(`calendar:${calendarId}:has-business-summary`, "true");
+        }
+
         if (result?.summaryUpdated === false) {
           anyFailedToFold = true;
         }
@@ -289,7 +304,6 @@ if (presignContentType.includes("application/json")) {
         );
       }
 
-      router.refresh();
     } catch (err) {
       setError(
         err instanceof Error
@@ -320,7 +334,7 @@ if (presignContentType.includes("application/json")) {
       }
 
       setConfirmingDeleteId(null);
-      router.refresh();
+      setDocumentsState((current) => current.filter((document) => document.id !== documentId));
     } catch (err) {
       setError(
         err instanceof Error
@@ -332,7 +346,7 @@ if (presignContentType.includes("application/json")) {
     }
   };
 
-  const updated = formatDate(summaryUpdatedAt);
+  const updated = formatDate(summaryUpdatedAtState);
   const researched = formatDate(lastResearchedAt);
 
   if (!aiActive) {
@@ -451,8 +465,8 @@ if (presignContentType.includes("application/json")) {
             <FileIcon />
 
             <span className="text-[11px] font-semibold text-[#475467]">
-              {documents.length}{" "}
-              {documents.length === 1
+              {documentsState.length}{" "}
+              {documentsState.length === 1
                 ? "source"
                 : "sources"}
             </span>
@@ -482,7 +496,7 @@ if (presignContentType.includes("application/json")) {
                 </p>
               </div>
 
-              {businessSummary && (
+              {businessSummaryState && (
                 <button
                   type="button"
                   onClick={() =>
@@ -499,13 +513,13 @@ if (presignContentType.includes("application/json")) {
               )}
             </div>
 
-            {businessSummary ? (
+            {businessSummaryState ? (
               <p
                 className={`mt-4 whitespace-pre-wrap text-xs leading-6 text-[#475467] ${
                   summaryExpanded ? "" : "line-clamp-4"
                 }`}
               >
-                {businessSummary}
+                {businessSummaryState}
               </p>
             ) : (
               <div className="mt-4 rounded-xl border border-dashed border-[#D5DCE5] bg-white px-4 py-5">
@@ -605,7 +619,7 @@ if (presignContentType.includes("application/json")) {
           }}
         />
 
-        {documents.length > 0 && (
+        {documentsState.length > 0 && (
           <div className="mt-5 rounded-[22px] border border-[#E4E7EC] bg-white">
             <button
               type="button"
@@ -625,8 +639,8 @@ if (presignContentType.includes("application/json")) {
                   </p>
 
                   <p className="mt-0.5 truncate text-[10px] text-[#98A2B3]">
-                    {documents.length}{" "}
-                    {documents.length === 1
+                    {documentsState.length}{" "}
+                    {documentsState.length === 1
                       ? "document"
                       : "documents"}{" "}
                     available to the AI
@@ -642,7 +656,7 @@ if (presignContentType.includes("application/json")) {
             {documentsExpanded && (
               <div className="border-t border-[#EEF0F3] px-4 pb-4 pt-2 sm:px-5">
                 <div className="divide-y divide-[#EEF0F3]">
-                  {documents.map((doc) => (
+                  {documentsState.map((doc) => (
                     <div
                       key={doc.id}
                       className="flex min-w-0 items-center gap-3 py-3"
