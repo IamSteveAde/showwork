@@ -1796,6 +1796,7 @@ enum SocialPlatform {
 enum InstagramPublishStatus {
   NOT_SCHEDULED
   SCHEDULED
+  PUBLISHING
   PUBLISHED
   FAILED
 }
@@ -1805,6 +1806,7 @@ enum InstagramPublishStatus {
 enum TikTokPublishStatus {
   NOT_SCHEDULED
   SCHEDULED
+  PUBLISHING
   PUBLISHED
   FAILED
 }
@@ -1895,6 +1897,11 @@ script         String?        @db.Text
   // the content audit clears and posts become genuinely public.
   tikTokPublishId     String?
   tikTokPublishError  String?
+
+  // Lease marker prevents Netlify background-function retries from
+  // starting the same platform publish twice. A stale PUBLISHING job
+  // is failed for manual reconciliation after the worker time limit.
+  publishWorkerStartedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

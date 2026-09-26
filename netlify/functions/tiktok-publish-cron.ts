@@ -1,10 +1,8 @@
 import { schedule } from "@netlify/functions";
 
-// Runs every 15 minutes, same interval as the Instagram publish job
-// — calls the protected API route above rather than duplicating its
-// logic here, same pattern as every other scheduled job in this
-// codebase.
-export const handler = schedule("*/15 * * * *", async () => {
+// Check each minute; due posts are atomically claimed and dispatched
+// to independent background workers by the protected API route.
+export const handler = schedule("* * * * *", async () => {
   const siteUrl = process.env.URL || process.env.DEPLOY_URL;
 
   try {
