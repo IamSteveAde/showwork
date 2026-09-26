@@ -7,8 +7,12 @@ import BlogFooter from "@/components/blog/BlogFooter";
 const COLOR = { black: "#080808", offWhite: "#F7F4EC", blue: "#2478FF", yellow: "#FFCC00" };
 
 export const metadata: Metadata = {
-  title: "Webinars | Showwork",
-  description: "Creativo webinars — conversations that make your next move smarter.",
+  title: "Creative Business Webinars for Creators | Creativo by Showwork",
+  description: "Join Creativo webinars for photographers, videographers and creative professionals. Learn about pricing, positioning, clients and growing a sustainable creative business.",
+  alternates: { canonical: "/webinars" },
+  keywords: ["creative business webinars", "photographer webinar", "videographer business training", "creative entrepreneurship Nigeria"],
+  openGraph: { type: "website", siteName: "Showwork", title: "Creative Business Webinars | Creativo by Showwork", description: "Learn about pricing, positioning, clients and growing a creative business in live Creativo webinars.", url: "/webinars", images: ["/images/create.jpg"] },
+  twitter: { card: "summary_large_image", title: "Creative Business Webinars | Creativo", description: "Practical webinars for photographers, videographers and creative professionals.", images: ["/images/create.jpg"] },
 };
 
 // Same reasoning as every other admin-managed public page this

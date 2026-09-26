@@ -20,17 +20,19 @@ export async function generateMetadata({
   });
 
   if (!post || !post.published) {
-    return { title: "Post not found — Showwork" };
+    return { title: "Post not found | Showwork", robots: { index: false, follow: false } };
   }
 
-  const title = post.metaTitle || `${post.title} | Showwork`;
-  const description = post.metaDescription || post.excerpt || "Read more on the Showwork blog.";
-  const image = post.coverImageUrl || `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+  const title = (post.metaTitle || `${post.title} | Showwork`).slice(0, 60);
+  const rawDescription = post.metaDescription || post.excerpt || "Creative business advice for photographers, videographers and independent creators.";
+  const description = rawDescription.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+  const image = post.coverImageUrl || "/images/shwk.jpg";
 
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }], type: "article" },
+    alternates: { canonical: `/blog/${slug}` },
+    openGraph: { title, description, url: `/blog/${slug}`, siteName: "Showwork", images: [{ url: image, width: 1200, height: 630, alt: title }], type: "article" },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }

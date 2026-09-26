@@ -5,8 +5,12 @@ import BlogFooter from "@/components/blog/BlogFooter";
 import LeaderboardPageContent from "@/components/leaderboard/LeaderboardPageContent";
 
 export const metadata: Metadata = {
-  title: "Leaderboard | Showwork",
-  description: "Every Creativo Spotlight winner, ever — filterable by category and month, plus who's won the most all-time.",
+  title: "Creativo Creator Leaderboard & Spotlight Winners | Showwork",
+  description: "Explore Creativo Spotlight winners and ranked creative work by category and month. Discover photographers, videographers and creators recognized by Showwork.",
+  alternates: { canonical: "/leaderboard" },
+  keywords: ["creative leaderboard Nigeria", "photography awards", "videographer spotlight winners", "creative community rankings"],
+  openGraph: { type: "website", siteName: "Showwork", title: "Creativo Creator Leaderboard | Showwork", description: "Explore Creativo Spotlight winners and ranked creative work by category and month.", url: "/leaderboard", images: ["/images/create.jpg"] },
+  twitter: { card: "summary_large_image", title: "Creativo Creator Leaderboard | Showwork", description: "Discover photographers, videographers and creators recognized by Showwork.", images: ["/images/create.jpg"] },
 };
 
 // Same reasoning as /creativo and /spotlight: reads admin-managed

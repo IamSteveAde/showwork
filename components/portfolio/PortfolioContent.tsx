@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import PortfolioMediaModal, { type PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
+import PortfolioAutoplayVideo from "@/components/portfolio/PortfolioAutoplayVideo";
 import WhatsAppChatWidget from "@/components/portfolio/WhatsAppChatWidget";
 
 
@@ -573,31 +574,6 @@ function TestimonialsCarousel({
 // rather than random: the same considered pattern Apple's editorial
 // pages and premium agency reels use, not an arbitrary shuffle.
 
-// Shared across every tile on the page — caps how many videos can
-// ever be decoding/playing at the same time. This, not the fade-in
-// animations, is what actually causes scroll jank on a media-heavy
-// page: a fast scroll past a dozen autoplay video tiles can trigger a
-// dozen simultaneous video decodes, which is genuinely expensive.
-// Real sites with lots of autoplay media (Vimeo showcases, agency
-// reels) all cap concurrent playback the same way.
-const MAX_CONCURRENT_VIDEOS = 3;
-const playingVideos: HTMLVideoElement[] = [];
-
-function requestPlay(vid: HTMLVideoElement) {
-  if (playingVideos.includes(vid)) return;
-  if (playingVideos.length >= MAX_CONCURRENT_VIDEOS) {
-    playingVideos.shift()?.pause();
-  }
-  playingVideos.push(vid);
-  vid.play().catch(() => {});
-}
-
-function releasePlay(vid: HTMLVideoElement) {
-  const idx = playingVideos.indexOf(vid);
-  if (idx !== -1) playingVideos.splice(idx, 1);
-  vid.pause();
-}
-
 function TiledTile({
   item,
   index,
@@ -614,42 +590,12 @@ function TiledTile({
   onOpen: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
     if (nearView) setShouldLoad(true);
   }, [nearView]);
-
-  useEffect(() => {
-    // Only trigger play once, right after the video actually mounts —
-    // no opposing pause call tied to a separate "inView" check here.
-    // The previous version paused the video the instant it wasn't
-    // strictly in view, which could fire in the very same tick as the
-    // native autoplay attempt, killing it before a single frame had
-    // even decoded — exactly what showed as a permanent black screen
-    // rather than a paused frame.
-    const vid = videoRef.current;
-    if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
-    requestPlay(vid);
-
-    // Mobile browsers (iOS Safari especially) can block a video's
-    // very first autoplay attempt if it wasn't tied to a direct user
-    // gesture, even with muted/playsInline/autoPlay all correctly
-    // set — a scroll alone isn't always treated as sufficient on iOS
-    // the way it is on desktop. Retrying on the very first tap
-    // anywhere on the page catches this: once genuinely triggered by
-    // a real gesture, mobile browsers reliably allow it from then on,
-    // including for videos that mount afterward.
-    const retryOnFirstTouch = () => requestPlay(vid);
-    window.addEventListener("touchstart", retryOnFirstTouch, { once: true });
-    window.addEventListener("click", retryOnFirstTouch, { once: true });
-    return () => {
-      window.removeEventListener("touchstart", retryOnFirstTouch);
-      window.removeEventListener("click", retryOnFirstTouch);
-    };
-  }, [shouldLoad, item.type]);
 
   return (
     <motion.div
@@ -671,23 +617,14 @@ function TiledTile({
     >
       {item.type === "VIDEO" ? (
         shouldLoad && (
-          <video
-            ref={videoRef}
+          <PortfolioAutoplayVideo
             src={item.url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            controlsList="nodownload noremoteplayback"
-            disablePictureInPicture
-            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
             // The dimmed → awake effect only applies on devices that
             // genuinely support hover ([@media(hover:hover)]) — on
             // touch devices there's no hover gesture to undo the dim,
             // so it never applies there at all; content shows at full
             // brightness immediately on mobile.
-            className="absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
           />
         )
       ) : (
@@ -784,7 +721,7 @@ function MiniSectionCard({
     >
       {cover ? (
         cover.type === "VIDEO" ? (
-          <video src={cover.url} autoPlay muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+          <PortfolioAutoplayVideo src={cover.url} className="absolute inset-0 h-full w-full object-cover" />
         ) : isDocType ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
             <IconDocument className="h-8 w-8 text-white/25" />
@@ -831,12 +768,8 @@ function CategoryCard({
     >
       {cover ? (
         cover.type === "VIDEO" ? (
-          <video
+          <PortfolioAutoplayVideo
             src={cover.url}
-            autoPlay
-            muted
-            playsInline
-            preload="metadata"
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
           />
         ) : isDocType ? (
@@ -1225,9 +1158,9 @@ export default function PortfolioContent({
                     based on its own recorded type. */}
                 {(heroBannerMobileUrl || heroBannerDesktopUrl) && (
                   (heroBannerMobileUrl ? heroBannerMobileType : heroBannerDesktopType) === "VIDEO" ? (
-                    <video
+                    <PortfolioAutoplayVideo
                       src={heroBannerMobileUrl || heroBannerDesktopUrl || ""}
-                      autoPlay muted loop playsInline
+                      enabled={!scrolled}
                       className="block h-full w-full object-cover md:hidden"
                       style={{ opacity: 0.85 }}
                     />
@@ -1243,9 +1176,9 @@ export default function PortfolioContent({
                 )}
                 {(heroBannerDesktopUrl || heroBannerMobileUrl) && (
                   (heroBannerDesktopUrl ? heroBannerDesktopType : heroBannerMobileType) === "VIDEO" ? (
-                    <video
+                    <PortfolioAutoplayVideo
                       src={heroBannerDesktopUrl || heroBannerMobileUrl || ""}
-                      autoPlay muted loop playsInline
+                      enabled={!scrolled}
                       className="hidden h-full w-full object-cover md:block"
                       style={{ opacity: 0.85 }}
                     />
@@ -1261,7 +1194,7 @@ export default function PortfolioContent({
                 )}
               </>
             ) : heroMedia!.type === "VIDEO" ? (
-              <video src={heroMedia!.url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+              <PortfolioAutoplayVideo src={heroMedia!.url} enabled={!scrolled} className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={heroMedia!.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
@@ -1480,13 +1413,9 @@ export default function PortfolioContent({
                 className="absolute inset-0"
               >
                 {selectedCover?.type === "VIDEO" ? (
-                  <video
+                  <PortfolioAutoplayVideo
                     key={selectedCover.url}
                     src={selectedCover.url}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
                     className="h-full w-full object-cover"
                     style={{ opacity: 0.8 }}
                   />

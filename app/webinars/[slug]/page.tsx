@@ -29,15 +29,15 @@ export async function generateMetadata({
 
   if (!webinar) {
     return {
-      title: "Webinar not found — Showwork",
+      title: "Webinar not found | Showwork",
       description: "The requested Creativo webinar could not be found.",
+      robots: { index: false, follow: false },
     };
   }
 
-  const title = `${webinar.topic} | Creativo Webinar`;
-  const description =
-    webinar.description ||
-    "Join a Creativo webinar built for ambitious creatives, professionals and teams.";
+  const title = `${webinar.topic.slice(0, 42)} | Creativo`;
+  const description = (webinar.description ||
+    "Join a Creativo webinar for photographers, videographers and creative professionals. Learn practical ways to grow your creative business.").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
 
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL || "https://useshowwork.com";
@@ -48,6 +48,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: `/webinars/${slug}` },
 
     robots: {
       index: true,

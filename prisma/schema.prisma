@@ -1397,7 +1397,7 @@ model PasswordResetToken {
 // ─────────────────────────────────────────────
 model Portfolio {
   id                    String   @id @default(uuid())
-  slug                  String   @unique // useshowwork.com/p/{slug}
+  slug                  String   @unique // useshowwork.com/portfolio/{slug}
   companyName           String
   heroTagline           String?
   // Legacy — picks one already-uploaded section photo as the hero.

@@ -10,6 +10,30 @@ interface BannerCandidate {
   type: "PHOTO" | "VIDEO";
 }
 
+async function prepareBannerFile(file: File, maxDimension: number): Promise<File> {
+  if (!file.type.startsWith("image/") || typeof createImageBitmap === "undefined") return file;
+  let bitmap: ImageBitmap | undefined;
+  try {
+    bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.92));
+    if (!blob || blob.size >= file.size) return file;
+    const name = file.name.replace(/\.[^.]+$/, "") || "portfolio-banner";
+    return new File([blob], `${name}.webp`, { type: "image/webp", lastModified: Date.now() });
+  } catch {
+    // Unsupported image codecs and browser canvas failures keep the original upload intact.
+    return file;
+  } finally {
+    bitmap?.close();
+  }
+}
+
 export default function PortfolioDetailsForm({
   companyName,
   heroTagline,
@@ -120,26 +144,28 @@ export default function PortfolioDetailsForm({
     }
   };
 
-     const uploadBanner = async (
+  const uploadBanner = async (
     file: File,
     setUrl: (url: string) => void,
     setType: (type: "IMAGE" | "VIDEO") => void,
     setUploading: (v: boolean) => void,
-    setProgress: (percent: number) => void
+    setProgress: (percent: number) => void,
+    maxDimension: number,
   ) => {
     setUploading(true);
     setUploadError(null);
     setProgress(0);
     try {
+      const uploadFile = await prepareBannerFile(file, maxDimension);
       const presignRes = await fetch("/api/portfolio/upload/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: uploadFile.name, contentType: uploadFile.type, fileSizeMb: uploadFile.size / (1024 * 1024) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setProgress(percent) });
+      await putFileWithProgress(presignData.uploadUrl, uploadFile, { contentType: uploadFile.type, onProgress: ({ percent }) => setProgress(percent) });
 
       // Same reasoning as the bio photo above — a banner isn't a
       // gallery piece, so this never calls /api/portfolio/upload/
@@ -147,7 +173,7 @@ export default function PortfolioDetailsForm({
       // recorded alongside it so the public page knows whether to
       // render this as an <img> or a <video>.
       setUrl(presignData.publicUrl);
-      setType(file.type.startsWith("video/") ? "VIDEO" : "IMAGE");
+      setType(uploadFile.type.startsWith("video/") ? "VIDEO" : "IMAGE");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Banner upload failed. Please try again.");
     } finally {
@@ -239,7 +265,7 @@ export default function PortfolioDetailsForm({
         <h3 className="mb-1 text-sm font-semibold text-slate-950">Your portfolio's banner</h3>
         <p className="mb-4 text-xs leading-relaxed text-slate-500">
           Upload two versions of your banner — one shaped for wide desktop screens, one shaped for tall phone screens.
-          Visitors automatically see whichever one actually fits their screen.
+          Visitors automatically see the version for their screen. Banner images are resized and saved as high-quality WebP; gallery originals are unchanged.
         </p>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -268,7 +294,7 @@ export default function PortfolioDetailsForm({
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   e.currentTarget.value = "";
-                  if (file) uploadBanner(file, setBannerDesktopUrl, setBannerDesktopType, setUploadingDesktopBanner, setDesktopBannerProgress);
+                  if (file) uploadBanner(file, setBannerDesktopUrl, setBannerDesktopType, setUploadingDesktopBanner, setDesktopBannerProgress, 1920);
                 }}
               />
             </label>
@@ -299,7 +325,7 @@ export default function PortfolioDetailsForm({
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   e.currentTarget.value = "";
-                  if (file) uploadBanner(file, setBannerMobileUrl, setBannerMobileType, setUploadingMobileBanner, setMobileBannerProgress);
+                  if (file) uploadBanner(file, setBannerMobileUrl, setBannerMobileType, setUploadingMobileBanner, setMobileBannerProgress, 1350);
                 }}
               />
             </label>

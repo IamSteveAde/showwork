@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import PortfolioAutoplayVideo from "@/components/portfolio/PortfolioAutoplayVideo";
 
 export interface PortfolioMediaItem {
   id: string;
@@ -98,13 +99,9 @@ export default function PortfolioMediaModal({
         onContextMenu={(e) => e.preventDefault()}
       >
         {item.type === "VIDEO" ? (
-          <video
+          <PortfolioAutoplayVideo
             src={item.url}
             controls
-            autoPlay
-            playsInline
-            controlsList="nodownload noremoteplayback"
-            disablePictureInPicture
             className="max-h-[85vh] max-w-[92vw] object-contain"
           />
         ) : item.type === "PHOTO" ? (

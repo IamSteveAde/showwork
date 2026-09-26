@@ -14,8 +14,12 @@ const DEFAULT_DESCRIPTION =
   "Every month, we spotlight the strongest client work submitted by creators — real projects, judged on real craft. Submit yours for a shot at the monthly Top 3.";
 
 export const metadata: Metadata = {
-  title: "Monthly Spotlight | Showwork",
-  description: DEFAULT_DESCRIPTION,
+  title: "Creator Portfolio Competition & Monthly Spotlight | Showwork",
+  description: "Submit your best creative project to the Showwork Monthly Spotlight. Discover featured work from photographers, videographers and creative professionals.",
+  alternates: { canonical: "/spotlight" },
+  keywords: ["creative portfolio competition", "photography competition Nigeria", "videography showcase", "creator spotlight"],
+  openGraph: { type: "website", siteName: "Showwork", title: "Creator Monthly Spotlight | Showwork", description: "Submit your creative project to the Showwork Monthly Spotlight and discover featured work from creators.", url: "/spotlight", images: ["/images/create.jpg"] },
+  twitter: { card: "summary_large_image", title: "Creator Monthly Spotlight | Showwork", description: "Celebrate standout work from photographers, videographers and creative professionals.", images: ["/images/create.jpg"] },
 };
 
 // Same reasoning as /creativo: no cookies()/headers() call of its own

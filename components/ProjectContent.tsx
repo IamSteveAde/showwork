@@ -12,6 +12,7 @@ import DocModal from "@/components/Docmodal";
 import DeliveryStatusBanner from "@/components/DeliveryStatusBanner";
 import { downloadFile, downloadAllAsZip } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
+import PortfolioAutoplayVideo from "@/components/portfolio/PortfolioAutoplayVideo";
 
 function DownloadIconButton({
   onDownload,
@@ -189,27 +190,16 @@ function Hero({
   onViewWork: () => void;
 }) {
   const heroRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.72], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
-
-  useEffect(() => {
-    videoRef.current?.play().catch(() => {});
-  }, []);
 
   return (
     <section ref={heroRef} className="relative h-[92svh] min-h-[680px] w-full overflow-hidden bg-[#080808]">
       <motion.div style={{ scale: heroScale }} className="absolute inset-0 origin-center">
         {heroMedia.type === "VIDEO" ? (
-          <video
-            ref={videoRef}
+          <PortfolioAutoplayVideo
             src={heroMedia.url}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
             className="h-full w-full object-cover"
             style={{ opacity: 0.9 }}
           />
@@ -220,7 +210,7 @@ function Hero({
             transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
             className="relative h-full w-full"
           >
-            <Image src={heroMedia.url} alt={heroMedia.caption} fill priority sizes="100vw" quality={92} className="object-cover" />
+            <Image src={heroMedia.url} alt={heroMedia.caption} fill priority sizes="100vw" quality={82} className="object-cover" />
           </motion.div>
         )}
       </motion.div>
@@ -271,20 +261,6 @@ function Hero({
   );
 }
 
-
-const MAX_CONCURRENT_VIDEOS = 3;
-const playingVideos: HTMLVideoElement[] = [];
-function requestPlay(vid: HTMLVideoElement) {
-  if (playingVideos.includes(vid)) return;
-  if (playingVideos.length >= MAX_CONCURRENT_VIDEOS) playingVideos.shift()?.pause();
-  playingVideos.push(vid);
-  vid.play().catch(() => {});
-}
-function releasePlay(vid: HTMLVideoElement) {
-  const idx = playingVideos.indexOf(vid);
-  if (idx !== -1) playingVideos.splice(idx, 1);
-  vid.pause();
-}
 
 function officeViewerUrl(url: string) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
@@ -468,7 +444,6 @@ function WallTile({
   onDeleteReview: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const nearView = useInView(containerRef, { once: true, margin: "-20%" });
   const [shouldLoad, setShouldLoad] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -477,20 +452,6 @@ function WallTile({
     if (nearView) setShouldLoad(true);
   }, [nearView]);
 
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid || item.type !== "VIDEO" || !shouldLoad) return;
-    requestPlay(vid);
-    const retry = () => requestPlay(vid);
-    window.addEventListener("touchstart", retry, { once: true });
-    window.addEventListener("click", retry, { once: true });
-    return () => {
-      releasePlay(vid);
-      window.removeEventListener("touchstart", retry);
-      window.removeEventListener("click", retry);
-    };
-  }, [shouldLoad, item.type]);
-
   return (
     <motion.div
       ref={containerRef}
@@ -498,7 +459,7 @@ function WallTile({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.65, delay: (index % 8) * 0.025 }}
-      className="group relative overflow-hidden rounded-[18px] bg-[#171717] shadow-[0_18px_50px_rgba(0,0,0,0.14)]"
+      className="group relative overflow-hidden bg-[#171717] shadow-[0_18px_50px_rgba(0,0,0,0.14)]"
       style={{ width }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -511,17 +472,8 @@ function WallTile({
       >
         {item.type === "VIDEO" ? (
           shouldLoad ? (
-            <video
-              ref={videoRef}
+            <PortfolioAutoplayVideo
               src={item.url}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              controlsList="nodownload noremoteplayback"
-              disablePictureInPicture
-              draggable={false}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out"
               style={{ transform: hovered ? "scale(1.045)" : "scale(1)" }}
             />
@@ -625,7 +577,7 @@ function DocTile({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.55, delay: index * 0.035 }}
-      className="group overflow-hidden rounded-[22px] border border-black/[0.06] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.07)]"
+      className="group overflow-hidden border border-black/[0.06] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.07)]"
     >
       <div onClick={onOpen} className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-slate-100">
         {doc.type === "PDF" ? (
@@ -977,7 +929,7 @@ export default function ProjectContent({
               ["Images", photos.length],
               ["Documents", docs.length],
             ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5">
+              <div key={String(label)} className="border border-white/[0.07] bg-white/[0.035] p-5">
                 <p className="text-2xl font-light tracking-[-0.04em] text-white">{value}</p>
                 <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/25">{label}</p>
               </div>

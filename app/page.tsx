@@ -10,9 +10,9 @@ import HomeClient from "./HomeClient";
 // current subscription model (free to start) rather than the old flat
 // one-time fee.
 export const metadata: Metadata = {
-  title: "Showwork | Premium Portfolios & Client Delivery for Nigerian Creators",
+  title: "Showwork | Portfolios, Client Delivery & Content Workspaces",
   description:
-    "Showwork helps Nigerian photographers, videographers, and content creators present — and price — their work like the premium brand it deserves to be. A professional portfolio, a password-protected client delivery, and Creativo, a community built around positioning and pricing with confidence. Free to start.",
+    "Build a portfolio, deliver client projects, plan social media content and manage approvals in one platform for Nigerian creators, agencies and creative teams.",
   keywords: [
     "client delivery Nigeria",
     "creator portfolio Nigeria",
@@ -23,27 +23,28 @@ export const metadata: Metadata = {
     "WeTransfer alternative Nigeria",
     "Dropbox alternative for creators",
     "premium client presentation Lagos",
-    "how to charge more as a photographer",
+    "social media content approval platform",
+    "creative agency project management Nigeria",
     "creator community Nigeria",
     "Creativo",
     "Showwork",
   ],
     openGraph: {
-    title: "Showwork | Present Your Work Like a Premium Brand",
+    title: "Showwork | The Creator Business Platform",
     description:
-      "A professional portfolio, a premium client delivery, and a community built to help Nigerian creators position themselves properly. Free to start.",
-    url: "https://useshowwork.com",
+      "Build a creative portfolio, deliver client projects, plan social content and grow your creative business with Showwork.",
+    url: "/",
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
-    images: [{ url: `${process.env.NEXT_PUBLIC_APP_URL}/images/work.jpg`, width: 1200, height: 630 }],
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork creator business platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork | Present and Price Your Work Like a Premium Brand",
+    title: "Showwork | Portfolios, Project Delivery & Content Planning",
     description:
-      "Stop sending Dropbox links. Deliver your client work — and your own portfolio — the way a premium brand would.",
-    images: [`${process.env.NEXT_PUBLIC_APP_URL}/images/work.jpg`],
+      "One platform for your portfolio, professional client delivery, social media calendar, content approvals and creative community.",
+    images: ["/images/work.jpg"],
   },
   robots: {
     index: true,

@@ -17,8 +17,38 @@ const brandFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Showwork",
-  description: "Present your content deliveries like a premium brand.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://useshowwork.com"),
+  title: "Showwork | Creator Business Platform",
+  description:
+    "Showwork helps Nigerian photographers, videographers, agencies and social media managers build portfolios, deliver client projects, plan social content and manage approvals in one platform.",
+  keywords: [
+    "creator business platform Nigeria",
+    "photographer portfolio Nigeria",
+    "videographer portfolio",
+    "client project delivery platform",
+    "social media content calendar",
+    "client content approval software",
+    "creative business tools",
+    "Showwork",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "Showwork",
+    title: "Showwork | Creator Business Platform",
+    description:
+      "Build a creative portfolio, deliver client projects, plan social content and manage approvals with Showwork.",
+    url: "/",
+    locale: "en_NG",
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork creator business platform" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Showwork | Creator Business Platform",
+    description:
+      "Portfolios, client delivery and social content workspaces for Nigerian creators and creative teams.",
+    images: ["/images/work.jpg"],
+  },
+  robots: { index: true, follow: true },
 };
 
 // Lets TypeScript know window.fbq exists (set by the Meta Pixel

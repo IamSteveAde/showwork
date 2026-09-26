@@ -30,12 +30,12 @@ export async function generateMetadata({
   });
 
   if (!project) {
-    return { title: "Project not found — Showwork" };
+    return { title: "Project not found | Showwork", robots: { index: false, follow: false } };
   }
 
   const creatorName = project.creator.companyName || project.creator.name || "Showwork";
   const title = `${project.clientName} — Delivered by ${creatorName}`;
-  const description = `${creatorName} has delivered your project. View, approve, and download your final files. Sponsored by Showwork.`;
+  const description = `View, review and download ${project.clientName}'s creative project delivery from ${creatorName}. Shared securely with Showwork.`;
 
    // Any real photo from this delivery, picked at random — not
   // specifically the banner, and not a generic Showwork graphic.
@@ -48,12 +48,13 @@ export async function generateMetadata({
     : null;
   const image = randomPhoto
     ? publicUrlFor(randomPhoto.fileKey)
-    : `${process.env.NEXT_PUBLIC_APP_URL}/images/shwk.jpg`;
+    : "/images/shwk.jpg";
 
   return {
     title,
     description,
-    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
+    robots: { index: false, follow: false, noarchive: true },
+    openGraph: { title, description, url: `/${slug}`, siteName: "Showwork", images: [{ url: image, width: 1200, height: 630, alt: `${project.clientName} project delivery` }] },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }

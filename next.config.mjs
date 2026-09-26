@@ -5,7 +5,6 @@ const nextConfig = {
       { protocol: "https", hostname: "*.r2.dev" },
       { protocol: "https", hostname: "*.r2.cloudflarestorage.com" },
     ],
-    unoptimized: true,
   },
   // pdfkit reads its own font data files (Helvetica.afm, etc.) from disk
   // at runtime via fs.readFileSync. If webpack bundles it, those data
