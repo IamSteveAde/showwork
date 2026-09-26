@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import WorkspaceTour from "@/components/calendars/WorkspaceTour";
@@ -177,18 +178,8 @@ export default function CalendarWorkspaceShell({
   publishAction?: ReactNode;
   sections: WorkspaceSection[];
 }) {
-  const [activeId, setActiveId] =
-  useState<WorkspaceSectionId>(() => {
-    if (typeof window === "undefined") return "overview";
-
-    const view = new URLSearchParams(window.location.search).get("view");
-
-    const validViews = sections.map((section) => section.id);
-
-    return validViews.includes(view as WorkspaceSectionId)
-      ? (view as WorkspaceSectionId)
-      : "overview";
-  });
+  const router = useRouter();
+  const [activeId, setActiveId] = useState<WorkspaceSectionId>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Allow rich overview modules to behave like real navigation controls without
@@ -199,6 +190,9 @@ export default function CalendarWorkspaceShell({
       if (detail?.id) {
         setActiveId(detail.id);
         setMobileOpen(false);
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", detail.id);
+        window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     };
@@ -208,6 +202,45 @@ export default function CalendarWorkspaceShell({
   }, []);
 
   const visibleSections = useMemo(() => sections.filter(Boolean), [sections]);
+
+  useEffect(() => {
+    const refreshWhenSafe = () => {
+      if (document.visibilityState !== "visible") return;
+
+      const focused = document.activeElement;
+      const editing =
+        focused instanceof HTMLElement &&
+        (focused.isContentEditable || focused.matches("input, textarea, select"));
+      if (!editing) router.refresh();
+    };
+
+    const interval = window.setInterval(refreshWhenSafe, 15_000);
+    window.addEventListener("focus", refreshWhenSafe);
+    document.addEventListener("visibilitychange", refreshWhenSafe);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenSafe);
+      document.removeEventListener("visibilitychange", refreshWhenSafe);
+    };
+  }, [router]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const requestedView = new URLSearchParams(window.location.search).get("view");
+      const validViews = sections.map((section) => section.id);
+      setActiveId(
+        validViews.includes(requestedView as WorkspaceSectionId)
+          ? (requestedView as WorkspaceSectionId)
+          : "overview",
+      );
+    };
+
+    handlePopState();
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [sections]);
+
   const active =
     visibleSections.find((section) => section.id === activeId) ??
     visibleSections.find((section) => section.id === "content") ??
@@ -277,6 +310,11 @@ export default function CalendarWorkspaceShell({
   const select = (id: WorkspaceSectionId) => {
     setActiveId(id);
     setMobileOpen(false);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("view") !== id) {
+      url.searchParams.set("view", id);
+      window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
     requestAnimationFrame(() => {
       document.getElementById("workspace-main")?.scrollTo({ top: 0, behavior: "smooth" });
       window.scrollTo({ top: 0, behavior: "smooth" });
