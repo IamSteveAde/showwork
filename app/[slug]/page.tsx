@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
-import { verifyViewerToken } from "@/lib/auth";
+import { getCurrentCreator, verifyViewerToken } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 import DeliveryPage from "./DeliveryPage";
 
 // A lightweight, separate query from the main page component below —
@@ -111,12 +112,17 @@ export default async function SlugPage({
 
   if (!project || project.deletedAt) notFound();
 
-  // Real view: someone actually opened this delivery link. Independent
-  // of email capture — counts regardless of whether that's turned on.
-  await db.project.update({
-    where: { id: project.id },
-    data: { viewCount: { increment: 1 } },
-  });
+  const currentCreator = await getCurrentCreator();
+  const isAdminPreview = !!currentCreator && isAdminEmail(currentCreator.email);
+
+  // Public client opens count as views. Admin previews bypass the gate
+  // without changing client analytics or creating viewer records.
+  if (!isAdminPreview) {
+    await db.project.update({
+      where: { id: project.id },
+      data: { viewCount: { increment: 1 } },
+    });
+  }
 
   const mapMedia = (m: {
     id: string;
@@ -224,9 +230,9 @@ export default async function SlugPage({
       heroMedia={heroMedia}
       heroTagline={project.heroTagline}
       deliveryStatus={project.deliveryStatus}
-      initiallyUnlocked={!!viewerSession}
-      initialViewerEmail={viewerSession?.email ?? null}
-      initialViewerName={viewerSession?.name ?? null}
+      initiallyUnlocked={isAdminPreview || !!viewerSession}
+      initialViewerEmail={isAdminPreview ? currentCreator!.email : viewerSession?.email ?? null}
+      initialViewerName={isAdminPreview ? currentCreator!.name : viewerSession?.name ?? null}
       managedProject={managedProjectForClient}
     />
   );

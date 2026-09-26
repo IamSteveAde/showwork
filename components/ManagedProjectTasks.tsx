@@ -56,10 +56,8 @@ interface AssigneeOption {
   email: string;
 }
 
-// ── Upload helpers — same pattern used in AddMoreFilesButton, the
-// new-project page, and SectionHeader: real progress via XHR, plus a
-// second version for multipart chunks that reads back the ETag R2
-// returns for that chunk. ──
+// ── Upload helpers — real progress via XHR. Multipart ETags are
+// resolved by the server from R2 during finalization. ──
 function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -85,12 +83,7 @@ function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: n
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
-          return;
-        }
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -139,7 +132,7 @@ function clearTaskMultipartProgress(taskId: string, fingerprint: string) {
 
 const TASK_MULTIPART_THRESHOLD_MB = 100;
 const TASK_CHUNK_SIZE_MB = 200;
-const TASK_CHUNK_CONCURRENCY = 2;
+const TASK_CHUNK_CONCURRENCY = 3;
 const TASK_MAX_RETRIES = 2;
 const TASK_MAX_RETRIES_PER_CHUNK = 3;
 const taskSleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -188,7 +181,9 @@ function TaskAssets({
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+          setChunkStatus(`${Math.round((loaded / total) * 100)}% uploaded`);
+        });
 
         const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-complete`, {
           method: "POST",
@@ -314,7 +309,7 @@ function TaskAssets({
     if (!file) return;
     setUploading(true);
     setError(null);
-    setChunkStatus(null);
+    setChunkStatus("0% uploaded");
     try {
       const type = detectType(file);
       const isLarge = file.size >= TASK_MULTIPART_THRESHOLD_MB * 1024 * 1024;

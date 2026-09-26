@@ -26,6 +26,7 @@ function formatDate(date: Date | null | undefined) {
   if (!date) return "—";
 
   return date.toLocaleDateString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -36,6 +37,7 @@ function formatDateTime(date: Date | null | undefined) {
   if (!date) return "—";
 
   return date.toLocaleString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -289,10 +291,22 @@ export default async function CreatorDetailPage({
     },
   });
 
+  const portfolios = await db.portfolio.findMany({
+    where: { creatorId: creator.id },
+    select: { id: true, slug: true, companyName: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+  });
+
   const calendarCount = await db.socialCalendar.count({
     where: {
       managerId: creator.id,
     },
+  });
+
+  const calendars = await db.socialCalendar.findMany({
+    where: { managerId: creator.id },
+    select: { id: true, slug: true, clientName: true, planStatus: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
   });
 
   const contentWorkspaceUsage = await db.contentWorkspaceUsage.findUnique({
@@ -734,6 +748,27 @@ export default async function CreatorDetailPage({
                     <p className="mt-2 text-lg font-bold">{calendarCount}</p>
                   </div>
                 </div>
+
+                <div className="mt-5 space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: COLOR.subtle }}>Creator workspaces</p>
+                  {calendars.length ? calendars.map((calendar) => (
+                    <Link key={calendar.id} href={`/dashboard/calendars/${calendar.id}`} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:bg-white/[0.04]" style={{ borderColor: COLOR.border, background: COLOR.panelSoft }}>
+                      <span className="min-w-0 truncate text-sm font-medium text-white">{calendar.clientName} <span className="ml-1 text-xs text-white/40">/{calendar.slug}</span></span>
+                      <span className="shrink-0 text-xs text-white/50">Open →</span>
+                    </Link>
+                  )) : <p className="text-xs" style={{ color: COLOR.subtle }}>No workspaces created.</p>}
+                </div>
+              </div>
+            </Section>
+
+            <Section title={`Portfolios · ${portfolios.length}`} description="Public portfolio pages created by this account.">
+              <div className="space-y-2 p-5">
+                {portfolios.length ? portfolios.map((portfolio) => (
+                  <a key={portfolio.id} href={`/portfolio/${portfolio.slug}`} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:bg-white/[0.04]" style={{ borderColor: COLOR.border, background: COLOR.panelSoft }}>
+                    <span className="min-w-0 truncate text-sm font-medium text-white">{portfolio.companyName} <span className="ml-1 text-xs text-white/40">/portfolio/{portfolio.slug}</span></span>
+                    <span className="shrink-0 text-xs text-white/50">Visit ↗</span>
+                  </a>
+                )) : <p className="text-xs" style={{ color: COLOR.subtle }}>No portfolios created.</p>}
               </div>
             </Section>
 
@@ -753,7 +788,9 @@ export default async function CreatorDetailPage({
                   {creator.projects.map((project) => (
                     <Link
                       key={project.id}
-                      href={`/admin/activity`}
+                      href={`/${project.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
                       className="group block px-5 py-4 transition-colors hover:bg-white/[0.025] sm:px-6"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -779,7 +816,10 @@ export default async function CreatorDetailPage({
                             className="mt-1 truncate text-xs"
                             style={{ color: COLOR.subtle }}
                           >
-                            /{project.slug}
+                            Project link: /{project.slug}
+                          </p>
+                          <p className="mt-1 truncate text-xs" style={{ color: COLOR.subtle }}>
+                            Access code: <span className="font-mono text-white/80">{project.accessCode || "Unavailable for this older project"}</span>
                           </p>
                         </div>
 

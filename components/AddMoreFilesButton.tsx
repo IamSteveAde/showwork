@@ -53,15 +53,8 @@ function uploadWithProgress(
   });
 }
 
-// Same as uploadWithProgress, but for one chunk of a multipart upload
-// — the only real difference is reading back the ETag R2 returns for
-// that specific chunk, which is required later to tell R2 how to
-// stitch every chunk together into the final file. Reading this
-// response header requires R2's CORS config on this bucket to
-// explicitly list ETag under Access-Control-Expose-Headers — without
-// that, the chunk itself uploads fine (a 200 comes back), but the
-// browser silently can't read the header value needed to complete
-// the upload.
+// Same as uploadWithProgress, but reads an optional ETag for debugging.
+// Finalization reads the authoritative ETags from R2 on the server.
 function uploadPartWithProgress(
   url: string,
   chunk: Blob,
@@ -75,12 +68,7 @@ function uploadPartWithProgress(
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
-          return;
-        }
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -187,7 +175,7 @@ const CHUNK_SIZE_MB = 200;
 // the fully sequential approach. Kept modest on purpose rather than
 // maximized, since this is the same class of resource pressure that
 // caused the original crash this whole upload rework was built to fix.
-const CHUNK_CONCURRENCY = 2;
+const CHUNK_CONCURRENCY = 3;
 
 // Detects each file's real type from its actual content-type, rather
 // than assuming every file in a "Documents" section is the same kind
@@ -530,7 +518,7 @@ export default function AddMoreFilesButton({
         const file = filesToUpload[i];
         const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
 
-        setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
+        setStatus(`Uploading ${i + 1} of ${filesToUpload.length} — 0% uploaded${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
 
 
               const result = isLarge

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { blue: "#2478FF", gradient: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" };
 
@@ -50,6 +51,7 @@ function BriefAttachments({ managedProjectId, isOwner }: { managedProjectId: str
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +76,7 @@ function BriefAttachments({ managedProjectId, isOwner }: { managedProjectId: str
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadPercent(0);
     setError(null);
     try {
       const presignRes = await fetch(`/api/managed-projects/${managedProjectId}/brief-attachments/upload-presign`, {
@@ -84,8 +87,10 @@ function BriefAttachments({ managedProjectId, isOwner }: { managedProjectId: str
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) throw new Error("Upload to storage failed");
+      await putFileWithProgress(presignData.uploadUrl, file, {
+        contentType: file.type,
+        onProgress: ({ percent }) => setUploadPercent(percent),
+      });
 
       const completeRes = await fetch(`/api/managed-projects/${managedProjectId}/brief-attachments/upload-complete`, {
         method: "POST",
@@ -144,7 +149,7 @@ function BriefAttachments({ managedProjectId, isOwner }: { managedProjectId: str
             className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold"
             style={{ color: COLOR.blue, opacity: uploading ? 0.5 : 1 }}
           >
-            {uploading ? "Uploading..." : "+ Add attachment"}
+              {uploading ? `Uploading ${uploadPercent}%` : "+ Add attachment"}
           </label>
           {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
         </div>

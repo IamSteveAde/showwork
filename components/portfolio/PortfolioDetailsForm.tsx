@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 interface BannerCandidate {
   id: string;
@@ -65,6 +66,8 @@ export default function PortfolioDetailsForm({
   const [bannerMobileType, setBannerMobileType] = useState<"IMAGE" | "VIDEO">((initialBannerMobileType as "IMAGE" | "VIDEO") ?? "IMAGE");
   const [uploadingDesktopBanner, setUploadingDesktopBanner] = useState(false);
   const [uploadingMobileBanner, setUploadingMobileBanner] = useState(false);
+  const [desktopBannerProgress, setDesktopBannerProgress] = useState(0);
+  const [mobileBannerProgress, setMobileBannerProgress] = useState(0);
   const [email, setEmail] = useState(contactEmail ?? "");
   const [whatsapp, setWhatsapp] = useState(whatsappNumber ?? "");
   const [cta, setCta] = useState(ctaText ?? "");
@@ -76,6 +79,7 @@ export default function PortfolioDetailsForm({
   const [youtube, setYoutube] = useState(youtubeUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // ── Intro / bio section — shown before the portfolio's own sections
   // on the public page. Separate state from everything above, but
@@ -86,9 +90,12 @@ export default function PortfolioDetailsForm({
   const [bioStat, setBioStat] = useState(initialBioStat ?? "");
   const [bioPhotoUrl, setBioPhotoUrl] = useState(initialBioPhotoUrl ?? "");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState(0);
 
   const uploadBioPhoto = async (file: File) => {
     setUploadingPhoto(true);
+    setPhotoProgress(0);
+    setUploadError(null);
     try {
       const presignRes = await fetch("/api/portfolio/upload/presign", {
         method: "POST",
@@ -98,7 +105,7 @@ export default function PortfolioDetailsForm({
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setPhotoProgress(percent) });
 
       // A profile photo isn't gallery work, so this deliberately never
       // calls /api/portfolio/upload/complete — that route creates a
@@ -106,9 +113,8 @@ export default function PortfolioDetailsForm({
       // isn't what a bio photo is. presignData.publicUrl is what gets
       // saved directly.
       setBioPhotoUrl(presignData.publicUrl);
-    } catch {
-      // silently ignored — matches how this form already handles
-      // upload-adjacent actions without an inline error state
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Photo upload failed. Please try again.");
     } finally {
       setUploadingPhoto(false);
     }
@@ -118,9 +124,12 @@ export default function PortfolioDetailsForm({
     file: File,
     setUrl: (url: string) => void,
     setType: (type: "IMAGE" | "VIDEO") => void,
-    setUploading: (v: boolean) => void
+    setUploading: (v: boolean) => void,
+    setProgress: (percent: number) => void
   ) => {
     setUploading(true);
+    setUploadError(null);
+    setProgress(0);
     try {
       const presignRes = await fetch("/api/portfolio/upload/presign", {
         method: "POST",
@@ -130,7 +139,7 @@ export default function PortfolioDetailsForm({
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setProgress(percent) });
 
       // Same reasoning as the bio photo above — a banner isn't a
       // gallery piece, so this never calls /api/portfolio/upload/
@@ -139,8 +148,8 @@ export default function PortfolioDetailsForm({
       // render this as an <img> or a <video>.
       setUrl(presignData.publicUrl);
       setType(file.type.startsWith("video/") ? "VIDEO" : "IMAGE");
-    } catch {
-      // silently ignored, matching how uploadBioPhoto already handles this
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Banner upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -193,6 +202,7 @@ export default function PortfolioDetailsForm({
 
   return (
     <div className="flex flex-col gap-5">
+      {uploadError && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{uploadError}</p>}
       <div>
         <label className="mb-1.5 block text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
           Company / brand name
@@ -249,7 +259,7 @@ export default function PortfolioDetailsForm({
               )
             )}
             <label className="block cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-300">
-              {uploadingDesktopBanner ? "Uploading..." : bannerDesktopUrl ? "Change desktop banner" : "Upload desktop banner"}
+              {uploadingDesktopBanner ? `Uploading ${desktopBannerProgress}%` : bannerDesktopUrl ? "Change desktop banner" : "Upload desktop banner"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
@@ -257,7 +267,8 @@ export default function PortfolioDetailsForm({
                 disabled={uploadingDesktopBanner}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) uploadBanner(file, setBannerDesktopUrl, setBannerDesktopType, setUploadingDesktopBanner);
+                  e.currentTarget.value = "";
+                  if (file) uploadBanner(file, setBannerDesktopUrl, setBannerDesktopType, setUploadingDesktopBanner, setDesktopBannerProgress);
                 }}
               />
             </label>
@@ -279,7 +290,7 @@ export default function PortfolioDetailsForm({
               )
             )}
             <label className="block cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-300">
-              {uploadingMobileBanner ? "Uploading..." : bannerMobileUrl ? "Change mobile banner" : "Upload mobile banner"}
+              {uploadingMobileBanner ? `Uploading ${mobileBannerProgress}%` : bannerMobileUrl ? "Change mobile banner" : "Upload mobile banner"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
@@ -287,7 +298,8 @@ export default function PortfolioDetailsForm({
                 disabled={uploadingMobileBanner}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) uploadBanner(file, setBannerMobileUrl, setBannerMobileType, setUploadingMobileBanner);
+                  e.currentTarget.value = "";
+                  if (file) uploadBanner(file, setBannerMobileUrl, setBannerMobileType, setUploadingMobileBanner, setMobileBannerProgress);
                 }}
               />
             </label>
@@ -449,7 +461,7 @@ export default function PortfolioDetailsForm({
             <label
               className="cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500 hover:border-slate-300"
             >
-              {uploadingPhoto ? "Uploading..." : bioPhotoUrl ? "Change photo" : "Upload photo"}
+              {uploadingPhoto ? `Uploading ${photoProgress}%` : bioPhotoUrl ? "Change photo" : "Upload photo"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -457,6 +469,7 @@ export default function PortfolioDetailsForm({
                 disabled={uploadingPhoto}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  e.currentTarget.value = "";
                   if (file) uploadBioPhoto(file);
                 }}
               />

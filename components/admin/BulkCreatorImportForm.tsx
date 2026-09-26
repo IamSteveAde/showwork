@@ -2,27 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { postFormWithProgress } from "@/lib/uploadClient";
 
 export default function BulkCreatorImportForm() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ created: string[]; skipped: string[]; emailFailed: string[]; totalFound: number } | null>(null);
 
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
+    setUploadPercent(0);
     setError(null);
     setResult(null);
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("/api/admin/creators/bulk-import", { method: "POST", body: formData });
-    const data = await res.json();
+    try {
+    const res = await postFormWithProgress("/api/admin/creators/bulk-import", formData, setUploadPercent);
+    const data = JSON.parse(res.body);
 
-    if (res.ok) {
+    if (res.status >= 200 && res.status < 300) {
       setResult(data);
       setFile(null);
       router.refresh();
@@ -30,6 +34,10 @@ export default function BulkCreatorImportForm() {
       setError(data.error ?? "Failed to process file");
     }
     setLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to process file");
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,7 +56,7 @@ export default function BulkCreatorImportForm() {
         className="rounded-md py-2 text-xs font-semibold disabled:opacity-50"
         style={{ background: "#F5C842", color: "#0A0A0A" }}
       >
-        {loading ? "Creating accounts..." : "Create accounts from file"}
+        {loading ? uploadPercent < 100 ? `Uploading ${uploadPercent}%...` : "Processing file..." : "Create accounts from file"}
       </button>
 
       {result && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
@@ -45,6 +46,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
   const [form, setForm] = useState(emptyForm);
   const [selectedCreatorKey, setSelectedCreatorKey] = useState(NEW_CREATOR_VALUE);
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
 
   const uploadPhoto = async (file: File) => {
     setUploading(true);
+    setUploadPercent(0);
     setUploadError(null);
     try {
       const presignRes = await fetch("/api/admin/creativo/upload", {
@@ -135,8 +138,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error || "Failed to start upload");
 
-      const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) throw new Error(`Upload to storage failed (${putRes.status})`);
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setUploadPercent(percent) });
 
       setForm((f) => ({ ...f, profileImageUrl: presignData.publicUrl }));
     } catch (err) {
@@ -280,7 +282,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
                   <img src={form.profileImageUrl} alt="" className="h-10 w-10 flex-shrink-0 rounded-full object-cover" />
                 )}
                 <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
-                  {uploading ? "Uploading..." : form.profileImageUrl ? "Change photo" : "Upload photo"}
+                  {uploading ? `Uploading ${uploadPercent}%` : form.profileImageUrl ? "Change photo" : "Upload photo"}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -288,6 +290,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
                     disabled={uploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
+                      e.currentTarget.value = "";
                       if (file) uploadPhoto(file);
                     }}
                   />

@@ -7,6 +7,7 @@ import CalendarVideoComments, {
 } from "@/components/calendars/CalendarVideoComments";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 type Platform =
   | "INSTAGRAM"
@@ -1096,6 +1097,8 @@ function AddPostPanel({
       file: File,
       index: number
     ): Promise<CalendarPostData> => {
+      uploadedBytesByFile[index] = 0;
+      updateOverallProgress();
       const presignRes = await fetch(
         `/api/calendars/${calendarId}/posts/${postId}/upload-presign`,
         {
@@ -1119,60 +1122,15 @@ function AddPostPanel({
         );
       }
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.open("PUT", presignData.uploadUrl);
-
-        xhr.setRequestHeader(
-          "Content-Type",
-          file.type
-        );
-
-        xhr.upload.onprogress = (event) => {
-          if (!event.lengthComputable) {
-            return;
-          }
-
-          uploadedBytesByFile[index] = event.loaded;
-
+      await putFileWithProgress(presignData.uploadUrl, file, {
+        contentType: file.type,
+        onProgress: ({ loaded }) => {
+          uploadedBytesByFile[index] = loaded;
           updateOverallProgress();
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            uploadedBytesByFile[index] = file.size;
-
-            updateOverallProgress();
-
-            resolve();
-          } else {
-            reject(
-              new Error(
-                `Failed to upload ${file.name}`
-              )
-            );
-          }
-        };
-
-        xhr.onerror = () => {
-          reject(
-            new Error(
-              `Failed to upload ${file.name}`
-            )
-          );
-        };
-
-        xhr.onabort = () => {
-          reject(
-            new Error(
-              `Upload cancelled for ${file.name}`
-            )
-          );
-        };
-
-        xhr.send(file);
+        },
       });
+      uploadedBytesByFile[index] = file.size;
+      updateOverallProgress();
 
       const mediaType = file.type.startsWith("video/")
         ? "VIDEO"
@@ -3110,12 +3068,14 @@ function AddPostPanel({
 function PostDetailPanel({
   calendarId,
   post,
+  userRole,
   theme,
   onClose,
   onUpdated,
 }: {
   calendarId: string;
   post: CalendarPostData;
+  userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
   theme: Theme;
   onClose: () => void;
   onUpdated: (post: CalendarPostData) => void;
@@ -3128,6 +3088,7 @@ function PostDetailPanel({
 
   const [uploading, setUploading] =
     useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -3144,6 +3105,7 @@ const [aiEditError, setAiEditError] = useState("");
 const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   const [savingDetails, setSavingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [resubmitting, setResubmitting] = useState(false);
 
   const [draftDetails, setDraftDetails] = useState({
   postDate: "",
@@ -3343,6 +3305,7 @@ caption: draftDetails.caption,
     null;
 
   const uploadOne = async (file: File) => {
+    setUploadPercent(0);
     if (isApproved) {
       throw new Error(
         "This post has already been approved by the client and is locked."
@@ -3374,22 +3337,10 @@ caption: draftDetails.caption,
       );
     }
 
-    const uploadRes = await fetch(
-      presignData.uploadUrl,
-      {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
-      }
-    );
-
-    if (!uploadRes.ok) {
-      throw new Error(
-        "Failed to upload file"
-      );
-    }
+    await putFileWithProgress(presignData.uploadUrl, file, {
+      contentType: file.type,
+      onProgress: ({ percent }) => setUploadPercent(percent),
+    });
 
     const mediaType =
       file.type.startsWith("video/")
@@ -3429,6 +3380,7 @@ caption: draftDetails.caption,
     files: FileList
   ) => {
     setUploading(true);
+    setUploadPercent(0);
     setError(null);
 
     try {
@@ -3504,6 +3456,30 @@ caption: draftDetails.caption,
           ? err.message
           : "Failed to remove content"
       );
+    }
+  };
+
+  const resubmitForApproval = async () => {
+    setResubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/calendars/${calendarId}/posts/${post.id}/resubmit`,
+        { method: "POST" }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Unable to resubmit this post");
+      onUpdated({
+        ...data.post,
+        assets: data.post?.assets ?? post.assets,
+        videoComments: data.post?.videoComments ?? post.videoComments,
+        customFields: data.post?.customFields ?? post.customFields,
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to resubmit this post");
+    } finally {
+      setResubmitting(false);
     }
   };
 
@@ -3817,6 +3793,23 @@ caption: draftDetails.caption,
                         }}
                       >
                         &ldquo;{post.approvalNote}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                {post.approvalStatus === "NEEDS_REVISION" &&
+                  userRole === "EDIT_CALENDAR" && (
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={resubmitForApproval}
+                        disabled={resubmitting || post.assets.length === 0}
+                        className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
+                      >
+                        {resubmitting ? "Sending for approval..." : "Resubmit for approval"}
+                      </button>
+                      <p className="mt-2 text-[10px]" style={{ color: t.textMuted }}>
+                        The client will be able to review this updated post.
                       </p>
                     </div>
                   )}
@@ -4321,7 +4314,7 @@ caption: draftDetails.caption,
                       }}
                     >
                       {uploading
-                        ? "Uploading files..."
+                        ? `Uploading ${uploadPercent}%`
                         : post.assets.length > 0
                           ? post.postType ===
                             "Carousel"
@@ -7019,6 +7012,7 @@ export default function CalendarGrid({
         <PostDetailPanel
           calendarId={calendarId}
           post={selectedPost}
+          userRole={userRole}
           theme={theme}
           onClose={() =>
             setSelectedPost(null)
