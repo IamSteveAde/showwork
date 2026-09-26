@@ -66,18 +66,7 @@ function uploadPartWithProgress(
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-
-        if (!etag) {
-          reject(
-            new Error(
-              "R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."
-            )
-          );
-          return;
-        }
-
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -211,7 +200,7 @@ function clearMultipartProgress(
 
 const MULTIPART_THRESHOLD_MB = 100;
 const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 2;
+const CHUNK_CONCURRENCY = 3;
 const BATCH_SIZE = 3;
 const INTER_FILE_PAUSE_MS = 150;
 const INTER_BATCH_PAUSE_MS = 3000;

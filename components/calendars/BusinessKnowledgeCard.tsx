@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 interface BusinessDocumentData {
   id: string;
@@ -148,6 +149,7 @@ export default function BusinessKnowledgeCard({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [documentsExpanded, setDocumentsExpanded] = useState(false);
@@ -156,6 +158,7 @@ export default function BusinessKnowledgeCard({
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const uploadOne = async (file: File) => {
+    setUploadPercent(0);
     /*
      * Step 1:
      * Reserve the file's storage allowance and obtain the R2
@@ -223,17 +226,10 @@ if (presignContentType.includes("application/json")) {
      * Step 2:
      * Upload the file directly to R2.
      */
-    const uploadRes = await fetch(presignData.uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": file.type,
-      },
+    await putFileWithProgress(presignData.uploadUrl, file, {
+      contentType: file.type,
+      onProgress: ({ percent }) => setUploadPercent(percent),
     });
-
-    if (!uploadRes.ok) {
-      throw new Error("Failed to upload file");
-    }
 
     /*
      * Step 3:
@@ -580,7 +576,7 @@ if (presignContentType.includes("application/json")) {
                 <UploadIcon />
 
                 {uploading
-                  ? "Uploading & reading…"
+                  ? `Uploading ${uploadPercent}% & reading…`
                   : "Add business documents"}
               </button>
 

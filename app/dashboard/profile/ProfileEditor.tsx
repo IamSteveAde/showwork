@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 type CreatorData = {
   name: string | null;
@@ -142,6 +143,7 @@ export default function ProfileEditor({
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] =
     useState(false);
+  const [avatarUploadPercent, setAvatarUploadPercent] = useState(0);
 
   const [message, setMessage] = useState<string | null>(
     null
@@ -240,6 +242,7 @@ export default function ProfileEditor({
     }
 
     setUploadingAvatar(true);
+    setAvatarUploadPercent(0);
 
     try {
       /*
@@ -271,23 +274,10 @@ export default function ProfileEditor({
         return;
       }
 
-      const uploadResponse = await fetch(
-        presignData.uploadUrl,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": file.type,
-          },
-          body: file,
-        }
-      );
-
-      if (!uploadResponse.ok) {
-        setError(
-          "The profile photo couldn't be uploaded."
-        );
-        return;
-      }
+      await putFileWithProgress(presignData.uploadUrl, file, {
+        contentType: file.type,
+        onProgress: ({ percent }) => setAvatarUploadPercent(percent),
+      });
 
       /*
        * The existing avatar endpoint handles the account
@@ -392,7 +382,7 @@ export default function ProfileEditor({
                 <UploadIcon />
 
                 {uploadingAvatar
-                  ? "Uploading..."
+                  ? `Uploading ${avatarUploadPercent}%`
                   : "Change photo"}
               </button>
             </div>

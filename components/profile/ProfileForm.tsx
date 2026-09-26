@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A" };
 
@@ -30,6 +31,7 @@ export default function ProfileForm({
   const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -37,6 +39,7 @@ export default function ProfileForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingAvatar(true);
+    setAvatarProgress(0);
     setError(null);
 
     try {
@@ -51,8 +54,10 @@ export default function ProfileForm({
       }
       const { uploadUrl, publicUrl } = await presignRes.json();
 
-      const uploadRes = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-      if (!uploadRes.ok) throw new Error("Upload failed");
+      await putFileWithProgress(uploadUrl, file, {
+        contentType: file.type,
+        onProgress: ({ percent }) => setAvatarProgress(percent),
+      });
 
       const saveRes = await fetch("/api/account/avatar", {
         method: "PATCH",
@@ -67,6 +72,7 @@ export default function ProfileForm({
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -117,7 +123,7 @@ export default function ProfileForm({
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
         </div>
-        <p className="text-xs text-white/40">{uploadingAvatar ? "Uploading..." : "Click the pencil to upload a photo"}</p>
+        <p className="text-xs text-white/40">{uploadingAvatar ? `Uploading ${avatarProgress}%` : "Click the pencil to upload a photo"}</p>
       </div>
 
       <div>

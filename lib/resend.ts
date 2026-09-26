@@ -1331,6 +1331,32 @@ export async function sendCalendarPostReviewedEmail({
   });
 }
 
+export async function sendCalendarPostResubmittedEmail({
+  to,
+  clientName,
+  clientUrl,
+}: {
+  to: string;
+  clientName: string;
+  clientUrl: string;
+}) {
+  await sendEmail({
+    from: FROM,
+    to,
+    subject: `Updated content is ready for ${clientName} to review`,
+    html: emailShell({
+      eyebrow: "Ready for review",
+      headline: `${clientName} has updated content for you.`,
+      body: `The changes you requested have been made. Open your client workspace to review the updated post and approve it or request another revision.`,
+      detailsHtml: infoBox("Client workspace", clientName, "#2478FF"),
+      ctaLabel: "Review updated content",
+      ctaUrl: clientUrl,
+      heroImage: true,
+      accent: "#2478FF",
+    }),
+  });
+}
+
 export async function sendCalendarPaymentFailedEmail({
   to,
   name,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 
@@ -37,6 +38,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,6 +70,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
 
   const uploadHeroImage = async (file: File) => {
     setUploading(true);
+    setUploadPercent(0);
     setError(null);
     try {
       const presignRes = await fetch("/api/admin/spotlight/upload", {
@@ -78,8 +81,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
-      const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) throw new Error("Upload to storage failed");
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setUploadPercent(percent) });
 
       setForm((f) => ({ ...f, heroImageUrl: presignData.publicUrl }));
     } catch (err) {
@@ -203,7 +205,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
                 <img src={form.heroImageUrl} alt="" className="h-14 w-24 flex-shrink-0 rounded-md object-cover" />
               )}
               <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
-                {uploading ? "Uploading..." : form.heroImageUrl ? "Change image" : "Upload image"}
+                {uploading ? `Uploading ${uploadPercent}%` : form.heroImageUrl ? "Change image" : "Upload image"}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -211,6 +213,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
                   disabled={uploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
                     if (file) uploadHeroImage(file);
                   }}
                 />

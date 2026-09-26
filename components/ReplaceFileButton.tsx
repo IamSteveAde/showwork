@@ -3,24 +3,15 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 
 function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded, e.total);
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`Upload failed (${xhr.status})`));
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.send(file);
-  });
+  return putFileWithProgress(url, file, {
+    contentType: file.type || undefined,
+    onProgress: ({ loaded, total }) => onProgress(loaded, total),
+  }).then(() => undefined);
 }
 function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -31,12 +22,7 @@ function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: n
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
-          return;
-        }
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -82,7 +68,7 @@ function clearMultipartProgress(mediaId: string, fingerprint: string) {
 
 const MULTIPART_THRESHOLD_MB = 100;
 const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 2;
+const CHUNK_CONCURRENCY = 3;
 const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

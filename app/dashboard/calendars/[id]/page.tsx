@@ -9,6 +9,7 @@ import {
   canAccessCalendar,
 } from "@/lib/calendarPermissions";
 import { isComplimentaryAccessActive } from "@/lib/contentWorkspaceUsage";
+import { isAdminEmail } from "@/lib/admin";
 
 import CalendarGrid from "@/components/calendars/CalendarGrid";
 import CalendarPlanStatus from "@/components/calendars/CalendarPlanStatus";
@@ -355,7 +356,8 @@ compedUntil: true,
     notFound();
   }
 
-  const userRole = await getCalendarRole(creator.id, id);
+  const isAdmin = isAdminEmail(creator.email);
+  const userRole = (await getCalendarRole(creator.id, id)) ?? (isAdmin ? "VIEW_ONLY" : null);
 
   if (!userRole) {
     notFound();
@@ -365,7 +367,7 @@ compedUntil: true,
 const canEditWorkspace = userRole === "EDIT_CALENDAR";
 const totalMembers = 1 + calendar._count.collaborators;
 
-  if (!canAccessCalendar(calendar.manager)) {
+  if (!isAdmin && !canAccessCalendar(calendar.manager)) {
    const trialExpired =
   calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
   !!calendar.manager.contentWorkspaceTrialEndsAt &&

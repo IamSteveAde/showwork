@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const STATUS_META: Record<string, { text: string; color: string; bg: string; description: string }> = {
   BUILDING: {
@@ -55,12 +56,16 @@ const [desktopReservationId, setDesktopReservationId] = useState<string | null>(
 const [mobileReservationId, setMobileReservationId] = useState<string | null>(null);
   const [uploadingDesktop, setUploadingDesktop] = useState(false);
   const [uploadingMobile, setUploadingMobile] = useState(false);
+  const [desktopProgress, setDesktopProgress] = useState(0);
+  const [mobileProgress, setMobileProgress] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const uploadBanner = async (file: File, variant: "desktop" | "mobile") => {
     const setUploading = variant === "desktop" ? setUploadingDesktop : setUploadingMobile;
+    const setProgress = variant === "desktop" ? setDesktopProgress : setMobileProgress;
     setUploading(true);
+    setProgress(0);
     setError(null);
     try {
       const presignRes = await fetch(`/api/calendars/${calendarId}/banner-upload-presign`, {
@@ -76,15 +81,10 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      const uploadRes = await fetch(presignData.uploadUrl, {
-  method: "PUT",
-  body: file,
-  headers: { "Content-Type": file.type },
-});
-
-if (!uploadRes.ok) {
-  throw new Error("Banner upload failed");
-}
+      await putFileWithProgress(presignData.uploadUrl, file, {
+        contentType: file.type,
+        onProgress: ({ percent }) => setProgress(percent),
+      });
 
      const publicUrl = presignData.fileKey;
 const reservationId = presignData.reservationId;
@@ -192,7 +192,7 @@ if (variant === "desktop") {
               <p className="mb-2 text-[11px] text-white/30">Landscape works best — wide, roughly 1920×720.</p>
               <label className="flex h-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-white/15 text-xs text-white/50 hover:border-white/30">
                 {uploadingDesktop ? (
-                  "Uploading..."
+                  `Uploading ${desktopProgress}%`
                 ) : desktopUrl ? (
                   <span className="text-green-400">✓ Banner set — tap to replace</span>
                 ) : (
@@ -203,7 +203,11 @@ if (variant === "desktop") {
                   accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   disabled={uploadingDesktop}
-                  onChange={(e) => e.target.files?.[0] && uploadBanner(e.target.files[0], "desktop")}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
+                    if (file) uploadBanner(file, "desktop");
+                  }}
                 />
               </label>
             </div>
@@ -215,7 +219,7 @@ if (variant === "desktop") {
               <p className="mb-2 text-[11px] text-white/30">Portrait works best — taller than wide, roughly 1080×1350.</p>
               <label className="flex h-24 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-white/15 text-xs text-white/50 hover:border-white/30">
                 {uploadingMobile ? (
-                  "Uploading..."
+                  `Uploading ${mobileProgress}%`
                 ) : mobileUrl ? (
                   <span className="text-green-400">✓ Banner set — tap to replace</span>
                 ) : (
@@ -226,7 +230,11 @@ if (variant === "desktop") {
                   accept="image/jpeg,image/png,image/webp"
                   className="hidden"
                   disabled={uploadingMobile}
-                  onChange={(e) => e.target.files?.[0] && uploadBanner(e.target.files[0], "mobile")}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
+                    if (file) uploadBanner(file, "mobile");
+                  }}
                 />
               </label>
             </div>

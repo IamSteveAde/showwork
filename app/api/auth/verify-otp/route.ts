@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
         companyName: pending.companyName,
         passwordHash: pending.passwordHash,
         accountType: pending.accountType,
+        lastLoginAt: now,
 
         lifecycleSequenceStartedAt: now,
       },

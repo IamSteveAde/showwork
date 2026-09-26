@@ -115,6 +115,7 @@ function relativeTime(date: Date): string {
   }
 
   return date.toLocaleDateString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -123,6 +124,7 @@ function relativeTime(date: Date): string {
 
 function fullDate(date: Date): string {
   return date.toLocaleString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -132,24 +134,14 @@ function fullDate(date: Date): string {
 }
 
 function dayLabel(date: Date): string {
-  const now = new Date();
-
-  const startToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  );
-
-  const startDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-
-  const diffDays = Math.round(
-    (startToday.getTime() - startDate.getTime()) /
-      (1000 * 60 * 60 * 24)
-  );
+  const parts = (value: Date) => new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(value);
+  const todayKey = parts(new Date());
+  const dateKey = parts(date);
+  const startToday = new Date(`${todayKey}T00:00:00Z`);
+  const startDate = new Date(`${dateKey}T00:00:00Z`);
+  const diffDays = Math.floor((startToday.getTime() - startDate.getTime()) / 86_400_000);
 
   if (diffDays === 0) {
     return "Today";
@@ -161,11 +153,13 @@ function dayLabel(date: Date): string {
 
   if (diffDays < 7) {
     return date.toLocaleDateString("en-NG", {
+      timeZone: "Africa/Lagos",
       weekday: "long",
     });
   }
 
   return date.toLocaleDateString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -731,20 +725,6 @@ const media = await db.media.findMany({
       meta: project.deliveryStatus,
     });
 
-    if (project.updatedAt.getTime() !== project.createdAt.getTime()) {
-      activities.push({
-        id: `project-updated-${project.id}-${project.updatedAt.getTime()}`,
-        creatorId: project.creatorId,
-        creatorName: account.name,
-        creatorEmail: account.email,
-        category: "PROJECT_DELIVERY",
-        action: "Project updated",
-        description: `"${project.clientName}" was updated`,
-        timestamp: project.updatedAt,
-        href: `/admin/creators/${project.creatorId}`,
-       meta: `Status: ${project.deliveryStatus}`,
-      });
-    }
   }
 
   // ------------------------------------------------------------
@@ -975,23 +955,6 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
       meta: `/${portfolio.slug}`,
     });
 
-    if (
-      portfolio.updatedAt.getTime() !==
-      portfolio.createdAt.getTime()
-    ) {
-      activities.push({
-        id: `portfolio-updated-${portfolio.id}-${portfolio.updatedAt.getTime()}`,
-        creatorId: portfolio.creatorId,
-        creatorName: account.name,
-        creatorEmail: account.email,
-        category: "PORTFOLIO",
-        action: "Portfolio updated",
-        description: `"${portfolio.companyName}" was updated`,
-        timestamp: portfolio.updatedAt,
-        href: `/admin/creators/${portfolio.creatorId}`,
-        meta: `/${portfolio.slug}`,
-      });
-    }
   }
 
   // ------------------------------------------------------------
@@ -1018,23 +981,6 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
       meta: calendar.planStatus,
     });
 
-    if (
-      calendar.updatedAt.getTime() !==
-      calendar.createdAt.getTime()
-    ) {
-      activities.push({
-        id: `calendar-updated-${calendar.id}-${calendar.updatedAt.getTime()}`,
-        creatorId: calendar.managerId,
-        creatorName: account.name,
-        creatorEmail: account.email,
-        category: "CONTENT_WORKSPACE",
-        action: "Workspace updated",
-        description: `"${calendar.clientName}" workspace was updated`,
-        timestamp: calendar.updatedAt,
-        href: `/admin/creators/${calendar.managerId}`,
-        meta: `Plan: ${calendar.planStatus}`,
-      });
-    }
   }
 
   // ------------------------------------------------------------
@@ -1067,23 +1013,6 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
       meta: post.platform,
     });
 
-    if (
-      post.updatedAt.getTime() !==
-      post.createdAt.getTime()
-    ) {
-      activities.push({
-        id: `calendar-post-updated-${post.id}-${post.updatedAt.getTime()}`,
-        creatorId: calendar.managerId,
-        creatorName: account.name,
-        creatorEmail: account.email,
-        category: "CONTENT_WORKSPACE",
-        action: "Content updated",
-        description: `${post.platform} content for "${calendar.clientName}" was updated`,
-        timestamp: post.updatedAt,
-        href: `/admin/creators/${calendar.managerId}`,
-        meta: `Scheduled: ${post.postDate.toLocaleDateString("en-NG")}`,
-      });
-    }
   }
 
   // ------------------------------------------------------------
@@ -1779,6 +1708,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                                     {activity.timestamp.toLocaleTimeString(
                                       "en-NG",
                                       {
+                                        timeZone: "Africa/Lagos",
                                         hour: "numeric",
                                         minute: "2-digit",
                                       }

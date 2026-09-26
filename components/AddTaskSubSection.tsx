@@ -23,12 +23,7 @@ function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: n
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
-          return;
-        }
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -103,7 +98,7 @@ function clearMultipartProgress(scopeKey: string, fingerprint: string) {
 
 const MULTIPART_THRESHOLD_MB = 100;
 const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 2;
+const CHUNK_CONCURRENCY = 3;
 const MAX_RETRIES_PER_FILE = 2;
 const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -183,7 +178,9 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-        await uploadWithProgress(presignData.uploadUrl, file, () => {});
+        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
+          setChunkStatus(`${Math.round((loaded / total) * 100)}% uploaded`);
+        });
 
         const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-complete`, {
           method: "POST",
@@ -340,7 +337,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
         const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
 
         setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
-        setChunkStatus(null);
+        setChunkStatus("0% uploaded");
 
         const result = isLarge
           ? await uploadLargeFileMultipart(file, folderId, scopeKey)

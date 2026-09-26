@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import { useRouter } from "next/navigation";
+import { putFileWithProgress } from "@/lib/uploadClient";
 import Link from "next/link";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
@@ -153,32 +154,10 @@ function uploadWithProgress(
   file: File,
   onProgress: (loaded: number, total: number) => void
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        onProgress(event.loaded, event.total);
-      }
-    };
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed (${xhr.status})`));
-      }
-    };
-
-    xhr.onerror = () => {
-      reject(new Error("Network error during upload"));
-    };
-
-    xhr.send(file);
-  });
+  return putFileWithProgress(url, file, {
+    contentType: file.type,
+    onProgress: ({ loaded, total }) => onProgress(loaded, total),
+  }).then(() => undefined);
 }
 
 /* -------------------------------------------------------------------------- */

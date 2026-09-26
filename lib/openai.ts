@@ -72,10 +72,14 @@
     instructions,
     input,
     webSearch = false,
+    jsonSchema,
+    maxOutputTokens = 4096,
   }: {
     instructions: string;
     input: string;
     webSearch?: boolean;
+    jsonSchema?: { name: string; schema: Record<string, unknown> };
+    maxOutputTokens?: number;
   }): Promise<string> {
     const apiKey = requireApiKey();
     const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
@@ -84,25 +88,52 @@
       model,
       instructions,
       input,
-      max_output_tokens: 4096,
+      max_output_tokens: maxOutputTokens,
     };
+
+    if (jsonSchema) {
+      body.text = {
+        format: {
+          type: "json_schema",
+          name: jsonSchema.name,
+          strict: true,
+          schema: jsonSchema.schema,
+        },
+      };
+    }
 
     if (webSearch) {
       body.tools = [{ type: "web_search" }];
     }
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    let res: Response | undefined;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(120_000),
+        });
+        if (res.status < 500 && res.status !== 429) break;
+      } catch (error) {
+        if (attempt === 2) throw error;
+      }
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+    }
+    if (!res) throw new Error("The AI service could not be reached. Please try again.");
 
-    const data = (await res.json()) as ResponsesApiResult & {
+    let data: ResponsesApiResult & {
       error?: { message: string };
     };
+    try {
+      data = (await res.json()) as typeof data;
+    } catch {
+      throw new Error(`OpenAI returned an unreadable response (${res.status}).`);
+    }
 
     if (!res.ok || (data as any).error) {
       throw new Error(
@@ -277,6 +308,15 @@
     const raw = await callOpenAI({
       instructions,
       input,
+      jsonSchema: {
+        name: "video_fields",
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["hook", "script"],
+          properties: { hook: { type: "string" }, script: { type: "string" } },
+        },
+      },
     });
 
     const cleaned = raw
@@ -886,6 +926,33 @@ ${customInstructions.trim()}`
   const raw = await callOpenAI({
     instructions,
     input,
+    maxOutputTokens: Math.min(
+      30000,
+      Math.max(4096, expectedCanonicalPosts * 900 + 1024)
+    ),
+    jsonSchema: {
+      name: "content_calendar",
+      schema: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["contentUnit", "platform", "postType", "category", "hook", "script", "caption", "contentIdea", "cta", "hashtags"],
+          properties: {
+            contentUnit: { type: "integer" },
+            platform: { type: "string", enum: [...new Set(streams.map((stream) => stream.platforms[0]))] },
+            postType: { type: "string" },
+            category: { type: "string" },
+            hook: { type: "string" },
+            script: { type: "string" },
+            caption: { type: "string" },
+            contentIdea: { type: "string" },
+            cta: { type: "string" },
+            hashtags: { type: "string" },
+          },
+        },
+      },
+    },
   });
 
   const cleaned = raw

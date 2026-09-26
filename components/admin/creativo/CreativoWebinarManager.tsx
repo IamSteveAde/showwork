@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
 
@@ -146,6 +147,8 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingSpeakerIndex, setUploadingSpeakerIndex] = useState<number | null>(null);
+  const [uploadPercent, setUploadPercent] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -204,6 +207,8 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
 
   const uploadFlyer = async (file: File) => {
     setUploading(true);
+    setUploadPercent(0);
+    setUploadError(null);
     try {
       const presignRes = await fetch("/api/admin/creativo/upload", {
         method: "POST",
@@ -212,10 +217,10 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error);
-      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setUploadPercent(percent) });
       setForm((f) => ({ ...f, flyerImageUrl: presignData.publicUrl }));
-    } catch {
-      // upload failures leave the field blank — the admin can retry
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Flyer upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -223,6 +228,8 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
 
   const uploadSpeakerPhoto = async (index: number, file: File) => {
     setUploadingSpeakerIndex(index);
+    setUploadPercent(0);
+    setUploadError(null);
     try {
       const presignRes = await fetch("/api/admin/creativo/upload", {
         method: "POST",
@@ -231,10 +238,10 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error);
-      await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setUploadPercent(percent) });
       updateSpeaker(index, "profileImageUrl", presignData.publicUrl);
-    } catch {
-      // upload failures leave the field blank — the admin can retry
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Speaker photo upload failed. Please try again.");
     } finally {
       setUploadingSpeakerIndex(null);
     }
@@ -333,7 +340,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                 <img src={form.flyerImageUrl} alt="" className="h-16 w-12 flex-shrink-0 rounded-md object-cover" />
               )}
               <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
-                {uploading ? "Uploading..." : form.flyerImageUrl ? "Change flyer" : "Upload flyer"}
+                {uploading ? `Uploading ${uploadPercent}%` : form.flyerImageUrl ? "Change flyer" : "Upload flyer"}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -341,6 +348,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                   disabled={uploading}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
+                    e.currentTarget.value = "";
                     if (file) uploadFlyer(file);
                   }}
                 />
@@ -402,7 +410,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                         <img src={speaker.profileImageUrl} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" />
                       )}
                       <label className="cursor-pointer text-[10px] font-semibold uppercase text-white/30 underline hover:text-white/50">
-                        {uploadingSpeakerIndex === index ? "Uploading..." : speaker.profileImageUrl ? "Change photo" : "Upload photo"}
+                        {uploadingSpeakerIndex === index ? `Uploading ${uploadPercent}%` : speaker.profileImageUrl ? "Change photo" : "Upload photo"}
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
@@ -410,6 +418,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                           disabled={uploadingSpeakerIndex === index}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
+                            e.currentTarget.value = "";
                             if (file) uploadSpeakerPhoto(index, file);
                           }}
                         />
@@ -487,7 +496,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
             </div>
           </div>
 
-          {saveError && <p className="text-xs text-red-400">{saveError}</p>}
+          {(uploadError || saveError) && <p role="alert" className="text-xs text-red-400">{uploadError || saveError}</p>}
           <div className="flex items-center gap-3">
             <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: COLOR.black }}>
               {saving ? "Saving..." : editingId ? "Save changes" : "Add webinar"}

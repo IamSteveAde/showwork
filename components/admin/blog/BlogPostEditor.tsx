@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { putFileWithProgress } from "@/lib/uploadClient";
 import RichTextEditor from "@/components/admin/blog/RichTextEditor";
 
 const COLOR = { charcoal: "#1A1A1A", gold: "#F5C842" };
@@ -31,12 +32,14 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
   const [metaDescription, setMetaDescription] = useState(post.metaDescription ?? "");
   const [published, setPublished] = useState(post.published);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverUploadPercent, setCoverUploadPercent] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const uploadCoverImage = async (file: File) => {
     setUploadingCover(true);
+    setCoverUploadPercent(0);
     setError(null);
     try {
       const presignRes = await fetch("/api/admin/blog/upload", {
@@ -47,8 +50,7 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
-      const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      if (!putRes.ok) throw new Error("Upload to storage failed");
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setCoverUploadPercent(percent) });
 
       setCoverImageUrl(presignData.publicUrl);
     } catch (err) {
@@ -206,7 +208,7 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
               <img src={coverImageUrl} alt="" className="mb-3 h-40 w-full rounded-lg object-cover" />
             )}
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 hover:bg-white/5">
-              {uploadingCover ? "Uploading..." : coverImageUrl ? "Change cover image" : "Upload cover image"}
+              {uploadingCover ? `Uploading ${coverUploadPercent}%` : coverImageUrl ? "Change cover image" : "Upload cover image"}
               <input
                 type="file"
                 accept="image/*"
@@ -214,6 +216,7 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
                 disabled={uploadingCover}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  e.currentTarget.value = "";
                   if (file) uploadCoverImage(file);
                 }}
               />

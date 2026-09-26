@@ -38,6 +38,7 @@ function formatDate(date: Date | null | undefined) {
   if (!date) return "Never";
 
   return date.toLocaleDateString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -48,6 +49,7 @@ function formatDateTime(date: Date | null | undefined) {
   if (!date) return "Never";
 
   return date.toLocaleString("en-NG", {
+    timeZone: "Africa/Lagos",
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -1203,7 +1205,7 @@ export default async function AdminPage({
 
                                 <span>
                                   Last login{" "}
-                                  {formatDate(
+                                  {formatDateTime(
                                     creator.lastLoginAt
                                   )}
                                 </span>

@@ -7,6 +7,7 @@ import {
   UploadPartCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  ListPartsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -120,28 +121,58 @@ export async function getPresignedPartUploadUrl(
 }
 
 /**
- * Stitches every uploaded chunk into the final, real object. Each
- * part's ETag (returned by R2 the moment that specific chunk's PUT
- * succeeds — the browser needs to hold onto these) has to be reported
- * back here in the correct part-number order. This call is what
- * actually makes the file exist as one complete, readable object —
- * before this, it's just a pile of separate uploaded chunks R2 hasn't
- * assembled into anything yet.
+ * Stitches every uploaded chunk into the final, real object. The browser
+ * reports which part numbers completed; ETags are read directly from R2
+ * so bucket CORS settings do not need to expose them to browsers.
  */
 export async function completeMultipartUpload(
   key: string,
   uploadId: string,
   parts: { partNumber: number; etag: string }[]
 ): Promise<void> {
+  const requestedPartNumbers = [...new Set(parts.map((part) => part.partNumber))].sort((a, b) => a - b);
+  if (
+    requestedPartNumbers.length !== parts.length ||
+    requestedPartNumbers.some((partNumber, index) => !Number.isInteger(partNumber) || partNumber < 1 || partNumber !== index + 1)
+  ) {
+    throw new Error("Multipart completion requires a complete, ordered part-number list");
+  }
+
+  // Read ETags from R2 itself. Browsers cannot always read the ETag
+  // response header due to bucket CORS configuration, even when a part
+  // upload succeeded. The storage service is the authoritative source.
+  const uploadedParts: { PartNumber: number; ETag: string }[] = [];
+  let partNumberMarker: string | undefined;
+  do {
+    const listed = await r2.send(new ListPartsCommand({
+      Bucket: BUCKET,
+      Key: key,
+      UploadId: uploadId,
+      PartNumberMarker: partNumberMarker,
+    }));
+    for (const part of listed.Parts ?? []) {
+      if (typeof part.PartNumber === "number" && part.ETag) {
+        uploadedParts.push({ PartNumber: part.PartNumber, ETag: part.ETag });
+      }
+    }
+    partNumberMarker = listed.IsTruncated && listed.NextPartNumberMarker !== undefined
+      ? String(listed.NextPartNumberMarker)
+      : undefined;
+  } while (partNumberMarker !== undefined);
+
+  uploadedParts.sort((a, b) => a.PartNumber - b.PartNumber);
+  if (
+    uploadedParts.length !== requestedPartNumbers.length ||
+    uploadedParts.some((part, index) => part.PartNumber !== requestedPartNumbers[index])
+  ) {
+    throw new Error("The uploaded multipart chunks are incomplete. Please retry the missing chunks.");
+  }
+
   const command = new CompleteMultipartUploadCommand({
     Bucket: BUCKET,
     Key: key,
     UploadId: uploadId,
-    MultipartUpload: {
-      Parts: parts
-        .sort((a, b) => a.partNumber - b.partNumber)
-        .map((p) => ({ PartNumber: p.partNumber, ETag: p.etag })),
-    },
+    MultipartUpload: { Parts: uploadedParts },
   });
   await r2.send(command);
 }

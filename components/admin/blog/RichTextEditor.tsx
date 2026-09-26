@@ -5,7 +5,8 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { Node, mergeAttributes } from "@tiptap/core";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { putFileWithProgress } from "@/lib/uploadClient";
 
 const COLOR = { gold: "#F5C842" };
 
@@ -58,7 +59,7 @@ function ToolbarButton({
 
 // Uploads a file to R2 via the same admin presign route used
 // elsewhere, returning the public URL once the upload completes.
-async function uploadFile(file: File): Promise<string> {
+async function uploadFile(file: File, onProgress: (percent: number) => void): Promise<string> {
   const presignRes = await fetch("/api/admin/blog/upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -67,8 +68,10 @@ async function uploadFile(file: File): Promise<string> {
   const presignData = await presignRes.json();
   if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
-  const putRes = await fetch(presignData.uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-  if (!putRes.ok) throw new Error("Upload to storage failed");
+  await putFileWithProgress(presignData.uploadUrl, file, {
+    contentType: file.type,
+    onProgress: ({ percent }) => onProgress(percent),
+  });
 
   return presignData.publicUrl;
 }
@@ -80,6 +83,7 @@ export default function RichTextEditor({
   content: string;
   onChange: (html: string) => void;
 }) {
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -105,10 +109,13 @@ export default function RichTextEditor({
       const file = input.files?.[0];
       if (!file || !editor) return;
       try {
-        const url = await uploadFile(file);
+        setUploadPercent(0);
+        const url = await uploadFile(file, setUploadPercent);
         editor.chain().focus().setImage({ src: url }).run();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Image upload failed");
+      } finally {
+        setUploadPercent(null);
       }
     };
     input.click();
@@ -122,10 +129,13 @@ export default function RichTextEditor({
       const file = input.files?.[0];
       if (!file || !editor) return;
       try {
-        const url = await uploadFile(file);
+        setUploadPercent(0);
+        const url = await uploadFile(file, setUploadPercent);
         editor.chain().focus().insertContent({ type: "video", attrs: { src: url } }).run();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Video upload failed");
+      } finally {
+        setUploadPercent(null);
       }
     };
     input.click();
@@ -142,6 +152,14 @@ export default function RichTextEditor({
 
   return (
     <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+      {uploadPercent !== null && (
+        <div className="border-b border-white/10 px-3 py-2 text-xs text-white/60" role="status">
+          Uploading media: {uploadPercent}%
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full bg-[#F5C842] transition-[width]" style={{ width: `${uploadPercent}%` }} />
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-1.5 border-b border-white/10 p-2">
         <ToolbarButton label="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>B</ToolbarButton>
         <ToolbarButton label="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><span className="italic">I</span></ToolbarButton>

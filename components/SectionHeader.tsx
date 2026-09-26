@@ -28,12 +28,8 @@ function uploadWithProgress(
   });
 }
 
-// Same as uploadWithProgress, but for one chunk of a multipart upload
-// — reads back the ETag R2 returns for that specific chunk, required
-// to tell R2 how to stitch every chunk together. Requires R2's CORS
-// config on this bucket to expose ETag under
-// Access-Control-Expose-Headers, or this fails at the read step even
-// though the chunk itself uploaded fine.
+// Same as uploadWithProgress, but reads an optional ETag for debugging.
+// Finalization reads the authoritative ETags from R2 on the server.
 function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -43,12 +39,7 @@ function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: n
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        const etag = xhr.getResponseHeader("ETag");
-        if (!etag) {
-          reject(new Error("R2 didn't return an ETag for this chunk — check that ETag is listed under Access-Control-Expose-Headers in your R2 bucket's CORS settings."));
-          return;
-        }
-        resolve(etag);
+        resolve(xhr.getResponseHeader("ETag") ?? "");
       } else {
         reject(new Error(`Chunk upload failed (${xhr.status})`));
       }
@@ -129,7 +120,7 @@ function clearMultipartProgress(sectionId: string, fingerprint: string) {
 
 const MULTIPART_THRESHOLD_MB = 100;
 const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 2;
+const CHUNK_CONCURRENCY = 3;
 const BATCH_SIZE = 3;
 const INTER_FILE_PAUSE_MS = 150;
 const INTER_BATCH_PAUSE_MS = 3000;
@@ -394,7 +385,7 @@ export default function SectionHeader({
         const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
 
         setUploadStatus(`Uploading ${i + 1} of ${filesToUpload.length}...`);
-        setChunkStatus(null);
+        setChunkStatus("0% uploaded");
 
         const result = isLarge ? await uploadLargeFileMultipart(file) : await uploadOneFileWithRetry(file);
 
