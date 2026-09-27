@@ -86,8 +86,16 @@ function requireAppCredentials(): {
 // OAUTH SCOPES
 // ─────────────────────────────────────────────────────────────
 
+const INSTAGRAM_BASE_OAUTH_SCOPES =
+  "instagram_basic,instagram_content_publish,instagram_manage_messages,pages_read_engagement,pages_show_list,pages_manage_metadata";
+
+// Only request this after `instagram_manage_insights` is enabled for the
+// configured Meta app. Meta rejects the entire OAuth request as Invalid Scopes
+// when the app has not been granted access to this permission.
 export const INSTAGRAM_OAUTH_SCOPES =
-  "instagram_basic,instagram_content_publish,instagram_manage_messages,instagram_manage_insights,pages_read_engagement,pages_show_list,pages_manage_metadata";
+  process.env.INSTAGRAM_REQUEST_INSIGHTS_SCOPE === "true"
+    ? `${INSTAGRAM_BASE_OAUTH_SCOPES},instagram_manage_insights`
+    : INSTAGRAM_BASE_OAUTH_SCOPES;
 
 // ─────────────────────────────────────────────────────────────
 // OAUTH URL
