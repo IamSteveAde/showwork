@@ -59,8 +59,7 @@ async function readAccountInsights(accountId: string, token: string) {
   } catch (batchError) {
     // Fall back per metric because Meta may remove or restrict one metric
     // without making the other account-level insights unavailable.
-    const withoutMetricType = { ...params };
-    delete withoutMetricType.metric_type;
+    const withoutMetricType = (({ metric_type: _metricType, ...rest }) => rest)(params);
     for (const metric of ["reach", "views", "total_interactions", "likes"]) {
       for (const includeMetricType of [true, false]) {
         try {
