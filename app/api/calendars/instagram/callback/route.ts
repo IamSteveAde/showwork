@@ -101,11 +101,10 @@ export async function GET(req: NextRequest) {
         where: { id: socialConnection.id },
         data: {
           messagingWebhookSubscribedAt: new Date(),
-          // A successful Page subscription does not prove that this Meta
-          // app has the Instagram `messages` webhook capability enabled.
-          // Keep that known external prerequisite visible until Meta
-          // accepts/configures the Instagram webhook field.
-          messagingWebhookError: "The Facebook Page subscription succeeded. Inbound Instagram DMs also require the Instagram `messages` webhook field to be enabled for this Meta app.",
+          // This field records actual subscription failures. App-level
+          // webhook capability is configured separately in Meta and is
+          // shown as a setup note in the inbox status.
+          messagingWebhookError: null,
         },
       });
     } catch (error) {
