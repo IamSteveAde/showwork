@@ -98,6 +98,17 @@ async function syncConnection(initialConnection: SocialConnection & {
       });
     }
 
+    const facebookPageLikes = accountMetrics.additionalMetrics?.pageLikes;
+    if (connection.platform === "FACEBOOK" && typeof facebookPageLikes === "number" && facebookPageLikes < 100) {
+      // Meta does not provide Page Insights below this eligibility threshold.
+      // Remove previous empty/zero Insight readings so the report does not
+      // keep presenting them as valid history after the limitation is known.
+      await db.socialAccountMetricSnapshot.updateMany({
+        where: { socialConnectionId: connection.id },
+        data: { reach: null, impressions: null, views: null, engagement: null },
+      });
+    }
+
     // Some platforms (including Instagram) return account-wide daily
     // insights as a time series. Persist each returned day so reporting
     // includes content published outside Showwork as well as linked posts.
