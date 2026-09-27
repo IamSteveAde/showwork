@@ -87,7 +87,7 @@ function requireAppCredentials(): {
 // ─────────────────────────────────────────────────────────────
 
 export const INSTAGRAM_OAUTH_SCOPES =
-  "instagram_basic,instagram_content_publish,instagram_manage_messages,pages_read_engagement,pages_show_list,pages_manage_metadata";
+  "instagram_basic,instagram_content_publish,instagram_manage_messages,instagram_manage_insights,pages_read_engagement,pages_show_list,pages_manage_metadata";
 
 // ─────────────────────────────────────────────────────────────
 // OAUTH URL
