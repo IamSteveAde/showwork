@@ -86,7 +86,7 @@ function requireAppCredentials(): {
 // ─────────────────────────────────────────────────────────────
 
 export const INSTAGRAM_OAUTH_SCOPES =
-  "instagram_basic,instagram_content_publish,pages_read_engagement,pages_show_list";
+  "instagram_basic,instagram_content_publish,instagram_manage_insights,instagram_manage_messages,pages_read_engagement,pages_show_list,pages_manage_metadata";
 
 // ─────────────────────────────────────────────────────────────
 // OAUTH URL
@@ -266,6 +266,16 @@ export async function listManagedPages(
   );
 
   return result.data ?? [];
+}
+
+export async function listInstagramGrantedPermissions(userAccessToken: string): Promise<string[]> {
+  const result = await graphGet<{ data?: { permission: string; status: string }[] }>(
+    "/me/permissions",
+    { access_token: userAccessToken },
+  );
+  return (result.data ?? [])
+    .filter((permission) => permission.status === "granted")
+    .map((permission) => permission.permission);
 }
 
 // ─────────────────────────────────────────────────────────────

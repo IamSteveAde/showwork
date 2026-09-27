@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import CalendarVideoComments, { type CalendarVideoCommentData } from "@/components/calendars/CalendarVideoComments";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
+import SocialLeadInbox from "@/components/calendars/SocialLeadInbox";
 
 type Platform = "INSTAGRAM" | "TIKTOK" | "YOUTUBE" | "FACEBOOK" | "X" | "LINKEDIN";
 type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -1116,7 +1117,7 @@ export default function ClientCalendarView({
 }) {
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("dark");
-  const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok">("calendar");
+  const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok" | "inbox">("calendar");
   const [currentPlanStatus, setCurrentPlanStatus] = useState(planStatus);
 
   useEffect(() => {
@@ -1355,11 +1356,12 @@ export default function ClientCalendarView({
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-4 gap-1">
           {[
             { key: "calendar" as const, label: "Calendar", icon: "calendar" },
             { key: "instagram" as const, label: "Instagram Preview", icon: "instagram" },
             { key: "tiktok" as const, label: "TikTok", icon: "tiktok" },
+            { key: "inbox" as const, label: "Inbox", icon: "inbox" },
           ].map((tab) => {
             const active = viewMode === tab.key;
             return (
@@ -1394,6 +1396,12 @@ export default function ClientCalendarView({
                 {tab.icon === "tiktok" && (
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
                     <path d="M16.6 2h-3.3v13.8c0 1.5-1.2 2.7-2.7 2.7a2.7 2.7 0 1 1 0-5.4c.3 0 .5 0 .8.1V9.8a6.1 6.1 0 0 0-.8 0A6.1 6.1 0 1 0 16.6 15.9V8.5a8 8 0 0 0 4.6 1.5V6.7a4.8 4.8 0 0 1-4.6-4.7Z" />
+                  </svg>
+                )}
+                {tab.icon === "inbox" && (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                    <path d="M4 5.5h16v13H4z" />
+                    <path d="M4 13h4l1.5 2h5L16 13h4M8 9h8" />
                   </svg>
                 )}
                 {tab.label}
@@ -1441,6 +1449,12 @@ export default function ClientCalendarView({
             <TikTokPreview posts={filteredPosts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
+      )}
+
+      {viewMode === "inbox" && (
+        <div className="relative z-10">
+          <SocialLeadInbox slug={slug} clientMode />
+        </div>
       )}
 
       {viewMode === "calendar" && (

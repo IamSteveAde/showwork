@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
+import { recordPublishedSocialPost } from "@/lib/socialReporting";
 import {
   refreshTikTokAccessToken,
   queryTikTokCreatorInfo,
@@ -61,6 +62,18 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
           tikTokAccessToken: true,
           tikTokAccessTokenExpiresAt: true,
           tikTokRefreshToken: true,
+          socialConnections: {
+            where: { platform: "TIKTOK", status: "CONNECTED" },
+            take: 1,
+            select: {
+              id: true,
+              platformAccountId: true,
+              accessToken: true,
+              accessTokenExpiresAt: true,
+              refreshToken: true,
+              refreshTokenExpiresAt: true,
+            },
+          },
         },
       },
     },
@@ -76,8 +89,13 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
   };
 
   const { calendar } = post;
+  const normalizedConnection = calendar.socialConnections[0];
+  const tikTokOpenId = normalizedConnection?.platformAccountId ?? calendar.tikTokOpenId;
+  const storedAccessToken = normalizedConnection?.accessToken ?? calendar.tikTokAccessToken;
+  const storedAccessTokenExpiresAt = normalizedConnection?.accessTokenExpiresAt ?? calendar.tikTokAccessTokenExpiresAt;
+  const storedRefreshToken = normalizedConnection?.refreshToken ?? calendar.tikTokRefreshToken;
 
-  if (!calendar.tikTokOpenId || !calendar.tikTokAccessToken || !calendar.tikTokRefreshToken) {
+  if (!tikTokOpenId || !storedAccessToken || !storedRefreshToken) {
     return fail("This calendar's TikTok connection was removed before this post could publish.");
   }
   if (post.assets.length === 0) {
@@ -91,15 +109,16 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
   // here (rather than waiting for a publish call to fail first) keeps
   // this working silently for as long as the refresh token itself
   // stays valid, with no manager action ever needed for routine renewal.
-  let accessToken = calendar.tikTokAccessToken;
-  const tokenExpired = !calendar.tikTokAccessTokenExpiresAt || calendar.tikTokAccessTokenExpiresAt.getTime() <= Date.now() + 60_000;
+  let accessToken = storedAccessToken;
+  const tokenExpired = !storedAccessTokenExpiresAt || storedAccessTokenExpiresAt.getTime() <= Date.now() + 60_000;
 
   if (tokenExpired) {
     try {
-      const refreshed = await refreshTikTokAccessToken(calendar.tikTokRefreshToken);
+      const refreshed = await refreshTikTokAccessToken(storedRefreshToken);
       accessToken = refreshed.access_token;
       const newExpiresAt = new Date();
       newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshed.expires_in);
+      const newRefreshExpiresAt = new Date(Date.now() + refreshed.refresh_expires_in * 1000);
       await db.socialCalendar.update({
         where: { id: calendar.id },
         data: {
@@ -108,6 +127,27 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
           tikTokRefreshToken: refreshed.refresh_token,
         },
       });
+      if (normalizedConnection) {
+        await db.socialConnection.update({
+          where: { id: normalizedConnection.id },
+          data: {
+            accessToken: refreshed.access_token,
+            accessTokenExpiresAt: newExpiresAt,
+            refreshToken: refreshed.refresh_token,
+            refreshTokenExpiresAt: newRefreshExpiresAt,
+          },
+        });
+      } else {
+        await db.socialConnection.updateMany({
+          where: { calendarId: calendar.id, platform: "TIKTOK" },
+          data: {
+            accessToken: refreshed.access_token,
+            accessTokenExpiresAt: newExpiresAt,
+            refreshToken: refreshed.refresh_token,
+            refreshTokenExpiresAt: newRefreshExpiresAt,
+          },
+        });
+      }
     } catch (err) {
       return fail("TikTok's connection has expired and couldn't be automatically renewed — reconnect TikTok on this calendar to keep publishing.");
     }
@@ -155,17 +195,35 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       publishId = result.publish_id;
     }
 
-    await waitForTikTokPublishResult(accessToken, publishId);
+    const publishResult = await waitForTikTokPublishResult(accessToken, publishId);
+    const platformPostId = publishResult.publicaly_available_post_id?.[0] != null
+      ? String(publishResult.publicaly_available_post_id[0])
+      : null;
+    const publishedAt = new Date();
 
     await db.calendarPost.update({
       where: { id: postId },
       data: {
         tikTokPublishStatus: "PUBLISHED",
-        tikTokPublishedAt: new Date(),
+        tikTokPublishedAt: publishedAt,
         tikTokPublishId: publishId,
         tikTokPublishError: null,
       },
     });
+    try {
+      await recordPublishedSocialPost({
+        calendarId: calendar.id,
+        calendarPostId: post.id,
+        platform: "TIKTOK",
+        platformAccountId: tikTokOpenId,
+        platformPostId,
+        providerReference: publishId,
+        publishedAt,
+        platformPostType: post.postType ?? (isVideo ? "VIDEO" : "PHOTO"),
+      });
+    } catch (reportingError) {
+      console.error(`Could not link TikTok post ${postId} to reporting:`, reportingError);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to publish to TikTok";
     console.error(`TikTok publish failed for post ${postId}:`, err);

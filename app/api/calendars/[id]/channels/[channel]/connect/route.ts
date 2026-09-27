@@ -1,0 +1,69 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentCreator } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { appUrl } from "@/lib/url";
+import {
+  buildChannelAuthorizationUrl,
+  createXCodeChallenge,
+  createXCodeVerifier,
+} from "@/lib/channelOAuth";
+import {
+  channelOAuthCookieOptions,
+  createChannelOAuthState,
+  xPkceCookieName,
+  type PublishingChannel,
+} from "@/lib/channelOAuthState";
+
+const CHANNELS: PublishingChannel[] = ["facebook", "linkedin", "x"];
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string; channel: string }> },
+) {
+  const { id, channel: rawChannel } = await params;
+  if (!CHANNELS.includes(rawChannel as PublishingChannel)) {
+    return NextResponse.json({ error: "Unknown publishing channel." }, { status: 404 });
+  }
+  const channel = rawChannel as PublishingChannel;
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.redirect(`${appUrl()}/login`);
+
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id },
+    select: { managerId: true },
+  });
+  const settingsPath = `/dashboard/calendars/${id}?view=channels`;
+  if (!calendar || calendar.managerId !== creator.id) {
+    return NextResponse.redirect(`${appUrl()}${settingsPath}&${channel}Error=not_found`);
+  }
+
+  try {
+    const callbackPath = `/api/calendars/channels/${channel}/callback`;
+    const redirectUri = `${appUrl()}${callbackPath}`;
+    const oauthState = createChannelOAuthState(channel, id);
+    const verifier = channel === "x" ? createXCodeVerifier() : undefined;
+    const authorizationUrl = buildChannelAuthorizationUrl({
+      channel,
+      redirectUri,
+      state: oauthState.state,
+      codeChallenge: verifier ? createXCodeChallenge(verifier) : undefined,
+    });
+
+    const response = NextResponse.redirect(authorizationUrl);
+    response.cookies.set(
+      oauthState.cookieName,
+      oauthState.nonce,
+      channelOAuthCookieOptions(channel, oauthState.maxAge),
+    );
+    if (verifier) {
+      response.cookies.set(xPkceCookieName(), verifier, {
+        ...channelOAuthCookieOptions(channel, oauthState.maxAge),
+        path: callbackPath,
+      });
+    }
+    return response;
+  } catch (error) {
+    console.error(`Failed to start ${channel} OAuth:`, error);
+    return NextResponse.redirect(`${appUrl()}${settingsPath}&${channel}Error=not_configured`);
+  }
+}

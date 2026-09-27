@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { markSocialConnectionDisconnected } from "@/lib/socialReporting";
 
 // POST — disconnects TikTok from one calendar. Manager-only, same
 // trust boundary as connecting. Doesn't touch any already-published
@@ -29,6 +30,7 @@ export async function POST(
       tikTokConnectedAt: null,
     },
   });
+  await markSocialConnectionDisconnected(id, "TIKTOK");
 
   return NextResponse.json({ ok: true });
 }

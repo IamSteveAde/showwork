@@ -10,6 +10,8 @@ type WorkspaceSectionId =
   | "content"
   | "team"
   | "analytics"
+  | "inbox"
+  | "leads"
   | "access"
   | "channels"
   | "knowledge"
@@ -26,6 +28,7 @@ type WorkspaceSection = {
     | "Workspace"
     | "Collaboration"
     | "Insights"
+    | "Leads & Messages"
     | "Client"
     | "Publishing"
     | "AI Studio";
@@ -84,6 +87,20 @@ function SectionIcon({
         <svg {...common}>
           <path d="M4 19V12M10 19V5M16 19v-9M21 19H3" />
           <path d="m4 9 5-3 6 2 5-4" opacity=".45" />
+        </svg>
+      );
+    case "inbox":
+      return (
+        <svg {...common}>
+          <path d="M4 5.5h16v13H4z" />
+          <path d="M4 13h4l1.5 2h5L16 13h4M8 9h8" />
+        </svg>
+      );
+    case "leads":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="8" r="3" />
+          <path d="M3.5 19c.5-3.2 2.3-5 5.5-5s5 1.8 5.5 5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.3 2.1 3.6 4.5" />
         </svg>
       );
     case "access":
@@ -179,6 +196,12 @@ export default function CalendarWorkspaceShell({
 }) {
   const [activeId, setActiveId] = useState<WorkspaceSectionId>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mountedInsightViews, setMountedInsightViews] = useState<Set<WorkspaceSectionId>>(() => new Set());
+
+  const rememberInsightView = (id: WorkspaceSectionId) => {
+    if (id !== "inbox" && id !== "analytics" && id !== "leads") return;
+    setMountedInsightViews((current) => current.has(id) ? current : new Set(current).add(id));
+  };
 
   // Allow rich overview modules to behave like real navigation controls without
   // coupling server-rendered page content to client routing state.
@@ -187,6 +210,7 @@ export default function CalendarWorkspaceShell({
       const detail = (event as CustomEvent<{ id?: WorkspaceSectionId }>).detail;
       if (detail?.id) {
         setActiveId(detail.id);
+        rememberInsightView(detail.id);
         setMobileOpen(false);
         const url = new URL(window.location.href);
         url.searchParams.set("view", detail.id);
@@ -210,6 +234,9 @@ export default function CalendarWorkspaceShell({
           ? (requestedView as WorkspaceSectionId)
           : "overview",
       );
+      if (requestedView === "inbox" || requestedView === "analytics" || requestedView === "leads") {
+        rememberInsightView(requestedView);
+      }
     };
 
     handlePopState();
@@ -248,16 +275,19 @@ export default function CalendarWorkspaceShell({
   },
 
   {
-    label: "Collaborate",
-    items: compact([
-      byId("team"),
-    ]),
+    label: "Understand",
+    items: compact([byId("analytics")]),
   },
 
   {
-    label: "Understand",
+    label: "Leads & Messages",
+    items: compact([byId("leads"), byId("inbox")]),
+  },
+
+  {
+    label: "Collaborate",
     items: compact([
-      byId("analytics"),
+      byId("team"),
     ]),
   },
 
@@ -285,6 +315,7 @@ export default function CalendarWorkspaceShell({
 
   const select = (id: WorkspaceSectionId) => {
     setActiveId(id);
+    rememberInsightView(id);
     setMobileOpen(false);
     const url = new URL(window.location.href);
     if (url.searchParams.get("view") !== id) {
@@ -707,8 +738,19 @@ export default function CalendarWorkspaceShell({
               key={active.id}
               className="animate-[workspaceEnter_.28s_cubic-bezier(.2,.8,.2,1)]"
             >
-              {active.content}
+              {active.id === "inbox" || active.id === "analytics" || active.id === "leads" ? null : active.content}
             </div>
+
+            {(["leads", "inbox", "analytics"] as const).map((id) => {
+              if (!mountedInsightViews.has(id)) return null;
+              const section = visibleSections.find((item) => item.id === id);
+              if (!section) return null;
+              return (
+                <div key={id} hidden={active.id !== id}>
+                  {section.content}
+                </div>
+              );
+            })}
 
             <div className="mt-8 flex items-center justify-between border-t border-[#E4E9F0] pt-5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A0A8B4]">
               <span>Showwork · Client Content Workspace</span>
