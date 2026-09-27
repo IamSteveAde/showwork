@@ -106,12 +106,22 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     const starting = histories.reduce((sum, history) => sum + (history[0]?.followers ?? 0), 0);
     const byDate = new Map<string, Record<string, number>>();
     const nativeFallbackUsed = new Set<string>();
+    // Instagram's account-level `views` insight is a date-range total, not
+    // a daily value. Use the latest range total per connected account rather
+    // than adding the same rolling total from every daily snapshot.
+    const latestViews = active.reduce((sum, connection) => {
+      const value = connection.accountMetricSnapshots
+        .filter(snapshot => snapshot.views != null)
+        .sort((a, b) => b.snapshotDate.localeCompare(a.snapshotDate))[0]?.views;
+      return sum + (value ?? 0);
+    }, 0);
+    const hasViews = active.some(connection => connection.accountMetricSnapshots.some(snapshot => snapshot.views != null));
     for (const connection of active) {
       const snapshotMetrics = new Set<string>();
       for (const snapshot of connection.accountMetricSnapshots) {
         const dayKey = snapshot.snapshotDate.slice(0, 10);
         const day = byDate.get(dayKey) ?? {};
-        for (const key of ["reach", "views", "engagement"] as const) {
+        for (const key of ["reach", "engagement"] as const) {
           if (snapshot[key] != null) {
             day[key] = (day[key] ?? 0) + snapshot[key]!;
             snapshotMetrics.add(key);
@@ -127,12 +137,16 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
       for (const post of report.accountPosts.filter(item => item.connectionId === connection.id)) {
         const dayKey = post.publishedAt.slice(0, 10);
         const day = byDate.get(dayKey) ?? {};
-        for (const key of ["reach", "views", "engagement", "likes"] as const) {
+        for (const key of ["reach", "engagement", "likes"] as const) {
           const value = post[key];
           if (connection.platform !== "FACEBOOK" && !snapshotMetrics.has(key) && value != null) {
             day[key] = (day[key] ?? 0) + value;
             nativeFallbackUsed.add(key);
           }
+        }
+        if (connection.platform === "TIKTOK" && post.views != null && !snapshotMetrics.has("views")) {
+          day.views = (day.views ?? 0) + post.views;
+          nativeFallbackUsed.add("views");
         }
         byDate.set(dayKey, day);
       }
@@ -143,7 +157,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
       return values.length ? values.reduce((total, value) => total + value, 0) : null;
     };
     const trends: Record<string, number | null> = {};
-    for (const key of ["reach", "views", "engagement", "likes"]) {
+    for (const key of ["reach", "engagement", "likes"]) {
       const firstValue = days.find(([, day]) => day[key] != null)?.[1][key];
       const lastValue = [...days].reverse().find(([, day]) => day[key] != null)?.[1][key];
       trends[key] = !nativeFallbackUsed.has(key) && firstValue != null && lastValue != null && firstValue > 0
@@ -154,7 +168,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
       followers: hasFollowerData ? latest : null,
       growth: hasComparableHistory && starting > 0 ? ((latest - starting) / starting) * 100 : null,
       reach: sum("reach"),
-      views: sum("views"),
+      views: hasViews ? latestViews + (sum("views") ?? 0) : sum("views"),
       engagement: sum("engagement"),
       likes: sum("likes"),
       trends,
