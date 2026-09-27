@@ -1,5 +1,6 @@
 import type { SocialLeadStatus, SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
+import { getFacebookMessengerProfile } from "@/lib/socialMessaging/meta";
 
 export const SOCIAL_LEAD_STATUSES: SocialLeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "CUSTOMER", "NOT_A_LEAD"];
 export const SOCIAL_INBOX_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "FACEBOOK", "X", "TIKTOK", "LINKEDIN", "YOUTUBE"];
@@ -33,7 +34,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       take: 100,
       include: {
         messages: { orderBy: { platformCreatedAt: "desc" }, take: 50 },
-        connection: { select: { accountName: true, username: true, status: true } },
+        connection: { select: { accountName: true, username: true, status: true, accessToken: true } },
       },
     }),
     db.socialLeadConversation.count({ where: { calendarId, leadStatus: { not: "NOT_A_LEAD" } } }),
@@ -47,6 +48,33 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       orderBy: { platform: "asc" },
     }),
   ]);
+  // Resolve older conversations that arrived before profile lookup was
+  // implemented. Limit each request so a large inbox cannot trigger an
+  // unbounded burst of Graph API calls.
+  const missingFacebookNames = conversations
+    .filter((conversation) => {
+      const name = conversation.participantName?.trim().toLowerCase();
+      const genericName = !name || ["social contact", "facebook contact", "facebook user", conversation.participantPlatformId.toLowerCase()].includes(name);
+      return conversation.platform === "FACEBOOK" && genericName && conversation.connection?.accessToken;
+    })
+    .slice(0, 5);
+  const resolvedNames = new Map<string, string>();
+  await Promise.all(missingFacebookNames.map(async (conversation) => {
+    const profile = await getFacebookMessengerProfile({
+      pageScopedUserId: conversation.participantPlatformId,
+      pageAccessToken: conversation.connection!.accessToken!,
+    });
+    if (!profile?.name) return;
+    resolvedNames.set(conversation.id, profile.name);
+    try {
+      await Promise.all([
+        db.socialLeadConversation.update({ where: { id: conversation.id }, data: { participantName: profile.name } }),
+        db.calendarLead.updateMany({ where: { socialConversationId: conversation.id }, data: { name: profile.name } }),
+      ]);
+    } catch (error) {
+      console.warn("Could not save Facebook inbox profile name:", error);
+    }
+  }));
   return {
     summary: { leads: totalLeads, newMessages: unreadResult._sum.unreadCount ?? 0, messagesThisMonth: newMessages, allMessages: totalMessages },
     accounts: accounts.map(({ tokenScopes, ...account }) => ({
@@ -76,13 +104,17 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       platform: conversation.platform,
       providerConversationId: conversation.providerConversationId,
       participantPlatformId: conversation.participantPlatformId,
-      participantName: conversation.participantName,
       participantUsername: conversation.participantUsername,
       leadStatus: conversation.leadStatus,
       unreadCount: conversation.unreadCount,
       lastMessagePreview: conversation.lastMessagePreview,
       lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
-      connection: conversation.connection,
+      participantName: conversation.participantName || resolvedNames.get(conversation.id) || null,
+      connection: conversation.connection ? {
+        accountName: conversation.connection.accountName,
+        username: conversation.connection.username,
+        status: conversation.connection.status,
+      } : null,
       messages: [...conversation.messages].reverse().map((message) => ({
         id: message.id,
         direction: message.direction,

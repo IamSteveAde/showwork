@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { metaWebhookPlatform } from "@/lib/socialMessaging/meta";
+import { getFacebookMessengerProfile, metaWebhookPlatform } from "@/lib/socialMessaging/meta";
 import { socialStatusToPipeline } from "@/lib/calendarLeads";
 
 export const runtime = "nodejs";
@@ -64,25 +64,38 @@ export async function POST(req: NextRequest) {
       if (!senderId || !providerMessageId || !text) continue;
       if (!isEcho && senderId === connection.platformAccountId) continue;
       const messageAt = new Date(Number.isFinite(event.timestamp) ? Number(event.timestamp) : Date.now());
-      const conversation = await db.socialLeadConversation.upsert({
-        where: {
-          socialConnectionId_providerConversationId: {
-            socialConnectionId: connection.id,
-            providerConversationId: senderId,
-          },
+      const conversationKey = {
+        socialConnectionId_providerConversationId: {
+          socialConnectionId: connection.id,
+          providerConversationId: senderId,
         },
+      };
+      const existingConversation = await db.socialLeadConversation.findUnique({
+        where: conversationKey,
+        select: { id: true, participantName: true, participantUsername: true, leadStatus: true },
+      });
+      const savedName = existingConversation?.participantName?.trim();
+      const hasUsableSavedName = Boolean(savedName && !["social contact", "facebook contact", "facebook user", senderId.toLowerCase()].includes(savedName.toLowerCase()));
+      const profile = platform === "FACEBOOK" && !isEcho && !hasUsableSavedName && connection.accessToken
+        ? await getFacebookMessengerProfile({ pageScopedUserId: senderId, pageAccessToken: connection.accessToken })
+        : null;
+      const participantName = profile?.name || existingConversation?.participantName || null;
+      const conversation = await db.socialLeadConversation.upsert({
+        where: conversationKey,
         create: {
           calendarId: connection.calendarId,
           socialConnectionId: connection.id,
           platform,
           providerConversationId: senderId,
           participantPlatformId: senderId,
+          participantName,
           unreadCount: isEcho ? 0 : 1,
           lastMessagePreview: text.slice(0, 500),
           lastMessageAt: messageAt,
         },
         update: {
           ...(isEcho ? {} : { unreadCount: { increment: 1 } }),
+          ...(profile?.name ? { participantName: profile.name } : {}),
           lastMessagePreview: text.slice(0, 500),
           lastMessageAt: messageAt,
         },
@@ -97,7 +110,7 @@ export async function POST(req: NextRequest) {
           status: socialStatusToPipeline(conversation.leadStatus),
           source: "SOCIAL",
         },
-        update: {},
+        update: profile?.name ? { name: profile.name } : {},
       });
       const inserted = await db.socialLeadMessage.createMany({
         data: [{
