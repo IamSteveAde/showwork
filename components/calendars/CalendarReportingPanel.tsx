@@ -86,34 +86,6 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     } catch (err) { setError(err instanceof Error ? err.message : "Could not start reporting sync."); }
     finally { setSyncing(false); }
   }
-  const metrics = useMemo(() => {
-    if (!report) return null;
-    const keys = ["reach", "impressions", "views", "engagement", "likes", "comments", "shares", "saves"] as const;
-    const first: Record<typeof keys[number], number> = { reach: 0, impressions: 0, views: 0, engagement: 0, likes: 0, comments: 0, shares: 0, saves: 0 };
-    const latest: Record<typeof keys[number], number> = { ...first };
-    const firstCounts: Record<typeof keys[number], number> = { ...first };
-    const latestCounts: Record<typeof keys[number], number> = { ...first };
-    for (const post of report.posts) {
-      const history = [...post.metricSnapshots].sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate));
-      const beginning = history[0];
-      const current = history.at(-1);
-      if (!current) continue;
-      for (const key of keys) {
-        if (current[key] != null) { latest[key] += current[key]!; latestCounts[key]++; }
-        if (beginning?.[key] != null) { first[key] += beginning[key]!; firstCounts[key]++; }
-      }
-    }
-    const trends: Record<string, number | null> = {};
-    const totals: Record<typeof keys[number], number | null> = { ...latest };
-    for (const key of keys) {
-      totals[key] = latestCounts[key] ? latest[key] : null;
-      trends[key] = firstCounts[key] && latestCounts[key] && first[key] > 0
-        ? ((latest[key] - first[key]) / first[key]) * 100
-        : null;
-    }
-    return { ...totals, posts: report.posts.length, trends };
-  }, [report]);
-
   const accountTotals = useMemo(() => {
     if (!report) return { followers: null as number | null, growth: null as number | null, reach: null as number | null, views: null as number | null, engagement: null as number | null, likes: null as number | null, trends: {} as Record<string, number | null>, connected: 0 };
     const active = report.connections.filter(connection => connection.status === "CONNECTED");
@@ -194,12 +166,12 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
   }
 
   const cards = [
-    { title: "Total reach", value: accountTotals.reach ?? metrics?.reach, trend: accountTotals.trends.reach ?? metrics?.trends.reach ?? null, icon: Eye, tint: "bg-blue-50 text-blue-700" },
-    { title: "Video views", value: accountTotals.views ?? metrics?.views, trend: accountTotals.trends.views ?? metrics?.trends.views ?? null, icon: BarChart3, tint: "bg-violet-50 text-violet-700" },
-    { title: "Engagements", value: accountTotals.engagement ?? metrics?.engagement, trend: accountTotals.trends.engagement ?? metrics?.trends.engagement ?? null, icon: Activity, tint: "bg-emerald-50 text-emerald-700" },
+    { title: "Total reach", value: accountTotals.reach, trend: accountTotals.trends.reach ?? null, icon: Eye, tint: "bg-blue-50 text-blue-700" },
+    { title: "Video views", value: accountTotals.views, trend: accountTotals.trends.views ?? null, icon: BarChart3, tint: "bg-violet-50 text-violet-700" },
+    { title: "Engagements", value: accountTotals.engagement, trend: accountTotals.trends.engagement ?? null, icon: Activity, tint: "bg-emerald-50 text-emerald-700" },
     { title: "Followers", value: accountTotals.followers, trend: accountTotals.growth, icon: Users, tint: "bg-amber-50 text-amber-700" },
-    { title: "Likes", value: accountTotals.likes ?? metrics?.likes, trend: accountTotals.trends.likes ?? metrics?.trends.likes ?? null, icon: Heart, tint: "bg-rose-50 text-rose-700" },
-    { title: "Published posts", value: metrics?.posts ?? 0, trend: null, icon: Share2, tint: "bg-slate-100 text-slate-700" },
+    { title: "Likes", value: accountTotals.likes, trend: accountTotals.trends.likes ?? null, icon: Heart, tint: "bg-rose-50 text-rose-700" },
+    { title: "Showwork posts", value: report?.posts.length ?? 0, trend: null, icon: Share2, tint: "bg-slate-100 text-slate-700" },
   ];
 
   return <section className="space-y-6" aria-label="Social reporting">

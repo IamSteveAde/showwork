@@ -4,6 +4,8 @@ import { refreshTikTokAccessToken } from "@/lib/tiktok";
 import type { NormalizedSocialMetrics, PublishedPostRef, SocialReportingAdapter } from "@/lib/reporting/types";
 
 const API_BASE = "https://open.tiktokapis.com/v2";
+const REPORTING_HISTORY_DAYS = 366;
+const MAX_VIDEO_LIST_PAGES = 50;
 
 async function apiGet<T>(path: string, token: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -78,17 +80,47 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
 
   async fetchAccountMetrics(connection): Promise<NormalizedSocialMetrics> {
     requireScopes(connection, ["user.info.stats"]);
+    requireScopes(connection, ["video.list"]);
     if (!connection.accessToken) throw new Error("TikTok connection needs to be renewed.");
-    const result = await apiGet<{
+    const [result, videos] = await Promise.all([
+      apiGet<{
       user?: { follower_count?: number; following_count?: number; likes_count?: number; video_count?: number };
-    }>("/user/info/?fields=follower_count,following_count,likes_count,video_count", connection.accessToken);
+      }>("/user/info/?fields=follower_count,following_count,likes_count,video_count", connection.accessToken),
+      listReportingVideos(connection.accessToken),
+    ]);
     const user = result.user ?? {};
+    const daily = new Map<string, { views: number; likes: number; comments: number; shares: number }>();
+    for (const video of videos) {
+      if (typeof video.create_time !== "number") continue;
+      const date = new Date(video.create_time * 1000);
+      const key = date.toISOString().slice(0, 10);
+      const stats = daily.get(key) ?? { views: 0, likes: 0, comments: 0, shares: 0 };
+      stats.views += video.view_count ?? 0;
+      stats.likes += video.like_count ?? 0;
+      stats.comments += video.comment_count ?? 0;
+      stats.shares += video.share_count ?? 0;
+      daily.set(key, stats);
+    }
+    const dailySnapshots = [...daily.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, stats]) => ({
+      snapshotDate: new Date(`${date}T00:00:00.000Z`),
+      views: stats.views,
+      engagement: stats.likes + stats.comments + stats.shares,
+      additionalMetrics: { likes: stats.likes, comments: stats.comments, shares: stats.shares },
+    }));
+    const totals = dailySnapshots.reduce((sum, day) => ({
+      views: sum.views + (day.views ?? 0),
+      engagement: sum.engagement + (day.engagement ?? 0),
+    }), { views: 0, engagement: 0 });
     return {
       followers: typeof user.follower_count === "number" ? user.follower_count : null,
+      views: totals.views,
+      engagement: totals.engagement,
+      dailySnapshots,
       additionalMetrics: {
         ...(typeof user.following_count === "number" ? { followingCount: user.following_count } : {}),
         ...(typeof user.likes_count === "number" ? { totalLikes: user.likes_count } : {}),
         ...(typeof user.video_count === "number" ? { videoCount: user.video_count } : {}),
+        reportedVideos: videos.length,
       },
     };
   },
@@ -144,3 +176,35 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
     return results;
   },
 };
+
+async function listReportingVideos(token: string) {
+  const oldestIncluded = Math.floor(Date.now() / 1000) - REPORTING_HISTORY_DAYS * 24 * 60 * 60;
+  const videos: {
+    id: string;
+    create_time?: number;
+    view_count?: number;
+    like_count?: number;
+    comment_count?: number;
+    share_count?: number;
+  }[] = [];
+  let cursor: number | undefined;
+
+  for (let page = 0; page < MAX_VIDEO_LIST_PAGES; page++) {
+    const result = await apiPost<{
+      videos?: typeof videos;
+      cursor?: number;
+      has_more?: boolean;
+    }>(
+      "/video/list/?fields=id,create_time,view_count,like_count,comment_count,share_count",
+      token,
+      { max_count: 20, ...(cursor ? { cursor } : {}) },
+    );
+    const pageVideos = result.videos ?? [];
+    videos.push(...pageVideos.filter(video => typeof video.create_time !== "number" || video.create_time >= oldestIncluded));
+    const oldestOnPage = pageVideos.reduce<number | null>((oldest, video) =>
+      typeof video.create_time === "number" ? Math.min(oldest ?? video.create_time, video.create_time) : oldest, null);
+    if (!result.has_more || !result.cursor || (oldestOnPage !== null && oldestOnPage < oldestIncluded)) break;
+    cursor = result.cursor;
+  }
+  return videos;
+}
