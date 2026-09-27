@@ -1,11 +1,11 @@
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 import { refreshTikTokAccessToken } from "@/lib/tiktok";
-import type { NormalizedSocialMetrics, PublishedPostRef, SocialReportingAdapter } from "@/lib/reporting/types";
+import type { NormalizedSocialMetrics, PublishedPostRef, SocialAccountPostRecord, SocialReportingAdapter } from "@/lib/reporting/types";
 
 const API_BASE = "https://open.tiktokapis.com/v2";
 const REPORTING_HISTORY_DAYS = 366;
-const MAX_VIDEO_LIST_PAGES = 50;
+const MAX_VIDEO_LIST_PAGES = 10;
 
 async function apiGet<T>(path: string, token: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -89,33 +89,30 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
       listReportingVideos(connection.accessToken),
     ]);
     const user = result.user ?? {};
-    const daily = new Map<string, { views: number; likes: number; comments: number; shares: number }>();
-    for (const video of videos) {
-      if (typeof video.create_time !== "number") continue;
-      const date = new Date(video.create_time * 1000);
-      const key = date.toISOString().slice(0, 10);
-      const stats = daily.get(key) ?? { views: 0, likes: 0, comments: 0, shares: 0 };
-      stats.views += video.view_count ?? 0;
-      stats.likes += video.like_count ?? 0;
-      stats.comments += video.comment_count ?? 0;
-      stats.shares += video.share_count ?? 0;
-      daily.set(key, stats);
-    }
-    const dailySnapshots = [...daily.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, stats]) => ({
-      snapshotDate: new Date(`${date}T00:00:00.000Z`),
-      views: stats.views,
-      engagement: stats.likes + stats.comments + stats.shares,
-      additionalMetrics: { likes: stats.likes, comments: stats.comments, shares: stats.shares },
-    }));
-    const totals = dailySnapshots.reduce((sum, day) => ({
-      views: sum.views + (day.views ?? 0),
-      engagement: sum.engagement + (day.engagement ?? 0),
-    }), { views: 0, engagement: 0 });
     return {
       followers: typeof user.follower_count === "number" ? user.follower_count : null,
-      views: totals.views,
-      engagement: totals.engagement,
-      dailySnapshots,
+      // TikTok returns current lifetime counters per video, not a historical
+      // daily account time series. The report aggregates these on native posts.
+      views: null,
+      engagement: null,
+      accountPosts: videos.flatMap((video): SocialAccountPostRecord[] => {
+        if (typeof video.create_time !== "number") return [];
+        const likes = video.like_count ?? null;
+        const comments = video.comment_count ?? null;
+        const shares = video.share_count ?? null;
+        return [{
+          platformPostId: video.id,
+          caption: video.video_description || video.title || null,
+          postType: "VIDEO",
+          publishedAt: new Date(video.create_time * 1000),
+          permalink: video.share_url ?? null,
+          views: video.view_count ?? null,
+          likes,
+          comments,
+          shares,
+          engagement: likes !== null && comments !== null && shares !== null ? likes + comments + shares : null,
+        }];
+      }),
       additionalMetrics: {
         ...(typeof user.following_count === "number" ? { followingCount: user.following_count } : {}),
         ...(typeof user.likes_count === "number" ? { totalLikes: user.likes_count } : {}),
@@ -182,6 +179,9 @@ async function listReportingVideos(token: string) {
   const videos: {
     id: string;
     create_time?: number;
+    title?: string;
+    video_description?: string;
+    share_url?: string;
     view_count?: number;
     like_count?: number;
     comment_count?: number;
@@ -195,7 +195,7 @@ async function listReportingVideos(token: string) {
       cursor?: number;
       has_more?: boolean;
     }>(
-      "/video/list/?fields=id,create_time,view_count,like_count,comment_count,share_count",
+      "/video/list/?fields=id,create_time,title,video_description,share_url,view_count,like_count,comment_count,share_count",
       token,
       { max_count: 20, ...(cursor ? { cursor } : {}) },
     );

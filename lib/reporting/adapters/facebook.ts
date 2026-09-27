@@ -136,6 +136,34 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       },
     };
 
+    // Fetch the Page's own recent posts independently of Showwork's
+    // PublishedSocialPost table. Keep this to one bounded edge request.
+    try {
+      const until = new Date();
+      const since = new Date(until.getTime() - 366 * 24 * 60 * 60 * 1000);
+      const nativePosts = await graphGet<{ data?: PagePostRecord[] }>(`/${encodeURIComponent(page.id ?? connection.platformAccountId)}/posts`, token, {
+        fields: "id,message,created_time,permalink_url",
+        limit: "100",
+        since: String(Math.floor(since.getTime() / 1000)),
+        until: String(Math.floor(until.getTime() / 1000)),
+      });
+      metrics.accountPosts = (nativePosts.data ?? []).flatMap((post) => {
+        if (!post.created_time) return [];
+        const publishedAt = new Date(post.created_time);
+        if (!Number.isFinite(publishedAt.getTime())) return [];
+        return [{
+          platformPostId: post.id,
+          caption: post.message ?? null,
+          postType: "POST",
+          publishedAt,
+          permalink: post.permalink_url ?? null,
+        }];
+      });
+    } catch (error) {
+      // Page insights remain useful if reading the optional native feed fails.
+      console.warn("Facebook Page post list could not be read:", error);
+    }
+
     if (scopesFor(connection).has("read_insights")) {
       const [reach, impressions, engagement] = await Promise.all([
         optionalInsight(connection.platformAccountId, token, "page_impressions_unique"),

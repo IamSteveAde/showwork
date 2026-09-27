@@ -53,7 +53,29 @@ export async function getCalendarReportingData(
         accountMetricSnapshots: {
           where: { snapshotDate: { gte: start, lte: end } },
           orderBy: { snapshotDate: "desc" },
-          take: 90,
+          take: 366,
+        },
+        accountPosts: {
+          where: { publishedAt: { gte: start, lte: end } },
+          orderBy: { publishedAt: "desc" },
+          take: 250,
+          select: {
+            id: true,
+            platformPostId: true,
+            caption: true,
+            postType: true,
+            publishedAt: true,
+            permalink: true,
+            views: true,
+            reach: true,
+            impressions: true,
+            engagement: true,
+            likes: true,
+            comments: true,
+            shares: true,
+            saves: true,
+            metricsUpdatedAt: true,
+          },
         },
       },
       orderBy: { platform: "asc" },
@@ -135,6 +157,62 @@ export async function getCalendarReportingData(
     }
   }
 
+  const accountPosts = connections.flatMap((connection) => connection.accountPosts.map((post) => ({
+    id: `${connection.id}:${post.platformPostId}`,
+    connectionId: connection.id,
+    platform: connection.platform,
+    platformPostId: post.platformPostId,
+    caption: post.caption,
+    postType: post.postType,
+    publishedAt: post.publishedAt.toISOString(),
+    permalink: post.permalink,
+    views: post.views,
+    reach: post.reach,
+    impressions: post.impressions,
+    engagement: post.engagement,
+    likes: post.likes,
+    comments: post.comments,
+    shares: post.shares,
+    saves: post.saves,
+    metricsUpdatedAt: post.metricsUpdatedAt?.toISOString() ?? null,
+    accountName: connection.accountName,
+    username: connection.username,
+    source: "PLATFORM" as const,
+  })));
+  if (facebookPageActivity) {
+    for (const post of facebookPageActivity.posts) {
+      if (!post.createdAt) continue;
+      const existingIndex = accountPosts.findIndex((item) => item.platform === "FACEBOOK" && item.platformPostId === post.id);
+      const enrichedPost = {
+        id: existingIndex >= 0 ? accountPosts[existingIndex].id : `FACEBOOK:${post.id}`,
+        connectionId: facebookConnection?.id ?? "",
+        platform: "FACEBOOK" as const,
+        platformPostId: post.id,
+        caption: post.message,
+        postType: "POST",
+        publishedAt: post.createdAt ?? new Date().toISOString(),
+        permalink: post.permalink,
+        views: null,
+        reach: post.reach,
+        impressions: post.impressions,
+        engagement: [post.likes, post.comments, post.shares].every((value) => value != null)
+          ? (post.likes ?? 0) + (post.comments ?? 0) + (post.shares ?? 0)
+          : null,
+        likes: post.likes,
+        comments: post.comments,
+        shares: post.shares,
+        saves: null,
+        metricsUpdatedAt: null,
+        accountName: facebookPageActivity.pageName,
+        username: null,
+        source: "PLATFORM" as const,
+      };
+      if (existingIndex >= 0) accountPosts[existingIndex] = { ...accountPosts[existingIndex], ...enrichedPost };
+      else accountPosts.push(enrichedPost);
+    }
+  }
+  accountPosts.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+
   return {
     period: { start: start.toISOString(), end: end.toISOString() },
     clientSharing: {
@@ -178,6 +256,7 @@ export async function getCalendarReportingData(
         })),
       },
     })),
+    accountPosts,
     insights: insights.map((insight) => includeSyncErrors
       ? insight
       : {

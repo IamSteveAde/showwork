@@ -28,6 +28,13 @@ type Report = {
     status: string; lastSyncAt: string | null; lastSyncAttemptAt: string | null; lastSyncError?: string | null;
     accountMetricSnapshots: Array<{ snapshotDate: string; followers: number | null; followerGrowth: number | null; reach: number | null; views: number | null; engagement: number | null; additionalMetrics?: Record<string, unknown> | null }>;
   }>;
+  accountPosts: Array<{
+    id: string; connectionId: string; platform: string; platformPostId: string; caption: string | null; postType: string | null;
+    publishedAt: string; permalink: string | null; views: number | null; reach: number | null;
+    impressions: number | null; engagement: number | null; likes: number | null; comments: number | null;
+    shares: number | null; saves: number | null; metricsUpdatedAt: string | null;
+    accountName: string | null; username: string | null; source: "PLATFORM";
+  }>;
   posts: Array<{
     id: string; platform: string; permalink: string | null; status: string; publishedAt: string | null;
     metricSnapshots: Array<Metrics & { snapshotDate: string }>;
@@ -98,14 +105,37 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     const hasComparableHistory = active.length > 0 && histories.every(history => history.length >= 2);
     const starting = histories.reduce((sum, history) => sum + (history[0]?.followers ?? 0), 0);
     const byDate = new Map<string, Record<string, number>>();
-    for (const connection of active) for (const snapshot of connection.accountMetricSnapshots) {
-      const day = byDate.get(snapshot.snapshotDate) ?? {};
-      for (const key of ["reach", "views", "engagement"] as const) {
-        if (snapshot[key] != null) day[key] = (day[key] ?? 0) + snapshot[key]!;
+    const nativeFallbackUsed = new Set<string>();
+    for (const connection of active) {
+      const snapshotMetrics = new Set<string>();
+      for (const snapshot of connection.accountMetricSnapshots) {
+        const dayKey = snapshot.snapshotDate.slice(0, 10);
+        const day = byDate.get(dayKey) ?? {};
+        for (const key of ["reach", "views", "engagement"] as const) {
+          if (snapshot[key] != null) {
+            day[key] = (day[key] ?? 0) + snapshot[key]!;
+            snapshotMetrics.add(key);
+          }
+        }
+        const likes = snapshot.additionalMetrics?.likes;
+        if (typeof likes === "number") {
+          day.likes = (day.likes ?? 0) + likes;
+          snapshotMetrics.add("likes");
+        }
+        byDate.set(dayKey, day);
       }
-      const likes = snapshot.additionalMetrics?.likes;
-      if (typeof likes === "number") day.likes = (day.likes ?? 0) + likes;
-      byDate.set(snapshot.snapshotDate, day);
+      for (const post of report.accountPosts.filter(item => item.connectionId === connection.id)) {
+        const dayKey = post.publishedAt.slice(0, 10);
+        const day = byDate.get(dayKey) ?? {};
+        for (const key of ["reach", "views", "engagement", "likes"] as const) {
+          const value = post[key];
+          if (connection.platform !== "FACEBOOK" && !snapshotMetrics.has(key) && value != null) {
+            day[key] = (day[key] ?? 0) + value;
+            nativeFallbackUsed.add(key);
+          }
+        }
+        byDate.set(dayKey, day);
+      }
     }
     const days = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b));
     const sum = (key: string) => {
@@ -116,7 +146,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     for (const key of ["reach", "views", "engagement", "likes"]) {
       const firstValue = days.find(([, day]) => day[key] != null)?.[1][key];
       const lastValue = [...days].reverse().find(([, day]) => day[key] != null)?.[1][key];
-      trends[key] = firstValue != null && lastValue != null && firstValue > 0
+      trends[key] = !nativeFallbackUsed.has(key) && firstValue != null && lastValue != null && firstValue > 0
         ? ((lastValue - firstValue) / firstValue) * 100
         : null;
     }
@@ -171,7 +201,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     { title: "Engagements", value: accountTotals.engagement, trend: accountTotals.trends.engagement ?? null, icon: Activity, tint: "bg-emerald-50 text-emerald-700" },
     { title: "Followers", value: accountTotals.followers, trend: accountTotals.growth, icon: Users, tint: "bg-amber-50 text-amber-700" },
     { title: "Likes", value: accountTotals.likes, trend: accountTotals.trends.likes ?? null, icon: Heart, tint: "bg-rose-50 text-rose-700" },
-    { title: "Showwork posts", value: report?.posts.length ?? 0, trend: null, icon: Share2, tint: "bg-slate-100 text-slate-700" },
+    { title: "Platform posts", value: report?.accountPosts.length ?? 0, trend: null, icon: Share2, tint: "bg-slate-100 text-slate-700" },
   ];
 
   return <section className="space-y-6" aria-label="Social reporting">
@@ -199,8 +229,8 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
         <div className="rounded-2xl border border-[#DFE6EF] bg-white p-4 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="text-sm font-semibold text-[#101828]">Connected accounts</h4><p className="mt-1 text-xs text-[#667085]">Latest account sync status</p></div><div className="flex items-center gap-3"><span className="text-xs text-[#667085]">{report.connections.length} account{report.connections.length === 1 ? "" : "s"}</span>{isManager && <button type="button" onClick={() => void syncReportingNow()} disabled={syncing || !report.connections.some(connection => ["INSTAGRAM", "TIKTOK", "FACEBOOK"].includes(connection.platform) && connection.status === "CONNECTED")} className="inline-flex items-center gap-1.5 rounded-lg border border-[#D0D5DD] bg-white px-3 py-2 text-xs font-semibold text-[#344054] disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />{syncing ? "Starting…" : "Sync now"}</button>}</div></div>
           {syncNotice && <p role="status" className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-800">{syncNotice}</p>}
           {report.connections.length ? <div className="mt-4 divide-y divide-[#EEF1F5]">{report.connections.map(connection => <div key={connection.id} className="flex items-center justify-between gap-3 py-3"><div><p className="text-sm font-semibold text-[#101828]">{label[connection.platform] || connection.platform}<span className="font-normal text-[#667085]">{connection.username ? ` · @${connection.username}` : connection.accountName ? ` · ${connection.accountName}` : ""}</span></p><p className="mt-1 text-[11px] text-[#667085]">{connection.lastSyncAt ? `Last synced ${new Date(connection.lastSyncAt).toLocaleString()}` : "Waiting for first sync"}</p>{connection.lastSyncError && <p className="mt-1 text-[11px] text-red-600">{connection.lastSyncError}</p>}</div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${connection.status === "CONNECTED" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>{connection.status === "CONNECTED" ? "Connected" : connection.status === "NEEDS_REAUTH" ? "Reconnect" : "Disconnected"}</span></div>)}</div> : <p className="mt-5 rounded-xl bg-[#F8FAFC] p-4 text-xs leading-5 text-[#667085]">No reporting accounts are connected yet. Connect a supported social account in Channels to begin collecting performance data.</p>}</div>
-        <div className="rounded-2xl border border-[#DFE6EF] bg-white p-4 sm:p-5"><div><h4 className="text-sm font-semibold text-[#101828]">Published posts</h4><p className="mt-1 text-xs text-[#667085]">Posts published during this reporting period</p></div>
-          {report.posts.length ? <div className="mt-4 divide-y divide-[#EEF1F5]">{report.posts.map(post => { const latest = post.metricSnapshots[0]; const hasMetrics = latest && [latest.reach, latest.views, latest.engagement, latest.likes, latest.comments, latest.shares].some(value => value != null); return <article key={post.id} className="flex gap-3 py-3">{post.calendarPost.assets[0]?.previewUrl ? <img src={post.calendarPost.assets[0].previewUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg border border-[#EEF1F5] object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#F2F4F7] text-[10px] font-bold text-[#667085]">{label[post.platform] || post.platform}</div>}<div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2"><span className="text-xs font-bold text-[#101828]">{label[post.platform] || post.platform}</span>{post.publishedAt && <span className="text-[10px] text-[#667085]">{new Date(post.publishedAt).toLocaleDateString()}</span>}{post.permalink && <a href={post.permalink} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-[#1768E8]">View post ↗</a>}</div><p className="mt-1 line-clamp-2 text-xs text-[#475467]">{post.calendarPost.caption || "Published content"}</p><div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[#667085]">{hasMetrics && latest ? <>{latest.reach != null && <span>Reach {number(latest.reach)}</span>}{latest.views != null && <span>Views {number(latest.views)}</span>}{latest.engagement != null && <span>Engagement {number(latest.engagement)}</span>}{latest.likes != null && <span>Likes {number(latest.likes)}</span>}{latest.comments != null && <span>Comments {number(latest.comments)}</span>}{latest.shares != null && <span>Shares {number(latest.shares)}</span>}</> : <span>No post metrics are available yet.</span>}</div></div></article>; })}</div> : <p className="mt-5 rounded-xl bg-[#F8FAFC] p-4 text-xs leading-5 text-[#667085]">No published posts found for this period. Scheduled calendar posts appear here once the platform confirms publication.</p>}</div>
+        <div className="rounded-2xl border border-[#DFE6EF] bg-white p-4 sm:p-5"><div><h4 className="text-sm font-semibold text-[#101828]">Platform posts</h4><p className="mt-1 text-xs text-[#667085]">Content fetched from connected social accounts during this period</p></div>
+          {report.accountPosts.length ? <div className="mt-4 divide-y divide-[#EEF1F5]">{report.accountPosts.map(post => <article key={post.id} className="flex gap-3 py-3"><div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#F2F4F7] text-[10px] font-bold text-[#667085]">{label[post.platform] || post.platform}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-x-2"><span className="text-xs font-bold text-[#101828]">{label[post.platform] || post.platform}</span>{post.username && <span className="text-[10px] text-[#667085]">@{post.username}</span>}<span className="text-[10px] text-[#667085]">{new Date(post.publishedAt).toLocaleDateString()}</span>{post.permalink && <a href={post.permalink} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-[#1768E8]">View post ↗</a>}</div><p className="mt-1 line-clamp-2 text-xs text-[#475467]">{post.caption || `${label[post.platform] || post.platform} ${post.postType?.toLowerCase() || "post"}`}</p><div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-[#667085]">{post.reach != null && <span>Reach {number(post.reach)}</span>}{post.views != null && <span>Views {number(post.views)}</span>}{post.engagement != null && <span>Engagement {number(post.engagement)}</span>}{post.likes != null && <span>Likes {number(post.likes)}</span>}{post.comments != null && <span>Comments {number(post.comments)}</span>}{post.shares != null && <span>Shares {number(post.shares)}</span>}{post.impressions != null && <span>Impressions {number(post.impressions)}</span>}{post.saves != null && <span>Saves {number(post.saves)}</span>}{[post.reach, post.views, post.engagement, post.likes, post.comments, post.shares].every(value => value == null) && <span>Metrics unavailable for this post.</span>}</div></div></article>)}</div> : <p className="mt-5 rounded-xl bg-[#F8FAFC] p-4 text-xs leading-5 text-[#667085]">No native posts are available for this period yet. Check each connection’s sync status and granted platform permissions.</p>}</div>
       </div>
       <div className="rounded-2xl border border-[#DFE6EF] bg-white p-4 shadow-[0_2px_8px_rgba(16,24,40,.025)] sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700"><Lightbulb className="h-4 w-4" /></span><div><h4 className="text-sm font-semibold text-[#101828]">What’s working and what to improve</h4><p className="mt-1 text-xs leading-5 text-[#667085]">AI analysis is grounded in your synced post metrics, dates and captions.</p></div></div>{canAnalyze && <button type="button" onClick={() => void analyzePerformance()} disabled={analyzing || loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1768E8] px-3.5 py-2.5 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"><Sparkles className={`h-3.5 w-3.5 ${analyzing ? "animate-pulse" : ""}`} />{analyzing ? "Analyzing performance…" : report.insights.length ? "Refresh AI analysis" : "Analyze performance"}</button>}</div>
