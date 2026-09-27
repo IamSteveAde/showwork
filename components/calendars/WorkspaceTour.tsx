@@ -7,6 +7,8 @@ type TourSectionId =
   | "content"
   | "team"
   | "analytics"
+  | "inbox"
+  | "leads"
   | "access"
   | "channels"
   | "knowledge"
@@ -90,6 +92,20 @@ const TOUR_STEPS: TourStep[] = [
     title: "Understand what is happening across the workspace.",
     description:
       "Keep an eye on the content operation and quickly see what is moving, what is waiting and where attention is needed so the team can keep the account progressing.",
+  },
+  {
+    id: "inbox",
+    eyebrow: "Leads & Messages",
+    title: "Keep client conversations and new leads together.",
+    description:
+      "Review incoming social messages, track each conversation as a lead and reply from the workspace when the connected platform grants messaging access.",
+  },
+  {
+    id: "leads",
+    eyebrow: "Leads & Messages · Leads",
+    title: "Keep contact details and follow-up organized.",
+    description:
+      "Manage social contacts alongside leads you add manually or import. Keep names, email addresses, phone numbers, hot/warm/cold temperature, notes and pipeline status current, then export the list as a CSV when you need it elsewhere.",
   },
   {
   id: "knowledge",

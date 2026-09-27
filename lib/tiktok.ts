@@ -32,7 +32,7 @@ function requireAppCredentials() {
 
 // user.info.basic — for the account's display name/username.
 // video.publish — the actual Direct Post permission.
-export const TIKTOK_OAUTH_SCOPES = "user.info.basic,video.publish";
+export const TIKTOK_OAUTH_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish";
 
 /** Builds the TikTok authorization page URL the manager is redirected to. */
 export function buildTikTokAuthUrl({ redirectUri, state }: { redirectUri: string; state: string }): string {
@@ -218,6 +218,7 @@ export function initTikTokPhotoPublish({
 interface PublishStatus {
   status: "PROCESSING_DOWNLOAD" | "PROCESSING_UPLOAD" | "PUBLISH_COMPLETE" | "FAILED" | "SEND_TO_USER_INBOX";
   fail_reason?: string;
+  publicaly_available_post_id?: (string | number)[];
 }
 
 function checkTikTokPublishStatus(accessToken: string, publishId: string): Promise<PublishStatus> {
@@ -231,10 +232,10 @@ function checkTikTokPublishStatus(accessToken: string, publishId: string): Promi
  * until it settles, the same role waitForContainerReady plays for
  * Instagram videos, just with an extra terminal state to watch for.
  */
-export async function waitForTikTokPublishResult(accessToken: string, publishId: string, maxAttempts = 20): Promise<void> {
+export async function waitForTikTokPublishResult(accessToken: string, publishId: string, maxAttempts = 20): Promise<PublishStatus> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const result = await checkTikTokPublishStatus(accessToken, publishId);
-    if (result.status === "PUBLISH_COMPLETE") return;
+    if (result.status === "PUBLISH_COMPLETE") return result;
     if (result.status === "FAILED") throw new Error(result.fail_reason ?? "TikTok reported the publish failed");
     await new Promise((r) => setTimeout(r, 3000));
   }

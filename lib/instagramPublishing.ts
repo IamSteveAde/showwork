@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
+import { recordPublishedSocialPost } from "@/lib/socialReporting";
 import {
   createMediaContainer,
   createCarouselContainer,
@@ -55,9 +56,15 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
       assets: { orderBy: { displayOrder: "asc" } },
       calendar: {
         select: {
+          id: true,
           instagramAccountId: true,
           instagramAccessToken: true,
           instagramTokenExpiresAt: true,
+          socialConnections: {
+            where: { platform: "INSTAGRAM", status: "CONNECTED" },
+            take: 1,
+            select: { platformAccountId: true, accessToken: true, accessTokenExpiresAt: true },
+          },
         },
       },
     },
@@ -72,7 +79,10 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
     });
   };
 
-  const { instagramAccountId, instagramAccessToken, instagramTokenExpiresAt } = post.calendar;
+  const normalizedConnection = post.calendar.socialConnections[0];
+  const instagramAccountId = normalizedConnection?.platformAccountId ?? post.calendar.instagramAccountId;
+  const instagramAccessToken = normalizedConnection?.accessToken ?? post.calendar.instagramAccessToken;
+  const instagramTokenExpiresAt = normalizedConnection?.accessTokenExpiresAt ?? post.calendar.instagramTokenExpiresAt;
 
   if (!instagramAccountId || !instagramAccessToken) {
     return fail("This calendar's Instagram connection was removed before this post could publish.");
@@ -140,6 +150,22 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
         instagramPublishError: null,
       },
     });
+    try {
+      await recordPublishedSocialPost({
+        calendarId: post.calendarId,
+        calendarPostId: post.id,
+        platform: "INSTAGRAM",
+        platformAccountId: instagramAccountId,
+        platformPostId: mediaId,
+        permalink,
+        publishedAt: new Date(),
+        platformPostType: post.postType ?? (post.assets.length > 1 ? "CAROUSEL" : post.assets[0]?.mediaType ?? null),
+      });
+    } catch (reportingError) {
+      // A reporting persistence issue must not turn a successfully published
+      // platform post into a false publishing failure.
+      console.error(`Could not link Instagram post ${postId} to reporting:`, reportingError);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to publish to Instagram";
     console.error(`Instagram publish failed for post ${postId}:`, err);

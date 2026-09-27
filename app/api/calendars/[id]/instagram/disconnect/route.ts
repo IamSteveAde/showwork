@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { markSocialConnectionDisconnected } from "@/lib/socialReporting";
 
 // POST — disconnects Instagram from one calendar. Manager-only, same
 // trust boundary as connecting in the first place. Doesn't touch any
@@ -31,6 +32,7 @@ export async function POST(
       instagramConnectedAt: null,
     },
   });
+  await markSocialConnectionDisconnected(id, "INSTAGRAM");
 
   return NextResponse.json({ ok: true });
 }

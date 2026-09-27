@@ -60,6 +60,7 @@ export default function AiContentGeneratorCard({
   const [endDate, setEndDate] = useState(defaultEnd);
   const [postsPerWeek, setPostsPerWeek] = useState(3);
   const [customInstructions, setCustomInstructions] = useState("");
+  const [reportingRecommendationLoaded, setReportingRecommendationLoaded] = useState(false);
  const [platforms, setPlatforms] = useState<string[]>(["INSTAGRAM"]);
 const [contentStrategy, setContentStrategy] = useState<
   "SAME_CONTENT" | "DIFFERENT_CONTENT" | "CUSTOM_GROUPS"
@@ -90,6 +91,15 @@ const [platformSchedules, setPlatformSchedules] = useState<
     if (window.sessionStorage.getItem(`calendar:${calendarId}:has-business-summary`) === "true") {
       setHasBusinessSummaryState(true);
     }
+  }, [calendarId]);
+
+  useEffect(() => {
+    const key = `calendar:${calendarId}:reporting-recommendation`;
+    const recommendation = window.sessionStorage.getItem(key);
+    if (!recommendation) return;
+    setCustomInstructions(recommendation.slice(0, 1200));
+    setReportingRecommendationLoaded(true);
+    window.sessionStorage.removeItem(key);
   }, [calendarId]);
 
 const togglePlatform = (platform: string) => {
@@ -940,6 +950,11 @@ const togglePlatform = (platform: string) => {
 )}
 
               <label className="mt-5 block">
+                {reportingRecommendationLoaded && (
+                  <span className="mb-3 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-medium leading-5 text-blue-800">
+                    <SparkIcon /> Reporting recommendation added as creative direction. Review or edit it before generating.
+                  </span>
+                )}
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <span className="block text-xs font-semibold text-[#101828]">

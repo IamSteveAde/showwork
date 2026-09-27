@@ -3,6 +3,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { exchangeCodeForTikTokTokens, getTikTokDisplayName } from "@/lib/tiktok";
 import { appUrl } from "@/lib/url";
+import { upsertSocialConnection } from "@/lib/socialReporting";
 
 // GET — TikTok redirects here after the manager approves (or denies)
 // access on its authorization page. `state` carries the calendar id
@@ -51,6 +52,19 @@ export async function GET(req: NextRequest) {
         tikTokRefreshToken: tokens.refresh_token,
         tikTokConnectedAt: new Date(),
       },
+    });
+    const refreshTokenExpiresAt = new Date(Date.now() + tokens.refresh_expires_in * 1000);
+    await upsertSocialConnection({
+      calendarId,
+      platform: "TIKTOK",
+      platformAccountId: tokens.open_id,
+      accountName: displayName,
+      username: displayName,
+      accessToken: tokens.access_token,
+      accessTokenExpiresAt,
+      refreshToken: tokens.refresh_token,
+      refreshTokenExpiresAt,
+      tokenScopes: tokens.scope,
     });
 
     return redirectTo(`${settingsPath}?tiktokConnected=true`);

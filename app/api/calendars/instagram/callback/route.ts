@@ -5,9 +5,12 @@ import {
   exchangeCodeForToken,
   exchangeForLongLivedToken,
   listManagedPages,
+  listInstagramGrantedPermissions,
   getInstagramUsername,
 } from "@/lib/instagram";
 import { appUrl } from "@/lib/url";
+import { upsertSocialConnection } from "@/lib/socialReporting";
+import { subscribeMetaMessagingAccount } from "@/lib/socialMessaging/meta";
 
 // GET — Facebook redirects here after the manager approves (or
 // denies) access on the OAuth dialog. `state` carries the calendar id
@@ -51,6 +54,7 @@ export async function GET(req: NextRequest) {
   try {
     const shortLived = await exchangeCodeForToken(code, redirectUri);
     const longLived = await exchangeForLongLivedToken(shortLived.access_token);
+    const grantedPermissions = await listInstagramGrantedPermissions(longLived.access_token);
 
     const pages = await listManagedPages(longLived.access_token);
     const pageWithInstagram = pages.find((p) => !!p.instagram_business_account);
@@ -78,6 +82,23 @@ export async function GET(req: NextRequest) {
         instagramConnectedAt: new Date(),
       },
     });
+    const socialConnection = await upsertSocialConnection({
+      calendarId,
+      platform: "INSTAGRAM",
+      platformAccountId: igUserId,
+      accountName: username,
+      username,
+      accessToken: pageWithInstagram.access_token,
+      accessTokenExpiresAt: expiresAt,
+      tokenScopes: grantedPermissions.join(","),
+    });
+    try {
+      await subscribeMetaMessagingAccount(igUserId, pageWithInstagram.access_token, "INSTAGRAM");
+      await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookSubscribedAt: new Date(), messagingWebhookError: null } });
+    } catch (error) {
+      await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookError: error instanceof Error ? error.message.slice(0, 1500) : "Meta webhook subscription failed." } });
+      console.warn("Instagram publishing is connected, but messaging webhooks could not be enabled:", error);
+    }
 
     return redirectTo(`${settingsPath}?instagramConnected=true`);
   } catch (err) {

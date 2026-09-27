@@ -108,9 +108,9 @@ model Creator {
   // everywhere access is gated. discountPercent (0-100) is applied the
   // next time this creator starts or switches a subscription — it
   // doesn't retroactively change an already-active one.
-  isComped        Boolean   @default(false)
-  compedUntil     DateTime?
-  discountPercent Int       @default(0)
+  isComped              Boolean   @default(false)
+  compedUntil           DateTime?
+  discountPercent       Int       @default(0)
   // Overrides the standard Free-tier limit (normally 1/month) for this
   // specific creator, without granting them a paid tier or full comped
   // access — they stay on Free, just with a raised allowance. Null
@@ -247,18 +247,19 @@ model Creator {
   calendarTrialEndsTodayEmailSentAt DateTime?
   calendarTrialEndedEmailSentAt     DateTime?
 
-  ownedCalendars           SocialCalendar[]       @relation("OwnedCalendars")
-  calendarCollaborations   CalendarCollaborator[] @relation("CalendarMemberships")
-  calendarInvitesSent      CalendarInvite[]       @relation("CalendarInvitesSent")
+  ownedCalendars              SocialCalendar[]              @relation("OwnedCalendars")
+  reportingPermissionsGranted CalendarReportingPermission[] @relation("ReportingPermissionGrantedBy")
+  calendarCollaborations      CalendarCollaborator[]        @relation("CalendarMemberships")
+  calendarInvitesSent         CalendarInvite[]              @relation("CalendarInvitesSent")
   // Every task assigned to this specific creator, across any managed
   // project they're on — what lets "my tasks" be queried directly
   // without joining through every project they collaborate on.
-  assignedTasks            Task[]                 @relation("AssignedTasks")
+  assignedTasks               Task[]                        @relation("AssignedTasks")
   // Tasks this creator created/assigned to someone else — the
   // opposite direction from assignedTasks above.
-  createdTasks             Task[]                 @relation("CreatedTasks")
-  uploadedBriefAttachments BriefAttachment[]      @relation("UploadedBriefAttachments")
-  uploadedTaskAssets       TaskAsset[]            @relation("UploadedTaskAssets")
+  createdTasks                Task[]                        @relation("CreatedTasks")
+  uploadedBriefAttachments    BriefAttachment[]             @relation("UploadedBriefAttachments")
+  uploadedTaskAssets          TaskAsset[]                   @relation("UploadedTaskAssets")
 }
 
 // ─────────────────────────────────────────────
@@ -293,15 +294,15 @@ model PartnerProfile {
 
   // Allows Showwork to disable a partner without
   // deleting their historical referral/commission data.
-  
+
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  referrals Referral[]
-payouts PartnerPayout[]
-payoutAccount PartnerPayoutAccount?
+  referrals     Referral[]
+  payouts       PartnerPayout[]
+  payoutAccount PartnerPayoutAccount?
 }
 
 // ─────────────────────────────────────────────
@@ -319,12 +320,12 @@ payoutAccount PartnerPayoutAccount?
 model PartnerPayoutAccount {
   id String @id @default(uuid())
 
-  partner PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  partnerId String @unique
+  partner   PartnerProfile @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String         @unique
 
-  bankName String
+  bankName      String
   accountNumber String
-  accountName String
+  accountName   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -366,6 +367,7 @@ model PartnerPayout {
   @@index([status])
   @@index([requestedAt])
 }
+
 // ─────────────────────────────────────────────
 // PARTNER PAYOUT COMMISSION — links an individual
 // commission to the payout in which it was settled.
@@ -381,7 +383,7 @@ model PartnerPayoutCommission {
   payoutId String
 
   commission   ReferralCommission @relation(fields: [commissionId], references: [id], onDelete: Restrict)
-  commissionId String @unique
+  commissionId String             @unique
 
   amountNgn Int
 
@@ -504,7 +506,6 @@ enum DeliveryStatus {
   APPROVED
   PAID
 }
-
 
 model Project {
   id             String         @id @default(uuid())
@@ -1232,7 +1233,7 @@ model PaymentRecord {
   // Only set for CALENDAR_* payment types — which specific calendar
   // this charge was for, since one manager can have several clients.
   calendarId           String?
- paystackReference    String? @unique
+  paystackReference    String?               @unique
   createdAt            DateTime              @default(now())
 
   @@index([creatorId])
@@ -1747,10 +1748,43 @@ model SocialCalendar {
   tikTokRefreshToken         String?
   tikTokConnectedAt          DateTime?
 
-  posts         CalendarPost[]
-  collaborators CalendarCollaborator[]
-  invites       CalendarInvite[]
-  viewerEmails  CalendarViewerEmail[]
+  // Facebook publishing is connected to a managed Facebook Page, never
+  // to a personal profile. The Page access token stays server-side.
+  facebookPageId         String?
+  facebookPageName       String?
+  facebookAccessToken    String?
+  facebookTokenExpiresAt DateTime?
+  facebookConnectedAt    DateTime?
+
+  // LinkedIn member-profile publishing uses w_member_social. Organization
+  // publishing requires separate LinkedIn product access and is not implied.
+  linkedinMemberId              String?
+  linkedinName                  String?
+  linkedinAccessToken           String?
+  linkedinAccessTokenExpiresAt  DateTime?
+  linkedinRefreshToken          String?
+  linkedinRefreshTokenExpiresAt DateTime?
+  linkedinConnectedAt           DateTime?
+
+  // X account publishing uses OAuth 2.0 user-context access and refresh tokens.
+  xUserId               String?
+  xUsername             String?
+  xAccessToken          String?
+  xAccessTokenExpiresAt DateTime?
+  xRefreshToken         String?
+  xConnectedAt          DateTime?
+
+  posts                CalendarPost[]
+  socialConnections    SocialConnection[]
+  publishedSocialPosts PublishedSocialPost[]
+  reportingInsights    ReportingInsight[]
+  reportingPermission  CalendarReportingPermission?
+  leadConversations    SocialLeadConversation[]
+  leads                CalendarLead[]
+  inboxSettings        SocialInboxSettings?
+  collaborators        CalendarCollaborator[]
+  invites              CalendarInvite[]
+  viewerEmails         CalendarViewerEmail[]
 
   contentWorkspaceStorageReservations ContentWorkspaceStorageReservation[]
 
@@ -1785,6 +1819,287 @@ enum SocialPlatform {
   FACEBOOK
   X
   LINKEDIN
+}
+
+enum SocialConnectionStatus {
+  CONNECTED
+  NEEDS_REAUTH
+  DISCONNECTED
+}
+
+enum PublishedSocialPostStatus {
+  PUBLISHED
+  UNAVAILABLE
+  FAILED
+}
+
+enum ReportingInsightType {
+  WHAT_WORKED
+  UNDERPERFORMED
+  TREND
+  RECOMMENDATION
+}
+
+enum SocialLeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CUSTOMER
+  NOT_A_LEAD
+}
+
+enum CalendarLeadTemperature {
+  COLD
+  WARM
+  HOT
+}
+
+enum CalendarLeadPipelineStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CUSTOMER
+  LOST
+}
+
+enum CalendarLeadSource {
+  SOCIAL
+  MANUAL
+  IMPORT
+}
+
+enum SocialInboxMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum SocialInboxMessageStatus {
+  RECEIVED
+  PENDING
+  SENT
+  FAILED
+}
+
+// Normalized, server-only social account connection. Platform-specific
+// legacy columns remain while existing publishing and admin code migrates.
+model SocialConnection {
+  id                           String                        @id @default(uuid())
+  calendar                     SocialCalendar                @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId                   String
+  platform                     SocialPlatform
+  platformAccountId            String
+  accountName                  String?
+  username                     String?
+  accessToken                  String?                       @db.Text
+  refreshToken                 String?                       @db.Text
+  accessTokenExpiresAt         DateTime?
+  refreshTokenExpiresAt        DateTime?
+  tokenScopes                  String?                       @db.Text
+  status                       SocialConnectionStatus        @default(CONNECTED)
+  connectedAt                  DateTime                      @default(now())
+  disconnectedAt               DateTime?
+  lastSyncAttemptAt            DateTime?
+  lastSyncAt                   DateTime?
+  lastSyncError                String?                       @db.Text
+  messagingWebhookSubscribedAt DateTime?
+  messagingWebhookError        String?                       @db.Text
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  publishedPosts               PublishedSocialPost[]
+  accountMetricSnapshots       SocialAccountMetricSnapshot[]
+  leadConversations            SocialLeadConversation[]
+
+  @@unique([calendarId, platform, platformAccountId])
+  @@index([calendarId, platform, status])
+  @@index([platform, status])
+}
+
+// A platform DM thread is a lead by default. The provider conversation id
+// stays scoped to its connection so separate client accounts never collide.
+model SocialLeadConversation {
+  id                     String              @id @default(uuid())
+  calendar               SocialCalendar      @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId             String
+  connection             SocialConnection?   @relation(fields: [socialConnectionId], references: [id], onDelete: SetNull)
+  socialConnectionId     String?
+  platform               SocialPlatform
+  providerConversationId String
+  participantPlatformId  String
+  participantName        String?
+  participantUsername    String?
+  leadStatus             SocialLeadStatus    @default(NEW)
+  unreadCount            Int                 @default(0)
+  lastMessagePreview     String?             @db.Text
+  lastMessageAt          DateTime?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  messages               SocialLeadMessage[]
+  crmLead                CalendarLead?
+
+  @@unique([socialConnectionId, providerConversationId])
+  @@index([calendarId, lastMessageAt])
+  @@index([calendarId, platform, leadStatus])
+}
+
+model CalendarLead {
+  id                   String                     @id @default(uuid())
+  calendar             SocialCalendar             @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId           String
+  socialConversation   SocialLeadConversation?    @relation(fields: [socialConversationId], references: [id], onDelete: SetNull)
+  socialConversationId String?                    @unique
+  name                 String
+  username             String?
+  email                String?
+  phone                String?
+  company              String?
+  temperature          CalendarLeadTemperature    @default(WARM)
+  status               CalendarLeadPipelineStatus @default(NEW)
+  source               CalendarLeadSource         @default(MANUAL)
+  notes                String?                    @db.Text
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+
+  @@unique([calendarId, email])
+  @@index([calendarId, status])
+  @@index([calendarId, temperature])
+  @@index([calendarId, updatedAt])
+}
+
+model SocialLeadMessage {
+  id                     String                      @id @default(uuid())
+  conversation           SocialLeadConversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId         String
+  providerMessageId      String?
+  direction              SocialInboxMessageDirection
+  status                 SocialInboxMessageStatus    @default(RECEIVED)
+  text                   String                      @db.Text
+  platformCreatedAt      DateTime
+  sentByCreatorId        String?
+  isAiGenerated          Boolean                     @default(false)
+  autoReplyEligible      Boolean                     @default(false)
+  autoReplyClaimedAt     DateTime?
+  autoReplyHandledAt     DateTime?
+  autoReplyAttemptCount  Int                         @default(0)
+  autoReplyHandoffReason String?                     @db.Text
+  sendError              String?                     @db.Text
+  createdAt              DateTime                    @default(now())
+
+  @@unique([conversationId, providerMessageId])
+  @@index([conversationId, platformCreatedAt])
+}
+
+model SocialInboxSettings {
+  id                      String         @id @default(uuid())
+  calendar                SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId              String         @unique
+  clientAccessEnabled     Boolean        @default(true)
+  aiAutoReplyEnabled      Boolean        @default(false)
+  aiAutoReplyInstructions String?        @db.Text
+  updatedAt               DateTime       @updatedAt
+  createdAt               DateTime       @default(now())
+}
+
+// Durable link from a Showwork calendar item to the provider's post.
+model PublishedSocialPost {
+  id                 String                     @id @default(uuid())
+  calendar           SocialCalendar             @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId         String
+  calendarPost       CalendarPost               @relation(fields: [calendarPostId], references: [id], onDelete: Cascade)
+  calendarPostId     String
+  connection         SocialConnection           @relation(fields: [socialConnectionId], references: [id], onDelete: Cascade)
+  socialConnectionId String
+  platform           SocialPlatform
+  platformPostId     String?
+  providerReference  String?
+  permalink          String?
+  status             PublishedSocialPostStatus  @default(PUBLISHED)
+  publishedAt        DateTime?
+  platformPostType   String?
+  platformMetadata   Json?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  metricSnapshots    SocialPostMetricSnapshot[]
+
+  @@unique([calendarPostId, socialConnectionId])
+  @@index([calendarId, publishedAt])
+  @@index([platform, platformPostId])
+}
+
+// One immutable point-in-time snapshot per day and post. Unsupported
+// metrics remain null instead of being estimated from unrelated values.
+model SocialPostMetricSnapshot {
+  id                    String              @id @default(uuid())
+  publishedPost         PublishedSocialPost @relation(fields: [publishedSocialPostId], references: [id], onDelete: Cascade)
+  publishedSocialPostId String
+  snapshotDate          DateTime            @db.Date
+  reach                 Float?
+  impressions           Float?
+  views                 Float?
+  engagement            Float?
+  engagementRate        Float?
+  engagementRateBasis   String?
+  likes                 Float?
+  comments              Float?
+  shares                Float?
+  saves                 Float?
+  clicks                Float?
+  additionalMetrics     Json?
+  sourceUpdatedAt       DateTime?
+  createdAt             DateTime            @default(now())
+
+  @@unique([publishedSocialPostId, snapshotDate])
+  @@index([snapshotDate])
+}
+
+model SocialAccountMetricSnapshot {
+  id                 String           @id @default(uuid())
+  connection         SocialConnection @relation(fields: [socialConnectionId], references: [id], onDelete: Cascade)
+  socialConnectionId String
+  snapshotDate       DateTime         @db.Date
+  followers          Float?
+  followerGrowth     Float?
+  reach              Float?
+  impressions        Float?
+  views              Float?
+  engagement         Float?
+  additionalMetrics  Json?
+  sourceUpdatedAt    DateTime?
+  createdAt          DateTime         @default(now())
+
+  @@unique([socialConnectionId, snapshotDate])
+  @@index([snapshotDate])
+}
+
+model CalendarReportingPermission {
+  id          String         @id @default(uuid())
+  calendar    SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId  String         @unique
+  enabled     Boolean        @default(false)
+  grantedBy   Creator?       @relation("ReportingPermissionGrantedBy", fields: [grantedById], references: [id], onDelete: SetNull)
+  grantedById String?
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime       @default(now())
+}
+
+model ReportingInsight {
+  id             String               @id @default(uuid())
+  calendar       SocialCalendar       @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId     String
+  platform       SocialPlatform?
+  periodStart    DateTime
+  periodEnd      DateTime
+  type           ReportingInsightType
+  title          String
+  description    String               @db.Text
+  recommendation String?              @db.Text
+  supportingData Json
+  generatedAt    DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+
+  @@index([calendarId, periodStart, periodEnd])
+  @@index([calendarId, platform, type])
 }
 
 // Only ever meaningful when a post's platform is INSTAGRAM and its
@@ -1846,7 +2161,7 @@ model CalendarPost {
   category       String?        @db.Text
   caption        String?        @db.Text
   hook           String?        @db.Text
-script         String?        @db.Text
+  script         String?        @db.Text
   contentIdea    String?        @db.Text
   // What the post is actually asking the viewer to do — "Link in
   // bio," "Comment below," etc. Free text with presets in the UI.
@@ -1911,11 +2226,12 @@ script         String?        @db.Text
   // treats it (every post is 1-10 items; "carousel" just describes
   // having more than one). Ordered so the carousel plays back in the
   // sequence the manager actually intended.
-  assets        CalendarPostAsset[]
-  comments      CalendarPostComment[]
-  videoComments CalendarPostVideoComment[]
-  customFields  CalendarPostCustomField[]
-  aiGenerations CalendarPostAiGeneration[]
+  assets               CalendarPostAsset[]
+  publishedSocialPosts PublishedSocialPost[]
+  comments             CalendarPostComment[]
+  videoComments        CalendarPostVideoComment[]
+  customFields         CalendarPostCustomField[]
+  aiGenerations        CalendarPostAiGeneration[]
 
   @@index([calendarId])
   @@index([calendarId, postDate])
@@ -1938,8 +2254,8 @@ model CalendarPostAiGeneration {
   postType    String?        @db.Text
   category    String?        @db.Text
   caption     String?        @db.Text
-  hook           String?        @db.Text
-script         String?        @db.Text
+  hook        String?        @db.Text
+  script      String?        @db.Text
   contentIdea String?        @db.Text
   cta         String?        @db.Text
   hashtags    String?        @db.Text

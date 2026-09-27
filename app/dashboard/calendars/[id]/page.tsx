@@ -19,12 +19,16 @@ import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisp
 import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaymentButton";
 import InstagramConnectionCard from "@/components/calendars/InstagramConnectionCard";
 import TikTokConnectionCard from "@/components/calendars/TikTokConnectionCard";
+import AdditionalChannelCard from "@/components/calendars/AdditionalChannelCard";
 import BusinessKnowledgeCard from "@/components/calendars/BusinessKnowledgeCard";
 import AiContentGeneratorCard from "@/components/calendars/AiContentGeneratorCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import PublishTrigger from "@/components/calendars/PublishTrigger";
 import CalendarWorkspaceShell, { type WorkspaceSection } from "@/components/calendars/CalendarWorkspaceShell";
 import WorkspaceActionButton from "@/components/calendars/WorkspaceActionButton";
+import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
+import SocialLeadInbox from "@/components/calendars/SocialLeadInbox";
+import CalendarLeadsPanel from "@/components/calendars/CalendarLeadsPanel";
 
 
 const COLOR = {
@@ -995,14 +999,21 @@ contentIdea: p.contentIdea,
       : []),
     {
       id: "analytics",
-      label: "Analytics",
+      label: "Analytics & Reporting",
       eyebrow: "Insights",
       title: "Know what is moving.",
       description:
-        "See the publishing mix and approval health without digging through the calendar.",
+        "Review social performance, published post metrics, connected account health, and approval progress.",
       group: "Insights",
       content: (
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="space-y-6">
+          <CalendarReportingPanel
+            calendarId={calendar.id}
+            isManager={isManager}
+            canAnalyze={canEditWorkspace}
+            canApplyRecommendations={canEditWorkspace && aiActive}
+          />
+          <div className="grid gap-5 xl:grid-cols-2">
           <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)] sm:p-6">
             <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#1768E8]">
               Distribution
@@ -1035,7 +1046,34 @@ contentIdea: p.contentIdea,
               />
             </div>
           </div>
+          </div>
         </div>
+      ),
+    },
+    {
+      id: "leads",
+      label: "Leads",
+      eyebrow: "Lead management",
+      title: "Keep every opportunity moving.",
+      description: "Manage social contacts and manually added leads, qualify interest, and keep contact details and follow-up status current.",
+      group: "Leads & Messages",
+      content: (
+        <CalendarLeadsPanel calendarId={calendar.id} canEdit={canEditWorkspace} />
+      ),
+    },
+    {
+      id: "inbox",
+      label: "Inbox",
+      eyebrow: "Social inbox",
+      title: "Manage conversations in one inbox.",
+      description: "Review incoming messages across connected channels and respond from one workspace.",
+      group: "Leads & Messages",
+      content: (
+        <SocialLeadInbox
+          calendarId={calendar.id}
+          isManager={isManager}
+          canReplyFromWorkspace={canEditWorkspace}
+        />
       ),
     },
     {
@@ -1110,10 +1148,10 @@ contentIdea: p.contentIdea,
             eyebrow: "Publishing",
             title: "Connect the channels behind the work.",
             description:
-              "Connect the client's social accounts once, then publish approved content from Showwork.",
+              "Connect the social accounts used for this client’s content and manage their access here.",
             group: "Publishing" as const,
             content: (
-              <div className="grid gap-5 xl:grid-cols-2">
+              <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
                 <InstagramConnectionCard
   calendarId={calendar.id}
   username={calendar.instagramUsername}
@@ -1127,6 +1165,27 @@ contentIdea: p.contentIdea,
   connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
   isManager={isManager}
 />
+                <AdditionalChannelCard
+                  channel="facebook"
+                  calendarId={calendar.id}
+                  accountName={calendar.facebookPageName}
+                  connectedAt={calendar.facebookConnectedAt?.toISOString() ?? null}
+                  isManager={isManager}
+                />
+                <AdditionalChannelCard
+                  channel="linkedin"
+                  calendarId={calendar.id}
+                  accountName={calendar.linkedinName}
+                  connectedAt={calendar.linkedinConnectedAt?.toISOString() ?? null}
+                  isManager={isManager}
+                />
+                <AdditionalChannelCard
+                  channel="x"
+                  calendarId={calendar.id}
+                  accountName={calendar.xUsername}
+                  connectedAt={calendar.xConnectedAt?.toISOString() ?? null}
+                  isManager={isManager}
+                />
               </div>
             ),
           },
