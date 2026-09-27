@@ -4,13 +4,26 @@ import { sendMetaInboxMessage } from "@/lib/socialMessaging/meta";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 
-export async function processSocialInboxAutoReplies() {
-  const settings = await db.socialInboxSettings.findMany({ where: { aiAutoReplyEnabled: true }, select: { calendarId: true } });
+export async function processSocialInboxAutoReplies(messageIds?: string[]) {
+  let targetCalendarIds: string[] | undefined;
+  if (messageIds) {
+    const pending = await db.socialLeadMessage.findMany({
+      where: { id: { in: messageIds }, direction: "INBOUND", autoReplyEligible: true, autoReplyHandledAt: null },
+      select: { conversation: { select: { calendarId: true } } },
+    });
+    targetCalendarIds = [...new Set(pending.map((message) => message.conversation.calendarId))];
+    if (!targetCalendarIds.length) return { workspaces: 0, analyzed: 0, sent: 0, handedOff: 0, failed: 0 };
+  }
+  const settings = await db.socialInboxSettings.findMany({
+    where: { aiAutoReplyEnabled: true, ...(targetCalendarIds ? { calendarId: { in: targetCalendarIds } } : {}) },
+    select: { calendarId: true },
+  });
   const summary = { workspaces: settings.length, analyzed: 0, sent: 0, handedOff: 0, failed: 0 };
   for (const { calendarId } of settings) {
     const queue = await db.socialLeadMessage.findMany({
       where: {
         direction: "INBOUND",
+        ...(messageIds ? { id: { in: messageIds } } : {}),
         autoReplyEligible: true,
         autoReplyHandledAt: null,
         autoReplyAttemptCount: { lt: 3 },
@@ -22,7 +35,7 @@ export async function processSocialInboxAutoReplies() {
         conversation: {
           include: {
             connection: true,
-            calendar: { select: { clientName: true, aiBusinessSummary: true } },
+            calendar: { select: { clientName: true, aiBusinessSummary: true, instagramPageId: true } },
             messages: { orderBy: { platformCreatedAt: "desc" }, take: 12 },
           },
         },
@@ -65,7 +78,12 @@ export async function processSocialInboxAutoReplies() {
           summary.handedOff++;
           continue;
         }
-        const providerMessageId = await sendMetaInboxMessage({ connection: inbound.conversation.connection, recipientId: inbound.conversation.participantPlatformId, text: generated.replyText });
+        const providerMessageId = await sendMetaInboxMessage({
+          connection: inbound.conversation.connection,
+          instagramPageId: inbound.conversation.calendar.instagramPageId,
+          recipientId: inbound.conversation.participantPlatformId,
+          text: generated.replyText,
+        });
         const sentAt = new Date();
         await db.$transaction(async (tx) => {
           if (providerMessageId) {
@@ -97,4 +115,8 @@ export async function processSocialInboxAutoReplies() {
     }
   }
   return summary;
+}
+
+export async function processSocialInboxAutoReply(messageId: string) {
+  return processSocialInboxAutoReplies([messageId]);
 }

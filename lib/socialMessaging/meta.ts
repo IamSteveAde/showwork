@@ -2,10 +2,12 @@ import type { SocialConnection, SocialPlatform } from "@prisma/client";
 
 export async function sendMetaInboxMessage({
   connection,
+  instagramPageId,
   recipientId,
   text,
 }: {
   connection: SocialConnection;
+  instagramPageId?: string | null;
   recipientId: string;
   text: string;
 }) {
@@ -13,8 +15,15 @@ export async function sendMetaInboxMessage({
     throw new Error("This platform’s inbox is not enabled yet.");
   }
   if (!connection.accessToken) throw new Error("Reconnect this account to enable replies.");
+  const endpointId = connection.platform === "INSTAGRAM"
+    ? instagramPageId
+    : connection.platformAccountId;
+  if (!endpointId) {
+    throw new Error(connection.platform === "INSTAGRAM"
+      ? "Reconnect Instagram to refresh its linked Facebook Page connection before replying."
+      : "Reconnect this account to enable replies.");
+  }
   const version = process.env.META_GRAPH_API_VERSION || "v26.0";
-  const endpointId = connection.platformAccountId;
   const response = await fetch(`https://graph.facebook.com/${version}/${endpointId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,7 +51,7 @@ export async function getFacebookMessengerProfile({
 }: {
   pageScopedUserId: string;
   pageAccessToken: string;
-}): Promise<{ name: string | null } | null> {
+}): Promise<{ name: string | null; username: string | null } | null> {
   const version = process.env.META_GRAPH_API_VERSION || "v26.0";
   const url = new URL(`https://graph.facebook.com/${version}/${encodeURIComponent(pageScopedUserId)}`);
   url.searchParams.set("fields", "first_name,last_name");
@@ -56,10 +65,38 @@ export async function getFacebookMessengerProfile({
       .filter((part): part is string => typeof part === "string" && Boolean(part.trim()))
       .map((part) => part.trim())
       .join(" ");
-    return name ? { name } : null;
+    return name ? { name, username: null } : null;
   } catch {
     // Profile access can be unavailable because of Meta permissions or API
     // restrictions. Receiving the message must still succeed in that case.
+    return null;
+  }
+}
+
+/** Best-effort Instagram Messaging profile lookup using the IGSID and the
+ * connected account's Page access token. Meta may withhold profile fields;
+ * callers should retain the sender ID as a fallback. */
+export async function getInstagramMessagingProfile({
+  instagramScopedUserId,
+  pageAccessToken,
+}: {
+  instagramScopedUserId: string;
+  pageAccessToken: string;
+}): Promise<{ name: string | null; username: string | null } | null> {
+  const version = process.env.META_GRAPH_API_VERSION || "v26.0";
+  const url = new URL(`https://graph.facebook.com/${version}/${encodeURIComponent(instagramScopedUserId)}`);
+  url.searchParams.set("fields", "name,username");
+  url.searchParams.set("access_token", pageAccessToken);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(2500) });
+    if (!response.ok) return null;
+    const profile = await response.json().catch(() => null) as { name?: unknown; username?: unknown } | null;
+    if (!profile) return null;
+    const clean = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : null;
+    const name = clean(profile.name);
+    const username = clean(profile.username)?.replace(/^@/, "") ?? null;
+    return name || username ? { name, username } : null;
+  } catch {
     return null;
   }
 }

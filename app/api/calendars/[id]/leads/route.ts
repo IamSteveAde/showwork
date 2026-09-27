@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         ...(temperature ? { temperature: temperature as CalendarLeadTemperature } : {}),
         ...(search ? { OR: [
           { name: { contains: search, mode: "insensitive" } },
+          { username: { contains: search, mode: "insensitive" } },
           { email: { contains: search, mode: "insensitive" } },
           { phone: { contains: search, mode: "insensitive" } },
           { company: { contains: search, mode: "insensitive" } },
@@ -37,14 +38,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       },
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
       take: 5000,
-      include: { socialConversation: { select: { platform: true, participantUsername: true, participantPlatformId: true } } },
+      include: { socialConversation: { select: { platform: true, participantName: true, participantUsername: true, participantPlatformId: true } } },
     });
-    return NextResponse.json({ leads: leads.map((lead) => ({
-      ...lead,
-      username: lead.username || lead.socialConversation?.participantUsername || null,
-      socialUserId: lead.socialConversation?.participantPlatformId || null,
-      socialPlatform: lead.socialConversation?.platform || null,
-    })) });
+    return NextResponse.json({ leads: leads.map((lead) => {
+      const conversation = lead.socialConversation;
+      const username = lead.username || conversation?.participantUsername || null;
+      const genericNames = ["social contact", "facebook contact", "facebook user", "instagram contact", "instagram account", "instagram user", conversation?.participantPlatformId?.toLowerCase()];
+      const leadNameIsGeneric = genericNames.includes(lead.name.trim().toLowerCase());
+      const name = leadNameIsGeneric
+        ? conversation?.participantName || username || `${conversation?.platform === "INSTAGRAM" ? "Instagram" : conversation?.platform === "FACEBOOK" ? "Facebook" : "Social"} contact`
+        : lead.name;
+      return {
+        ...lead,
+        name,
+        username,
+        socialUserId: conversation?.participantPlatformId || null,
+        socialPlatform: conversation?.platform || null,
+      };
+    }) });
   } catch (error) {
     console.error("Could not load calendar leads:", error);
     return NextResponse.json({ error: "Could not load leads." }, { status: 500 });

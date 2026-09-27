@@ -1,6 +1,6 @@
 import type { SocialLeadStatus, SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
-import { getFacebookMessengerProfile } from "@/lib/socialMessaging/meta";
+import { getFacebookMessengerProfile, getInstagramMessagingProfile } from "@/lib/socialMessaging/meta";
 
 export const SOCIAL_LEAD_STATUSES: SocialLeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "CUSTOMER", "NOT_A_LEAD"];
 export const SOCIAL_INBOX_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "FACEBOOK", "X", "TIKTOK", "LINKEDIN", "YOUTUBE"];
@@ -51,28 +51,41 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
   // Resolve older conversations that arrived before profile lookup was
   // implemented. Limit each request so a large inbox cannot trigger an
   // unbounded burst of Graph API calls.
-  const missingFacebookNames = conversations
+  const unresolvedMetaProfiles = conversations
     .filter((conversation) => {
       const name = conversation.participantName?.trim().toLowerCase();
-      const genericName = !name || ["social contact", "facebook contact", "facebook user", conversation.participantPlatformId.toLowerCase()].includes(name);
-      return conversation.platform === "FACEBOOK" && genericName && conversation.connection?.accessToken;
+      const genericName = !name || ["social contact", "facebook contact", "facebook user", "instagram contact", "instagram account", "instagram user", conversation.participantPlatformId.toLowerCase()].includes(name);
+      return (conversation.platform === "FACEBOOK" || conversation.platform === "INSTAGRAM")
+        && (genericName || (conversation.platform === "INSTAGRAM" && !conversation.participantUsername))
+        && conversation.connection?.accessToken;
     })
     .slice(0, 5);
-  const resolvedNames = new Map<string, string>();
-  await Promise.all(missingFacebookNames.map(async (conversation) => {
-    const profile = await getFacebookMessengerProfile({
-      pageScopedUserId: conversation.participantPlatformId,
-      pageAccessToken: conversation.connection!.accessToken!,
-    });
-    if (!profile?.name) return;
-    resolvedNames.set(conversation.id, profile.name);
+  const resolvedProfiles = new Map<string, { name: string | null; username: string | null }>();
+  await Promise.all(unresolvedMetaProfiles.map(async (conversation) => {
+    const profile = conversation.platform === "INSTAGRAM"
+      ? await getInstagramMessagingProfile({
+          instagramScopedUserId: conversation.participantPlatformId,
+          pageAccessToken: conversation.connection!.accessToken!,
+        })
+      : await getFacebookMessengerProfile({
+          pageScopedUserId: conversation.participantPlatformId,
+          pageAccessToken: conversation.connection!.accessToken!,
+        });
+    if (!profile?.name && !profile?.username) return;
+    resolvedProfiles.set(conversation.id, profile);
     try {
       await Promise.all([
-        db.socialLeadConversation.update({ where: { id: conversation.id }, data: { participantName: profile.name } }),
-        db.calendarLead.updateMany({ where: { socialConversationId: conversation.id }, data: { name: profile.name } }),
+        db.socialLeadConversation.update({ where: { id: conversation.id }, data: {
+          ...(profile.name ? { participantName: profile.name } : {}),
+          ...(profile.username ? { participantUsername: profile.username } : {}),
+        } }),
+        db.calendarLead.updateMany({ where: { socialConversationId: conversation.id }, data: {
+          ...(profile.name ? { name: profile.name } : {}),
+          ...(profile.username ? { username: profile.username } : {}),
+        } }),
       ]);
     } catch (error) {
-      console.warn("Could not save Facebook inbox profile name:", error);
+      console.warn("Could not save social inbox profile details:", error);
     }
   }));
   return {
@@ -101,17 +114,23 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
             : "Messaging is not supported for this channel",
     })),
     settings: settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },
-    conversations: conversations.map((conversation) => ({
+    conversations: conversations.map((conversation) => {
+      const resolvedProfile = resolvedProfiles.get(conversation.id);
+      const participantUsername = resolvedProfile?.username || conversation.participantUsername;
+      const rawName = resolvedProfile?.name || conversation.participantName;
+      const genericNames = ["social contact", "facebook contact", "facebook user", "instagram contact", "instagram account", "instagram user", conversation.participantPlatformId.toLowerCase()];
+      const participantName = rawName && !genericNames.includes(rawName.trim().toLowerCase()) ? rawName : null;
+      return ({
       id: conversation.id,
       platform: conversation.platform,
       providerConversationId: conversation.providerConversationId,
       participantPlatformId: conversation.participantPlatformId,
-      participantUsername: conversation.participantUsername,
+      participantUsername,
       leadStatus: conversation.leadStatus,
       unreadCount: conversation.unreadCount,
       lastMessagePreview: conversation.lastMessagePreview,
       lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
-      participantName: conversation.participantName || resolvedNames.get(conversation.id) || null,
+      participantName,
       connection: conversation.connection ? {
         accountName: conversation.connection.accountName,
         username: conversation.connection.username,
@@ -128,6 +147,6 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
         autoReplyHandoffReason: message.autoReplyHandoffReason,
         sendError: message.sendError,
       })),
-    })),
+    }); }),
   };
 }
