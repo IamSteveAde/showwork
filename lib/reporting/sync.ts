@@ -67,10 +67,17 @@ async function syncConnection(initialConnection: SocialConnection & {
     if (expiring && adapter.refreshConnection) connection = await adapter.refreshConnection(connection);
     else if (expiring) throw new Error(`${connection.platform} connection has expired. Reconnect the account to continue reporting.`);
 
-    const [accountMetrics, postMetrics] = await Promise.all([
-      adapter.fetchAccountMetrics(connection),
-      adapter.fetchPostMetrics(connection, initialConnection.publishedPosts),
-    ]);
+    // Account-level analytics and the native platform feed are the source
+    // of truth. A stale Showwork-linked post must not cancel that sync.
+    const accountMetrics = await adapter.fetchAccountMetrics(connection);
+    let postMetrics = new Map<string, NormalizedSocialMetrics>();
+    let postMetricsError: string | null = null;
+    try {
+      postMetrics = await adapter.fetchPostMetrics(connection, initialConnection.publishedPosts);
+    } catch (error) {
+      postMetricsError = error instanceof Error ? error.message : "Showwork post metrics could not be refreshed.";
+      console.warn(`Showwork post metric sync failed for ${connection.platform} connection ${connection.id}:`, error);
+    }
     const snapshotDate = utcSnapshotDate();
     const previousAccountSnapshot = await db.socialAccountMetricSnapshot.findFirst({
       where: { socialConnectionId: connection.id, snapshotDate: { lt: snapshotDate } },
@@ -80,6 +87,16 @@ async function syncConnection(initialConnection: SocialConnection & {
     const followerGrowth = accountMetrics.followers != null && previousAccountSnapshot?.followers != null
       ? accountMetrics.followers - previousAccountSnapshot.followers
       : null;
+
+    if (connection.platform === "TIKTOK") {
+      // Older syncs stored each video's lifetime counters as if they were
+      // daily account metrics. Clear those misleading aggregates; the current
+      // video counters are now persisted against their native platform posts.
+      await db.socialAccountMetricSnapshot.updateMany({
+        where: { socialConnectionId: connection.id },
+        data: { reach: null, impressions: null, views: null, engagement: null, additionalMetrics: Prisma.JsonNull },
+      });
+    }
 
     // Some platforms (including Instagram) return account-wide daily
     // insights as a time series. Persist each returned day so reporting
@@ -112,6 +129,28 @@ async function syncConnection(initialConnection: SocialConnection & {
       });
     }
 
+    const nativePosts = accountMetrics.accountPosts ?? [];
+    for (let offset = 0; offset < nativePosts.length; offset += 25) {
+      const batch = nativePosts.slice(offset, offset + 25);
+      await db.$transaction(batch.map((post) => db.socialAccountPost.upsert({
+        where: {
+          socialConnectionId_platformPostId: {
+            socialConnectionId: connection.id,
+            platformPostId: post.platformPostId,
+          },
+        },
+        create: {
+          socialConnectionId: connection.id,
+          ...post,
+          metricsUpdatedAt: new Date(),
+        },
+        update: {
+          ...post,
+          metricsUpdatedAt: new Date(),
+        },
+      })));
+    }
+
     await db.socialAccountMetricSnapshot.upsert({
       where: { socialConnectionId_snapshotDate: { socialConnectionId: connection.id, snapshotDate } },
       create: {
@@ -142,7 +181,11 @@ async function syncConnection(initialConnection: SocialConnection & {
 
     await db.socialConnection.update({
       where: { id: connection.id },
-      data: { status: "CONNECTED", lastSyncAt: new Date(), lastSyncError: null },
+      data: {
+        status: "CONNECTED",
+        lastSyncAt: new Date(),
+        lastSyncError: postMetricsError?.slice(0, 2000) ?? null,
+      },
     });
     return { connectionId: connection.id, status: "SYNCED" as const, postsUpdated: postMetrics.size };
   } catch (error) {

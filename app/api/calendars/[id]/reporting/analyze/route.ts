@@ -35,11 +35,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       getCalendarReportingData(calendarId, params, true),
     ]);
     if (!calendar) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
-    const allPosts = report.posts.map((post) => {
+    const showworkPosts = report.posts.map((post) => {
       const snapshots = [...post.metricSnapshots].sort((a, b) => new Date(a.snapshotDate).getTime() - new Date(b.snapshotDate).getTime());
       const selectedSnapshots = snapshots.length > 1 ? [snapshots[0], snapshots[snapshots.length - 1]] : snapshots;
       return {
         platform: post.platform,
+        platformPostId: post.platformPostId,
         publishedAt: post.publishedAt,
         caption: post.calendarPost.caption,
         postType: post.calendarPost.postType,
@@ -57,6 +58,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })),
       };
     });
+    const linkedIds = new Set(showworkPosts.map((post) => `${post.platform}:${post.platformPostId ?? ""}`));
+    const platformPosts = report.accountPosts
+      .filter((post) => !linkedIds.has(`${post.platform}:${post.platformPostId}`))
+      .map((post) => ({
+        platform: post.platform,
+        publishedAt: post.publishedAt,
+        caption: post.caption,
+        postType: post.postType,
+        category: null,
+        snapshots: [{
+          date: post.metricsUpdatedAt ?? post.publishedAt,
+          reach: post.reach,
+          views: post.views,
+          engagement: post.engagement,
+          engagementRate: null,
+          likes: post.likes,
+          comments: post.comments,
+          shares: post.shares,
+          saves: post.saves,
+        }],
+      }));
+    const allPosts = [...showworkPosts, ...platformPosts]
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     const posts = allPosts.slice(0, 100);
     const accounts = report.connections.map((connection) => ({
       platform: connection.platform,

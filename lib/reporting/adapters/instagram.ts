@@ -1,5 +1,5 @@
 import type { SocialConnection } from "@prisma/client";
-import type { NormalizedSocialMetrics, PublishedPostRef, SocialReportingAdapter } from "@/lib/reporting/types";
+import type { NormalizedSocialMetrics, PublishedPostRef, SocialAccountPostRecord, SocialReportingAdapter } from "@/lib/reporting/types";
 
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v26.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
@@ -40,6 +40,47 @@ type UserInsight = {
   values?: { value?: number; end_time?: string }[];
   total_value?: { value?: number };
 };
+
+async function readAccountPosts(accountId: string, token: string): Promise<SocialAccountPostRecord[]> {
+  const until = new Date();
+  const since = new Date(until.getTime() - 366 * 24 * 60 * 60 * 1000);
+  const posts: SocialAccountPostRecord[] = [];
+  let after: string | undefined;
+  for (let page = 0; page < 5; page++) {
+    const result = await graphGet<{
+      data?: Array<{
+        id: string; caption?: string; media_type?: string; timestamp?: string;
+        permalink?: string; like_count?: number; comments_count?: number;
+      }>;
+      paging?: { cursors?: { after?: string }; next?: string };
+    }>(`/${accountId}/media`, token, {
+      fields: "id,caption,media_type,timestamp,permalink,like_count,comments_count",
+      limit: "100",
+      since: String(Math.floor(since.getTime() / 1000)),
+      until: String(Math.floor(until.getTime() / 1000)),
+      ...(after ? { after } : {}),
+    });
+    for (const media of result.data ?? []) {
+      const publishedAt = media.timestamp ? new Date(media.timestamp) : null;
+      if (!publishedAt || !Number.isFinite(publishedAt.getTime())) continue;
+      const likes = typeof media.like_count === "number" ? media.like_count : null;
+      const comments = typeof media.comments_count === "number" ? media.comments_count : null;
+      posts.push({
+        platformPostId: media.id,
+        caption: media.caption ?? null,
+        postType: media.media_type ?? null,
+        publishedAt,
+        permalink: media.permalink ?? null,
+        likes,
+        comments,
+        engagement: likes !== null && comments !== null ? likes + comments : null,
+      });
+    }
+    after = result.paging?.cursors?.after;
+    if (!result.paging?.next || !after) break;
+  }
+  return posts;
+}
 
 async function readAccountInsights(accountId: string, token: string) {
   const until = new Date();
@@ -145,16 +186,21 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
 
   async fetchAccountMetrics(connection: SocialConnection): Promise<NormalizedSocialMetrics> {
     const scopes = new Set((connection.tokenScopes ?? "").split(/[\s,]+/).filter(Boolean));
-    if (!scopes.has("instagram_manage_insights")) {
-      throw new Error("Instagram insights are not authorized for this connection. Enable instagram_manage_insights for the Meta app, set INSTAGRAM_REQUEST_INSIGHTS_SCOPE=true, deploy, then reconnect Instagram.");
-    }
     if (!connection.accessToken) throw new Error("Instagram connection needs to be renewed.");
-    const profile = await graphGet<{ followers_count?: number; media_count?: number }>(
-      `/${connection.platformAccountId}`,
-      connection.accessToken,
-      { fields: "followers_count,media_count" },
-    );
-    const dailySnapshots = await readAccountInsights(connection.platformAccountId, connection.accessToken);
+    const [profile, dailySnapshots, accountPosts] = await Promise.all([
+      graphGet<{ followers_count?: number; media_count?: number }>(
+        `/${connection.platformAccountId}`,
+        connection.accessToken,
+        { fields: "followers_count,media_count" },
+      ),
+      scopes.has("instagram_manage_insights")
+        ? readAccountInsights(connection.platformAccountId, connection.accessToken)
+        : Promise.resolve([]),
+      readAccountPosts(connection.platformAccountId, connection.accessToken).catch((error) => {
+        console.warn("Instagram account post list could not be read:", error);
+        return [];
+      }),
+    ]);
     const latest = dailySnapshots.at(-1);
     return {
       followers: typeof profile.followers_count === "number" ? profile.followers_count : null,
@@ -162,6 +208,7 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
       views: latest?.views ?? null,
       engagement: latest?.engagement ?? null,
       dailySnapshots,
+      accountPosts,
       additionalMetrics: {
         ...(typeof profile.media_count === "number" ? { mediaCount: profile.media_count } : {}),
         ...(typeof latest?.additionalMetrics?.likes === "number" ? { likes: latest.additionalMetrics.likes } : {}),

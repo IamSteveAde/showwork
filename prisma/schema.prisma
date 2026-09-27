@@ -1909,6 +1909,7 @@ model SocialConnection {
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   publishedPosts               PublishedSocialPost[]
+  accountPosts                 SocialAccountPost[]
   accountMetricSnapshots       SocialAccountMetricSnapshot[]
   leadConversations            SocialLeadConversation[]
 
@@ -2071,6 +2072,34 @@ model SocialAccountMetricSnapshot {
 
   @@unique([socialConnectionId, snapshotDate])
   @@index([snapshotDate])
+}
+
+// Posts fetched directly from a connected platform account. This feed is
+// independent of CalendarPost/PublishedSocialPost so reporting includes
+// posts published outside Showwork as well.
+model SocialAccountPost {
+  id                 String           @id @default(uuid())
+  connection         SocialConnection @relation(fields: [socialConnectionId], references: [id], onDelete: Cascade)
+  socialConnectionId String
+  platformPostId     String
+  caption            String?          @db.Text
+  postType           String?
+  publishedAt        DateTime
+  permalink          String?
+  views              Float?
+  reach              Float?
+  impressions        Float?
+  engagement         Float?
+  likes              Float?
+  comments           Float?
+  shares             Float?
+  saves              Float?
+  metricsUpdatedAt   DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([socialConnectionId, platformPostId])
+  @@index([socialConnectionId, publishedAt])
 }
 
 model CalendarReportingPermission {

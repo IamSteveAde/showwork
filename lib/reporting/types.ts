@@ -14,6 +14,8 @@ export type NormalizedSocialMetrics = {
   clicks?: number | null;
   followers?: number | null;
   additionalMetrics?: Record<string, unknown>;
+  /** Latest native content fetched from the connected platform account. */
+  accountPosts?: SocialAccountPostRecord[];
   sourceUpdatedAt?: Date | null;
   /** Optional historical daily account metrics fetched from a platform insights edge. */
   dailySnapshots?: Array<{
@@ -31,6 +33,22 @@ export type PublishedPostRef = {
   platformPostId: string | null;
   providerReference: string | null;
   publishedAt: Date | null;
+};
+
+export type SocialAccountPostRecord = {
+  platformPostId: string;
+  caption?: string | null;
+  postType?: string | null;
+  publishedAt: Date;
+  permalink?: string | null;
+  views?: number | null;
+  reach?: number | null;
+  impressions?: number | null;
+  engagement?: number | null;
+  likes?: number | null;
+  comments?: number | null;
+  shares?: number | null;
+  saves?: number | null;
 };
 
 export type FacebookPagePost = {
