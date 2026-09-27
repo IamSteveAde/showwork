@@ -4,7 +4,12 @@ import type { NormalizedSocialMetrics, PublishedPostRef, SocialReportingAdapter 
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v26.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
-type GraphError = { error?: { message?: string; code?: number } };
+type GraphError = { error?: { message?: string; code?: number; error_subcode?: number } };
+
+type InstagramGraphRequestError = Error & {
+  metaCode?: number;
+  metaSubcode?: number;
+};
 
 async function graphGet<T>(path: string, token: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`${GRAPH_BASE}${path}`);
@@ -15,9 +20,12 @@ async function graphGet<T>(path: string, token: string, params: Record<string, s
     const detail = data.error?.message || `Instagram reporting request failed (${response.status}).`;
     const code = typeof data.error?.code === "number" ? ` (Meta code ${data.error.code})` : "";
     const request = path.replace(/^\/+/, "");
-    throw new Error(data.error?.code === 190
+    const error = new Error(data.error?.code === 190
       ? `Instagram connection needs renewal: ${detail}${code}`
-      : `Instagram reporting request for ${request} failed${code}: ${detail}`);
+      : `Instagram reporting request for ${request} failed${code}: ${detail}`) as InstagramGraphRequestError;
+    error.metaCode = data.error?.code;
+    error.metaSubcode = data.error?.error_subcode;
+    throw error;
   }
   return data;
 }
@@ -79,40 +87,54 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
     const results = new Map<string, NormalizedSocialMetrics>();
     for (const post of posts) {
       if (!post.platformPostId) continue;
-      const media = await graphGet<{
-        media_type?: string;
-        like_count?: number;
-        comments_count?: number;
-        permalink?: string;
-        timestamp?: string;
-      }>(`/${post.platformPostId}`, connection.accessToken, {
-        fields: "media_type,like_count,comments_count,permalink,timestamp",
-      });
-      const insights = await readMediaInsights(post.platformPostId, connection.accessToken);
-      const reach = valueFromInsights(insights, "reach");
-      const views = valueFromInsights(insights, "views");
-      const likes = typeof media.like_count === "number" ? media.like_count : null;
-      const comments = typeof media.comments_count === "number" ? media.comments_count : null;
-      const shares = valueFromInsights(insights, "shares");
-      const saves = valueFromInsights(insights, "saved");
-      const engagement = valueFromInsights(insights, "total_interactions");
-      const metrics: NormalizedSocialMetrics = {
-        reach,
-        views,
-        likes,
-        comments,
-        shares,
-        saves,
-        engagement,
-        engagementRate: engagement !== null && reach ? engagement / reach : null,
-        engagementRateBasis: engagement !== null && reach ? "reach" : null,
-        additionalMetrics: {
-          ...(media.media_type ? { mediaType: media.media_type } : {}),
-          ...(media.permalink ? { permalink: media.permalink } : {}),
-        },
-        sourceUpdatedAt: media.timestamp ? new Date(media.timestamp) : null,
-      };
-      results.set(post.id, metrics);
+      try {
+        const media = await graphGet<{
+          media_type?: string;
+          like_count?: number;
+          comments_count?: number;
+          permalink?: string;
+          timestamp?: string;
+        }>(`/${post.platformPostId}`, connection.accessToken, {
+          fields: "media_type,like_count,comments_count,permalink,timestamp",
+        });
+        const insights = await readMediaInsights(post.platformPostId, connection.accessToken);
+        const reach = valueFromInsights(insights, "reach");
+        const views = valueFromInsights(insights, "views");
+        const likes = typeof media.like_count === "number" ? media.like_count : null;
+        const comments = typeof media.comments_count === "number" ? media.comments_count : null;
+        const shares = valueFromInsights(insights, "shares");
+        const saves = valueFromInsights(insights, "saved");
+        const engagement = valueFromInsights(insights, "total_interactions");
+        const metrics: NormalizedSocialMetrics = {
+          reach,
+          views,
+          likes,
+          comments,
+          shares,
+          saves,
+          engagement,
+          engagementRate: engagement !== null && reach ? engagement / reach : null,
+          engagementRateBasis: engagement !== null && reach ? "reach" : null,
+          additionalMetrics: {
+            ...(media.media_type ? { mediaType: media.media_type } : {}),
+            ...(media.permalink ? { permalink: media.permalink } : {}),
+          },
+          sourceUpdatedAt: media.timestamp ? new Date(media.timestamp) : null,
+        };
+        results.set(post.id, metrics);
+      } catch (error) {
+        const graphError = error as InstagramGraphRequestError;
+        if (graphError.metaCode === 100 && graphError.metaSubcode === 33) {
+          // A stale or inaccessible media object must not block account
+          // metrics or reporting for other posts on this Instagram account.
+          console.warn("Skipping an Instagram post unavailable to the reporting token:", {
+            publishedSocialPostId: post.id,
+            platformPostId: post.platformPostId,
+          });
+          continue;
+        }
+        throw error;
+      }
     }
     return results;
   },
