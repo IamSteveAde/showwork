@@ -1802,17 +1802,17 @@ model CalendarBusinessDocument {
   calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
   calendarId String
 
-  fileKey       String?
-  originalName  String
-  websiteUrl    String? @db.Text
+  fileKey        String?
+  originalName   String
+  websiteUrl     String? @db.Text
   websiteUrlHash String? @db.VarChar(64)
-  sizeBytes     BigInt  @default(0)
-  extractedText String? @db.Text
+  sizeBytes      BigInt  @default(0)
+  extractedText  String? @db.Text
 
   createdAt DateTime @default(now())
 
-  @@index([calendarId])
   @@unique([calendarId, websiteUrlHash])
+  @@index([calendarId])
 }
 
 enum SocialPlatform {
@@ -2076,7 +2076,7 @@ model SocialAccountMetricSnapshot {
 
 // Posts fetched directly from a connected platform account. This feed is
 // independent of CalendarPost/PublishedSocialPost so reporting includes
-// posts published outside Showwork as well.
+// posts published outside Showwork.
 model SocialAccountPost {
   id                 String           @id @default(uuid())
   connection         SocialConnection @relation(fields: [socialConnectionId], references: [id], onDelete: Cascade)
