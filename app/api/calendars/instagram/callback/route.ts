@@ -93,8 +93,21 @@ export async function GET(req: NextRequest) {
       tokenScopes: grantedPermissions.join(","),
     });
     try {
-      await subscribeMetaMessagingAccount(igUserId, pageWithInstagram.access_token, "INSTAGRAM");
-      await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookSubscribedAt: new Date(), messagingWebhookError: null } });
+      // Instagram is linked to this Facebook Page. The Page is the
+      // subscribable asset; the Instagram account ID remains the
+      // SocialConnection ID used for Instagram webhook matching/replies.
+      await subscribeMetaMessagingAccount(pageWithInstagram.id, pageWithInstagram.access_token, "INSTAGRAM");
+      await db.socialConnection.update({
+        where: { id: socialConnection.id },
+        data: {
+          messagingWebhookSubscribedAt: new Date(),
+          // A successful Page subscription does not prove that this Meta
+          // app has the Instagram `messages` webhook capability enabled.
+          // Keep that known external prerequisite visible until Meta
+          // accepts/configures the Instagram webhook field.
+          messagingWebhookError: "The Facebook Page subscription succeeded. Inbound Instagram DMs also require the Instagram `messages` webhook field to be enabled for this Meta app.",
+        },
+      });
     } catch (error) {
       await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookError: error instanceof Error ? error.message.slice(0, 1500) : "Meta webhook subscription failed." } });
       console.warn("Instagram publishing is connected, but messaging webhooks could not be enabled:", error);

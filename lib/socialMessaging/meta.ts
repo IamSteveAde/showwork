@@ -72,7 +72,9 @@ export function metaWebhookPlatform(object: string): SocialPlatform | null {
 
 export async function subscribeMetaMessagingAccount(accountId: string, accessToken: string, platform: "FACEBOOK" | "INSTAGRAM") {
   const version = process.env.META_GRAPH_API_VERSION || "v26.0";
-  const fields = platform === "FACEBOOK" ? "messages,messaging_postbacks" : "messages,messaging_postbacks,messaging_optins";
+  // Instagram DMs only need the `messages` event. Keep Facebook's
+  // established subscription fields unchanged.
+  const fields = platform === "FACEBOOK" ? "messages,messaging_postbacks" : "messages";
   const response = await fetch(`https://graph.facebook.com/${version}/${accountId}/subscribed_apps`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
