@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }],
       }));
     const allPosts = [...showworkPosts, ...platformPosts]
-      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      .sort((a, b) => (b.publishedAt ? new Date(b.publishedAt).getTime() : 0) - (a.publishedAt ? new Date(a.publishedAt).getTime() : 0));
     const posts = allPosts.slice(0, 100);
     const accounts = report.connections.map((connection) => ({
       platform: connection.platform,
