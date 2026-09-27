@@ -13,6 +13,7 @@ const PAGE_POST_LIMIT = 5;
 
 type GraphError = { error?: { message?: string; code?: number; error_subcode?: number } };
 type GraphCount = { summary?: { total_count?: number }; count?: number };
+type InsightValue = { name?: string; values?: Array<{ value?: unknown }>; total_value?: { value?: unknown } };
 
 function scopesFor(connection: SocialConnection) {
   return new Set((connection.tokenScopes ?? "").split(/[\s,]+/).filter(Boolean));
@@ -64,18 +65,63 @@ async function optionalCount(path: string, token: string, params?: Record<string
   }
 }
 
-async function optionalInsight(pageId: string, token: string, metric: string): Promise<number | null> {
+async function optionalInsight(pageId: string, token: string, metric: string, period = "day"): Promise<number | null> {
   try {
     const result = await graphGet<{
-      data?: Array<{ name?: string; values?: Array<{ value?: unknown }> }>;
-    }>(`/${encodeURIComponent(pageId)}/insights`, token, { metric, period: "day" });
-    const values = result.data?.find((entry) => entry.name === metric)?.values;
-    const last = values?.at(-1)?.value;
+      data?: Array<{ name?: string; values?: Array<{ value?: unknown }>; total_value?: { value?: unknown } }>;
+    }>(`/${encodeURIComponent(pageId)}/insights`, token, { metric, period });
+    const insight = result.data?.find((entry) => entry.name === metric);
+    const last = insight?.total_value?.value ?? insight?.values?.at(-1)?.value;
     return asCount(last);
   } catch {
     // Insights are optional and can be unavailable for a Page or metric.
     return null;
   }
+}
+
+async function fetchPageInsights(pageId: string, token: string) {
+  const metrics = [
+    "page_total_media_view_unique",
+    "page_media_view",
+    "page_video_views",
+    "page_post_engagements",
+  ];
+  const warnings: string[] = [];
+  let rows: InsightValue[] = [];
+  try {
+    const result = await graphGet<{ data?: InsightValue[] }>(
+      `/${encodeURIComponent(pageId)}/insights`,
+      token,
+      { metric: metrics.join(","), period: "day" },
+    );
+    rows = result.data ?? [];
+  } catch {
+    // One unsupported metric can fail the entire multi-metric request. Retry
+    // independently so available metrics still populate the report.
+    const settled = await Promise.all(metrics.map(async metric => {
+      try {
+        const result = await graphGet<{ data?: InsightValue[] }>(
+          `/${encodeURIComponent(pageId)}/insights`, token, { metric, period: "day" },
+        );
+        return { metric, row: result.data?.find(item => item.name === metric) ?? null };
+      } catch (error) {
+        return { metric, row: null, error: error instanceof Error ? error.message : "Unknown Meta Insights error" };
+      }
+    }));
+    rows = settled.flatMap(item => item.row ? [item.row] : []);
+    warnings.push(...settled.flatMap(item => item.error ? [`${item.metric}: ${item.error}`] : []));
+  }
+  const values = Object.fromEntries(metrics.map(metric => {
+    const insight = rows.find(row => row.name === metric);
+    const raw = insight?.total_value?.value ?? insight?.values?.at(-1)?.value;
+    return [metric, asCount(raw)];
+  })) as Record<typeof metrics[number], number | null>;
+  for (const metric of metrics) {
+    if (values[metric] === null && !warnings.some(warning => warning.startsWith(`${metric}:`))) {
+      warnings.push(`${metric}: Meta returned no value for this Page or date.`);
+    }
+  }
+  return { values, warnings };
 }
 
 type PagePostRecord = {
@@ -84,6 +130,9 @@ type PagePostRecord = {
   created_time?: string;
   permalink_url?: string;
   full_picture?: string;
+  likes?: { summary?: { total_count?: number } };
+  comments?: { summary?: { total_count?: number } };
+  shares?: { count?: number };
 };
 
 async function fetchPostMetricValues(postId: string, token: string, includeInsights: boolean) {
@@ -95,8 +144,8 @@ async function fetchPostMetricValues(postId: string, token: string, includeInsig
   ]);
   const [reach, impressions] = includeInsights
     ? await Promise.all([
-        optionalInsight(postId, token, "post_impressions_unique"),
-        optionalInsight(postId, token, "post_impressions"),
+        optionalInsight(postId, token, "post_total_media_view_unique", "lifetime"),
+        optionalInsight(postId, token, "post_media_view", "lifetime"),
       ])
     : [null, null];
   return { likes, comments, shares, reach, impressions };
@@ -119,17 +168,15 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     const token = requireConnection(connection);
     const page = await fetchPageIdentity(connection, token);
 
-    // Facebook exposes both fields across Page types/API access levels. Query
-    // them separately so an unsupported optional field cannot break sync.
-    const [followersCount, fanCount] = await Promise.all([
+    const [followersCount] = await Promise.all([
       graphGet<{ followers_count?: number }>(`/${encodeURIComponent(connection.platformAccountId)}`, token, { fields: "followers_count" })
         .then((result) => asCount(result.followers_count)).catch(() => null),
-      graphGet<{ fan_count?: number }>(`/${encodeURIComponent(connection.platformAccountId)}`, token, { fields: "fan_count" })
-        .then((result) => asCount(result.fan_count)).catch(() => null),
     ]);
 
     const metrics: NormalizedSocialMetrics = {
-      followers: followersCount ?? fanCount,
+      // Do not substitute fan_count (Page likes) for followers. They are
+      // different measures and presenting likes as followers is misleading.
+      followers: followersCount,
       additionalMetrics: {
         pageId: page.id ?? connection.platformAccountId,
         pageName: page.name ?? connection.accountName ?? "Facebook Page",
@@ -142,7 +189,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       const until = new Date();
       const since = new Date(until.getTime() - 366 * 24 * 60 * 60 * 1000);
       const nativePosts = await graphGet<{ data?: PagePostRecord[] }>(`/${encodeURIComponent(page.id ?? connection.platformAccountId)}/posts`, token, {
-        fields: "id,message,created_time,permalink_url",
+        fields: "id,message,created_time,permalink_url,likes.limit(0).summary(true),comments.limit(0).summary(true),shares",
         limit: "100",
         since: String(Math.floor(since.getTime() / 1000)),
         until: String(Math.floor(until.getTime() / 1000)),
@@ -151,12 +198,19 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
         if (!post.created_time) return [];
         const publishedAt = new Date(post.created_time);
         if (!Number.isFinite(publishedAt.getTime())) return [];
+        const likes = asCount(post.likes?.summary?.total_count);
+        const comments = asCount(post.comments?.summary?.total_count);
+        const shares = asCount(post.shares?.count);
         return [{
           platformPostId: post.id,
           caption: post.message ?? null,
           postType: "POST",
           publishedAt,
           permalink: post.permalink_url ?? null,
+          likes,
+          comments,
+          shares,
+          engagement: likes !== null && comments !== null && shares !== null ? likes + comments + shares : null,
         }];
       });
     } catch (error) {
@@ -165,16 +219,19 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     }
 
     if (scopesFor(connection).has("read_insights")) {
-      const [reach, impressions, engagement] = await Promise.all([
-        optionalInsight(connection.platformAccountId, token, "page_impressions_unique"),
-        optionalInsight(connection.platformAccountId, token, "page_impressions"),
-        optionalInsight(connection.platformAccountId, token, "page_post_engagements"),
-      ]);
-      metrics.reach = reach;
-      metrics.impressions = impressions;
-      metrics.engagement = engagement;
-      metrics.engagementRate = engagement !== null && reach ? engagement / reach : null;
+      const { values, warnings } = await fetchPageInsights(connection.platformAccountId, token);
+      // Meta's current media-view metrics replace deprecated impression and
+      // unique-impression fields. `page_video_views` remains video-only;
+      // `page_media_view` includes all displayed/played Page content.
+      metrics.reach = values.page_total_media_view_unique;
+      metrics.impressions = values.page_media_view;
+      metrics.views = values.page_video_views;
+      metrics.engagement = values.page_post_engagements;
+      metrics.engagementRate = metrics.engagement !== null && metrics.reach ? metrics.engagement / metrics.reach : null;
       metrics.engagementRateBasis = metrics.engagementRate !== null ? "reach" : null;
+      metrics.reportingWarnings = warnings;
+    } else {
+      metrics.reportingWarnings = ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."];
     }
     return metrics;
   },
@@ -188,7 +245,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       if (!postId) continue;
       const [counts, engagement] = await Promise.all([
         fetchPostMetricValues(postId, token, includeInsights),
-        includeInsights ? optionalInsight(postId, token, "post_engaged_users") : Promise.resolve(null),
+        includeInsights ? optionalInsight(postId, token, "post_engaged_users", "lifetime") : Promise.resolve(null),
       ]);
       results.set(post.id, {
         ...counts,
@@ -206,12 +263,10 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     const pageId = page.id || connection.platformAccountId;
 
     const followers = await graphGet<{ followers_count?: number }>(`/${encodeURIComponent(pageId)}`, token, { fields: "followers_count" })
-      .then((result) => asCount(result.followers_count))
-      .catch(async () => graphGet<{ fan_count?: number }>(`/${encodeURIComponent(pageId)}`, token, { fields: "fan_count" })
-        .then((result) => asCount(result.fan_count)).catch(() => null));
+      .then((result) => asCount(result.followers_count)).catch(() => null);
 
     const result = await graphGet<{ data?: PagePostRecord[] }>(`/${encodeURIComponent(pageId)}/posts`, token, {
-      fields: "id,message,created_time,permalink_url,full_picture",
+      fields: "id,message,created_time,permalink_url,full_picture,likes.limit(0).summary(true),comments.limit(0).summary(true),shares",
       limit: String(PAGE_POST_LIMIT),
       since: String(Math.floor(period.start.getTime() / 1000)),
       until: String(Math.floor(period.end.getTime() / 1000)),
@@ -220,18 +275,28 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     const includeInsights = scopesFor(connection).has("read_insights");
     const pagePosts: FacebookPagePost[] = [];
     const records = result.data ?? [];
-    // Keep per-post optional metrics below Meta's burst thresholds while
-    // still making the Page's real recent content available immediately.
+    // Counts are included in the feed request; only Insights need a follow-up
+    // per post. This keeps the live Page panel bounded to one feed request and
+    // at most two Insight requests per displayed post.
     for (let offset = 0; offset < records.length; offset += 2) {
       const batch = await Promise.all(records.slice(offset, offset + 2).map(async (post): Promise<FacebookPagePost> => {
-        const metrics = await fetchPostMetricValues(post.id, token, includeInsights);
+        const [reach, impressions] = includeInsights
+          ? await Promise.all([
+              optionalInsight(post.id, token, "post_total_media_view_unique", "lifetime"),
+              optionalInsight(post.id, token, "post_media_view", "lifetime"),
+            ])
+          : [null, null];
         return {
           id: post.id,
           message: post.message ?? null,
           createdAt: post.created_time ?? null,
           permalink: post.permalink_url ?? null,
           imageUrl: post.full_picture ?? null,
-          ...metrics,
+          likes: asCount(post.likes?.summary?.total_count),
+          comments: asCount(post.comments?.summary?.total_count),
+          shares: asCount(post.shares?.count),
+          reach,
+          impressions,
         };
       }));
       pagePosts.push(...batch);
@@ -244,7 +309,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       posts: pagePosts,
       notices: includeInsights
         ? []
-        : ["Reach and impression metrics require the read_insights permission; Meta did not grant it to this Page connection."],
+        : ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."],
     };
   },
 };

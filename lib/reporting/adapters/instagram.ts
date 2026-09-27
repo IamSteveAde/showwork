@@ -154,19 +154,23 @@ async function readAccountInsights(accountId: string, token: string) {
 
   const dailySnapshots: Array<{
     snapshotDate: Date;
-    reach: number | null;
-    views: number | null;
-    engagement: number | null;
-    additionalMetrics: Record<string, number>;
-  }> = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, metrics]) => ({
-    snapshotDate: new Date(`${date}T00:00:00.000Z`),
-    reach: metrics.reach ?? null,
-    // Views are stored once on the sync-day snapshot below because Meta
-    // returns a total for the requested date range, not daily values.
-    views: null,
-    engagement: metrics.engagement ?? null,
-    additionalMetrics: typeof metrics.likes === "number" ? { likes: metrics.likes } : {},
-  }));
+    reach?: number | null;
+    views?: number | null;
+    engagement?: number | null;
+    additionalMetrics?: Record<string, number>;
+  }> = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, metrics]) => {
+    const additionalMetrics: Record<string, number> = {};
+    if (typeof metrics.likes === "number") additionalMetrics.likes = metrics.likes;
+    return {
+      snapshotDate: new Date(`${date}T00:00:00.000Z`),
+      reach: metrics.reach ?? null,
+      // Views are stored once on the sync-day snapshot below because Meta
+      // returns a total for the requested date range, not daily values.
+      views: null,
+      engagement: metrics.engagement ?? null,
+      additionalMetrics,
+    };
+  });
   return { dailySnapshots, rangeViews, warnings };
 }
 
