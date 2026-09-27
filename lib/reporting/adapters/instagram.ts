@@ -30,8 +30,9 @@ async function graphGet<T>(path: string, token: string, params: Record<string, s
   return data;
 }
 
-function valueFromInsights(data: { name: string; values?: { value?: number }[] }[], name: string) {
-  const value = data.find((entry) => entry.name === name)?.values?.[0]?.value;
+function valueFromInsights(data: UserInsight[], name: string) {
+  const insight = data.find((entry) => entry.name === name);
+  const value = insight?.total_value?.value ?? insight?.values?.[0]?.value;
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
@@ -85,41 +86,47 @@ async function readAccountPosts(accountId: string, token: string): Promise<Socia
 async function readAccountInsights(accountId: string, token: string) {
   const until = new Date();
   const since = new Date(until.getTime() - 29 * 24 * 60 * 60 * 1000);
-  const params = {
-    metric: "reach,views,total_interactions,likes",
-    metric_type: "time_series",
+  const range = {
     period: "day",
     since: Math.floor(since.getTime() / 1000).toString(),
     until: Math.floor(until.getTime() / 1000).toString(),
   };
+  const data: UserInsight[] = [];
+  const warnings: string[] = [];
+  let rangeViews: number | null = null;
 
-  let data: UserInsight[] = [];
-  try {
-    const result = await graphGet<{ data?: UserInsight[] }>(`/${accountId}/insights`, token, params);
-    data = result.data ?? [];
-  } catch (batchError) {
-    // Fall back per metric because Meta may remove or restrict one metric
-    // without making the other account-level insights unavailable.
-    const withoutMetricType = (({ metric_type: _metricType, ...rest }) => rest)(params);
-    for (const metric of ["reach", "views", "total_interactions", "likes"]) {
-      for (const includeMetricType of [true, false]) {
-        try {
-          const result = await graphGet<{ data?: UserInsight[] }>(
-            `/${accountId}/insights`,
-            token,
-            { ...(includeMetricType ? params : withoutMetricType), metric },
-          );
-          data.push(...(result.data ?? []));
-          break;
-        } catch {
-          // Leave unsupported metrics unavailable; still use any others.
-        }
+  // Meta returns account-level views as a range total. Requesting it as a
+  // time series can fail or omit the metric while the rest of the batch
+  // succeeds, which used to make the UI silently show no view count.
+  for (const [metric, metricType] of [
+    ["reach", "time_series"],
+    ["total_interactions", "total_value"],
+    ["likes", "total_value"],
+    ["views", "total_value"],
+  ] as const) {
+    try {
+      const result = await graphGet<{ data?: UserInsight[] }>(`/${accountId}/insights`, token, {
+        ...range,
+        metric,
+        metric_type: metricType,
+      });
+      const insight = result.data?.find((entry) => entry.name === metric);
+      if (metric === "views") {
+        const seriesTotal = insight?.values?.reduce((sum, item) =>
+          typeof item.value === "number" && Number.isFinite(item.value) ? sum + item.value : sum, 0);
+        const value = insight?.total_value?.value ?? (insight?.values?.length ? seriesTotal : null);
+        if (typeof value === "number" && Number.isFinite(value)) rangeViews = value;
+        else warnings.push("views: Meta returned no numeric value for the requested period.");
       }
-    }
-    if (!data.length) {
-      console.warn("Instagram account insights could not be read:", {
+      if (insight) data.push(insight);
+    } catch (error) {
+      // Keep other metrics available, but make an unavailable metric visible
+      // in server logs rather than silently treating it as a real zero.
+      const detail = error instanceof Error ? error.message : "Unknown insights error";
+      warnings.push(`${metric}: ${detail}`);
+      console.warn(`Instagram account insight ${metric} could not be read:`, {
         accountId,
-        error: batchError instanceof Error ? batchError.message : "Unknown insights error",
+        error: detail,
       });
     }
   }
@@ -145,18 +152,27 @@ async function readAccountInsights(accountId: string, token: string) {
     }
   }
 
-  return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, metrics]) => ({
+  const dailySnapshots: Array<{
+    snapshotDate: Date;
+    reach: number | null;
+    views: number | null;
+    engagement: number | null;
+    additionalMetrics: Record<string, number>;
+  }> = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, metrics]) => ({
     snapshotDate: new Date(`${date}T00:00:00.000Z`),
     reach: metrics.reach ?? null,
-    views: metrics.views ?? null,
+    // Views are stored once on the sync-day snapshot below because Meta
+    // returns a total for the requested date range, not daily values.
+    views: null,
     engagement: metrics.engagement ?? null,
     additionalMetrics: typeof metrics.likes === "number" ? { likes: metrics.likes } : {},
   }));
+  return { dailySnapshots, rangeViews, warnings };
 }
 
 async function readMediaInsights(mediaId: string, token: string) {
   try {
-    const result = await graphGet<{ data?: { name: string; values?: { value?: number }[] }[] }>(
+    const result = await graphGet<{ data?: UserInsight[] }>(
       `/${mediaId}/insights`,
       token,
       { metric: "reach,views,saved,shares,total_interactions" },
@@ -166,10 +182,10 @@ async function readMediaInsights(mediaId: string, token: string) {
     // Some metric names vary by media type and API version. Retry each
     // metric separately so a single unsupported metric does not hide the
     // metrics this account can provide.
-  const values: { name: string; values?: { value?: number }[] }[] = [];
+  const values: UserInsight[] = [];
     for (const metric of ["reach", "views", "saved", "shares", "total_interactions"]) {
       try {
-        const result = await graphGet<{ data?: { name: string; values?: { value?: number }[] }[] }>(
+        const result = await graphGet<{ data?: UserInsight[] }>(
           `/${mediaId}/insights`, token, { metric },
         );
         values.push(...(result.data ?? []));
@@ -187,7 +203,7 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
   async fetchAccountMetrics(connection: SocialConnection): Promise<NormalizedSocialMetrics> {
     const scopes = new Set((connection.tokenScopes ?? "").split(/[\s,]+/).filter(Boolean));
     if (!connection.accessToken) throw new Error("Instagram connection needs to be renewed.");
-    const [profile, dailySnapshots, accountPosts] = await Promise.all([
+    const [profile, insights, accountPosts] = await Promise.all([
       graphGet<{ followers_count?: number; media_count?: number }>(
         `/${connection.platformAccountId}`,
         connection.accessToken,
@@ -195,20 +211,34 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
       ),
       scopes.has("instagram_manage_insights")
         ? readAccountInsights(connection.platformAccountId, connection.accessToken)
-        : Promise.resolve([]),
+        : Promise.resolve({
+            dailySnapshots: [],
+            rangeViews: null,
+            warnings: ["Instagram Insights permission is missing; account metrics cannot be read until the account is reconnected with instagram_manage_insights."],
+          }),
       readAccountPosts(connection.platformAccountId, connection.accessToken).catch((error) => {
         console.warn("Instagram account post list could not be read:", error);
         return [];
       }),
     ]);
-    const latest = dailySnapshots.at(-1);
+    const latest = insights.dailySnapshots.at(-1);
+    const snapshotDate = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const dailySnapshots = [...insights.dailySnapshots];
+    // A range total belongs to the sync date. The reporting UI reads this
+    // field as a latest value, rather than summing repeated rolling totals.
+    if (insights.rangeViews !== null) {
+      const today = dailySnapshots.find((item) => item.snapshotDate.getTime() === snapshotDate.getTime());
+      if (today) today.views = insights.rangeViews;
+      else dailySnapshots.push({ snapshotDate, views: insights.rangeViews });
+    }
     return {
       followers: typeof profile.followers_count === "number" ? profile.followers_count : null,
       reach: latest?.reach ?? null,
-      views: latest?.views ?? null,
+      views: insights.rangeViews,
       engagement: latest?.engagement ?? null,
       dailySnapshots,
       accountPosts,
+      reportingWarnings: insights.warnings,
       additionalMetrics: {
         ...(typeof profile.media_count === "number" ? { mediaCount: profile.media_count } : {}),
         ...(typeof latest?.additionalMetrics?.likes === "number" ? { likes: latest.additionalMetrics.likes } : {}),

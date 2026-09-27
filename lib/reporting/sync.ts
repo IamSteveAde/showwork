@@ -184,7 +184,10 @@ async function syncConnection(initialConnection: SocialConnection & {
       data: {
         status: "CONNECTED",
         lastSyncAt: new Date(),
-        lastSyncError: postMetricsError?.slice(0, 2000) ?? null,
+        lastSyncError: [
+          ...(accountMetrics.reportingWarnings ?? []),
+          ...(postMetricsError ? [postMetricsError] : []),
+        ].join("; ").slice(0, 2000) || null,
       },
     });
     return { connectionId: connection.id, status: "SYNCED" as const, postsUpdated: postMetrics.size };

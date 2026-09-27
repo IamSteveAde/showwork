@@ -13,6 +13,8 @@ export type NormalizedSocialMetrics = {
   saves?: number | null;
   clicks?: number | null;
   followers?: number | null;
+  /** Non-fatal API limitations to surface in the connection's sync status. */
+  reportingWarnings?: string[];
   additionalMetrics?: Record<string, unknown>;
   /** Latest native content fetched from the connected platform account. */
   accountPosts?: SocialAccountPostRecord[];
