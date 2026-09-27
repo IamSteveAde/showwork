@@ -24,11 +24,33 @@ export type PublishedPostRef = {
   publishedAt: Date | null;
 };
 
+export type FacebookPagePost = {
+  id: string;
+  message: string | null;
+  createdAt: string | null;
+  permalink: string | null;
+  imageUrl: string | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  reach: number | null;
+  impressions: number | null;
+};
+
+export type FacebookPageActivity = {
+  pageId: string;
+  pageName: string;
+  followers: number | null;
+  posts: FacebookPagePost[];
+  notices: string[];
+};
+
 export interface SocialPlatformAdapter {
   readonly platform: SocialPlatform;
   refreshConnection?(connection: SocialConnection): Promise<SocialConnection>;
   publishPost?(calendarPostId: string): Promise<void>;
   fetchPublishedPosts?(connection: SocialConnection): Promise<PublishedPostRef[]>;
+  fetchPageActivity?(connection: SocialConnection, period: { start: Date; end: Date }): Promise<FacebookPageActivity>;
   fetchAccountMetrics(connection: SocialConnection): Promise<NormalizedSocialMetrics>;
   fetchPostMetrics(
     connection: SocialConnection,
