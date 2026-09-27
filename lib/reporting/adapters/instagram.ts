@@ -13,7 +13,11 @@ async function graphGet<T>(path: string, token: string, params: Record<string, s
   const data = await response.json().catch(() => ({})) as T & GraphError;
   if (!response.ok || data.error) {
     const detail = data.error?.message || `Instagram reporting request failed (${response.status}).`;
-    throw new Error(data.error?.code === 190 ? `Instagram connection needs renewal: ${detail}` : detail);
+    const code = typeof data.error?.code === "number" ? ` (Meta code ${data.error.code})` : "";
+    const request = path.replace(/^\/+/, "");
+    throw new Error(data.error?.code === 190
+      ? `Instagram connection needs renewal: ${detail}${code}`
+      : `Instagram reporting request for ${request} failed${code}: ${detail}`);
   }
   return data;
 }
@@ -56,7 +60,7 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
   async fetchAccountMetrics(connection: SocialConnection): Promise<NormalizedSocialMetrics> {
     const scopes = new Set((connection.tokenScopes ?? "").split(/[\s,]+/).filter(Boolean));
     if (!scopes.has("instagram_manage_insights")) {
-      throw new Error("Instagram insights permission is missing. Enable instagram_manage_insights for the Meta app, then reconnect this account.");
+      throw new Error("Instagram insights are not authorized for this connection. Enable instagram_manage_insights for the Meta app, set INSTAGRAM_REQUEST_INSIGHTS_SCOPE=true, deploy, then reconnect Instagram.");
     }
     if (!connection.accessToken) throw new Error("Instagram connection needs to be renewed.");
     const profile = await graphGet<{ followers_count?: number; media_count?: number }>(
