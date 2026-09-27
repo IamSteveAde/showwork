@@ -35,6 +35,35 @@ export async function sendMetaInboxMessage({
   return result.message_id ?? null;
 }
 
+/** Best-effort Messenger profile lookup for a Page-scoped user ID (PSID). */
+export async function getFacebookMessengerProfile({
+  pageScopedUserId,
+  pageAccessToken,
+}: {
+  pageScopedUserId: string;
+  pageAccessToken: string;
+}): Promise<{ name: string | null } | null> {
+  const version = process.env.META_GRAPH_API_VERSION || "v26.0";
+  const url = new URL(`https://graph.facebook.com/${version}/${encodeURIComponent(pageScopedUserId)}`);
+  url.searchParams.set("fields", "first_name,last_name");
+  url.searchParams.set("access_token", pageAccessToken);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(2500) });
+    if (!response.ok) return null;
+    const profile = await response.json().catch(() => null) as { first_name?: unknown; last_name?: unknown } | null;
+    if (!profile) return null;
+    const name = [profile.first_name, profile.last_name]
+      .filter((part): part is string => typeof part === "string" && Boolean(part.trim()))
+      .map((part) => part.trim())
+      .join(" ");
+    return name ? { name } : null;
+  } catch {
+    // Profile access can be unavailable because of Meta permissions or API
+    // restrictions. Receiving the message must still succeed in that case.
+    return null;
+  }
+}
+
 export function metaWebhookPlatform(object: string): SocialPlatform | null {
   if (object === "page") return "FACEBOOK";
   if (object === "instagram") return "INSTAGRAM";
