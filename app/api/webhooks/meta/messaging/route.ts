@@ -45,12 +45,24 @@ export async function POST(req: NextRequest) {
   const platform = body.object ? metaWebhookPlatform(body.object) : null;
   if (!platform || !Array.isArray(body.entry)) return NextResponse.json({ received: true });
 
+  let messagingEventCount = 0;
+  let matchedEntryCount = 0;
+  let unmatchedEntryCount = 0;
+  let entryWithoutMessagingCount = 0;
   for (const entry of body.entry) {
-    if (!entry.id || !Array.isArray(entry.messaging)) continue;
+    if (!entry.id || !Array.isArray(entry.messaging)) {
+      entryWithoutMessagingCount += 1;
+      continue;
+    }
+    messagingEventCount += entry.messaging.length;
     const connection = await db.socialConnection.findFirst({
       where: { platform, platformAccountId: entry.id, status: "CONNECTED" },
     });
-    if (!connection) continue;
+    if (!connection) {
+      unmatchedEntryCount += 1;
+      continue;
+    }
+    matchedEntryCount += 1;
     const settings = await db.socialInboxSettings.upsert({
       where: { calendarId: connection.calendarId },
       create: { calendarId: connection.calendarId },
@@ -128,6 +140,18 @@ export async function POST(req: NextRequest) {
         await db.socialLeadConversation.update({ where: { id: conversation.id }, data: { unreadCount: { decrement: 1 } } });
       }
     }
+  }
+  if (platform === "INSTAGRAM") {
+    // Safe diagnostics only: never log account/user IDs, tokens, or message
+    // contents. This distinguishes Meta not delivering, payload shape
+    // mismatch, and a connection ID mismatch in production logs.
+    console.info("Instagram messaging webhook delivery summary", {
+      entries: body.entry.length,
+      messagingEvents: messagingEventCount,
+      matchedEntries: matchedEntryCount,
+      unmatchedEntries: unmatchedEntryCount,
+      entriesWithoutMessaging: entryWithoutMessagingCount,
+    });
   }
   return NextResponse.json({ received: true });
 }

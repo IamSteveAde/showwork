@@ -3,7 +3,6 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { appUrl } from "@/lib/url";
 import { upsertSocialConnection } from "@/lib/socialReporting";
-import { subscribeMetaMessagingAccount } from "@/lib/socialMessaging/meta";
 import {
   exchangeChannelCode,
   exchangeForLongLivedFacebookToken,
@@ -18,6 +17,10 @@ import {
   xPkceCookieName,
   type PublishingChannel,
 } from "@/lib/channelOAuthState";
+import {
+  createFacebookPageSelection,
+  facebookPageSelectionCookieOptions,
+} from "@/lib/facebookPageSelection";
 
 const CHANNELS: PublishingChannel[] = ["facebook", "linkedin", "x"];
 
@@ -31,12 +34,18 @@ export async function GET(
   { params }: { params: Promise<{ channel: string }> },
 ) {
   const { channel: rawChannel } = await params;
+
   if (!CHANNELS.includes(rawChannel as PublishingChannel)) {
-    return NextResponse.json({ error: "Unknown publishing channel." }, { status: 404 });
+    return NextResponse.json(
+      { error: "Unknown publishing channel." },
+      { status: 404 },
+    );
   }
+
   const channel = rawChannel as PublishingChannel;
   const stateCookieName = `showwork_${channel}_oauth_state`;
   const cookieNonce = req.cookies.get(stateCookieName)?.value;
+
   const calendarId = verifyChannelOAuthState(
     channel,
     req.nextUrl.searchParams.get("state"),
@@ -44,16 +53,22 @@ export async function GET(
   );
 
   const fallback = `/dashboard/calendars?view=channels&${channel}Error=missing_state`;
-  if (!calendarId) return NextResponse.redirect(`${appUrl()}${fallback}`);
+
+  if (!calendarId) {
+    return NextResponse.redirect(`${appUrl()}${fallback}`);
+  }
 
   const callbackPath = `/api/calendars/channels/${channel}/callback`;
   const settingsPath = `/dashboard/calendars/${calendarId}?view=channels`;
+
   const makeRedirect = (url: string) => {
     const response = NextResponse.redirect(`${appUrl()}${url}`);
+
     response.cookies.set(stateCookieName, "", {
       ...channelOAuthCookieOptions(channel, 0),
       maxAge: 0,
     });
+
     if (channel === "x") {
       response.cookies.set(xPkceCookieName(), "", {
         ...channelOAuthCookieOptions(channel, 0),
@@ -61,69 +76,122 @@ export async function GET(
         maxAge: 0,
       });
     }
+
     return response;
   };
 
   const oauthError = req.nextUrl.searchParams.get("error");
   const code = req.nextUrl.searchParams.get("code");
-  if (oauthError || !code) return makeRedirect(`${settingsPath}&${channel}Error=denied`);
+
+  if (oauthError || !code) {
+    return makeRedirect(`${settingsPath}&${channel}Error=denied`);
+  }
 
   const creator = await getCurrentCreator();
-  if (!creator) return makeRedirect("/login");
+
+  if (!creator) {
+    return makeRedirect("/login");
+  }
+
   const calendar = await db.socialCalendar.findUnique({
     where: { id: calendarId },
     select: { managerId: true },
   });
+
   if (!calendar || calendar.managerId !== creator.id) {
     return makeRedirect(`${settingsPath}&${channel}Error=not_found`);
   }
 
   const redirectUri = `${appUrl()}${callbackPath}`;
+
   try {
     const tokens = await exchangeChannelCode({
       channel,
       code,
       redirectUri,
-      codeVerifier: channel === "x" ? req.cookies.get(xPkceCookieName())?.value : undefined,
+      codeVerifier:
+        channel === "x"
+          ? req.cookies.get(xPkceCookieName())?.value
+          : undefined,
     });
-    if (!tokens.access_token) throw new Error(`${channel} did not return an access token.`);
 
+    if (!tokens.access_token) {
+      throw new Error(`${channel} did not return an access token.`);
+    }
+
+    /*
+     * FACEBOOK
+     *
+     * Do not automatically connect pages[0].
+     *
+     * Meta App Review expects the user to see the Pages they manage,
+     * deliberately select one, and then continue into a Page-scoped
+     * feature using that exact Page.
+     *
+     * Page access tokens remain inside an encrypted/signed HTTP-only
+     * selection cookie and are never exposed to the browser UI.
+     */
     if (channel === "facebook") {
-      const longLived = await exchangeForLongLivedFacebookToken(tokens.access_token);
-      const grantedPermissions = await getFacebookGrantedPermissions(longLived.access_token);
-      const pages = await getFacebookPages(longLived.access_token);
-      const page = pages[0];
-      if (!page) return makeRedirect(`${settingsPath}&facebookError=no_page`);
+      const longLived = await exchangeForLongLivedFacebookToken(
+        tokens.access_token,
+      );
 
-      await db.socialCalendar.update({
-        where: { id: calendarId },
-        data: {
-          facebookPageId: page.id,
-          facebookPageName: page.name,
-          facebookAccessToken: page.access_token,
-          facebookTokenExpiresAt: withExpiry(longLived.expires_in),
-          facebookConnectedAt: new Date(),
-        },
-      });
-      const socialConnection = await upsertSocialConnection({
-        calendarId,
-        platform: "FACEBOOK",
-        platformAccountId: page.id,
-        accountName: page.name,
-        accessToken: page.access_token,
-        accessTokenExpiresAt: withExpiry(longLived.expires_in),
-        tokenScopes: grantedPermissions.join(","),
-      });
-      try {
-        await subscribeMetaMessagingAccount(page.id, page.access_token, "FACEBOOK");
-        await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookSubscribedAt: new Date(), messagingWebhookError: null } });
-      } catch (error) {
-        await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookError: error instanceof Error ? error.message.slice(0, 1500) : "Meta webhook subscription failed." } });
-        console.warn("Facebook publishing is connected, but messaging webhooks could not be enabled:", error);
+      const grantedPermissions = await getFacebookGrantedPermissions(
+        longLived.access_token,
+      );
+
+      const pages = await getFacebookPages(longLived.access_token);
+
+      if (pages.length === 0) {
+        return makeRedirect(`${settingsPath}&facebookError=no_page`);
       }
-    } else if (channel === "linkedin") {
+
+      const selection = createFacebookPageSelection({
+        calendarId,
+        pages: pages.map((page) => ({
+          id: page.id,
+          name: page.name,
+          accessToken: page.access_token,
+        })),
+        grantedPermissions,
+        userTokenExpiresAt:
+          longLived.expires_in && Number.isFinite(longLived.expires_in)
+            ? Date.now() + longLived.expires_in * 1000
+            : null,
+      });
+
+      const response = NextResponse.redirect(
+        `${appUrl()}/dashboard/calendars/${calendarId}/facebook/select-page`,
+      );
+
+      // OAuth state has now been consumed.
+      response.cookies.set(stateCookieName, "", {
+        ...channelOAuthCookieOptions(channel, 0),
+        maxAge: 0,
+      });
+
+      response.cookies.set(
+        selection.cookieName,
+        selection.value,
+        facebookPageSelectionCookieOptions(selection.maxAge),
+      );
+
+      return response;
+    }
+
+    /*
+     * LINKEDIN
+     */
+    if (channel === "linkedin") {
       const member = await getLinkedInMember(tokens.access_token);
-      const name = member.name || [member.given_name, member.family_name].filter(Boolean).join(" ") || "LinkedIn member";
+
+      const name =
+        member.name ||
+        [member.given_name, member.family_name]
+          .filter(Boolean)
+          .join(" ") ||
+        "LinkedIn member";
+
       await db.socialCalendar.update({
         where: { id: calendarId },
         data: {
@@ -132,10 +200,13 @@ export async function GET(
           linkedinAccessToken: tokens.access_token,
           linkedinAccessTokenExpiresAt: withExpiry(tokens.expires_in),
           linkedinRefreshToken: tokens.refresh_token ?? null,
-          linkedinRefreshTokenExpiresAt: withExpiry(tokens.refresh_token_expires_in),
+          linkedinRefreshTokenExpiresAt: withExpiry(
+            tokens.refresh_token_expires_in,
+          ),
           linkedinConnectedAt: new Date(),
         },
       });
+
       await upsertSocialConnection({
         calendarId,
         platform: "LINKEDIN",
@@ -145,11 +216,17 @@ export async function GET(
         accessToken: tokens.access_token,
         accessTokenExpiresAt: withExpiry(tokens.expires_in),
         refreshToken: tokens.refresh_token ?? null,
-        refreshTokenExpiresAt: withExpiry(tokens.refresh_token_expires_in),
+        refreshTokenExpiresAt: withExpiry(
+          tokens.refresh_token_expires_in,
+        ),
         tokenScopes: tokens.scope ?? null,
       });
     } else {
+      /*
+       * X
+       */
       const member = await getXMember(tokens.access_token);
+
       await db.socialCalendar.update({
         where: { id: calendarId },
         data: {
@@ -161,6 +238,7 @@ export async function GET(
           xConnectedAt: new Date(),
         },
       });
+
       await upsertSocialConnection({
         calendarId,
         platform: "X",
@@ -174,9 +252,14 @@ export async function GET(
       });
     }
 
-    return makeRedirect(`${settingsPath}&${channel}Connected=true`);
+    return makeRedirect(
+      `${settingsPath}&${channel}Connected=true`,
+    );
   } catch (error) {
     console.error(`${channel} OAuth callback failed:`, error);
-    return makeRedirect(`${settingsPath}&${channel}Error=connection_failed`);
+
+    return makeRedirect(
+      `${settingsPath}&${channel}Error=connection_failed`,
+    );
   }
 }

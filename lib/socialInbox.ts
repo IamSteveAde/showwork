@@ -82,15 +82,17 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       messagingAvailable: account.platform === "FACEBOOK"
         ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
-          ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
+          ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
           : false,
       messagingNote: account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
-        ? account.messagingWebhookError
+        ? account.messagingWebhookError && !(account.platform === "INSTAGRAM" && account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded."))
           ? account.messagingWebhookError
           : !(account.platform === "FACEBOOK" ? tokenScopes?.includes("pages_messaging") : tokenScopes?.includes("instagram_manage_messages"))
             ? "Reconnect and authorize messaging"
             : !account.messagingWebhookSubscribedAt
               ? "Reconnect this account to subscribe its messaging webhook"
+              : account.platform === "INSTAGRAM"
+                ? "Page subscription succeeded. Meta must also enable this app’s Instagram `messages` webhook field for inbound DMs."
               : "Messaging enabled"
         : account.platform === "TIKTOK" || account.platform === "LINKEDIN"
           ? "Messaging is not available through this standard API connection"
