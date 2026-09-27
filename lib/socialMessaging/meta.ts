@@ -29,6 +29,7 @@ export async function sendMetaInboxMessage({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       recipient: { id: recipientId },
+      ...(connection.platform === "INSTAGRAM" ? { messaging_type: "RESPONSE" } : {}),
       message: { text },
       access_token: connection.accessToken,
     }),
@@ -36,10 +37,24 @@ export async function sendMetaInboxMessage({
   });
   const result = await response.json().catch(() => ({})) as {
     message_id?: string;
-    error?: { message?: string; code?: number };
+    error?: {
+      message?: string;
+      type?: string;
+      code?: number;
+      error_subcode?: number;
+      fbtrace_id?: string;
+    };
   };
   if (!response.ok || result.error) {
-    throw new Error(result.error?.message || `Meta could not send the message (${response.status}).`);
+    const metaError = result.error;
+    const diagnostics = [
+      typeof metaError?.code === "number" ? `code=${metaError.code}` : null,
+      typeof metaError?.error_subcode === "number" ? `subcode=${metaError.error_subcode}` : null,
+      metaError?.type ? `type=${metaError.type}` : null,
+      metaError?.fbtrace_id ? `fbtrace_id=${metaError.fbtrace_id}` : null,
+    ].filter(Boolean);
+    const message = metaError?.message || `Meta could not send the message (${response.status}).`;
+    throw new Error(diagnostics.length ? `${message} [Meta ${diagnostics.join(", ")}]` : message);
   }
   return result.message_id ?? null;
 }

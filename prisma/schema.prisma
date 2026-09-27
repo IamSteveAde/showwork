@@ -1802,14 +1802,17 @@ model CalendarBusinessDocument {
   calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
   calendarId String
 
-  fileKey       String
+  fileKey       String?
   originalName  String
+  websiteUrl    String? @db.Text
+  websiteUrlHash String? @db.VarChar(64)
   sizeBytes     BigInt  @default(0)
   extractedText String? @db.Text
 
   createdAt DateTime @default(now())
 
   @@index([calendarId])
+  @@unique([calendarId, websiteUrlHash])
 }
 
 enum SocialPlatform {

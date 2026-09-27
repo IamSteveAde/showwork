@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 interface BusinessDocumentData {
   id: string;
   originalName: string;
   createdAt: string;
+  websiteUrl?: string | null;
 }
 
 type BusinessKnowledgeCardProps = {
@@ -150,6 +151,8 @@ export default function BusinessKnowledgeCard({
   const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
   const [documentsState, setDocumentsState] = useState(documents);
   const [uploading, setUploading] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [addingWebsite, setAddingWebsite] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
@@ -312,6 +315,38 @@ if (presignContentType.includes("application/json")) {
       );
     } finally {
       setUploading(false);
+    }
+  };
+
+  const addWebsite = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!websiteUrl.trim()) return;
+    setAddingWebsite(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/calendars/${calendarId}/business-documents/website`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: websiteUrl.trim() }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not read that website.");
+      if (data.document) {
+        const source = data.document as BusinessDocumentData;
+        setDocumentsState((current) => [source, ...current.filter((item) => item.id !== source.id)]);
+      }
+      if (data.summaryUpdated && typeof data.businessSummary === "string") {
+        setBusinessSummaryState(data.businessSummary);
+        setSummaryUpdatedAtState(data.summaryUpdatedAt ?? new Date().toISOString());
+        window.sessionStorage.setItem(`calendar:${calendarId}:has-business-summary`, "true");
+        setWebsiteUrl("");
+      } else {
+        setError("The website was saved, but the AI couldn't update its business summary. Try again shortly.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not read that website.");
+    } finally {
+      setAddingWebsite(false);
     }
   };
 
@@ -528,7 +563,7 @@ if (presignContentType.includes("application/json")) {
                 </p>
 
                 <p className="mt-1 text-[11px] leading-5 text-[#98A2B3]">
-                  Upload a business document and Showwork will
+                  Add a document or website and Showwork will
                   use it to build context for this client.
                 </p>
               </div>
@@ -574,9 +609,9 @@ if (presignContentType.includes("application/json")) {
               </p>
 
               <p className="mt-2 text-[11px] leading-5 text-[#667085]">
-                Upload brand guidelines, product information,
-                service details, briefs, or other useful business
-                documents.
+                Upload business documents or add the company website.
+                Showwork reads the site and uses its useful business
+                details as context for AI content.
               </p>
 
               <button
@@ -591,12 +626,33 @@ if (presignContentType.includes("application/json")) {
 
                 {uploading
                   ? `Uploading ${uploadPercent}% & reading…`
-                  : "Add business documents"}
+                  : "Upload documents"}
               </button>
 
               <p className="mt-2 text-center text-[9px] font-medium text-[#98A2B3]">
                 PDF, Word or plain text
               </p>
+              <form onSubmit={(event) => void addWebsite(event)} className="mt-4 border-t border-[#E4E7EC] pt-4">
+                <label htmlFor="business-website-url" className="block text-[10px] font-semibold text-[#475467]">Website URL</label>
+                <div className="mt-1.5 flex gap-2">
+                  <input
+                    id="business-website-url"
+                    type="text"
+                    inputMode="url"
+                    placeholder="example.com or https://example.com"
+                    value={websiteUrl}
+                    onChange={(event) => setWebsiteUrl(event.target.value)}
+                    disabled={addingWebsite || uploading}
+                    className="min-w-0 flex-1 rounded-xl border border-[#D0D5DD] bg-white px-3 py-2.5 text-xs text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/10 disabled:opacity-60"
+                  />
+                  <button
+                    type="submit"
+                    disabled={addingWebsite || uploading || !websiteUrl.trim()}
+                    className="shrink-0 rounded-xl bg-[#101828] px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >{addingWebsite ? "Reading…" : "Add website"}</button>
+                </div>
+                <p className="mt-2 text-[9px] leading-4 text-[#98A2B3]">Reads the homepage and up to four relevant pages on the same site. JavaScript-only pages may have limited text.</p>
+              </form>
             </div>
           </div>
         </div>
@@ -641,8 +697,8 @@ if (presignContentType.includes("application/json")) {
                   <p className="mt-0.5 truncate text-[10px] text-[#98A2B3]">
                     {documentsState.length}{" "}
                     {documentsState.length === 1
-                      ? "document"
-                      : "documents"}{" "}
+                      ? "source"
+                      : "sources"}{" "}
                     available to the AI
                   </p>
                 </div>
@@ -672,10 +728,10 @@ if (presignContentType.includes("application/json")) {
                         >
                           {doc.originalName}
                         </p>
-
-                        <p className="mt-0.5 text-[9px] text-[#98A2B3]">
-                          Added {formatDate(doc.createdAt)}
-                        </p>
+                        <div className="mt-0.5 flex items-center gap-2 text-[9px] text-[#98A2B3]">
+                          <span>Added {formatDate(doc.createdAt)}</span>
+                          {doc.websiteUrl && <a href={doc.websiteUrl} target="_blank" rel="noreferrer" className="font-semibold text-[#2478FF] hover:underline">Open website</a>}
+                        </div>
                       </div>
 
                       {confirmingDeleteId === doc.id ? (

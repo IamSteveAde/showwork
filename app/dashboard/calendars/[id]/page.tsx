@@ -340,6 +340,12 @@ compedUntil: true,
       },
       businessDocuments: {
         orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          originalName: true,
+          createdAt: true,
+          websiteUrl: true,
+        },
       },
       posts: {
         orderBy: { postDate: "asc" },
@@ -1208,6 +1214,7 @@ contentIdea: p.contentIdea,
                   id: doc.id,
                   originalName: doc.originalName,
                   createdAt: doc.createdAt.toISOString(),
+                  websiteUrl: doc.websiteUrl,
                 }))}
               />
             ),
