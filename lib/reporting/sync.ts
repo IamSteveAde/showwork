@@ -129,9 +129,9 @@ async function syncConnection(initialConnection: SocialConnection & {
 }
 
 /** Sync each account independently so one provider failure never blocks others. */
-export async function syncConnectedSocialReporting() {
+async function syncConnections(calendarId?: string) {
   const connections = await db.socialConnection.findMany({
-    where: { status: { in: ["CONNECTED", "NEEDS_REAUTH"] } },
+    where: { status: { in: ["CONNECTED", "NEEDS_REAUTH"] }, ...(calendarId ? { calendarId } : {}) },
     include: {
       publishedPosts: {
         where: { status: "PUBLISHED" },
@@ -149,4 +149,12 @@ export async function syncConnectedSocialReporting() {
     results.push(await syncConnection(connection));
   }
   return { total: connections.length, results };
+}
+
+export async function syncConnectedSocialReporting() {
+  return syncConnections();
+}
+
+export async function syncCalendarSocialReporting(calendarId: string) {
+  return syncConnections(calendarId);
 }
