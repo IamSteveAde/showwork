@@ -1,6 +1,8 @@
 import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
+import { getSocialReportingAdapter } from "@/lib/reporting/adapters";
+import type { FacebookPageActivity } from "@/lib/reporting/types";
 
 export const REPORTING_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"];
 
@@ -32,7 +34,7 @@ export async function getCalendarReportingData(
   }
   const platform = platformValue as SocialPlatform | null;
 
-  const [permission, connections, posts, insights] = await Promise.all([
+  const [permission, connections, posts, insights, facebookConnection] = await Promise.all([
     db.calendarReportingPermission.findUnique({ where: { calendarId } }),
     db.socialConnection.findMany({
       where: { calendarId, ...(platform ? { platform } : {}) },
@@ -97,7 +99,41 @@ export async function getCalendarReportingData(
       },
       orderBy: { generatedAt: "desc" },
     }),
+    !platform || platform === "FACEBOOK"
+      ? db.socialConnection.findFirst({
+          where: { calendarId, platform: "FACEBOOK", status: { in: ["CONNECTED", "NEEDS_REAUTH"] } },
+          orderBy: { connectedAt: "desc" },
+        })
+      : Promise.resolve(null),
   ]);
+
+  let facebookPageActivity: FacebookPageActivity | null = null;
+  let facebookPageActivityError: string | null = null;
+  if (facebookConnection) {
+    // Internal fallback keeps the deliberately selected Page identity
+    // visible even when Meta temporarily refuses the live reporting call.
+    facebookPageActivity = {
+      pageId: facebookConnection.platformAccountId,
+      pageName: facebookConnection.accountName || "Facebook Page",
+      followers: null,
+      posts: [],
+      notices: [],
+    };
+    const adapter = getSocialReportingAdapter("FACEBOOK");
+    if (!facebookConnection.accessToken) {
+      facebookPageActivityError = "Facebook Page connection needs renewal. Reconnect the selected Page to load Page activity.";
+    } else if (!(facebookConnection.tokenScopes ?? "").split(/[\s,]+/).includes("pages_read_engagement")) {
+      facebookPageActivityError = "Facebook reporting permission is missing. Reconnect this Page after granting pages_read_engagement.";
+    } else if (!adapter?.fetchPageActivity) {
+      facebookPageActivityError = "Facebook Page reporting is not available yet.";
+    } else {
+      try {
+        facebookPageActivity = await adapter.fetchPageActivity(facebookConnection, { start, end });
+      } catch (error) {
+        facebookPageActivityError = error instanceof Error ? error.message : "Could not load Facebook Page activity.";
+      }
+    }
+  }
 
   return {
     period: { start: start.toISOString(), end: end.toISOString() },
@@ -109,6 +145,7 @@ export async function getCalendarReportingData(
     connections: connections.map((connection) => ({
       id: connection.id,
       platform: connection.platform,
+      platformAccountId: connection.platformAccountId,
       accountName: connection.accountName,
       username: connection.username,
       status: connection.status,
@@ -154,5 +191,7 @@ export async function getCalendarReportingData(
           recommendation: insight.recommendation,
           generatedAt: insight.generatedAt,
         }),
+    facebookPageActivity,
+    facebookPageActivityError,
   };
 }
