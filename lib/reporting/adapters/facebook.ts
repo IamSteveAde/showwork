@@ -168,10 +168,24 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     const token = requireConnection(connection);
     const page = await fetchPageIdentity(connection, token);
 
-    const [followersCount] = await Promise.all([
-      graphGet<{ followers_count?: number }>(`/${encodeURIComponent(connection.platformAccountId)}`, token, { fields: "followers_count" })
-        .then((result) => asCount(result.followers_count)).catch(() => null),
-    ]);
+    let pageCounts: { followers_count?: number; fan_count?: number } = {};
+    try {
+      pageCounts = await graphGet(
+        `/${encodeURIComponent(connection.platformAccountId)}`,
+        token,
+        { fields: "followers_count,fan_count" },
+      );
+    } catch {
+      // A Page/API version may expose only one of these fields. Preserve the
+      // follower value even when the separate likes count is unavailable.
+      pageCounts = await graphGet<{ followers_count?: number }>(
+        `/${encodeURIComponent(connection.platformAccountId)}`,
+        token,
+        { fields: "followers_count" },
+      ).catch(() => ({}));
+    }
+    const followersCount = asCount(pageCounts.followers_count);
+    const pageLikes = asCount(pageCounts.fan_count);
 
     const metrics: NormalizedSocialMetrics = {
       // Do not substitute fan_count (Page likes) for followers. They are
@@ -180,6 +194,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       additionalMetrics: {
         pageId: page.id ?? connection.platformAccountId,
         pageName: page.name ?? connection.accountName ?? "Facebook Page",
+        ...(pageLikes !== null ? { pageLikes } : {}),
       },
     };
 
@@ -218,7 +233,11 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       console.warn("Facebook Page post list could not be read:", error);
     }
 
-    if (scopesFor(connection).has("read_insights")) {
+    if (!scopesFor(connection).has("read_insights")) {
+      metrics.reportingWarnings = ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."];
+    } else if (pageLikes !== null && pageLikes < 100) {
+      metrics.reportingWarnings = [`Meta only provides Page Insights for Pages with at least 100 likes. This Page currently has ${pageLikes}; follower count is a separate measure.`];
+    } else {
       const { values, warnings } = await fetchPageInsights(connection.platformAccountId, token);
       // Meta's current media-view metrics replace deprecated impression and
       // unique-impression fields. `page_video_views` remains video-only;
@@ -230,8 +249,6 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       metrics.engagementRate = metrics.engagement !== null && metrics.reach ? metrics.engagement / metrics.reach : null;
       metrics.engagementRateBasis = metrics.engagementRate !== null ? "reach" : null;
       metrics.reportingWarnings = warnings;
-    } else {
-      metrics.reportingWarnings = ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."];
     }
     return metrics;
   },
