@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!text || text.length > 2000) return NextResponse.json({ error: "Enter a reply of 1–2,000 characters." }, { status: 400 });
   const conversation = await db.socialLeadConversation.findFirst({
     where: { id: conversationId, calendarId },
-    include: { connection: true },
+    include: { connection: true, calendar: { select: { instagramPageId: true } } },
   });
   if (!conversation) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
   if (!conversation.connection || !["FACEBOOK", "INSTAGRAM"].includes(conversation.platform)) {
@@ -23,7 +23,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   const now = new Date();
   try {
-    const providerMessageId = await sendMetaInboxMessage({ connection: conversation.connection, recipientId: conversation.participantPlatformId, text });
+    const providerMessageId = await sendMetaInboxMessage({
+      connection: conversation.connection,
+      instagramPageId: conversation.calendar.instagramPageId,
+      recipientId: conversation.participantPlatformId,
+      text,
+    });
     if (providerMessageId) {
       await db.socialLeadMessage.createMany({
         data: [{ conversationId, providerMessageId, direction: "OUTBOUND", status: "SENT", text, platformCreatedAt: now, sentByCreatorId: creator.id }],

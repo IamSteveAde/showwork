@@ -1,8 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getFacebookMessengerProfile, metaWebhookPlatform } from "@/lib/socialMessaging/meta";
+import { getFacebookMessengerProfile, getInstagramMessagingProfile, metaWebhookPlatform } from "@/lib/socialMessaging/meta";
 import { socialStatusToPipeline } from "@/lib/calendarLeads";
+import { dispatchSocialInboxAutoReply } from "@/lib/socialMessaging/dispatchAutoReply";
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     entry?: Array<{
       id?: string;
       messaging?: Array<{
-        sender?: { id?: string };
+        sender?: { id?: string; name?: string; username?: string };
         recipient?: { id?: string };
         timestamp?: number;
         message?: { mid?: string; text?: string; is_echo?: boolean; attachments?: Array<{ type?: string }> };
@@ -87,11 +88,19 @@ export async function POST(req: NextRequest) {
         select: { id: true, participantName: true, participantUsername: true, leadStatus: true },
       });
       const savedName = existingConversation?.participantName?.trim();
-      const hasUsableSavedName = Boolean(savedName && !["social contact", "facebook contact", "facebook user", senderId.toLowerCase()].includes(savedName.toLowerCase()));
-      const profile = platform === "FACEBOOK" && !isEcho && !hasUsableSavedName && connection.accessToken
-        ? await getFacebookMessengerProfile({ pageScopedUserId: senderId, pageAccessToken: connection.accessToken })
+      const genericNames = ["social contact", "facebook contact", "facebook user", "instagram contact", "instagram account", "instagram user", senderId.toLowerCase()];
+      const hasUsableSavedName = Boolean(savedName && !genericNames.includes(savedName.toLowerCase()));
+      const senderName = !isEcho ? event.sender?.name?.trim() || null : null;
+      const senderUsername = !isEcho ? event.sender?.username?.trim().replace(/^@/, "") || null : null;
+      const shouldResolveProfile = !isEcho && connection.accessToken
+        && (!hasUsableSavedName || (platform === "INSTAGRAM" && !existingConversation?.participantUsername));
+      const profile = shouldResolveProfile
+        ? platform === "FACEBOOK"
+          ? await getFacebookMessengerProfile({ pageScopedUserId: senderId, pageAccessToken: connection.accessToken! })
+          : await getInstagramMessagingProfile({ instagramScopedUserId: senderId, pageAccessToken: connection.accessToken! })
         : null;
-      const participantName = profile?.name || existingConversation?.participantName || null;
+      const participantName = profile?.name || senderName || (hasUsableSavedName ? existingConversation?.participantName : null) || null;
+      const participantUsername = profile?.username || senderUsername || existingConversation?.participantUsername || null;
       const conversation = await db.socialLeadConversation.upsert({
         where: conversationKey,
         create: {
@@ -101,13 +110,15 @@ export async function POST(req: NextRequest) {
           providerConversationId: senderId,
           participantPlatformId: senderId,
           participantName,
+          participantUsername,
           unreadCount: isEcho ? 0 : 1,
           lastMessagePreview: text.slice(0, 500),
           lastMessageAt: messageAt,
         },
         update: {
           ...(isEcho ? {} : { unreadCount: { increment: 1 } }),
-          ...(profile?.name ? { participantName: profile.name } : {}),
+          ...(participantName ? { participantName } : {}),
+          ...(participantUsername ? { participantUsername } : {}),
           lastMessagePreview: text.slice(0, 500),
           lastMessageAt: messageAt,
         },
@@ -117,12 +128,15 @@ export async function POST(req: NextRequest) {
         create: {
           calendarId: connection.calendarId,
           socialConversationId: conversation.id,
-          name: conversation.participantName || conversation.participantUsername || "Social contact",
+          name: conversation.participantName || conversation.participantUsername || `${platform === "INSTAGRAM" ? "Instagram" : "Facebook"} contact`,
           username: conversation.participantUsername,
           status: socialStatusToPipeline(conversation.leadStatus),
           source: "SOCIAL",
         },
-        update: profile?.name ? { name: profile.name } : {},
+        update: {
+          ...(participantName ? { name: participantName } : {}),
+          ...(participantUsername ? { username: participantUsername } : {}),
+        },
       });
       const inserted = await db.socialLeadMessage.createMany({
         data: [{
@@ -138,6 +152,19 @@ export async function POST(req: NextRequest) {
       });
       if (inserted.count === 0 && !isEcho) {
         await db.socialLeadConversation.update({ where: { id: conversation.id }, data: { unreadCount: { decrement: 1 } } });
+      }
+      if (inserted.count > 0 && !isEcho && settings.aiAutoReplyEnabled) {
+        await dispatchSocialInboxAutoReply(
+          (await db.socialLeadMessage.findUniqueOrThrow({
+            where: {
+              conversationId_providerMessageId: {
+                conversationId: conversation.id,
+                providerMessageId,
+              },
+            },
+            select: { id: true },
+          })).id,
+        );
       }
     }
   }

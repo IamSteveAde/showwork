@@ -93,9 +93,9 @@ export async function GET(req: NextRequest) {
       tokenScopes: grantedPermissions.join(","),
     });
     try {
-      // Instagram is linked to this Facebook Page. The Page is the
-      // subscribable asset; the Instagram account ID remains the
-      // SocialConnection ID used for Instagram webhook matching/replies.
+      // Instagram is linked to this Facebook Page. Use the Page for
+      // webhook subscription and messaging sends; keep the Instagram
+      // account ID on SocialConnection for webhook matching.
       await subscribeMetaMessagingAccount(pageWithInstagram.id, pageWithInstagram.access_token, "INSTAGRAM");
       await db.socialConnection.update({
         where: { id: socialConnection.id },
