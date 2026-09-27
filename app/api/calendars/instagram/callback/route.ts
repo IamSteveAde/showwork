@@ -93,6 +93,19 @@ export async function GET(req: NextRequest) {
       tokenScopes: grantedPermissions.join(","),
     });
     try {
+      // Meta requires the Page user behind this token to have the
+      // MESSAGING task for Instagram Messaging on the linked Page.
+      // Publishing can still connect when that task is absent.
+      if (!pageWithInstagram.tasks?.includes("MESSAGING")) {
+        await db.socialConnection.update({
+          where: { id: socialConnection.id },
+          data: {
+            messagingWebhookSubscribedAt: null,
+            messagingWebhookError: "Instagram messaging needs the MESSAGING task on the linked Facebook Page. Reconnect with a Facebook account that has that Page task.",
+          },
+        });
+        return redirectTo(`${settingsPath}?instagramConnected=true`);
+      }
       // Instagram is linked to this Facebook Page. Use the Page for
       // webhook subscription and messaging sends; keep the Instagram
       // account ID on SocialConnection for webhook matching.

@@ -37,6 +37,7 @@ interface FacebookPage {
   id: string;
   name: string;
   access_token: string;
+  tasks?: string[];
   instagram_business_account?: {
     id: string;
   };
@@ -260,8 +261,7 @@ export async function listManagedPages(
     "/me/accounts",
     {
       access_token: userAccessToken,
-      fields:
-        "id,name,access_token,instagram_business_account",
+      fields: "id,name,access_token,tasks,instagram_business_account",
     }
   );
 

@@ -3,7 +3,6 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteObject } from "@/lib/r2";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
-import { releaseContentWorkspaceStorage } from "@/lib/contentWorkspaceUsage";
 
 // DELETE — removes one uploaded business document, both its database
 // record and its underlying R2 file.
@@ -79,7 +78,7 @@ export async function DELETE(
    * user's ability to remove the document from the workspace.
    */
   try {
-    await deleteObject(document.fileKey);
+    if (document.fileKey) await deleteObject(document.fileKey);
   } catch (error) {
     console.error(
       `Failed to delete R2 object for business document ${documentId}:`,
@@ -111,6 +110,7 @@ export async function DELETE(
             id: true,
             calendarId: true,
             sizeBytes: true,
+            fileKey: true,
           },
         });
 
@@ -134,25 +134,26 @@ export async function DELETE(
        *
        * This protects the usage counter from becoming negative.
        */
-      const usage =
-        await tx.contentWorkspaceUsage.updateMany({
-          where: {
-            creatorId: ownerId,
-            storageBytes: {
-              gte: releasedBytes,
+      if (currentDocument.fileKey) {
+        const usage = await tx.contentWorkspaceUsage.updateMany({
+            where: {
+              creatorId: ownerId,
+              storageBytes: {
+                gte: releasedBytes,
+              },
             },
-          },
-          data: {
-            storageBytes: {
-              decrement: releasedBytes,
+            data: {
+              storageBytes: {
+                decrement: releasedBytes,
+              },
             },
-          },
-        });
+          });
 
-      if (usage.count !== 1) {
-        throw new Error(
-          "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
-        );
+        if (usage.count !== 1) {
+          throw new Error(
+            "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
+          );
+        }
       }
 
       await tx.calendarBusinessDocument.delete({
