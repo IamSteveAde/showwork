@@ -81,6 +81,37 @@ async function syncConnection(initialConnection: SocialConnection & {
       ? accountMetrics.followers - previousAccountSnapshot.followers
       : null;
 
+    // Some platforms (including Instagram) return account-wide daily
+    // insights as a time series. Persist each returned day so reporting
+    // includes content published outside Showwork as well as linked posts.
+    for (const daily of accountMetrics.dailySnapshots ?? []) {
+      const fields = {
+        reach: daily.reach ?? null,
+        impressions: daily.impressions ?? null,
+        views: daily.views ?? null,
+        engagement: daily.engagement ?? null,
+        additionalMetrics: daily.additionalMetrics
+          ? daily.additionalMetrics as Prisma.InputJsonValue
+          : Prisma.JsonNull,
+      };
+      await db.socialAccountMetricSnapshot.upsert({
+        where: {
+          socialConnectionId_snapshotDate: {
+            socialConnectionId: connection.id,
+            snapshotDate: daily.snapshotDate,
+          },
+        },
+        create: {
+          socialConnectionId: connection.id,
+          snapshotDate: daily.snapshotDate,
+          followers: null,
+          followerGrowth: null,
+          ...fields,
+        },
+        update: fields,
+      });
+    }
+
     await db.socialAccountMetricSnapshot.upsert({
       where: { socialConnectionId_snapshotDate: { socialConnectionId: connection.id, snapshotDate } },
       create: {

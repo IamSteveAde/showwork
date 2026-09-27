@@ -15,6 +15,15 @@ export type NormalizedSocialMetrics = {
   followers?: number | null;
   additionalMetrics?: Record<string, unknown>;
   sourceUpdatedAt?: Date | null;
+  /** Optional historical daily account metrics fetched from a platform insights edge. */
+  dailySnapshots?: Array<{
+    snapshotDate: Date;
+    reach?: number | null;
+    impressions?: number | null;
+    views?: number | null;
+    engagement?: number | null;
+    additionalMetrics?: Record<string, unknown>;
+  }>;
 };
 
 export type PublishedPostRef = {

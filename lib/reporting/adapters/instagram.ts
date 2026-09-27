@@ -35,6 +35,85 @@ function valueFromInsights(data: { name: string; values?: { value?: number }[] }
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+type UserInsight = {
+  name: string;
+  values?: { value?: number; end_time?: string }[];
+  total_value?: { value?: number };
+};
+
+async function readAccountInsights(accountId: string, token: string) {
+  const until = new Date();
+  const since = new Date(until.getTime() - 29 * 24 * 60 * 60 * 1000);
+  const params = {
+    metric: "reach,views,total_interactions,likes",
+    metric_type: "time_series",
+    period: "day",
+    since: Math.floor(since.getTime() / 1000).toString(),
+    until: Math.floor(until.getTime() / 1000).toString(),
+  };
+
+  let data: UserInsight[] = [];
+  try {
+    const result = await graphGet<{ data?: UserInsight[] }>(`/${accountId}/insights`, token, params);
+    data = result.data ?? [];
+  } catch (batchError) {
+    // Fall back per metric because Meta may remove or restrict one metric
+    // without making the other account-level insights unavailable.
+    const withoutMetricType = { ...params };
+    delete withoutMetricType.metric_type;
+    for (const metric of ["reach", "views", "total_interactions", "likes"]) {
+      for (const includeMetricType of [true, false]) {
+        try {
+          const result = await graphGet<{ data?: UserInsight[] }>(
+            `/${accountId}/insights`,
+            token,
+            { ...(includeMetricType ? params : withoutMetricType), metric },
+          );
+          data.push(...(result.data ?? []));
+          break;
+        } catch {
+          // Leave unsupported metrics unavailable; still use any others.
+        }
+      }
+    }
+    if (!data.length) {
+      console.warn("Instagram account insights could not be read:", {
+        accountId,
+        error: batchError instanceof Error ? batchError.message : "Unknown insights error",
+      });
+    }
+  }
+
+  const byDate = new Map<string, Record<string, number | null>>();
+  for (const insight of data) {
+    const field = insight.name === "total_interactions" ? "engagement" : insight.name;
+    if (!["reach", "views", "engagement", "likes"].includes(field)) continue;
+    for (const value of insight.values ?? []) {
+      if (typeof value.value !== "number" || !Number.isFinite(value.value) || !value.end_time) continue;
+      const date = new Date(value.end_time);
+      if (!Number.isFinite(date.getTime())) continue;
+      const key = date.toISOString().slice(0, 10);
+      const metrics = byDate.get(key) ?? {};
+      metrics[field] = value.value;
+      byDate.set(key, metrics);
+    }
+    if (!insight.values?.length && typeof insight.total_value?.value === "number") {
+      const key = until.toISOString().slice(0, 10);
+      const metrics = byDate.get(key) ?? {};
+      metrics[field] = insight.total_value.value;
+      byDate.set(key, metrics);
+    }
+  }
+
+  return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, metrics]) => ({
+    snapshotDate: new Date(`${date}T00:00:00.000Z`),
+    reach: metrics.reach ?? null,
+    views: metrics.views ?? null,
+    engagement: metrics.engagement ?? null,
+    additionalMetrics: typeof metrics.likes === "number" ? { likes: metrics.likes } : {},
+  }));
+}
+
 async function readMediaInsights(mediaId: string, token: string) {
   try {
     const result = await graphGet<{ data?: { name: string; values?: { value?: number }[] }[] }>(
@@ -76,9 +155,18 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
       connection.accessToken,
       { fields: "followers_count,media_count" },
     );
+    const dailySnapshots = await readAccountInsights(connection.platformAccountId, connection.accessToken);
+    const latest = dailySnapshots.at(-1);
     return {
       followers: typeof profile.followers_count === "number" ? profile.followers_count : null,
-      additionalMetrics: typeof profile.media_count === "number" ? { mediaCount: profile.media_count } : {},
+      reach: latest?.reach ?? null,
+      views: latest?.views ?? null,
+      engagement: latest?.engagement ?? null,
+      dailySnapshots,
+      additionalMetrics: {
+        ...(typeof profile.media_count === "number" ? { mediaCount: profile.media_count } : {}),
+        ...(typeof latest?.additionalMetrics?.likes === "number" ? { likes: latest.additionalMetrics.likes } : {}),
+      },
     };
   },
 
