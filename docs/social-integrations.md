@@ -40,6 +40,14 @@ Retry requires the manager to confirm the post is not already on the platform. T
 - LinkedIn account analytics cover the last 30 days. Post-level analytics cover up to 100 Showwork-linked posts; native post discovery, organization analytics and follower counts are not implemented.
 - TikTok and LinkedIn DMs cannot be enabled with the existing standard tokens. Obtain Business Messaging / Page Messaging access and the approved API contract before implementing their OAuth, webhook verification, receipt and send adapters. Their connection cards/inbox explicitly disclose the requirement. Lead-form/advertising lead imports are separate integrations and are not part of DM-to-CRM ingestion.
 
+## X connected but inbox empty
+
+Use **Inbox → Sync X messages** to fetch up to 50 recent events immediately, including when running locally without Netlify cron. **Refresh inbox** only reloads saved conversations. Manual recovery ignores the previous sync watermark, deduplicates stored messages and never enables AI replies. The scheduled importer checks up to 1,000 events; truncated or partial responses preserve the previous watermark and display a warning.
+
+A connected OAuth account does not guarantee DM access. Reading requires `dm.read`, `tweet.read` and `users.read`; replies also require `dm.write`. Sync now surfaces missing scopes, rejected tokens, API access/billing failures and rate limits on the account and in the inbox. Use Channels → Refresh permissions when the error requests reauthorization. X lookup exposes a limited history window; group chats remain excluded.
+
+The importer accepts one-to-one conversation pair IDs when `participant_ids` is absent, empty or partial, while rejecting conflicting participants. Regression coverage includes those payloads, recovery pagination, safe checkpoints and workspace authorization. Live verification still requires reachable database and X credentials.
+
 ## Verification
 
 Run `node --test tests/social-integrations.test.cjs`, `npx tsc --noEmit --incremental false`, `npx prisma validate` and `npm run build`. Tests isolate all network and persistence access; they do not load `.env` or publish/send messages.

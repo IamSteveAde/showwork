@@ -93,10 +93,10 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     accounts: accounts.map(({ tokenScopes, ...account }) => ({
       ...account,
       messagingAvailable: account.platform === "FACEBOOK"
-        ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
+        ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
-          ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
-          : account.platform === "X" && account.status === "CONNECTED" && ["dm.read", "dm.write"].every(scope => tokenScopes?.split(/[ ,]+/).includes(scope)),
+          ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
+          : account.platform === "X" && account.status === "CONNECTED" && ["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)),
       messagingNote: account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
         ? account.messagingWebhookError && !(account.platform === "INSTAGRAM" && account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded."))
           ? account.messagingWebhookError
@@ -110,7 +110,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
         : account.platform === "TIKTOK" || account.platform === "LINKEDIN"
           ? account.platform === "TIKTOK" ? "Requires TikTok Business Messaging approval and a separate business connection" : "Requires LinkedIn Page Messaging approval and a Page connection"
           : account.platform === "X"
-            ? account.messagingSyncError || (["dm.read", "dm.write"].every(scope => tokenScopes?.split(/[ ,]+/).includes(scope)) ? "Direct messages sync every five minutes; group chats are excluded" : "Reconnect X to authorize direct messages")
+            ? account.messagingSyncError || (["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)) ? (account.messagingLastSyncAt ? "X messages last synced " + account.messagingLastSyncAt.toISOString() + ". Group chats are excluded." : "Connected, but X messages have not synced yet. Use Sync X messages to import them.") : "Reconnect X to authorize direct messages")
             : "Messaging is not supported for this channel",
     })),
     settings: settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },

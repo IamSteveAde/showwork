@@ -200,3 +200,75 @@ test('client revision cancels a scheduled post atomically',async()=>{
   const result=await POST(req,{params:Promise.resolve({slug:'calendar',postId:'post'})});
   assert.equal(result.status,200);assert.equal(update.data.publishStatus,'NOT_SCHEDULED');assert.equal(update.data.approvalStatus,'NEEDS_REVISION');assert.equal(update.where.publishStatus,'SCHEDULED');assert.equal(update.where.updatedAt,stamp);
 });
+
+function xInboxFixture(pages = [], overrides = {}) {
+  const writes = [], messages = [], requests = [];
+  const stored = { id:'x-connection', calendarId:'workspace', platformAccountId:'me', status:'CONNECTED', tokenScopes:'dm.read tweet.read users.read', messagingLastSyncAt:new Date() };
+  const mod = load('lib/socialMessaging/x.ts', {
+    '@/lib/db':{db:{socialInboxSettings:{findUnique:async()=>({aiAutoReplyEnabled:true})},socialConnection:{findMany:async query=>{assert.equal(query.where.tokenScopes,undefined);return [stored];},updateMany:async update=>{writes.push(update);return {count:1};}}}},
+    '@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:tokenMock.requireScopes},
+    '@/lib/publishing/http':{providerJson:async url=>{requests.push(new URL(url));return pages.shift();}},
+    './ingest':{ingestSocialMessage:async(c,event)=>{messages.push(event);return true;}},
+    ...overrides,
+  });
+  return {...mod, stored, writes, messages, requests};
+}
+const xEvent = (extra={}) => ({id:'dm1',sender_id:'other',dm_conversation_id:'me-other',created_at:new Date().toISOString(),text:'Hello',...extra});
+test('X participant parsing handles absent, empty and recipient-only lists without losing ID precision',()=>{
+  const {xMessageParticipant:parse}=xInboxFixture();
+  for(const participant_ids of [undefined,[],['me'],['other'],['me','other']]) assert.equal(parse(xEvent({participant_ids}),'me'),'other');
+  assert.equal(parse(xEvent({sender_id:'90071992547409931',dm_conversation_id:'90071992547409930-90071992547409931'}),'90071992547409930'),'90071992547409931');
+  assert.equal(parse(xEvent({participant_ids:['me','other','third']}),'me'),null);
+  assert.equal(parse(xEvent({sender_id:'third'}),'me'),null);
+  assert.equal(parse(xEvent(),'unrelated'),null);
+});
+test('X manual recovery imports skipped history, follows pagination and never enables AI replies',async()=>{
+  const f=xInboxFixture([{data:[xEvent({participant_ids:[],created_at:'2026-01-01T00:00:00Z'})],meta:{next_token:'page2'}},{data:[xEvent({id:'dm2',sender_id:'me'})]}]);
+  const result=await f.syncXInbox(f.stored,{fullHistory:true,maxPages:2,pageSize:25});
+  assert.equal(result.imported,2);assert.equal(result.complete,true);
+  assert.equal(f.requests[1].searchParams.get('pagination_token'),'page2');
+  assert.match(f.requests[0].searchParams.get('dm_event.fields'),/sender_id/);
+  assert.equal(f.messages[0].outbound,false);assert.equal(f.messages[1].outbound,true);
+  assert.ok(f.messages.every(m=>m.autoReplyEligible===false));
+  assert.ok(f.writes[0].data.messagingLastSyncAt instanceof Date);
+});
+test('X truncated or partial retrieval preserves the previous watermark',async()=>{
+  for(const page of [{data:[xEvent()],meta:{next_token:'more'}},{data:[xEvent()],errors:[{detail:'Profile unavailable'}]}]) {
+    const f=xInboxFixture([page]);
+    const result=await f.syncXInbox(f.stored,{fullHistory:true,maxPages:1});
+    assert.ok(result.warning);assert.equal(f.writes[0].data.messagingLastSyncAt,undefined);
+  }
+});
+test('X missing read scope is surfaced instead of silently excluding the connected account',async()=>{
+  const f=xInboxFixture();f.stored.tokenScopes='tweet.read users.read';
+  const result=await f.syncSocialInboxes('workspace');
+  assert.equal(result.checked,1);assert.equal(result.synced,0);assert.match(result.errors[0],/permission/);
+  assert.equal(f.requests.length,0);assert.equal(f.writes[0].data.messagingLastSyncAt,undefined);
+});
+test('X provider failures retain HTTP status and produce actionable inbox errors',async()=>{
+  const {providerJson}=load('lib/publishing/http.ts');
+  const {xInboxErrorMessage}=xInboxFixture();
+  for(const [status,pattern] of [[401,/reconnect/],[402,/billing/],[403,/DM access/],[429,/rate-limited/]]) {
+    global.fetch=async()=>response({detail:'Provider failure'},status);
+    await assert.rejects(providerJson('https://api.x.com/2/dm_events'),error=>{assert.equal(error.status,status);assert.match(xInboxErrorMessage(error),pattern);return true;});
+  }
+});
+test('manual X sync route enforces workspace permission before provider access',async()=>{
+  const {POST}=load('app/api/calendars/[id]/inbox/sync/route.ts',{
+    '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
+    '@/lib/calendarPermissions':{hasCalendarPermission:async()=>false,canAccessCalendarById:async()=>true},
+    '@/lib/socialMessaging/x':{syncSocialInboxes:async()=>assert.fail('unauthorized sync')},
+  });
+  assert.equal((await POST(new Request('https://site.test'),{params:Promise.resolve({id:'workspace'})})).status,403);
+});
+test('manual X sync route scopes recovery and returns missing-account/provider failure statuses',async()=>{
+  for(const [summary,status] of [[{checked:0,synced:0,errors:[]},409],[{checked:1,synced:0,errors:['Denied']},502],[{checked:1,synced:1,errors:[]},200]]) {
+    const {POST}=load('app/api/calendars/[id]/inbox/sync/route.ts',{
+      '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
+      '@/lib/calendarPermissions':{hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
+      '@/lib/socialMessaging/x':{syncSocialInboxes:async(id,options)=>{assert.equal(id,'workspace');assert.deepEqual(options,{fullHistory:true,maxPages:2,pageSize:25});return summary;}},
+    });
+    assert.equal((await POST(new Request('https://site.test'),{params:Promise.resolve({id:'workspace'})})).status,status);
+  }
+});

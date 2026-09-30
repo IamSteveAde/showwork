@@ -2,7 +2,7 @@ import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 
 export function requireScopes(connection: Pick<SocialConnection, "tokenScopes" | "platform">, required: string[]) {
-  const scopes = new Set((connection.tokenScopes || "").split(/[ ,]+/));
+  const scopes = new Set((connection.tokenScopes || "").split(/[\s,]+/));
   const missing = required.filter(scope => !scopes.has(scope));
   if (missing.length) throw new Error(`${connection.platform} permission is missing (${missing.join(", ")}). Reconnect after enabling access in the developer app.`);
 }
