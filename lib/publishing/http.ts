@@ -2,7 +2,8 @@ export async function providerJson<T>(url: string, init: RequestInit = {}): Prom
   const response = await fetch(url, { ...init, cache: "no-store", signal: init.signal ?? AbortSignal.timeout(60_000) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.error || (Array.isArray(data.errors) && data.errors.length && !data.data)) {
-    throw new Error(data.error?.message || data.errors?.[0]?.detail || data.detail || data.message || `Platform request failed (${response.status}).`);
+    const message = data.error?.message || data.errors?.[0]?.detail || data.detail || data.message || `Platform request failed (${response.status}).`;
+    throw Object.assign(new Error(message), { status: response.status });
   }
   return data as T;
 }
