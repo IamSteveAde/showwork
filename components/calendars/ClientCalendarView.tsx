@@ -851,7 +851,7 @@ useEffect(() => {
           {/* ─────────────────────────────────────────
     APPROVAL ACTIONS
 ───────────────────────────────────────── */}
-{post.assets.length > 0 && (
+{(post.assets.length > 0 || (["FACEBOOK", "LINKEDIN", "X"].includes(post.platform) && !!post.caption?.trim())) && (
   <section className="border-t border-white/[0.07] pt-5">
     {reviewStatus === "APPROVED" ? (
       <div className="rounded-2xl border border-green-400/15 bg-green-400/[0.06] p-4">
@@ -1049,7 +1049,7 @@ useEffect(() => {
   </section>
 )}
           {/* Empty state */}
-          {post.assets.length === 0 && (
+          {(post.assets.length === 0 && (!["FACEBOOK", "LINKEDIN", "X"].includes(post.platform) || !post.caption?.trim())) && (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.09] bg-white/[0.02] px-6 py-12 text-center">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.035]">
                 <svg
@@ -1236,7 +1236,7 @@ export default function ClientCalendarView({
       const matchesApproval =
         approvalFilter === "ALL" || post.approvalStatus === approvalFilter;
 
-      const hasContent = post.assets.length > 0;
+      const hasContent = post.assets.length > 0 || (["FACEBOOK", "LINKEDIN", "X"].includes(post.platform) && !!post.caption?.trim());
       const matchesContent =
         contentFilter === "ALL" ||
         (contentFilter === "WITH_CONTENT" && hasContent) ||

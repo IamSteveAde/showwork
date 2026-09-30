@@ -1,3 +1,4 @@
+import { validatePublishContent } from "@/lib/publishing/state";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
@@ -166,11 +167,14 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
     }
 
     const caption = buildCaption(post);
+    validatePublishContent("TIKTOK", post.assets, caption, post.postType);
     const isVideo = post.assets.some((a) => a.mediaType === "VIDEO");
 
     let publishId: string;
 
-    if (isVideo) {
+    if (post.tikTokPublishId) {
+      publishId = post.tikTokPublishId;
+    } else if (isVideo) {
       // TikTok's Direct Post video flow is one video per post — the
       // first video asset is used; a post mixing photos and a video
       // isn't a real TikTok content type, same reasoning as
@@ -189,12 +193,15 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       const result = await initTikTokPhotoPublish({
         accessToken,
         photoUrls,
+        disableComment: creatorInfo.comment_disabled,
         caption,
         privacyLevel: post.tikTokPrivacyLevel,
       });
       publishId = result.publish_id;
     }
 
+    // Save the provider reference before polling so timeouts can be reconciled.
+    await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishId: publishId } });
     const publishResult = await waitForTikTokPublishResult(accessToken, publishId);
     const platformPostId = publishResult.publicaly_available_post_id?.[0] != null
       ? String(publishResult.publicaly_available_post_id[0])

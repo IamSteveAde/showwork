@@ -64,12 +64,12 @@ export function buildChannelAuthorizationUrl({
   }
 
   if (channel === "linkedin") {
-    params.set("scope", "openid profile w_member_social");
+    params.set("scope", ["openid", "profile", "w_member_social", ...(process.env.LINKEDIN_ANALYTICS_ENABLED === "true" ? ["r_member_postAnalytics"] : [])].join(" "));
     return `https://www.linkedin.com/oauth/v2/authorization?${params}`;
   }
 
   if (!codeChallenge) throw new Error("X OAuth requires a PKCE code challenge.");
-  params.set("scope", "tweet.read tweet.write users.read offline.access");
+  params.set("scope", "tweet.read tweet.write users.read offline.access media.write dm.read dm.write");
   params.set("code_challenge", codeChallenge);
   params.set("code_challenge_method", "S256");
   return `https://twitter.com/i/oauth2/authorize?${params}`;

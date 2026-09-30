@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
 import { db } from "@/lib/db";
-import { sendMetaInboxMessage } from "@/lib/socialMessaging/meta";
+import { sendSocialInboxMessage, supportsMessaging } from "@/lib/socialMessaging/registry";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; conversationId: string }> }) {
   const creator = await getCurrentCreator();
@@ -18,12 +18,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     include: { connection: true, calendar: { select: { instagramPageId: true } } },
   });
   if (!conversation) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
-  if (!conversation.connection || !["FACEBOOK", "INSTAGRAM"].includes(conversation.platform)) {
+  if (!conversation.connection || !supportsMessaging(conversation.platform)) {
     return NextResponse.json({ error: "Replies are not available for this platform connection yet." }, { status: 409 });
   }
   const now = new Date();
   try {
-    const providerMessageId = await sendMetaInboxMessage({
+    const providerMessageId = await sendSocialInboxMessage({
       connection: conversation.connection,
       instagramPageId: conversation.calendar.instagramPageId,
       recipientId: conversation.participantPlatformId,

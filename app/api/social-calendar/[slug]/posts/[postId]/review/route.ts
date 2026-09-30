@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyViewerToken } from "@/lib/auth";
 import { sendCalendarPostReviewedEmail } from "@/lib/resend";
+import { buildCaption, PUBLISHING_PLATFORMS, publishingStatus, statusUpdate, statusWhere, validatePublishContent } from "@/lib/publishing/state";
 import { publicUrlFor } from "@/lib/r2";
 
 function cookieNameFor(calendarId: string) {
@@ -65,14 +66,14 @@ export async function POST(
     },
   });
 
-  if (!post || post.calendarId !== calendar.id) {
+  if (!post || post.calendarId !== calendar.id || post.isAiDraft) {
     return NextResponse.json(
       { error: "Post not found" },
       { status: 404 }
     );
   }
 
-  if (post.assets.length === 0) {
+  if (post.assets.length === 0 && (!post.caption?.trim() || ["INSTAGRAM", "TIKTOK"].includes(post.platform))) {
     return NextResponse.json(
       {
         error:
@@ -96,51 +97,30 @@ export async function POST(
     );
   }
 
-  // Approving an Instagram post on a calendar with Instagram
-  // connected schedules it for auto-publish — it doesn't post
-  // immediately, since the scheduled job is what actually fires the
-  // real publish once postDate arrives. Guarded to only ever happen
-  // once per post: if it's already SCHEDULED, PUBLISHED, or FAILED,
-  // approving it again (say, after a needs-revision round trip) never
-  // re-schedules it, so a post can't end up posted to Instagram twice.
-  const shouldScheduleInstagram =
-    approved &&
-    post.platform === "INSTAGRAM" &&
-    !!calendar.instagramAccountId &&
-    post.instagramPublishStatus === "NOT_SCHEDULED";
-
-  // Same reasoning, same guard, for TikTok — a separate connection
-  // and a separate publish status, so a calendar can have either or
-  // both connected without one affecting the other.
-  const shouldScheduleTikTok =
-    approved &&
-    post.platform === "TIKTOK" &&
-    !!calendar.tikTokOpenId &&
-    post.tikTokPublishStatus === "NOT_SCHEDULED";
-
-  const updated = await db.calendarPost.update({
-    where: { id: postId },
+  if (["PUBLISHING", "PUBLISHED"].includes(publishingStatus(post))) {
+    return NextResponse.json({ error: "This post is already publishing or published and cannot be reviewed again." }, { status: 409 });
+  }
+  const connection = await db.socialConnection.findFirst({ where: { calendarId: calendar.id, platform: post.platform, status: "CONNECTED" } });
+  const canSchedule = approved && !post.isAiDraft && !!connection && PUBLISHING_PLATFORMS.includes(post.platform);
+  if (canSchedule) {
+    try {
+      validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType);
+      if (post.platform === "TIKTOK" && !post.tikTokPrivacyLevel) throw new Error("Choose TikTok privacy before approving this post.");
+    } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content" }, { status: 400 }); }
+  }
+  const updatedCount = await db.calendarPost.updateMany({
+    where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, publishingStatus(post)) },
     data: {
-      approvalStatus: approved
-        ? "APPROVED"
-        : "NEEDS_REVISION",
-      approvalNote: approved
-        ? null
-        : note?.trim() || null,
+      approvalStatus: approved ? "APPROVED" : "NEEDS_REVISION",
+      approvalNote: approved ? null : typeof note === "string" ? note.trim() || null : null,
       reviewedAt: new Date(),
-      ...(shouldScheduleInstagram
-        ? {
-            instagramPublishStatus: "SCHEDULED",
-            publishWorkerStartedAt: null,
-          }
-        : {}),
-      ...(shouldScheduleTikTok
-        ? {
-            tikTokPublishStatus: "SCHEDULED",
-            publishWorkerStartedAt: null,
-          }
-        : {}),
+      ...(!approved && publishingStatus(post) === "SCHEDULED" ? statusUpdate(post.platform, "NOT_SCHEDULED") : {}),
+      ...(canSchedule && publishingStatus(post) === "NOT_SCHEDULED" ? { ...statusUpdate(post.platform, "SCHEDULED"), publishWorkerStartedAt: null } : {}),
     },
+  });
+  if (!updatedCount.count) return NextResponse.json({ error: "The publishing status changed. Refresh before reviewing." }, { status: 409 });
+  const updated = await db.calendarPost.findUniqueOrThrow({
+    where: { id: postId },
     include: {
       assets: {
         orderBy: {

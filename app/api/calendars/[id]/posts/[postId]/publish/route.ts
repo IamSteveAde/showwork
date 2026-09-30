@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getCurrentCreator } from "@/lib/auth";
+import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
+import { db } from "@/lib/db";
+import { buildCaption, publishingStatus, statusUpdate, statusWhere, validatePublishContent } from "@/lib/publishing/state";
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; postId: string }> }) {
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { id, postId } = await params;
+  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR")) || !(await canAccessCalendarById(id))) return NextResponse.json({ error: "You cannot publish in this workspace." }, { status: 403 });
+  const body = await req.json().catch(() => ({}));
+  if (!body || !["schedule", "cancel", "retry"].includes(body.action)) return NextResponse.json({ error: "Choose a publishing action." }, { status: 400 });
+  const post = await db.calendarPost.findFirst({ where: { id: postId, calendarId: id }, include: { assets: true } });
+  if (!post) return NextResponse.json({ error: "Post not found." }, { status: 404 });
+  const status = publishingStatus(post);
+  if (["PUBLISHING", "PUBLISHED"].includes(status)) return NextResponse.json({ error: "This post is already publishing or published." }, { status: 409 });
+  if (body.action === "cancel" && status !== "SCHEDULED") return NextResponse.json({ error: "This post is not scheduled." }, { status: 409 });
+  if (body.action !== "cancel") {
+    if (post.approvalStatus !== "APPROVED" || post.isAiDraft) return NextResponse.json({ error: "Client approval is required before publishing." }, { status: 409 });
+    if (status === "FAILED" && (body.action !== "retry" || body.confirmedNotPublished !== true)) return NextResponse.json({ error: "Check the platform first and confirm this post has not already published." }, { status: 409 });
+    if (!await db.socialConnection.findFirst({ where: { calendarId: id, platform: post.platform, status: "CONNECTED" } })) return NextResponse.json({ error: "Connect this channel first." }, { status: 409 });
+    try {
+      validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType);
+      if (post.platform === "TIKTOK" && !post.tikTokPrivacyLevel) throw new Error("Choose TikTok privacy before publishing.");
+    } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content" }, { status: 400 }); }
+  }
+  const updated = await db.calendarPost.updateMany({ where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, status), approvalStatus: post.approvalStatus }, data: {
+    ...statusUpdate(post.platform, body.action === "cancel" ? "NOT_SCHEDULED" : "SCHEDULED"), publishWorkerStartedAt: null,
+  } });
+  if (!updated.count) return NextResponse.json({ error: "Post status changed. Refresh and try again." }, { status: 409 });
+  return NextResponse.json({ ok: true });
+}

@@ -1,0 +1,18 @@
+import type { SocialConnection } from "@prisma/client";
+import { freshConnection, requireScopes } from "@/lib/socialTokens";
+import { providerJson } from "@/lib/publishing/http";
+import { sendMetaInboxMessage } from "./meta";
+
+export function supportsMessaging(platform: string) { return ["FACEBOOK", "INSTAGRAM", "X"].includes(platform); }
+export async function sendSocialInboxMessage(input: { connection: SocialConnection; instagramPageId?: string | null; recipientId: string; text: string }) {
+  if (input.connection.status !== "CONNECTED") throw new Error("Reconnect this account before replying.");
+  if (["FACEBOOK", "INSTAGRAM"].includes(input.connection.platform)) return sendMetaInboxMessage(input);
+  if (input.connection.platform !== "X") throw new Error("Messaging requires additional platform approval and an enabled adapter for this channel.");
+  const connection = await freshConnection(input.connection);
+  requireScopes(connection, ["dm.write"]);
+  const response = await providerJson<{ data?: { dm_event_id?: string } }>(`https://api.x.com/2/dm_conversations/with/${encodeURIComponent(input.recipientId)}/messages`, {
+    method: "POST", headers: { Authorization: `Bearer ${connection.accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ text: input.text }),
+  });
+  if (!response.data?.dm_event_id) throw new Error("X did not confirm the sent message. Check the conversation before trying again.");
+  return response.data.dm_event_id;
+}

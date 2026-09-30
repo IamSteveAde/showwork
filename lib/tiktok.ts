@@ -2,15 +2,9 @@
 // TIKTOK CONTENT POSTING API — connection (standard OAuth 2.0) and
 // Direct Post publishing helpers.
 //
-// IMPORTANT PLATFORM LIMITATION, not a bug in this code: until this
-// app passes TikTok's separate Content Audit (submitted only after
-// the integration is proven working, taking 2-6 weeks on top of the
-// initial product-access approval), every single post published
-// through this API lands as SELF_ONLY — visible only to the account
-// that posted it — regardless of which privacy level was actually
-// requested. There is no parameter that changes this before the
-// audit clears. The integration itself works and reports success;
-// nothing is broken.
+// Unaudited clients are restricted to private viewing. Public publishing
+// requires TikTok's content audit and the user's permitted privacy choice.
+// PULL_FROM_URL also requires a verified media domain.
 //
 // TIKTOK_CLIENT_KEY is safe to reference in a redirect URL (it's
 // meant to be public, TikTok's equivalent of an App ID).
@@ -194,17 +188,21 @@ export function initTikTokPhotoPublish({
   photoUrls,
   caption,
   privacyLevel,
+  disableComment = false,
 }: {
   accessToken: string;
   photoUrls: string[];
   caption: string;
   privacyLevel: string;
+  disableComment?: boolean;
 }): Promise<PublishInitResponse> {
   return apiPost<PublishInitResponse>("/post/publish/content/init/", accessToken, {
     media_type: "PHOTO",
     post_mode: "DIRECT_POST",
     post_info: {
-      title: caption,
+      title: caption.slice(0, 90),
+      description: caption,
+      disable_comment: disableComment,
       privacy_level: privacyLevel,
     },
     source_info: {

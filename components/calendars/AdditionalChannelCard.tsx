@@ -113,6 +113,7 @@ export default function AdditionalChannelCard({
           </p>
         )}
 
+        {isConnected && isManager && <a href={`/api/calendars/${calendarId}/channels/${channel}/connect`} className="mt-3 inline-block text-xs text-blue-300 underline">Refresh permissions</a>}
         {isConnected ? (
           <>
             <p className="mt-4 truncate text-sm font-medium text-white">{channel === "x" ? "@" : ""}{connectedAccount}</p>

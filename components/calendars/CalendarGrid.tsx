@@ -7,6 +7,8 @@ import CalendarVideoComments, {
 } from "@/components/calendars/CalendarVideoComments";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
+import TikTokPrivacySelect from "@/components/calendars/TikTokPrivacySelect";
+import SocialPostPublishing from "@/components/calendars/SocialPostPublishing";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 type Platform =
@@ -53,6 +55,9 @@ contentIdea: string | null;
   linkUrl: string | null;
   approvalStatus: ApprovalStatus;
   approvalNote: string | null;
+  publishStatus?: InstagramPublishStatus;
+  publishError?: string | null;
+  publishPermalink?: string | null;
   instagramPublishStatus: InstagramPublishStatus;
   instagramPermalink: string | null;
   instagramPublishError: string | null;
@@ -534,7 +539,10 @@ function PostTile({
             ? { text: "Publishing now", color: "#2478FF" }
             : { text: "Publish failed", color: "#EF4444" }
       : null;
-  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? approvalMeta;
+  const sharedStatusMeta = post.publishStatus && post.publishStatus !== "NOT_SCHEDULED"
+    ? { text: post.publishStatus === "PUBLISHED" ? `Published to ${meta.label}` : post.publishStatus === "SCHEDULED" ? "Scheduled to publish" : post.publishStatus === "PUBLISHING" ? "Publishing now" : "Publish failed", color: post.publishStatus === "FAILED" ? "#EF4444" : "#2478FF" }
+    : null;
+  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? approvalMeta;
 
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
@@ -908,7 +916,7 @@ function AddPostPanel({
     useState<Platform[]>([]);
 
   const [tikTokPrivacyLevel, setTikTokPrivacyLevel] =
-    useState<"PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY">("SELF_ONLY");
+    useState<TikTokPrivacyLevel | null>(null);
 
   // Time of day this post is scheduled for — combined with the
   // clicked calendar day before sending to the server, since the day
@@ -1873,46 +1881,7 @@ function AddPostPanel({
                   it can never be silently decided by this app, and
                   which levels are even available differs per
                   account (checked for real right before publish). */}
-              {platforms.includes("TIKTOK") && (
-                <div
-                  className="mt-3 rounded-xl border p-3"
-                  style={{ background: "rgba(0,242,234,0.05)", borderColor: "rgba(0,242,234,0.18)" }}
-                >
-                  <p className="mb-2 text-[11px] font-semibold" style={{ color: t.text }}>
-                    TikTok privacy level
-                  </p>
-                  <p className="mb-3 text-[10px] leading-relaxed" style={{ color: t.textFaint }}>
-                    TikTok requires this to be chosen up front — whichever level isn&apos;t actually available on the connected account will be flagged when it publishes.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        { value: "PUBLIC_TO_EVERYONE", label: "Public" },
-                        { value: "MUTUAL_FOLLOW_FRIENDS", label: "Friends" },
-                        { value: "FOLLOWER_OF_CREATOR", label: "Followers" },
-                        { value: "SELF_ONLY", label: "Only me" },
-                      ] as const
-                    ).map((option) => {
-                      const selected = tikTokPrivacyLevel === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setTikTokPrivacyLevel(option.value)}
-                          className="rounded-lg border px-3 py-2 text-[11px] font-semibold transition-all"
-                          style={{
-                            borderColor: selected ? "#00C2B8" : t.inputBorder,
-                            background: selected ? "rgba(0,242,234,0.12)" : t.inputBg,
-                            color: selected ? "#00C2B8" : t.pillText,
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {platforms.includes("TIKTOK") && <TikTokPrivacySelect calendarId={calendarId} value={tikTokPrivacyLevel} onChange={setTikTokPrivacyLevel} />}
             </section>
 
             {/* POST TYPE */}
@@ -3820,6 +3789,19 @@ caption: draftDetails.caption,
               </section>
             )}
 
+            {userRole === "EDIT_CALENDAR" && post.platform === "TIKTOK" && !isApproved && (
+              <TikTokPrivacySelect calendarId={calendarId} value={post.tikTokPrivacyLevel} onChange={async value => {
+                try {
+                  const response = await fetch(`/api/calendars/${calendarId}/posts/${post.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tikTokPrivacyLevel: value }) });
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error || "Could not save TikTok privacy.");
+                  onUpdated(result.post);
+                } catch (error) { setError(error instanceof Error ? error.message : "Could not save privacy."); }
+              }} />
+            )}
+
+            {userRole === "EDIT_CALENDAR" && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
+
             {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
                 post has actually been scheduled, published, or
                 failed; a post that's never been through that at all
@@ -3941,7 +3923,7 @@ caption: draftDetails.caption,
 
                     {post.tikTokPublishStatus === "SCHEDULED" && (
                       <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        This will publish to TikTok automatically once its scheduled time arrives — until this app clears TikTok&apos;s content audit, it will publish as private (visible only to the connected account).
+                        This will publish to TikTok at its scheduled time using your chosen privacy setting. Public visibility requires TikTok approval for this app.
                       </p>
                     )}
 

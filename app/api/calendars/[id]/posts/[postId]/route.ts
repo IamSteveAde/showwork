@@ -1,3 +1,4 @@
+import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -54,6 +55,9 @@ export async function PATCH(
     );
   }
 
+  const editError = await postContentEditError(postId, id);
+  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
+
   // Client approval is the permanent lock point for normal post editing.
   // NEEDS_REVISION deliberately remains editable.
   if (post.approvalStatus === "APPROVED") {
@@ -80,6 +84,7 @@ export async function PATCH(
   hashtags,
   taggedAccounts,
   linkUrl,
+  tikTokPrivacyLevel,
 } = await req.json();
 
   if (
@@ -92,9 +97,14 @@ export async function PATCH(
     );
   }
 
+  if (tikTokPrivacyLevel !== undefined && tikTokPrivacyLevel !== null && !["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "FOLLOWER_OF_CREATOR", "SELF_ONLY"].includes(tikTokPrivacyLevel)) {
+    return NextResponse.json({ error: "Choose a valid TikTok privacy level." }, { status: 400 });
+  }
+
   const updated = await db.calendarPost.update({
     where: { id: postId },
     data: {
+      ...(tikTokPrivacyLevel !== undefined ? { tikTokPrivacyLevel } : {}),
       ...(postDate
         ? { postDate: new Date(postDate) }
         : {}),
