@@ -3,14 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
-  variable: "--font-jakarta",
-});
 
 const COLOR = {
   black: "#0A0A0A",
@@ -731,8 +724,8 @@ export default function NewProjectPage() {
     
     return (
       <main
-        className={`${jakarta.variable} flex min-h-screen items-center justify-center px-6`}
-        style={{ background: COLOR.black, fontFamily: "var(--font-jakarta)" }}
+        className="flex min-h-screen items-center justify-center px-6"
+        style={{ background: COLOR.black, fontFamily: "var(--font-sans)" }}
      >
         <div className="w-full max-w-lg">
           <UploadPatienceBanner active={phase === "uploading"} />
@@ -829,8 +822,8 @@ export default function NewProjectPage() {
   // ─────────────────────────────────────────────
   return (
     <main
-      className={`${jakarta.variable} relative min-h-screen`}
-      style={{ background: COLOR.black, fontFamily: "var(--font-jakarta)" }}
+      className="relative min-h-screen"
+      style={{ background: COLOR.black, fontFamily: "var(--font-sans)" }}
     >
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute -left-48 -top-48 h-[620px] w-[620px] rounded-full blur-[150px]"
