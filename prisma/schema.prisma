@@ -1904,6 +1904,8 @@ model SocialConnection {
   lastSyncAttemptAt            DateTime?
   lastSyncAt                   DateTime?
   lastSyncError                String?                       @db.Text
+  messagingLastSyncAt           DateTime?
+  messagingSyncError            String? @db.Text
   messagingWebhookSubscribedAt DateTime?
   messagingWebhookError        String?                       @db.Text
   createdAt                    DateTime                      @default(now())
@@ -2245,6 +2247,13 @@ model CalendarPost {
   tikTokPublishId     String?
   tikTokPublishError  String?
 
+  // Shared lifecycle for Facebook, LinkedIn, X and future channels.
+  publishStatus InstagramPublishStatus @default(NOT_SCHEDULED)
+  publishedAt DateTime?
+  platformPostId String?
+  publishPermalink String?
+  publishError String? @db.Text
+
   // Lease marker prevents Netlify background-function retries from
   // starting the same platform publish twice. A stale PUBLISHING job
   // is failed for manual reconciliation after the worker time limit.
@@ -2265,6 +2274,7 @@ model CalendarPost {
   customFields         CalendarPostCustomField[]
   aiGenerations        CalendarPostAiGeneration[]
 
+  @@index([publishStatus, postDate])
   @@index([calendarId])
   @@index([calendarId, postDate])
 }

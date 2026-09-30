@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { generateSocialInboxAutoReply } from "@/lib/openai";
-import { sendMetaInboxMessage } from "@/lib/socialMessaging/meta";
+import { sendSocialInboxMessage, supportsMessaging } from "@/lib/socialMessaging/registry";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -67,7 +67,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           conversation: recent,
           latestInbound: inbound.text.slice(0, 3000),
         });
-        if (!generated.shouldReply || !generated.replyText || !inbound.conversation.connection || !["FACEBOOK", "INSTAGRAM"].includes(inbound.conversation.platform)) {
+        if (!generated.shouldReply || !generated.replyText || !inbound.conversation.connection || !supportsMessaging(inbound.conversation.platform)) {
           await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: generated.handoffReason || "This message needs a human response." } });
           summary.handedOff++;
           continue;
@@ -78,7 +78,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           summary.handedOff++;
           continue;
         }
-        const providerMessageId = await sendMetaInboxMessage({
+        const providerMessageId = await sendSocialInboxMessage({
           connection: inbound.conversation.connection,
           instagramPageId: inbound.conversation.calendar.instagramPageId,
           recipientId: inbound.conversation.participantPlatformId,

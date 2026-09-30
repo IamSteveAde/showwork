@@ -44,7 +44,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true } }),
     db.socialConnection.findMany({
       where: { calendarId, status: { not: "DISCONNECTED" } },
-      select: { id: true, platform: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true },
+      select: { id: true, platform: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true },
       orderBy: { platform: "asc" },
     }),
   ]);
@@ -96,7 +96,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
         ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
           ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[ ,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
-          : false,
+          : account.platform === "X" && account.status === "CONNECTED" && ["dm.read", "dm.write"].every(scope => tokenScopes?.split(/[ ,]+/).includes(scope)),
       messagingNote: account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
         ? account.messagingWebhookError && !(account.platform === "INSTAGRAM" && account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded."))
           ? account.messagingWebhookError
@@ -108,9 +108,9 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
                 ? "Page subscription succeeded. Meta must also enable this app’s Instagram `messages` webhook field for inbound DMs."
               : "Messaging enabled"
         : account.platform === "TIKTOK" || account.platform === "LINKEDIN"
-          ? "Messaging is not available through this standard API connection"
+          ? account.platform === "TIKTOK" ? "Requires TikTok Business Messaging approval and a separate business connection" : "Requires LinkedIn Page Messaging approval and a Page connection"
           : account.platform === "X"
-            ? "X DM API access is not enabled for this connection"
+            ? account.messagingSyncError || (["dm.read", "dm.write"].every(scope => tokenScopes?.split(/[ ,]+/).includes(scope)) ? "Direct messages sync every five minutes; group chats are excluded" : "Reconnect X to authorize direct messages")
             : "Messaging is not supported for this channel",
     })),
     settings: settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },

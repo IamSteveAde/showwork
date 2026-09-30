@@ -97,7 +97,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
     finally { setSavingSettings(false); }
   }
 
-  const canReply = !clientMode && canReplyFromWorkspace && selected && ["FACEBOOK", "INSTAGRAM"].includes(selected.platform) && selected.connection?.status === "CONNECTED" && data?.accounts.some(account => account.platform === selected.platform && account.messagingAvailable);
+  const canReply = !clientMode && canReplyFromWorkspace && selected && ["FACEBOOK", "INSTAGRAM", "X"].includes(selected.platform) && selected.connection?.status === "CONNECTED" && data?.accounts.some(account => account.platform === selected.platform && account.messagingAvailable);
   const monthName = new Date().toLocaleString(undefined, { month: "long" });
 
   return <section className="space-y-5" aria-label="Social leads inbox">

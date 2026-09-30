@@ -1,3 +1,4 @@
+import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
@@ -43,6 +44,9 @@ export async function POST(
       { status: 403 }
     );
   }
+
+  const editError = await postContentEditError(postId, calendarId);
+  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
 
   let body: {
     sourcePostId?: unknown;

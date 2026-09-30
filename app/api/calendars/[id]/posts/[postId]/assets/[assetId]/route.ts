@@ -1,3 +1,4 @@
+import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,6 +15,9 @@ export async function DELETE(
   if (!(await hasCalendarPermission(creator.id, id, "ADD_CONTENT"))) {
     return NextResponse.json({ error: "You don't have permission to modify content on this calendar" }, { status: 403 });
   }
+
+  const editError = await postContentEditError(postId, id);
+  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
 
   const asset = await db.calendarPostAsset.findUnique({ where: { id: assetId } });
   if (!asset || asset.postId !== postId) {

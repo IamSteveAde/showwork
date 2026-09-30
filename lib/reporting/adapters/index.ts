@@ -6,10 +6,15 @@ import { facebookReportingAdapter } from "@/lib/reporting/adapters/facebook";
 import { publishPostToInstagram } from "@/lib/instagramPublishing";
 import { publishPostToTikTok } from "@/lib/tiktokPublishing";
 
+import { xReportingAdapter } from "./x";
+import { linkedinReportingAdapter } from "./linkedin";
+
 const adapters: Partial<Record<SocialPlatform, SocialPlatformAdapter>> = {
   INSTAGRAM: { ...instagramReportingAdapter, publishPost: publishPostToInstagram },
   TIKTOK: { ...tiktokReportingAdapter, publishPost: publishPostToTikTok },
   FACEBOOK: facebookReportingAdapter,
+  X: xReportingAdapter,
+  LINKEDIN: linkedinReportingAdapter,
 };
 
 export function getSocialPlatformAdapter(platform: SocialPlatform) {
