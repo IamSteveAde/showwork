@@ -18,12 +18,13 @@ export type XMessageEvent = {
 type XEventsResponse = {
   data?: XMessageEvent[];
   includes?: { users?: { id: string; name?: string; username?: string }[] };
-  meta?: { next_token?: string };
+  meta?: { next_token?: string; result_count?: number };
   errors?: { detail?: string; title?: string }[];
 };
 export type XInboxSyncOptions = {
   /** Manual recovery ignores an older watermark that may have skipped messages. */
   fullHistory?: boolean;
+  participantUsername?: string;
   maxPages?: number;
   pageSize?: number;
 };
@@ -57,6 +58,20 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
   if (!(await canAccessCalendarById(stored.calendarId))) throw new Error("This workspace is not active.");
   const connection = await freshConnection(stored);
   requireScopes(connection, ["dm.read", "tweet.read", "users.read"]);
+  const username = options.participantUsername?.trim().replace(/^@/, "");
+  let participant: { id: string; username?: string; name?: string } | undefined;
+  if (username) {
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) throw new Error("Enter a valid X sender username.");
+    const lookup = await providerJson<{ data?: typeof participant }>(`https://api.x.com/2/users/by/username/${encodeURIComponent(username)}`, {
+      headers: { Authorization: `Bearer ${connection.accessToken}` }, signal: AbortSignal.timeout(10_000),
+    });
+    participant = lookup.data;
+    if (!participant?.id) throw new Error(`X could not find @${username}.`);
+    if (participant.id === connection.platformAccountId) throw new Error("Enter the other person's username, not the connected account.");
+  }
+  const eventsUrl = participant
+    ? `https://api.x.com/2/dm_conversations/with/${encodeURIComponent(participant.id)}/dm_events`
+    : "https://api.x.com/2/dm_events";
   const settings = await db.socialInboxSettings.findUnique({ where: { calendarId: connection.calendarId } });
   const startedAt = new Date();
   const result: XInboxSyncResult = { received: 0, imported: 0, skipped: 0, complete: false, warning: null };
@@ -75,12 +90,18 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
       "user.fields": "name,username",
       ...(next ? { pagination_token: next } : {}),
     });
-    const response = await providerJson<XEventsResponse>(`https://api.x.com/2/dm_events?${query}`, {
+    const response = await providerJson<XEventsResponse>(`${eventsUrl}?${query}`, {
       headers: { Authorization: `Bearer ${connection.accessToken}` },
       signal: AbortSignal.timeout(15_000),
     });
     if (response.data !== undefined && !Array.isArray(response.data)) throw new Error("X returned an invalid message list. The last successful sync was preserved.");
+    if (!response.data && response.meta?.result_count !== 0) {
+      throw new Error("X returned an unexpected response without a message list or zero result count. Sync was not marked successful.");
+    }
     const events = response.data ?? [];
+    if (!events.length && response.errors?.length) {
+      throw new Error("X returned no messages with an API error: " + (response.errors[0].detail || response.errors[0].title || "Unknown provider error"));
+    }
     result.received += events.length;
     if (response.errors?.length) {
       partialResponse = true;
@@ -91,10 +112,12 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
     for (const event of [...events].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))) {
       const createdAt = new Date(event.created_at);
       const participantId = xMessageParticipant(event, connection.platformAccountId);
+      if (participant && participantId !== participant.id) { result.skipped++; continue; }
       if (!event.id || !participantId || !Number.isFinite(createdAt.getTime())) { result.skipped++; continue; }
+      if (createdAt < connection.connectedAt) { result.skipped++; continue; }
       const text = event.text?.trim() || (event.attachments?.media_keys?.length ? "[Media attachment]" : "");
       if (!text) { result.skipped++; continue; }
-      const profile = response.includes?.users?.find(user => user.id === participantId);
+      const profile = response.includes?.users?.find(user => user.id === participantId) ?? participant;
       const age = startedAt.getTime() - createdAt.getTime();
       const inserted = await ingestSocialMessage(connection, {
         conversationId: event.dm_conversation_id,
@@ -106,7 +129,7 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
         createdAt,
         outbound: event.sender_id === connection.platformAccountId,
         // Manual recovery and initial history imports must never send replies.
-        autoReplyEligible: !options.fullHistory && !!settings?.aiAutoReplyEnabled && !!stored.messagingLastSyncAt
+        autoReplyEligible: !options.fullHistory && !participant && !!settings?.aiAutoReplyEnabled && !!stored.messagingLastSyncAt
           && createdAt > stored.messagingLastSyncAt && age >= 0 && age < 10 * 60_000 && !!event.text?.trim(),
       });
       if (inserted) result.imported++;
@@ -115,9 +138,19 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
     // Compare every page's timestamps, not just one out-of-order old event.
     // Keep a small overlap so delayed provider delivery isn't lost.
     const watermark = stored.messagingLastSyncAt?.getTime();
-    const passedWatermark = !options.fullHistory && watermark && events.length > 0
+    const passedWatermark = !options.fullHistory && !participant && watermark && events.length > 0
       && events.every(event => Date.parse(event.created_at) < watermark - 5 * 60_000);
     if (!next || passedWatermark) { result.complete = true; break; }
+  }
+  if (options.fullHistory && result.received === 0) {
+    // Verify the token's actual owner, rather than trusting the saved card label.
+    const identity = await providerJson<{ data?: { id: string; username?: string } }>("https://api.x.com/2/users/me", {
+      headers: { Authorization: `Bearer ${connection.accessToken}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!identity.data?.id) throw new Error("X did not confirm the account associated with this token. Refresh permissions in Channels.");
+    if (identity.data.id !== connection.platformAccountId) throw new Error("The X token belongs to a different account than this connection. Reconnect the intended account in Channels.");
+    warnings.push(`X confirmed ${identity.data.username ? "@" + identity.data.username : "the connected account"}, but ${participant ? "the conversation endpoint for @" + username : "its DM endpoint"} returned zero events. A recent message is not reaching this API; the history window alone does not explain missing recent DMs.`);
   }
   if (!result.complete) warnings.push(`Checked the newest ${result.received} events. More history remains; the scheduled sync can fetch a larger batch.`);
   if (result.skipped) warnings.push(`${result.skipped} group, incomplete, or unsupported events were skipped.`);
@@ -127,7 +160,7 @@ export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOp
   await db.socialConnection.updateMany({
     where: { id: connection.id, status: "CONNECTED" },
     data: {
-      ...(result.complete && !partialResponse ? { messagingLastSyncAt: startedAt } : {}),
+      ...(result.complete && !partialResponse && !participant ? { messagingLastSyncAt: startedAt } : {}),
       messagingSyncError: result.warning,
     },
   });

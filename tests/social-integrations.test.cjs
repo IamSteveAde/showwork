@@ -29,7 +29,7 @@ const tokenMock = { requireScopes: (c, scopes) => { if (scopes.some(scope => !c.
 const providers = (extra = {}) => load('lib/publishing/providers.ts', { '@/lib/r2': { publicUrlFor: key => `https://storage.test/${key}` }, '@/lib/socialTokens': tokenMock, ...extra });
 const response = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 const post = (assets = []) => ({ caption: 'Hello', cta: null, hashtags: null, taggedAccounts: null, linkUrl: null, postType: null, assets });
-const connection = (tokenScopes = '') => ({ platformAccountId: '123', accessToken: 'fake-test-token', tokenScopes });
+const connection = (tokenScopes = '') => ({ connectedAt: new Date('2026-01-01T00:00:00Z'), platformAccountId: '123', accessToken: 'fake-test-token', tokenScopes });
 
 test('shared status does not overwrite legacy Instagram/TikTok status', () => {
   const s = state();
@@ -271,4 +271,238 @@ test('manual X sync route scopes recovery and returns missing-account/provider f
     });
     assert.equal((await POST(new Request('https://site.test'),{params:Promise.resolve({id:'workspace'})})).status,status);
   }
+});
+
+test('X rejects missing payload instead of reporting an empty inbox',async()=>{
+  for(const payload of [{},{data:[],errors:[{detail:'DM access unavailable'}]}]) {
+    const f=xInboxFixture([payload]);
+    await assert.rejects(f.syncXInbox(f.stored,{fullHistory:true}),/unexpected response|DM access unavailable/);
+    assert.equal(f.writes.length,0);
+  }
+});
+test('X empty manual sync verifies token owner and reports the actual account',async()=>{
+  const f=xInboxFixture([{meta:{result_count:0}},{data:{id:'me',username:'test_account'}}]);
+  const result=await f.syncXInbox(f.stored,{fullHistory:true});
+  assert.match(result.warning,/@test_account/);
+  assert.equal(f.requests[1].pathname,'/2/users/me');
+});
+test('X empty manual sync rejects a mismatched token owner without advancing checkpoint',async()=>{
+  const f=xInboxFixture([{data:[],meta:{result_count:0}},{data:{id:'wrong',username:'another'}}]);
+  await assert.rejects(f.syncXInbox(f.stored,{fullHistory:true}),/different account/);
+  assert.equal(f.writes.length,0);
+});
+
+test('targeted X recovery resolves username and imports through the conversation endpoint without advancing global sync',async()=>{
+  const f=xInboxFixture([{data:{id:'other',username:'Randymqvm',name:'Randy'}},{data:[xEvent()]}]);
+  const result=await f.syncXInbox(f.stored,{fullHistory:true,participantUsername:'@Randymqvm'});
+  assert.equal(f.requests[0].pathname,'/2/users/by/username/Randymqvm');
+  assert.equal(f.requests[1].pathname,'/2/dm_conversations/with/other/dm_events');
+  assert.equal(result.imported,1);assert.equal(f.messages[0].username,'Randymqvm');
+  assert.equal(f.messages[0].autoReplyEligible,false);assert.equal(f.writes[0].data.messagingLastSyncAt,undefined);
+});
+test('targeted X recovery rejects the connected account as sender',async()=>{
+  const f=xInboxFixture([{data:{id:'me'}}]);
+  await assert.rejects(f.syncXInbox(f.stored,{participantUsername:'same'}),/other person's/);
+  assert.equal(f.requests.length,1);
+});
+
+const chatProvider = () => load('lib/xChat/provider.ts', {'@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:()=>{}}});
+test('X Chat transport accepts only bounded encrypted payloads and rejects PIN/plaintext fields',()=>{
+  const {encryptedSendBody}=chatProvider();
+  const body={message_id:'12345678-1234-4234-8234-123456789012',encoded_message_create_event:'YWJj',encoded_message_event_signature:'YWJj'};
+  assert.deepEqual(encryptedSendBody(body),body);
+  for(const extra of [{pin:'1234'},{text:'secret'},{privateKey:'secret'}]) assert.throws(()=>encryptedSendBody({...body,...extra}),/Only encrypted/);
+  assert.throws(()=>encryptedSendBody({...body,encoded_message_create_event:'a'.repeat(100001)}),/payload/);
+});
+test('X Chat rejects unrelated, self and group conversation IDs',()=>{
+  const {participantForConversation:participant}=chatProvider();
+  assert.equal(participant('123-456','123'),'456');assert.equal(participant('456:123','123'),'456');assert.equal(participant('456','123'),'456');
+  for(const id of ['123','g456','456-789','123/../../users','123-123']) assert.throws(()=>participant(id,'123'),/one-to-one/);
+});
+test('X Chat browser displays only verified messages from the selected conversation',()=>{
+  const {verifiedMessages}=load('lib/xChat/browser.ts');
+  const event={type:'message',verified:true,id:'m1',senderId:'456',conversationId:'123:456',createdAtMsec:1,content:{contentType:'text',text:'Hello'}};
+  const result=verifiedMessages([event,{...event,verified:false},{...event,conversationId:'123:789'},{...event,senderId:'789'}],'123','456');
+  assert.equal(result.length,1);assert.equal(result[0].text,'Hello');
+});
+test('X Chat backup callback resolves documented realm tokens without substituting OAuth credentials',()=>{
+  const {realmToken}=load('lib/xChat/browser.ts');
+  assert.equal(realmToken({token_map:[{key:'realm',value:{token:'realm-token'}}]},'realm'),'realm-token');
+  assert.equal(realmToken({tokens:{realm:'realm-token'}},'realm'),'realm-token');
+  assert.throws(()=>realmToken({accessToken:'oauth'},'missing'),/did not provide/);
+});
+test('X Chat provider errors never reflect sensitive response bodies',async()=>{
+  global.fetch=async()=>response({errors:[{detail:'sensitive-provider-value'}]},403);
+  await assert.rejects(chatProvider().chatRequest(connection(),'users/123/public_keys'),error=>{assert.match(error.message,/denied Chat/);assert.ok(!error.message.includes('sensitive-provider'));return true;});
+});
+function chatRouteFixture({owner=true,connected=true}={}) {
+  const calls=[];
+  const route=load('app/api/calendars/[id]/inbox/x-chat/route.ts',{
+    '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
+    '@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/db':{db:{socialCalendar:{findFirst:async query=>{assert.deepEqual(query.where,{id:'workspace',managerId:'owner'});return owner?{id:'workspace'}:null;}},socialConnection:{findFirst:async query=>{assert.deepEqual(query.where,{id:'connection',calendarId:'workspace',platform:'X',status:'CONNECTED'});return connected?{...connection(),id:'connection',connectedAt:new Date('2026-01-01T00:00:00Z')}:null;}}}},
+    '@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:()=>{}},
+  });
+  return route;
+}
+test('X Chat setup enforces owner permission and workspace-scoped connection before provider access',async()=>{
+  const {NextRequest}=require('next/server');global.fetch=async()=>assert.fail('provider must not be called');
+  for(const [options,status] of [[{owner:false},403],[{connected:false},404]]) {
+    const result=await chatRouteFixture(options).GET(new NextRequest('https://site.test/api?connectionId=connection'),{params:Promise.resolve({id:'workspace'})});
+    assert.equal(result.status,status);assert.match(result.headers.get('Cache-Control'),/no-store/);
+  }
+});
+test('X Chat setup checks token identity and selects newest existing key backup',async()=>{
+  const {NextRequest}=require('next/server');
+  global.fetch=async url=>response(url.endsWith('users/me')?{data:{id:'123',username:'account'}}:{data:[{public_key_version:'9',juicebox_config:{tokens:{}}},{public_key_version:'10',juicebox_config:{tokens:{}}}]});
+  const result=await chatRouteFixture().GET(new NextRequest('https://site.test/api?connectionId=connection'),{params:Promise.resolve({id:'workspace'})});
+  assert.equal(result.status,200);assert.equal((await result.json()).record.public_key_version,'10');
+});
+test('X Chat event retrieval includes key changes and signing keys for both participants',async()=>{
+  const {NextRequest}=require('next/server');
+  global.fetch=async url=>{
+    if(url.includes('/events?')) {assert.match(url,/conversations\/456\/events/);return response({data:[{encoded_event:'ciphertext'}],meta:{conversation_key_events:['wrapped-keys']}});}
+    assert.ok(!url.includes('juicebox_config'));return response({data:[{public_key_version:'1',public_key:'identity',signing_public_key:'signing',identity_public_key_signature:'signature'}]});
+  };
+  const result=await chatRouteFixture().GET(new NextRequest('https://site.test/api?connectionId=connection&action=events&conversationId=123-456'),{params:Promise.resolve({id:'workspace'})});
+  const data=await result.json();assert.equal(result.status,200);assert.deepEqual(data.meta.conversation_key_events,['wrapped-keys']);assert.deepEqual(data.signingKeys.map(k=>k.userId),['123','456']);
+});
+test('X Chat sends only validated ciphertext and keeps the SDK message ID on retries',async()=>{
+  const {NextRequest}=require('next/server');const sent=[];
+  global.fetch=async(url,init)=>{assert.match(url,/chat\/conversations\/456\/messages$/);sent.push(JSON.parse(init.body));return response({data:{encoded_message_event:'ciphertext'}},201);};
+  const body={message_id:'12345678-1234-4234-8234-123456789012',encoded_message_create_event:'YWJj',encoded_message_event_signature:'YWJj'};
+  for(let i=0;i<2;i++) {
+    const result=await chatRouteFixture().POST(new NextRequest('https://site.test/api?connectionId=connection&conversationId=123-456',{method:'POST',headers:{origin:'https://site.test'},body:JSON.stringify(body)}),{params:Promise.resolve({id:'workspace'})});
+    assert.equal(result.status,200);
+  }
+  assert.deepEqual(sent,[body,body]);
+});
+test('X Chat rejects cross-origin sends before provider access',async()=>{
+  const {NextRequest}=require('next/server');global.fetch=async()=>assert.fail('must not send');
+  const result=await chatRouteFixture().POST(new NextRequest('https://site.test/api?connectionId=connection&conversationId=123-456',{method:'POST',headers:{origin:'https://other.test'},body:'{}'}),{params:Promise.resolve({id:'workspace'})});
+  assert.equal(result.status,403);
+});
+
+test('X Chat serializes secure-backup recovery across connected accounts and releases failed attempts',async()=>{
+  const {withExclusiveUnlock}=load('lib/xChat/browser.ts');
+  let release;const running=withExclusiveUnlock(()=>new Promise(resolve=>{release=resolve;}));
+  await assert.rejects(withExclusiveUnlock(async()=>{}),/Another X Chat/);
+  release();await running;
+  await assert.rejects(withExclusiveUnlock(async()=>{throw new Error('failed');}),/failed/);
+  assert.equal(await withExclusiveUnlock(async()=>true),true);
+});
+
+test('X Chat list resolves names from participant expansion and drops self conversations',async()=>{
+  global.fetch=async url=>{if(url.includes('/events?'))return response({data:[{sender_id:'456',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}]});assert.equal(new URL(url).searchParams.get('expansions'),'participant_ids');return response({data:[{id:'123-123'},{id:'123-456'},{id:'g789'}],includes:{users:[{id:'456',name:'Randy',username:'Randymqvm'}]},meta:{next_token:'next'}});};
+  const result=await chatProvider().chatConversations(connection());
+  assert.equal(result.data.length,1);assert.equal(result.data[0].name,'Randy');assert.equal(result.data[0].username,'Randymqvm');assert.equal(result.meta.next_token,'next');
+});
+test('X Chat list batches missing profiles and preserves usable partial results',async()=>{
+  let calls=0;
+  global.fetch=async url=>{calls++;if(url.includes('/events?'))return response({data:[{sender_id:url.includes('/456/')?'456':'789',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}]});if(url.includes('chat/conversations'))return response({data:[{id:'123-456'},{id:'123-789'}]});assert.equal(new URL(url).searchParams.get('ids'),'456,789');return response({data:[{id:'456',name:'Randy',username:'Randymqvm'}],errors:[{detail:'Other user unavailable'}]});};
+  const result=await chatProvider().chatConversations(connection());
+  assert.equal(calls,4);assert.equal(result.data[0].username,'Randymqvm');assert.equal(result.data[1].username,null);
+});
+
+test('unified inbox merges encrypted X and Meta conversations in recency order and shares platform/search filters',()=>{
+  const {mergeInboxConversations:merge}=load('lib/xChat/inbox.ts');
+  const meta={id:'meta',platform:'FACEBOOK',participantName:'Alice',participantUsername:'alice',leadStatus:'NEW',unreadCount:1,lastMessageAt:'2026-09-29T00:00:00Z',messages:[]};
+  const x={id:'xchat:connection:123-456',platform:'X',participantName:'Randy',participantUsername:'Randymqvm',leadStatus:'',unreadCount:0,lastMessageAt:'2026-09-30T00:00:00Z',messages:[{text:'Recent encrypted test'}],encrypted:{connectionId:'connection',conversationId:'123-456'}};
+  const filters={platform:'',status:'',search:'',unreadOnly:false};
+  assert.deepEqual(merge([meta],[x],filters).map(c=>c.id),[x.id,meta.id]);
+  assert.deepEqual(merge([meta],[x],{...filters,platform:'X'}).map(c=>c.id),[x.id]);
+  assert.deepEqual(merge([meta],[x],{...filters,search:'randymqvm'}).map(c=>c.id),[x.id]);
+  assert.deepEqual(merge([meta],[x],{...filters,search:'encrypted test'}).map(c=>c.id),[x.id]);
+  assert.deepEqual(merge([meta],[x],{...filters,unreadOnly:true}).map(c=>c.id),[meta.id]);
+  assert.deepEqual(merge([meta],[],filters).map(c=>c.id),[meta.id]);
+});
+
+test('real X Chat WASM verified text reaches the inbox with the SDK content_type discriminator',async()=>{
+  const {pathToFileURL}=require('node:url');
+  const sdkDir=path.join(root,'node_modules/@xdevplatform/chat-xdk/pkg');
+  const wasm=await import(pathToFileURL(path.join(sdkDir,'chat_xdk_wasm.js')).href);
+  await wasm.default({module_or_path:fs.readFileSync(path.join(sdkDir,'chat_xdk_wasm_bg.wasm'))});
+  const v=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/xchat-sdk-message.json'),'utf8'));
+  const chat=new wasm.Chat();
+  try {
+    // Only the upstream public synthetic fixture is imported. Production
+    // key recovery continues to use the browser PIN flow, never raw imports.
+    chat.importKeys(Buffer.from(v.private_keys_concat_b64,'base64'),v.event_recipient_key_version);
+    chat.setIdentity(v.event_sender_id,v.event_recipient_key_version);
+    chat.setRejectUnverified(true);
+    chat.setCacheKeys(true);
+    chat.setSigningKeys([{userId:v.event_sender_id,publicKeyVersion:v.event_signing_key_version,publicKey:v.signing_public_b64,identityPublicKey:v.identity_public_b64,identityPublicKeySignature:v.identity_public_key_signature_b64}]);
+    const decrypted=chat.decryptEvents([v.event_key_change_b64,v.event_message_b64]);
+    assert.deepEqual(decrypted.errors,{});
+    const {verifiedMessages}=load('lib/xChat/browser.ts');
+    const [account,participant]=v.event_conversation_id.split(':');
+    const display=verifiedMessages(decrypted.messages.map(m=>m.event),account,participant);
+    assert.equal(display.length,1);assert.equal(display[0].text,v.event_message_text);
+    const {sendPayload}=load('lib/xChat/browser.ts');
+    for (let i=0;i<20;i++) {
+      const payload=sendPayload(chat.encryptMessage({conversationId:v.event_conversation_id.replace(':','-'),text:'Synthetic reply '+i}));
+      assert.deepEqual(chatProvider().encryptedSendBody(payload),payload);
+    }
+    const message=decrypted.messages.find(m=>m.event.type==='message').event;
+    assert.equal(verifiedMessages([{...message,verified:false}],account,participant).length,0);
+    assert.equal(verifiedMessages([message],account,'unrelated').length,0);
+  } finally {chat.lock();chat.free();}
+});
+
+test('encrypted X contacts create named CRM leads once without saving messages or resetting qualification',async()=>{
+  const conversations=new Map(),leads=new Map();const writes=[];
+  const tx={socialLeadConversation:{upsert:async query=>{const key=JSON.stringify(query.where);writes.push(query);if(!conversations.has(key))conversations.set(key,{id:'crm-thread',leadStatus:'QUALIFIED',...query.create});return conversations.get(key);}},calendarLead:{upsert:async query=>{writes.push(query);if(!leads.has(query.where.socialConversationId))leads.set(query.where.socialConversationId,query.create);else Object.assign(leads.get(query.where.socialConversationId),query.update);}}};
+  const {syncXChatLeads}=load('lib/xChat/leads.ts',{'@/lib/db':{db:{$transaction:async fn=>fn(tx)}},'@/lib/socialTokens':{}});
+  const c={id:'connection',calendarId:'workspace',platformAccountId:'123'};
+  await syncXChatLeads(c,[{id:'123-456',name:'Randy',username:'Randymqvm'}]);
+  const result=await syncXChatLeads(c,[{id:'456:123',name:'Randy Updated',username:'Randymqvm'}]);
+  assert.equal(conversations.size,1);assert.equal(leads.size,1);
+  assert.equal(leads.get('crm-thread').name,'Randy Updated');assert.equal(leads.get('crm-thread').status,'QUALIFIED');assert.equal(leads.get('crm-thread').source,'SOCIAL');
+  assert.equal(result[0].crmConversationId,'crm-thread');assert.equal(result[0].leadStatus,'QUALIFIED');
+  assert.ok(writes.every(q=>!('text' in (q.create||{}))));
+  assert.equal(writes[0].create.calendarId,'workspace');assert.equal(writes[0].create.providerConversationId,'xchat:123-456');
+});
+test('unified inbox merges stored X lead status with decrypted history without duplicate rows',()=>{
+  const {mergeInboxConversations:merge}=load('lib/xChat/inbox.ts');
+  const stored={id:'crm-thread',platform:'X',leadStatus:'QUALIFIED',unreadCount:0,messages:[],lastMessageAt:null};
+  const live={...stored,leadStatus:'NEW',messages:[{text:'browser-only'}]};
+  const result=merge([stored],[live],{platform:'X',status:'QUALIFIED',search:'',unreadOnly:false});
+  assert.equal(result.length,1);assert.equal(result[0].leadStatus,'QUALIFIED');assert.equal(result[0].messages[0].text,'browser-only');
+});
+
+test('X Chat recipient rejection is actionable, sanitized and permits a corrected send',async()=>{
+  global.fetch=async()=>response({type:'https://api.x.com/2/problems/recipient-not-messageable',detail:'sensitive-provider-value'},403);
+  await assert.rejects(chatProvider().chatRequest(connection(),'chat/conversations/456/messages',{}),error=>{
+    assert.match(error.message,/message this recipient/);assert.equal(error.retrySamePayload,false);assert.ok(!error.message.includes('sensitive-provider'));return true;
+  });
+  global.fetch=async()=>response({},503);
+  await assert.rejects(chatProvider().chatRequest(connection(),'chat/conversations/456/messages',{}),error=>error.retrySamePayload===true);
+});
+
+test('X Chat displays only verified messages at or after the connection date',()=>{
+  const {verifiedMessages}=load('lib/xChat/browser.ts');
+  const connectedAt='2026-09-01T00:00:00Z', time=Date.parse(connectedAt);
+  const event={type:'message',verified:true,id:'new',senderId:'456',conversationId:'123:456',createdAtMsec:time,content:{content_type:'text',text:'New message'}};
+  const events=[{...event,id:'old',createdAtMsec:time-1},event,{...event,id:'later',createdAtMsec:time+1},{...event,id:'unknown',createdAtMsec:undefined}];
+  assert.deepEqual(verifiedMessages(events,'123','456',connectedAt).map(m=>m.id),['new','later']);
+  assert.deepEqual(verifiedMessages(events,'123','456','invalid'),[]);
+});
+test('X full-history recovery cannot import DMs from before connection',async()=>{
+  const cutoff=new Date('2026-09-01T00:00:00Z');
+  const f=xInboxFixture([{data:[xEvent({id:'old',created_at:new Date(cutoff.getTime()-1).toISOString()}),xEvent({id:'new',created_at:cutoff.toISOString()})]}]);
+  f.stored.connectedAt=cutoff;
+  const result=await f.syncXInbox(f.stored,{fullHistory:true});
+  assert.deepEqual(f.messages.map(m=>m.messageId),['new']);assert.equal(result.skipped,1);
+});
+
+test('X conversation eligibility requires inbound activity since connection, including later pages',async()=>{
+  const {hasRecentXInbound}=chatProvider();
+  const c=connection();
+  for (const events of [[],[{sender_id:'456',created_at:'2025-12-31T00:00:00Z',encoded_event:'cipher'}],[{sender_id:'123',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}]]) {
+    global.fetch=async()=>response({data:events});
+    assert.equal(await hasRecentXInbound(c,'456'),false);
+  }
+  let calls=0;
+  global.fetch=async()=>response(++calls===1?{data:[{sender_id:'123',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}],meta:{next_token:'older'}}:{data:[{sender_id:'456',created_at:c.connectedAt.toISOString(),encoded_event:'cipher'}]});
+  assert.equal(await hasRecentXInbound(c,'456'),true);assert.equal(calls,2);
 });

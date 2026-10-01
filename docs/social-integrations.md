@@ -44,9 +44,23 @@ Retry requires the manager to confirm the post is not already on the platform. T
 
 Use **Inbox → Sync X messages** to fetch up to 50 recent events immediately, including when running locally without Netlify cron. **Refresh inbox** only reloads saved conversations. Manual recovery ignores the previous sync watermark, deduplicates stored messages and never enables AI replies. The scheduled importer checks up to 1,000 events; truncated or partial responses preserve the previous watermark and display a warning.
 
+When all-events lookup returns empty despite a recent DM, enter the other person’s @username in the inbox sync field. This resolves the user and requests their one-to-one conversation directly. Targeted recovery never advances the global inbox watermark or enables AI replies. An empty targeted lookup reports the confirmed connected account and target username.
+
 A connected OAuth account does not guarantee DM access. Reading requires `dm.read`, `tweet.read` and `users.read`; replies also require `dm.write`. Sync now surfaces missing scopes, rejected tokens, API access/billing failures and rate limits on the account and in the inbox. Use Channels → Refresh permissions when the error requests reauthorization. X lookup exposes a limited history window; group chats remain excluded.
 
 The importer accepts one-to-one conversation pair IDs when `participant_ids` is absent, empty or partial, while rejecting conflicting participants. Regression coverage includes those payloads, recovery pagination, safe checkpoints and workspace authorization. Live verification still requires reachable database and X credentials.
+
+## Encrypted X Chat
+
+The workspace owner can open **Inbox sidebar → Unlock X messages**, then unlock their existing X Chat identity on-device. Existing OAuth scopes apply. The check verifies token identity and fetches an existing public-key/secure-backup record; it never creates or resets keys. The official `@xdevplatform/chat-xdk` (pinned 0.5.0) and `juicebox-sdk` run in browser WASM. Enter the existing PIN only in that browser flow, never in support chat, environment variables or API requests.
+
+After unlocking, choose a one-to-one conversation or find its sender by username, load/decrypt verified text messages, paginate older events, and send an encrypted text reply. Signature verification is required; unverified messages are not displayed. Only ciphertext and public metadata go through the server. Retry preserves the same encrypted message and SDK-generated ID. Keys and displayed text clear on lock, unmount, hidden tab, page exit, or a 15-minute session timeout. Connection/workspace access is rechecked on each API request and periodically while unlocked.
+
+This initial encrypted-chat path is owner-only and supports existing one-to-one text conversations. It does not register/rotate identities, create group conversations, render media, or copy plaintext into the shared CRM/client portal/AI reply pipeline. Replies require a verified conversation key from history; key resets and new conversation-key provisioning are not attempted automatically. Messages are fetched when opened/refreshed, not by background decryption.
+
+Validation on this account confirmed HTTP 200 for token identity, public keys with an existing backup, and the conversation history endpoint (10 encrypted events and one key-change event). No PIN, private keys or message contents were collected, and no live reply was sent. PIN unlock and a live encrypted reply still require the owner to test in their browser.
+
+Official contracts: [browser architecture](https://docs.x.com/xchat/building-ui-apps-with-wasm), [Chat XDK](https://github.com/xdevplatform/chat-xdk), [public keys](https://docs.x.com/x-api/chat/get-user-public-keys), [conversation events](https://docs.x.com/x-api/chat/get-chat-conversation-events), [encrypted send](https://docs.x.com/x-api/chat/send-chat-message).
 
 ## Verification
 
@@ -72,3 +86,21 @@ After migration and deployment, use dedicated connected test accounts: approve a
 - Prisma schema validation and TypeScript checking pass.
 - The isolated production build compiles and passes type checking. It then fails during `/sitemap.xml` prerendering because the configured Supabase database is unreachable. Full production build completion remains unverified.
 - No migration was applied and no live posts or DMs were sent.
+
+### Encrypted Chat follow-up verification
+
+47 mocked integration tests pass, including owner/workspace isolation, encrypted payload validation, signature-filtered rendering, key-backup callback mapping and concurrent-unlock exclusion. An isolated production build and type checking pass. A headless Chrome smoke test loaded both WASM libraries, generated temporary test keys, matched the identity, and verified lock/release without live credentials. The read-only live probe confirmed Chat API access and encrypted events; actual PIN unlock and live sending remain user validation steps.
+
+### Unified inbox presentation
+
+Encrypted X conversations now join the same sorted conversation list, platform/search filters, message pane, message bubbles and Reply composer as Facebook and Instagram. The sidebar contains only X unlock/find/pagination controls; there is no separate encrypted-chat panel. Decrypted histories remain session-only and clear from the shared view on lock. CRM lead-status and unread filters do not invent server-side state for encrypted sessions. Shared CRM/client visibility and AI reply limitations remain unchanged.
+
+50 integration tests and TypeScript checks pass. An isolated browser test with fake accounts and a mocked crypto SDK verified the combined Meta/X list, X selection, shared-pane rendering, ciphertext-only reply routing and lock cleanup without touching live credentials or sending messages.
+
+### SDK message discriminator fix (2026-10-01)
+
+The installed Chat XDK 0.5.0 WASM serializes decrypted text with `content.content_type`, despite its TypeScript interface describing `content.contentType`. The inbox now accepts both documented and runtime forms while continuing to require verified signatures and matching conversation participants. A regression test decrypts X's public synthetic fixture using the real installed WASM and passes the result through the inbox filter. The fixture is attributed under `tests/fixtures/`; it contains no user credentials or real messages.
+
+### Encrypted X contacts in CRM
+
+Loading an X conversation page now performs an authorized metadata-only lead sync. Each contact gets a persistent social conversation and linked SOCIAL-source CRM lead with name and @username. Canonical conversation IDs deduplicate repeated pages and reversed pair IDs; existing qualification status is preserved. Stored rows and browser-decrypted rows merge into one inbox entry, and the existing lead-status control updates the linked CRM record. Unlock X again and load additional pages to import existing contacts. No decrypted text, PIN, private keys, or artificial message records are stored by lead sync.
