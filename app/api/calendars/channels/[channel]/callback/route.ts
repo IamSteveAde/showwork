@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { appUrl } from "@/lib/url";
+import { linkedInPages } from "@/lib/linkedin/pages";
 import { upsertSocialConnection } from "@/lib/socialReporting";
 import {
   exchangeChannelCode,
@@ -192,11 +193,20 @@ export async function GET(
           .join(" ") ||
         "LinkedIn member";
 
+      const existing = await db.socialConnection.findFirst({ where: { calendarId, platform: "LINKEDIN", status: "CONNECTED" } });
+      let publishingId = member.sub;
+      let publishingName = name;
+      if (existing?.platformAccountId.startsWith("urn:li:organization:")) {
+        const pages = await linkedInPages({ ...existing, accessToken: tokens.access_token, tokenScopes: tokens.scope ?? existing.tokenScopes });
+        const selectedPage = pages.find(page => page.id === existing.platformAccountId);
+        if (!selectedPage) throw new Error("The previously selected LinkedIn Page is no longer administered by this account.");
+        publishingId = selectedPage.id; publishingName = selectedPage.name;
+      }
       await db.socialCalendar.update({
         where: { id: calendarId },
         data: {
           linkedinMemberId: member.sub,
-          linkedinName: name,
+          linkedinName: publishingName,
           linkedinAccessToken: tokens.access_token,
           linkedinAccessTokenExpiresAt: withExpiry(tokens.expires_in),
           linkedinRefreshToken: tokens.refresh_token ?? null,
@@ -210,9 +220,9 @@ export async function GET(
       await upsertSocialConnection({
         calendarId,
         platform: "LINKEDIN",
-        platformAccountId: member.sub,
-        accountName: name,
-        username: name,
+        platformAccountId: publishingId,
+        accountName: publishingName,
+        username: publishingId === member.sub ? name : null,
         accessToken: tokens.access_token,
         accessTokenExpiresAt: withExpiry(tokens.expires_in),
         refreshToken: tokens.refresh_token ?? null,

@@ -127,12 +127,17 @@ export default function XChatInbox({ calendarId, connectionId, activeConversatio
         instance.setRejectUnverified(true); instance.setCacheKeys(true);
         chat.current = instance; instance = null; setUnlocked(true);
       });
-      if (version === epoch.current) await list(version);
+      if (version === epoch.current) {
+        try { await list(version); }
+        catch (err) {
+          if (version === epoch.current) setError(`X Chat unlocked, but conversations could not load. ${err instanceof ChatRequestError ? err.message : "Please retry loading conversations."}`);
+        }
+      }
     } catch (err) {
       // Never echo arbitrary SDK errors or backup responses into telemetry/UI.
       if (version === epoch.current) {
         const remaining = remainingGuesses(err);
-        setError(remaining !== null ? `Incorrect PIN. ${remaining} attempts remain. Do not keep guessing.` : "X Chat could not unlock or load. Check the PIN, Chat API access, and key-backup availability. No keys were changed.");
+        setError(remaining !== null ? `Incorrect PIN. ${remaining} attempts remain. Do not keep guessing.` : "X Chat could not unlock. Check the PIN, Chat API access, and key-backup availability. No keys were changed.");
       }
     } finally { bytes.fill(0); releaseChat(instance); if (version === epoch.current) setBusy(false); }
   }
@@ -229,6 +234,12 @@ export default function XChatInbox({ calendarId, connectionId, activeConversatio
     {error && !activeConversationId && <p role="alert" className="text-xs text-red-700">{error}</p>}
     {notice && !activeConversationId && <p role="status" className="text-[10px] text-[#667085]">{notice}</p>}
     {unlocked && <>
+      <button type="button" disabled={busy} onClick={async () => {
+        const version = epoch.current; setBusy(true); setError(""); setNotice("");
+        try { await list(version); }
+        catch (err) { if (version === epoch.current) setError(err instanceof ChatRequestError ? err.message : "Could not load conversations. Please retry."); }
+        finally { if (version === epoch.current) setBusy(false); }
+      }} className="text-[10px] text-blue-700">{busy ? "Loading conversations…" : "Refresh X conversations"}</button>
       <form onSubmit={findConversation} className="flex gap-2"><input aria-label="X Chat sender username" placeholder="Find X @username" value={username} onChange={e => setUsername(e.target.value)} disabled={busy} className="min-w-0 flex-1 rounded-lg border border-[#D0D5DD] p-2 text-xs" /><button disabled={busy} className="text-xs text-blue-700">Find</button></form>
       {listCursor && <button type="button" disabled={busy} onClick={async () => { const version = epoch.current; setBusy(true); try { await list(version, listCursor); } catch { if (version === epoch.current) setError("Could not load more conversations."); } finally { if (version === epoch.current) setBusy(false); } }} className="text-[10px] text-blue-700">Load more X conversations</button>}
     </>}

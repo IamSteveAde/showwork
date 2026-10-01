@@ -78,7 +78,7 @@ async function syncConnection(initialConnection: SocialConnection & {
       postMetricsError = error instanceof Error ? error.message : "Showwork post metrics could not be refreshed.";
       console.warn(`Showwork post metric sync failed for ${connection.platform} connection ${connection.id}:`, error);
     }
-    const snapshotDate = utcSnapshotDate();
+    const snapshotDate = accountMetrics.snapshotDate ?? utcSnapshotDate();
     const previousAccountSnapshot = await db.socialAccountMetricSnapshot.findFirst({
       where: { socialConnectionId: connection.id, snapshotDate: { lt: snapshotDate } },
       orderBy: { snapshotDate: "desc" },

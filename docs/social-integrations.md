@@ -104,3 +104,84 @@ The installed Chat XDK 0.5.0 WASM serializes decrypted text with `content.conten
 ### Encrypted X contacts in CRM
 
 Loading an X conversation page now performs an authorized metadata-only lead sync. Each contact gets a persistent social conversation and linked SOCIAL-source CRM lead with name and @username. Canonical conversation IDs deduplicate repeated pages and reversed pair IDs; existing qualification status is preserved. Stored rows and browser-decrypted rows merge into one inbox entry, and the existing lead-status control updates the linked CRM record. Unlock X again and load additional pages to import existing contacts. No decrypted text, PIN, private keys, or artificial message records are stored by lead sync.
+
+### LinkedIn readiness and app approvals
+
+Personal publishing uses Sign In with LinkedIn and Share on LinkedIn. Text,
+images, multi-image posts and one video are supported by the publishing worker.
+The integration does not publish documents or polls.
+
+Keep `LINKEDIN_ANALYTICS_ENABLED` off until the developer application has
+`r_member_postAnalytics`. After approval, set it to `true` and reconnect.
+Member account analytics use the latest returned day's actual date, rather than
+writing yesterday's counters into today's snapshot.
+
+Channels now offers **Authorize company Pages**, **Choose company Page**, and
+**Use personal profile**. Page authorization requests `rw_organization_admin`,
+`w_organization_social`, and `r_organization_social`; these require LinkedIn
+Community Management access. Do not use Page authorization on an app approved
+only for Sign In and Share. The owner must select a Page, and Showwork checks
+current administrator access again when saving that choice. One LinkedIn
+publishing identity is active per workspace. Refreshing permissions preserves
+an existing Page only when it is still authorized.
+
+Page reporting uses organization share statistics for the last 30 completed
+days, organization post statistics for up to 100 Showwork posts, and network
+size for followers. It does not discover posts made outside Showwork.
+
+LinkedIn messaging is still unavailable: Page connection does not grant Page
+Messaging partner access. Do not enable inbox reply controls or claim message
+lead capture until approved messaging documentation/credentials are available
+and the partner transport has been implemented and verified.
+
+Live acceptance checks after approval: reconnect, select a Page, publish a
+consented test post for each supported media format, schedule a post, sync
+analytics, and confirm expired/revoked permissions produce a reconnect error.
+Automated tests mock LinkedIn and do not publish to real accounts.
+
+
+### LinkedIn messaging and message-derived leads: prepared integration
+
+The Showwork-side integration now exists, but it is deliberately inactive. This
+is not the LinkedIn Lead Gen Forms API and does not import advertising leads.
+
+- Webhook: `/api/webhooks/linkedin/messaging`. GET implements the documented
+  UUID challenge/HMAC response. POST checks `X-LI-Signature` against the exact
+  raw JSON body with LinkedIn's documented `hmacsha256=` signing prefix.
+  It limits bodies to 1 MB, validates normalized events before writes, and
+  returns an error for failed processing so delivery can be retried.
+- Incoming Page messages enter the existing transactional inbox/CRM ingestion.
+  Stable provider message IDs deduplicate retries. New inbound conversations
+  create named leads; later messages preserve qualification status. Events
+  before the connection date, inactive workspaces and unsubscribed Pages are
+  excluded. Outbound echoes cannot create new lead conversations. AI replies
+  remain disabled for imported LinkedIn messages.
+- Replies use the shared inbox composer and validate the exact connection,
+  conversation and participant before calling the provider. A reply is only
+  marked sent after a provider message ID is returned.
+- Owner-only subscription setup is at
+  `/api/calendars/[id]/channels/linkedin/messaging` (POST) and is exposed in
+  Channels. Neither an environment flag nor a personal-profile connection
+  can enable messaging alone.
+
+**Remaining partner work:** `lib/linkedin/messagingProvider.ts` contains an
+explicitly unbound interface. Its field names are Showwork's internal model,
+not a guessed LinkedIn webhook schema. After approval, implement notification
+normalization, subscription registration and sending against the supplied
+partner API specification. If notifications only contain references, resolve
+those with the approved API before producing normalized messages. Ignore
+non-message events explicitly. Supply the approved OAuth scopes in
+`requiredScopes`. Ensure provider errors never contain credentials or bodies.
+
+Then set `LINKEDIN_MESSAGING_ENABLED=true`, reconnect the company Page to grant
+the new scopes, register/validate the HTTPS callback, and use **Set up Page
+messaging after approval**. Confirm an inbound message creates one inbox thread
+and CRM lead, replay it to verify deduplication, and send an authorized test
+reply. Also test echo handling, revoked subscriptions, expired tokens and
+cross-workspace isolation. Do not enable the production flag before the partner
+adapter and these live checks are complete.
+
+Public verification reference:
+https://learn.microsoft.com/en-us/linkedin/shared/api-guide/webhook-validation
+The public specification does not establish the private Page Messaging wire
+format. Update verification if the approved product specifies a different scheme.

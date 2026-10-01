@@ -61,8 +61,20 @@ export function encryptedSendBody(value: unknown) {
 }
 
 /** Conversation updates and outbound messages do not qualify a contact. */
+const inboundEligibility = new Map<string, { eligible: boolean; expires: number }>();
 export async function hasRecentXInbound(connection: SocialConnection, participantId: string) {
   const cutoff = connection.connectedAt.getTime();
+  // Cache metadata only. Never retain OAuth tokens, ciphertext, or plaintext.
+  const cacheKey = connection.id ? `${connection.id}:${cutoff}:${participantId}` : null;
+  const cached = cacheKey ? inboundEligibility.get(cacheKey) : undefined;
+  if (cached && cached.expires > Date.now()) return cached.eligible;
+  const remember = (eligible: boolean) => {
+    if (cacheKey) {
+      if (inboundEligibility.size >= 1000) inboundEligibility.delete(inboundEligibility.keys().next().value!);
+      inboundEligibility.set(cacheKey, { eligible, expires: Date.now() + (eligible ? 300_000 : 30_000) });
+    }
+    return eligible;
+  };
   let cursor: string | undefined;
   const seen = new Set<string>();
   do {
@@ -70,19 +82,19 @@ export async function hasRecentXInbound(connection: SocialConnection, participan
     if (cursor) params.set("pagination_token", cursor);
     const page = await chatRequest<{ data?: { sender_id?: string; created_at?: string; encoded_event?: string }[]; meta?: { next_token?: string } }>(connection, `chat/conversations/${participantId}/events?${params}`);
     const events = page.data || [];
-    if (events.some(event => event.sender_id === participantId && !!event.encoded_event && Date.parse(event.created_at || "") >= cutoff)) return true;
-    if (events.length && events.every(event => Date.parse(event.created_at || "") < cutoff)) return false;
+    if (events.some(event => event.sender_id === participantId && !!event.encoded_event && Date.parse(event.created_at || "") >= cutoff)) return remember(true);
+    if (events.length && events.every(event => Date.parse(event.created_at || "") < cutoff)) return remember(false);
     cursor = page.meta?.next_token;
     if (cursor && seen.has(cursor)) return false;
     if (cursor) seen.add(cursor);
   } while (cursor);
-  return false;
+  return remember(false);
 }
 
 export async function chatConversations(connection: SocialConnection, cursor?: string | null) {
   type Profile = { id: string; name?: string; username?: string };
   type Conversation = { id: string; updated_at?: string };
-  const params = new URLSearchParams({ max_results: "50", "chat_conversation.fields": "id,updated_at,type", expansions: "participant_ids", "user.fields": "name,username" });
+  const params = new URLSearchParams({ max_results: "10", "chat_conversation.fields": "id,updated_at,type", expansions: "participant_ids", "user.fields": "name,username" });
   if (cursor) params.set("pagination_token", cursor);
   const response = await chatRequest<{ data?: Conversation[]; includes?: { users?: Profile[] }; meta?: { next_token?: string } }>(connection, `chat/conversations?${params}`, undefined, true);
   const candidates = (response.data || []).flatMap(item => {
@@ -91,8 +103,8 @@ export async function chatConversations(connection: SocialConnection, cursor?: s
   });
   const direct: typeof candidates = [];
   // Bound concurrency; keep list pagination even when a page has no matches.
-  for (let offset = 0; offset < candidates.length; offset += 5) {
-    const batch = candidates.slice(offset, offset + 5);
+  for (let offset = 0; offset < candidates.length; offset += 2) {
+    const batch = candidates.slice(offset, offset + 2);
     const eligible = await Promise.all(batch.map(async item => {
       if (item.updated_at && Date.parse(item.updated_at) < connection.connectedAt.getTime()) return false;
       return hasRecentXInbound(connection, item.participantId);

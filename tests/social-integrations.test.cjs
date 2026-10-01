@@ -506,3 +506,169 @@ test('X conversation eligibility requires inbound activity since connection, inc
   global.fetch=async()=>response(++calls===1?{data:[{sender_id:'123',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}],meta:{next_token:'older'}}:{data:[{sender_id:'456',created_at:c.connectedAt.toISOString(),encoded_event:'cipher'}]});
   assert.equal(await hasRecentXInbound(c,'456'),true);assert.equal(calls,2);
 });
+
+test('X inbound eligibility caches metadata to avoid rescanning on each unlock',async()=>{
+  const {hasRecentXInbound}=chatProvider();const c={...connection(),id:'cache-connection'};let calls=0;
+  global.fetch=async()=>{calls++;return response({data:[{sender_id:'456',created_at:'2026-09-01T00:00:00Z',encoded_event:'cipher'}]});};
+  assert.equal(await hasRecentXInbound(c,'456'),true);assert.equal(await hasRecentXInbound(c,'456'),true);assert.equal(calls,1);
+  assert.equal(await hasRecentXInbound({...c,connectedAt:new Date('2026-10-01T00:00:00Z')},'456'),false);assert.equal(calls,2);
+});
+
+test('LinkedIn Page discovery includes only approved administrators and deduplicates organizations',async()=>{
+  const {linkedInPages}=load('lib/linkedin/pages.ts',{'@/lib/socialTokens':tokenMock});
+  global.fetch=async url=>url.includes('organizationAcls')?response({elements:[{organization:'urn:li:organization:9',role:'ADMINISTRATOR',state:'APPROVED'},{organization:'urn:li:organization:9',role:'ADMINISTRATOR',state:'APPROVED'},{organization:'urn:li:organization:8',role:'ANALYST',state:'APPROVED'},{organization:'urn:li:organization:7',role:'ADMINISTRATOR',state:'REQUESTED'}]}):response({localizedName:'Test Page'});
+  assert.deepEqual(await linkedInPages(connection('rw_organization_admin w_organization_social')),[{id:'urn:li:organization:9',name:'Test Page'}]);
+  await assert.rejects(linkedInPages(connection('w_member_social')),/permission/);
+});
+test('LinkedIn Page publishing requires organization scope and uses organization author',async()=>{
+  const c={...connection('w_organization_social'),platformAccountId:'urn:li:organization:9'};
+  global.fetch=async(url,init)=>{assert.equal(JSON.parse(init.body).author,c.platformAccountId);return response({},201,{'x-restli-id':'urn:li:share:99'});};
+  assert.equal((await providers().publishLinkedIn(post(),c)).id,'urn:li:share:99');
+  await assert.rejects(providers().publishLinkedIn(post(),{...c,tokenScopes:'w_member_social'}),/permission/);
+});
+test('LinkedIn video finalizes all uploaded parts before creating a post',async()=>{
+  const calls=[];
+  global.fetch=async(url,init={})=>{calls.push(url);
+    if(url.includes('initializeUpload'))return response({value:{video:'urn:li:video:1',uploadToken:'upload',uploadInstructions:[{uploadUrl:'https://upload.test/1',firstByte:0,lastByte:3},{uploadUrl:'https://upload.test/2',firstByte:4,lastByte:7}]}});
+    if(url.startsWith('https://storage.test'))return new Response('data',{status:206,headers:{'content-type':'video/mp4'}});
+    if(url.startsWith('https://upload.test'))return new Response(null,{status:200,headers:{etag:url.endsWith('1')?'"part1"':'"part2"'}});
+    if(url.includes('finalizeUpload')){assert.deepEqual(JSON.parse(init.body).finalizeUploadRequest.uploadedPartIds,['part1','part2']);return response({});}
+    if(url.includes('/videos/'))return response({status:'AVAILABLE'});
+    assert.ok(calls.some(value=>value.includes('finalizeUpload')));return response({},201,{'x-restli-id':'urn:li:ugcPost:1'});
+  };
+  assert.equal((await providers().publishLinkedIn(post([{mediaType:'VIDEO',fileKey:'v',sizeBytes:8}]),connection('w_member_social'))).id,'urn:li:ugcPost:1');
+});
+test('LinkedIn analytics preserve actual reporting day instead of duplicating counters into today',async()=>{
+  const {linkedinReportingAdapter}=load('lib/reporting/adapters/linkedin.ts',{'@/lib/socialTokens':{...tokenMock,freshConnection:async c=>c}});
+  global.fetch=async url=>response({elements:[{count:url.includes('IMPRESSION')?100:2,dateRange:{start:{year:2026,month:9,day:29}}}]});
+  const data=await linkedinReportingAdapter.fetchAccountMetrics(connection('r_member_postAnalytics'));
+  assert.equal(data.snapshotDate.toISOString(),'2026-09-29T00:00:00.000Z');assert.equal(data.impressions,100);assert.equal(data.engagement,6);
+});
+test('LinkedIn Page reporting routes to organization endpoints, with bounded daily history',async()=>{
+  const {linkedinReportingAdapter}=load('lib/reporting/adapters/linkedin.ts',{'@/lib/socialTokens':{...tokenMock,freshConnection:async c=>c}});
+  const c={...connection('rw_organization_admin'),platformAccountId:'urn:li:organization:9'};
+  global.fetch=async url=>{
+    assert.ok(!url.includes('memberCreator'));
+    if(url.includes('networkSizes'))return response({firstDegreeSize:500});
+    if(url.includes('timeIntervals'))return response({elements:[{timeRange:{start:Date.parse('2026-09-29')},totalShareStatistics:{impressionCount:100,likeCount:2,commentCount:3,shareCount:1}}]});
+    assert.ok(url.includes('ugcPosts=List('));return response({elements:[{totalShareStatistics:{impressionCount:200,likeCount:4,commentCount:2,shareCount:1,clickCount:5}}]});
+  };
+  const account=await linkedinReportingAdapter.fetchAccountMetrics(c);assert.equal(account.followers,500);assert.equal(account.dailySnapshots[0].engagement,6);
+  const posts=await linkedinReportingAdapter.fetchPostMetrics(c,[{id:'post',platformPostId:'urn:li:ugcPost:99'}]);assert.equal(posts.get('post').engagement,7);assert.equal(posts.get('post').clicks,5);
+});
+test('LinkedIn Page selection rejects unauthorized owners, foreign Pages and cross-origin writes',async()=>{
+  const {NextRequest}=require('next/server');let writes=0;let owner=true;
+  const route=load('app/api/calendars/[id]/channels/linkedin/pages/route.ts',{
+    '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
+    '@/lib/db':{db:{socialCalendar:{findFirst:async()=>owner?{id:'workspace'}:null,update:async()=>{writes++;}},socialConnection:{findFirst:async()=>({...connection(),calendarId:'workspace'})}}},
+    '@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/socialTokens':{freshConnection:async c=>c},
+    '@/lib/linkedin/pages':{linkedInPages:async()=>[{id:'urn:li:organization:9',name:'Page'}]},
+    '@/lib/socialReporting':{upsertSocialConnection:async()=>{writes++;}},
+    '@/lib/channelOAuth':{getLinkedInMember:async()=>({sub:'123',name:'Member'})},
+  });
+  const context={params:Promise.resolve({id:'workspace'})};
+  const req=(pageId,origin='https://site.test')=>new NextRequest('https://site.test/api',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify({pageId})});
+  assert.equal((await route.POST(req('urn:li:organization:8'),context)).status,403);assert.equal(writes,0);
+  assert.equal((await route.POST(req('urn:li:organization:9','https://evil.test'),context)).status,403);assert.equal(writes,0);
+  owner=false;assert.notEqual((await route.POST(req('urn:li:organization:9'),context)).status,200);assert.equal(writes,0);
+  owner=true;assert.equal((await route.POST(req('urn:li:organization:9'),context)).status,200);assert.equal(writes,2);
+});
+
+test('LinkedIn multi-image publishing preserves uploaded order and fails closed on upload errors',async()=>{
+  let uploads=0;
+  global.fetch=async(url,init={})=>{
+    if(url.includes('initializeUpload'))return response({value:{image:`urn:li:image:${++uploads}`,uploadUrl:'https://upload.test/image'}});
+    if(url.startsWith('https://storage.test'))return new Response('image',{headers:{'content-type':'image/jpeg'}});
+    if(url.startsWith('https://upload.test'))return new Response(null,{status:201});
+    assert.deepEqual(JSON.parse(init.body).content.multiImage.images,[{id:'urn:li:image:1'},{id:'urn:li:image:2'}]);return response({},201,{'x-restli-id':'urn:li:share:2'});
+  };
+  await providers().publishLinkedIn(post([{mediaType:'PHOTO',fileKey:'a'},{mediaType:'PHOTO',fileKey:'b'}]),connection('w_member_social'));
+  global.fetch=async()=>response({message:'Upload denied'},403);
+  await assert.rejects(providers().publishLinkedIn(post([{mediaType:'PHOTO',fileKey:'a'}]),connection('w_member_social')),/Upload denied/);
+});
+
+test('LinkedIn webhook signatures require the documented prefix and exact raw bytes',()=>{
+  const {createHmac}=require('node:crypto');const {linkedInChallenge,verifyLinkedInSignature}=load('lib/linkedin/webhook.ts');
+  const raw='{"text":"test"}',secret='synthetic-secret';
+  const signature=createHmac('sha256',secret).update('hmacsha256='+raw).digest('hex');
+  assert.equal(verifyLinkedInSignature(raw,signature,secret),true);
+  assert.equal(verifyLinkedInSignature(raw+' ',signature,secret),false);
+  assert.equal(verifyLinkedInSignature(raw,'hmacsha256='+signature,secret),false);
+  assert.equal(verifyLinkedInSignature(raw,signature,undefined),false);
+  assert.equal(linkedInChallenge('challenge',secret).challengeResponse,createHmac('sha256',secret).update('challenge').digest('hex'));
+});
+test('LinkedIn messaging remains unavailable with a flag alone and excludes personal accounts',()=>{
+  const original=process.env.LINKEDIN_MESSAGING_ENABLED;process.env.LINKEDIN_MESSAGING_ENABLED='true';
+  try {
+    const base={platformAccountId:'urn:li:organization:9',status:'CONNECTED',tokenScopes:'partner-scope',messagingWebhookSubscribedAt:new Date(),messagingWebhookError:null};
+    assert.equal(load('lib/linkedin/messagingAccess.ts').linkedInMessagingAccess(base).available,false);
+    const mod=load('lib/linkedin/messagingAccess.ts',{'./messagingProvider':{linkedInMessagingProvider:{requiredScopes:['partner-scope']}}});
+    assert.equal(mod.linkedInMessagingAccess(base).available,true);
+    for(const patch of [{platformAccountId:'member'},{status:'DISCONNECTED'},{tokenScopes:''},{messagingWebhookSubscribedAt:null},{messagingWebhookError:'failed'}])assert.equal(mod.linkedInMessagingAccess({...base,...patch}).available,false);
+  }finally{if(original===undefined)delete process.env.LINKEDIN_MESSAGING_ENABLED;else process.env.LINKEDIN_MESSAGING_ENABLED=original;}
+});
+function linkedinInboxFixture() {
+  const seen=new Set();let unread=0;const leads=new Map();const writes=[];
+  const connection={id:'li',platform:'LINKEDIN',platformAccountId:'urn:li:organization:9',calendarId:'workspace',status:'CONNECTED',connectedAt:new Date('2026-01-01'),tokenScopes:'partner-scope',messagingWebhookSubscribedAt:new Date(),messagingWebhookError:null};
+  const tx={socialLeadConversation:{upsert:async query=>{writes.push(query);return{id:'thread',leadStatus:'QUALIFIED'};},update:async()=>{unread++;},updateMany:async()=>({count:1})},socialLeadMessage:{createMany:async query=>{const event=query.data[0];if(seen.has(event.providerMessageId))return{count:0};seen.add(event.providerMessageId);writes.push(event);return{count:1};}},calendarLead:{upsert:async query=>{if(!leads.has(query.where.socialConversationId))leads.set(query.where.socialConversationId,query.create);else Object.assign(leads.get(query.where.socialConversationId),query.update);}}};
+  const mod=load('lib/socialMessaging/linkedin.ts',{
+    '@/lib/db':{db:{$transaction:fn=>fn(tx),socialConnection:{findMany:async query=>{assert.equal(query.where.platformAccountId,connection.platformAccountId);return[connection];}},socialLeadConversation:{findUnique:async()=>null,findFirst:async query=>query.where.participantPlatformId==='member'?{id:'thread'}:null}}},
+    '@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/socialTokens':{freshConnection:async c=>c},
+    '@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>true,linkedInMessagingAccess:c=>({available:c.status==='CONNECTED'})},
+    '@/lib/linkedin/messagingProvider':{linkedInMessagingProvider:{decodeNotification:async events=>events,send:async()=>({messageId:'confirmed'})}},
+  });
+  const event={pageUrn:connection.platformAccountId,message:{conversationId:'conversation',messageId:'inbound',participantId:'member',name:'Prospect',text:'Hello',createdAt:new Date('2026-01-02'),outbound:false,autoReplyEligible:true}};
+  return {...mod,connection,event,leads,writes,unread:()=>unread};
+}
+test('LinkedIn inbound messages create one lead and one unread entry across repeated deliveries',async()=>{
+  const f=linkedinInboxFixture();
+  assert.equal((await f.receiveLinkedInMessages([f.event])).imported,1);
+  assert.equal((await f.receiveLinkedInMessages([f.event])).imported,0);
+  assert.equal(f.unread(),1);assert.equal(f.leads.size,1);assert.equal(f.leads.get('thread').status,'QUALIFIED');
+  assert.equal(f.leads.get('thread').calendarId,'workspace');
+  assert.equal(f.writes.find(item=>item.providerMessageId)?.autoReplyEligible,false);
+});
+test('LinkedIn old messages and outbound-only threads do not create leads',async()=>{
+  const f=linkedinInboxFixture();
+  for(const message of [{...f.event.message,createdAt:new Date('2025-01-01')},{...f.event.message,outbound:true}])assert.equal((await f.receiveLinkedInMessages([{...f.event,message}])).imported,0);
+  assert.equal(f.leads.size,0);assert.equal(f.unread(),0);
+  await assert.rejects(f.receiveLinkedInMessages([{...f.event,message:{...f.event.message,createdAt:new Date('invalid')}}]),/Invalid/);
+});
+test('LinkedIn replies validate Page conversation ownership and require confirmation',async()=>{
+  const f=linkedinInboxFixture();
+  assert.equal(await f.sendLinkedInMessage({connection:f.connection,conversationId:'conversation',recipientId:'member',text:'Reply'}),'confirmed');
+  await assert.rejects(f.sendLinkedInMessage({connection:f.connection,conversationId:'conversation',recipientId:'foreign',text:'Reply'}),/does not belong/);
+  await assert.rejects(f.sendLinkedInMessage({connection:f.connection,recipientId:'member',text:'Reply'}),/Select/);
+});
+test('LinkedIn webhook rejects forged delivery, retries processing failures, and cannot act as a signing oracle',async()=>{
+  const {NextRequest}=require('next/server');const {createHmac}=require('node:crypto');
+  const saved={secret:process.env.LINKEDIN_CLIENT_SECRET,enabled:process.env.LINKEDIN_MESSAGING_ENABLED};process.env.LINKEDIN_CLIENT_SECRET='synthetic-secret';process.env.LINKEDIN_MESSAGING_ENABLED='true';
+  let calls=0,fail=false;
+  try {
+    const route=load('app/api/webhooks/linkedin/messaging/route.ts',{'@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>true},'@/lib/socialMessaging/linkedin':{receiveLinkedInMessages:async()=>{calls++;if(fail)throw new Error('db down');}}});
+    assert.equal((await route.GET(new NextRequest('https://site.test/?challengeCode=hmacsha256%3D%7B%7D'))).status,400);
+    assert.equal((await route.GET(new NextRequest('https://site.test/?challengeCode=12345678-1234-4234-8234-123456789012'))).status,200);
+    const raw='{}',signature=createHmac('sha256','synthetic-secret').update('hmacsha256='+raw).digest('hex');
+    const req=signature=>new NextRequest('https://site.test/',{method:'POST',headers:{'x-li-signature':signature},body:raw});
+    assert.equal((await route.POST(req('forged'))).status,401);assert.equal(calls,0);
+    assert.equal((await route.POST(req(signature))).status,200);assert.equal(calls,1);
+    fail=true;assert.equal((await route.POST(req(signature))).status,503);
+  }finally{for(const [key,value] of [['LINKEDIN_CLIENT_SECRET',saved.secret],['LINKEDIN_MESSAGING_ENABLED',saved.enabled]]){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
+});
+
+test('LinkedIn subscription setup cannot be enabled by an unauthorized user or a flag without an adapter',async()=>{
+  const {NextRequest}=require('next/server');let owner=false;
+  const route=load('app/api/calendars/[id]/channels/linkedin/messaging/route.ts',{
+    '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
+    '@/lib/db':{db:{socialCalendar:{findFirst:async()=>owner?{id:'workspace'}:null},socialConnection:{findFirst:async()=>assert.fail('must not load or subscribe')}}},
+    '@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>false},
+    '@/lib/url':{appUrl:()=> 'https://site.test'},
+  });
+  const req=()=>new NextRequest('https://site.test/api',{method:'POST',headers:{origin:'https://site.test'}});
+  const context={params:Promise.resolve({id:'workspace'})};
+  assert.equal((await route.POST(req(),context)).status,403);
+  owner=true;assert.equal((await route.POST(req(),context)).status,409);
+});

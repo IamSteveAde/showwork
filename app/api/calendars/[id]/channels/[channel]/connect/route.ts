@@ -42,8 +42,10 @@ export async function GET(
     const redirectUri = `${appUrl()}${callbackPath}`;
     const oauthState = createChannelOAuthState(channel, id);
     const verifier = channel === "x" ? createXCodeVerifier() : undefined;
+    const currentLinkedIn = channel === "linkedin" ? await db.socialConnection.findFirst({ where: { calendarId: id, platform: "LINKEDIN", status: "CONNECTED" }, select: { platformAccountId: true } }) : null;
     const authorizationUrl = buildChannelAuthorizationUrl({
       channel,
+      linkedInPages: channel === "linkedin" && (_req.nextUrl.searchParams.get("pages") === "true" || !!currentLinkedIn?.platformAccountId.startsWith("urn:li:organization:")),
       redirectUri,
       state: oauthState.state,
       codeChallenge: verifier ? createXCodeChallenge(verifier) : undefined,

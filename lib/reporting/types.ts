@@ -1,6 +1,8 @@
 import type { SocialConnection, SocialPlatform } from "@prisma/client";
 
 export type NormalizedSocialMetrics = {
+  /** Date represented by account counters when the provider excludes today. */
+  snapshotDate?: Date;
   reach?: number | null;
   impressions?: number | null;
   views?: number | null;

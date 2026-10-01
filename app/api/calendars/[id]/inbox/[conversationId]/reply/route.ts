@@ -27,6 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       connection: conversation.connection,
       instagramPageId: conversation.calendar.instagramPageId,
       recipientId: conversation.participantPlatformId,
+      conversationId: conversation.providerConversationId,
       text,
     });
     if (providerMessageId) {
