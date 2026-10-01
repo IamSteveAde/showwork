@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  webpack(config, { isServer }) {
+    config.output.environment = { ...config.output.environment, asyncFunction: true };
+    config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    if (!isServer) config.resolve.fallback = { ...config.resolve.fallback, fs: false, crypto: false, module: false, url: false };
+    return config;
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.r2.dev" },

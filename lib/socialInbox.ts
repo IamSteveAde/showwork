@@ -16,8 +16,15 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
   if (platform && !SOCIAL_INBOX_PLATFORMS.includes(platform as SocialPlatform)) throw new Error("Choose a supported platform.");
   if (status && !SOCIAL_LEAD_STATUSES.includes(status as SocialLeadStatus)) throw new Error("Choose a valid lead status.");
 
+  const xConnections = await db.socialConnection.findMany({ where: { calendarId, platform: "X" }, select: { id: true, connectedAt: true } });
   const where = {
     calendarId,
+    AND: [{ OR: [
+      { platform: { not: "X" as const } },
+      ...xConnections.map(connection => ({ platform: "X" as const, socialConnectionId: connection.id,
+        NOT: { providerConversationId: { startsWith: "xchat:" } },
+        messages: { some: { direction: "INBOUND" as const, platformCreatedAt: { gte: connection.connectedAt } } } })),
+    ] }],
     ...(platform ? { platform: platform as SocialPlatform } : {}),
     ...(status ? { leadStatus: status as SocialLeadStatus } : {}),
     ...(unread ? { unreadCount: { gt: 0 } } : {}),
@@ -34,7 +41,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       take: 100,
       include: {
         messages: { orderBy: { platformCreatedAt: "desc" }, take: 50 },
-        connection: { select: { accountName: true, username: true, status: true, accessToken: true } },
+        connection: { select: { id: true, accountName: true, username: true, status: true, accessToken: true, connectedAt: true } },
       },
     }),
     db.socialLeadConversation.count({ where: { calendarId, leadStatus: { not: "NOT_A_LEAD" } } }),
@@ -115,6 +122,9 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     })),
     settings: settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },
     conversations: conversations.map((conversation) => {
+      const cutoff = conversation.platform === "X" ? conversation.connection?.connectedAt?.getTime() ?? Infinity : -Infinity;
+      const visibleMessages = conversation.messages.filter(message => message.platformCreatedAt.getTime() >= cutoff);
+      const previewVisible = conversation.platform !== "X" || (conversation.lastMessageAt?.getTime() ?? 0) >= cutoff;
       const resolvedProfile = resolvedProfiles.get(conversation.id);
       const participantUsername = resolvedProfile?.username || conversation.participantUsername;
       const rawName = resolvedProfile?.name || conversation.participantName;
@@ -122,21 +132,22 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       const participantName = rawName && !genericNames.includes(rawName.trim().toLowerCase()) ? rawName : null;
       return ({
       id: conversation.id,
+      ...(conversation.platform === "X" && conversation.socialConnectionId && conversation.providerConversationId.startsWith("xchat:") ? { encrypted: { connectionId: conversation.socialConnectionId, conversationId: conversation.providerConversationId.slice(6) } } : {}),
       platform: conversation.platform,
       providerConversationId: conversation.providerConversationId,
       participantPlatformId: conversation.participantPlatformId,
       participantUsername,
       leadStatus: conversation.leadStatus,
-      unreadCount: conversation.unreadCount,
-      lastMessagePreview: conversation.lastMessagePreview,
-      lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
+      unreadCount: previewVisible ? conversation.unreadCount : 0,
+      lastMessagePreview: previewVisible ? conversation.lastMessagePreview : null,
+      lastMessageAt: previewVisible ? conversation.lastMessageAt?.toISOString() ?? null : null,
       participantName,
       connection: conversation.connection ? {
         accountName: conversation.connection.accountName,
         username: conversation.connection.username,
         status: conversation.connection.status,
       } : null,
-      messages: [...conversation.messages].reverse().map((message) => ({
+      messages: [...visibleMessages].reverse().map((message) => ({
         id: message.id,
         direction: message.direction,
         status: message.status,
