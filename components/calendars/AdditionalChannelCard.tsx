@@ -1,5 +1,6 @@
 "use client";
 
+import LinkedInPagePicker from "./LinkedInPagePicker";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -7,7 +8,7 @@ export type AdditionalChannel = "facebook" | "linkedin" | "x";
 
 const CHANNEL_META: Record<AdditionalChannel, { name: string; mark: string; color: string; accountType: string }> = {
   facebook: { name: "Facebook", mark: "f", color: "#1877F2", accountType: "Facebook Page" },
-  linkedin: { name: "LinkedIn", mark: "in", color: "#0A66C2", accountType: "member profile" },
+  linkedin: { name: "LinkedIn", mark: "in", color: "#0A66C2", accountType: "member profile or company Page" },
   x: { name: "X", mark: "𝕏", color: "#000000", accountType: "X account" },
 };
 
@@ -113,6 +114,8 @@ export default function AdditionalChannelCard({
           </p>
         )}
 
+        {channel === "linkedin" && isConnected && isManager && <LinkedInPagePicker calendarId={calendarId} />}
+        {channel === "linkedin" && <p className="mt-3 text-xs text-slate-400">LinkedIn inbox replies and message-to-lead import require approved Page Messaging access and a confirmed messaging subscription.</p>}
         {isConnected && isManager && <a href={`/api/calendars/${calendarId}/channels/${channel}/connect`} className="mt-3 inline-block text-xs text-blue-300 underline">Refresh permissions</a>}
         {isConnected ? (
           <>

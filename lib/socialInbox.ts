@@ -1,3 +1,4 @@
+import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import type { SocialLeadStatus, SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getFacebookMessengerProfile, getInstagramMessagingProfile } from "@/lib/socialMessaging/meta";
@@ -51,7 +52,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true } }),
     db.socialConnection.findMany({
       where: { calendarId, status: { not: "DISCONNECTED" } },
-      select: { id: true, platform: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true },
+      select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true },
       orderBy: { platform: "asc" },
     }),
   ]);
@@ -99,12 +100,12 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     summary: { leads: totalLeads, newMessages: unreadResult._sum.unreadCount ?? 0, messagesThisMonth: newMessages, allMessages: totalMessages },
     accounts: accounts.map(({ tokenScopes, ...account }) => ({
       ...account,
-      messagingAvailable: account.platform === "FACEBOOK"
+      messagingAvailable: account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).available : account.platform === "FACEBOOK"
         ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
           ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
           : account.platform === "X" && account.status === "CONNECTED" && ["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)),
-      messagingNote: account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
+      messagingNote: account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).reason : account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
         ? account.messagingWebhookError && !(account.platform === "INSTAGRAM" && account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded."))
           ? account.messagingWebhookError
           : !(account.platform === "FACEBOOK" ? tokenScopes?.includes("pages_messaging") : tokenScopes?.includes("instagram_manage_messages"))
@@ -114,8 +115,8 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
               : account.platform === "INSTAGRAM"
                 ? "Page subscription succeeded. Meta must also enable this app’s Instagram `messages` webhook field for inbound DMs."
               : "Messaging enabled"
-        : account.platform === "TIKTOK" || account.platform === "LINKEDIN"
-          ? account.platform === "TIKTOK" ? "Requires TikTok Business Messaging approval and a separate business connection" : "Requires LinkedIn Page Messaging approval and a Page connection"
+        : account.platform === "TIKTOK"
+          ? "Requires TikTok Business Messaging approval and a separate business connection"
           : account.platform === "X"
             ? account.messagingSyncError || (["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)) ? (account.messagingLastSyncAt ? "X messages last synced " + account.messagingLastSyncAt.toISOString() + ". Group chats are excluded." : "Connected, but X messages have not synced yet. Use Sync X messages to import them.") : "Reconnect X to authorize direct messages")
             : "Messaging is not supported for this channel",
@@ -143,6 +144,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       lastMessageAt: previewVisible ? conversation.lastMessageAt?.toISOString() ?? null : null,
       participantName,
       connection: conversation.connection ? {
+        id: conversation.connection.id,
         accountName: conversation.connection.accountName,
         username: conversation.connection.username,
         status: conversation.connection.status,
