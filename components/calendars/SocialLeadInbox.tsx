@@ -122,7 +122,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
     finally { setSavingSettings(false); }
   }
 
-  const canReply = selected?.encrypted ? !!selectedX && selectedX.selected === selected.encrypted.conversationId && !clientMode && isManager : !clientMode && canReplyFromWorkspace && selected && ["FACEBOOK", "INSTAGRAM", "X", "LINKEDIN"].includes(selected.platform) && selected.connection?.status === "CONNECTED" && data?.accounts.some(account => account.platform === selected.platform && (!selected.connection?.id || account.id === selected.connection.id) && account.messagingAvailable);
+  const canReply = selected?.encrypted ? !!selectedX && selectedX.selected === selected.encrypted.conversationId && !clientMode && isManager : !clientMode && canReplyFromWorkspace && selected && ["FACEBOOK", "INSTAGRAM", "X", "LINKEDIN", "TIKTOK"].includes(selected.platform) && selected.connection?.status === "CONNECTED" && data?.accounts.some(account => account.platform === selected.platform && (!selected.connection?.id || account.id === selected.connection.id) && account.messagingAvailable);
   const monthName = new Date().toLocaleString(undefined, { month: "long" });
 
   return <section className="space-y-5" aria-label="Social leads inbox">

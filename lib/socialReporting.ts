@@ -36,6 +36,12 @@ export function upsertSocialConnection(input: SocialConnectionInput) {
         refreshToken: null,
         accessTokenExpiresAt: null,
         refreshTokenExpiresAt: null,
+        ...(platform === "TIKTOK" ? {
+          tikTokMessagingAccessToken: null, tikTokMessagingRefreshToken: null,
+          tikTokMessagingTokenExpiresAt: null, tikTokMessagingRefreshExpiresAt: null,
+          tikTokMessagingScopes: null, tikTokMessagingConnectedAt: null,
+          messagingWebhookSubscribedAt: null, messagingWebhookError: null,
+        } : {}),
       },
     });
     return tx.socialConnection.upsert({
@@ -61,6 +67,12 @@ export function markSocialConnectionDisconnected(calendarId: string, platform: S
       refreshToken: null,
       accessTokenExpiresAt: null,
       refreshTokenExpiresAt: null,
+      ...(platform === "TIKTOK" ? {
+        tikTokMessagingAccessToken: null, tikTokMessagingRefreshToken: null,
+        tikTokMessagingTokenExpiresAt: null, tikTokMessagingRefreshExpiresAt: null,
+        tikTokMessagingScopes: null, tikTokMessagingConnectedAt: null,
+        messagingWebhookSubscribedAt: null, messagingWebhookError: null,
+      } : {}),
       lastSyncError: null,
     },
   });

@@ -1774,6 +1774,7 @@ model SocialCalendar {
   xRefreshToken         String?
   xConnectedAt          DateTime?
 
+  imports              CalendarImport[]
   posts                CalendarPost[]
   socialConnections    SocialConnection[]
   publishedSocialPosts PublishedSocialPost[]
@@ -1904,6 +1905,13 @@ model SocialConnection {
   lastSyncAttemptAt            DateTime?
   lastSyncAt                   DateTime?
   lastSyncError                String?                       @db.Text
+  tikTokMessagingBusinessId     String?
+  tikTokMessagingAccessToken    String? @db.Text
+  tikTokMessagingRefreshToken   String? @db.Text
+  tikTokMessagingTokenExpiresAt DateTime?
+  tikTokMessagingRefreshExpiresAt DateTime?
+  tikTokMessagingScopes         String? @db.Text
+  tikTokMessagingConnectedAt    DateTime?
   messagingLastSyncAt           DateTime?
   messagingSyncError            String? @db.Text
   messagingWebhookSubscribedAt DateTime?
@@ -2470,4 +2478,19 @@ model ContentWorkspaceStorageReservation {
   @@index([calendarId])
   @@index([fileKey])
   @@index([expiresAt])
+}
+
+// Durable receipt for confirmed imports; preview documents are not stored.
+model CalendarImport {
+  id          String @id @default(uuid())
+  calendarId  String
+  calendar    SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  requestId   String
+  creatorId   String
+  payloadHash String @db.VarChar(64)
+  result      Json
+  createdAt   DateTime @default(now())
+
+  @@unique([calendarId, requestId])
+  @@index([calendarId])
 }

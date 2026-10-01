@@ -1,3 +1,4 @@
+import { tikTokMessagingAccess } from "@/lib/socialMessaging/tiktok";
 import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import type { SocialLeadStatus, SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -42,7 +43,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       take: 100,
       include: {
         messages: { orderBy: { platformCreatedAt: "desc" }, take: 50 },
-        connection: { select: { id: true, accountName: true, username: true, status: true, accessToken: true, connectedAt: true } },
+        connection: { select: { id: true, accountName: true, username: true, status: true, accessToken: true, connectedAt: true, tikTokMessagingBusinessId: true } },
       },
     }),
     db.socialLeadConversation.count({ where: { calendarId, leadStatus: { not: "NOT_A_LEAD" } } }),
@@ -52,7 +53,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true } }),
     db.socialConnection.findMany({
       where: { calendarId, status: { not: "DISCONNECTED" } },
-      select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true },
+      select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true, tikTokMessagingBusinessId: true, tikTokMessagingScopes: true, tikTokMessagingConnectedAt: true },
       orderBy: { platform: "asc" },
     }),
   ]);
@@ -98,9 +99,10 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
   }));
   return {
     summary: { leads: totalLeads, newMessages: unreadResult._sum.unreadCount ?? 0, messagesThisMonth: newMessages, allMessages: totalMessages },
-    accounts: accounts.map(({ tokenScopes, ...account }) => ({
+    accounts: accounts.map(({ tokenScopes, tikTokMessagingScopes, ...account }) => ({
       ...account,
-      messagingAvailable: account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).available : account.platform === "FACEBOOK"
+      ...(account.platform === "TIKTOK" && account.tikTokMessagingBusinessId ? { accountName: `TikTok Business Account ${account.tikTokMessagingBusinessId}`, username: null } : {}),
+      messagingAvailable: account.platform === "TIKTOK" ? tikTokMessagingAccess({ ...account, tikTokMessagingScopes }).available : account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).available : account.platform === "FACEBOOK"
         ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
           ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
@@ -116,7 +118,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
                 ? "Page subscription succeeded. Meta must also enable this app’s Instagram `messages` webhook field for inbound DMs."
               : "Messaging enabled"
         : account.platform === "TIKTOK"
-          ? "Requires TikTok Business Messaging approval and a separate business connection"
+          ? tikTokMessagingAccess({ ...account, tikTokMessagingScopes }).reason
           : account.platform === "X"
             ? account.messagingSyncError || (["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)) ? (account.messagingLastSyncAt ? "X messages last synced " + account.messagingLastSyncAt.toISOString() + ". Group chats are excluded." : "Connected, but X messages have not synced yet. Use Sync X messages to import them.") : "Reconnect X to authorize direct messages")
             : "Messaging is not supported for this channel",
@@ -145,8 +147,8 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       participantName,
       connection: conversation.connection ? {
         id: conversation.connection.id,
-        accountName: conversation.connection.accountName,
-        username: conversation.connection.username,
+        accountName: conversation.platform === "TIKTOK" && conversation.connection.tikTokMessagingBusinessId ? `TikTok Business Account ${conversation.connection.tikTokMessagingBusinessId}` : conversation.connection.accountName,
+        username: conversation.platform === "TIKTOK" && conversation.connection.tikTokMessagingBusinessId ? null : conversation.connection.username,
         status: conversation.connection.status,
       } : null,
       messages: [...visibleMessages].reverse().map((message) => ({

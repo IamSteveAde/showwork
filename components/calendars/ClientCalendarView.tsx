@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, { type CalendarVideoCommentData } from "@/components/calendars/CalendarVideoComments";
+import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 import SocialLeadInbox from "@/components/calendars/SocialLeadInbox";
@@ -1108,16 +1109,18 @@ export default function ClientCalendarView({
   posts: initialPosts,
   clientName,
   initialMonth,
+  initialPostId,
 }: {
   slug: string;
   planStatus: string;
   posts: CalendarPostData[];
   clientName: string;
   initialMonth?: string;
+  initialPostId?: string;
 }) {
   const router = useRouter();
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok" | "inbox">("calendar");
+  const [theme, setTheme] = useState<Theme>("light");
+  const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x" | "inbox">("calendar");
   const [currentPlanStatus, setCurrentPlanStatus] = useState(planStatus);
 
   useEffect(() => {
@@ -1173,7 +1176,7 @@ export default function ClientCalendarView({
     })),
   );
 
-  const [selectedPost, setSelectedPost] = useState<CalendarPostData | null>(null);
+  const [selectedPost, setSelectedPost] = useState<CalendarPostData | null>(() => initialPosts.find((post) => post.id === initialPostId) ?? null);
   const [requestingChanges, setRequestingChanges] = useState(false);
   const [planNote, setPlanNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1356,11 +1359,14 @@ export default function ClientCalendarView({
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-1">
+        <div role="group" aria-label="Calendar and channel previews" className="grid grid-cols-3 gap-1 sm:flex sm:flex-wrap">
           {[
             { key: "calendar" as const, label: "Calendar", icon: "calendar" },
-            { key: "instagram" as const, label: "Instagram Preview", icon: "instagram" },
+            { key: "instagram" as const, label: "Instagram", icon: "instagram" },
             { key: "tiktok" as const, label: "TikTok", icon: "tiktok" },
+            { key: "linkedin" as const, label: "LinkedIn", icon: "linkedin" },
+            { key: "facebook" as const, label: "Facebook", icon: "facebook" },
+            { key: "x" as const, label: "X", icon: "x" },
             { key: "inbox" as const, label: "Inbox", icon: "inbox" },
           ].map((tab) => {
             const active = viewMode === tab.key;
@@ -1368,8 +1374,9 @@ export default function ClientCalendarView({
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setViewMode(tab.key)}
-                className="relative flex min-h-11 items-center justify-center gap-2 rounded-[16px] px-3 py-2.5 text-xs font-semibold transition-all duration-300 active:scale-[0.98] sm:text-sm"
+                aria-pressed={active}
+                onClick={() => { setViewMode(tab.key); setPlatformFilter("ALL"); }}
+                className="relative flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[16px] px-3 py-2.5 text-xs font-semibold transition-all duration-300 active:scale-[0.98] sm:text-sm"
                 style={{
                   background: active ? t.modalBg : "transparent",
                   color: active ? (theme === "dark" ? "#fff" : "#0A0A0A") : t.textMuted,
@@ -1449,6 +1456,11 @@ export default function ClientCalendarView({
             <TikTokPreview posts={filteredPosts} clientName={clientName?.trim() || "Your brand"} />
           </div>
         </section>
+      )}
+
+      {(viewMode === "linkedin" || viewMode === "facebook" || viewMode === "x") && (
+        <SocialFeedPreview posts={filteredPosts} clientName={clientName?.trim() || "Your brand"}
+          channel={viewMode} onOpen={setSelectedPost} filtersActive={activeFilterCount > 0 || Boolean(searchQuery.trim())} onClearFilters={clearFilters} />
       )}
 
       {viewMode === "inbox" && (

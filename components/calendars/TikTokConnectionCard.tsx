@@ -1,9 +1,15 @@
 "use client";
 
+import TikTokMessagingPanel from "./TikTokMessagingPanel";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const ERROR_MESSAGES: Record<string, string> = {
+  publishing_required: "Connect TikTok publishing before connecting Business Messaging.",
+  messaging_not_configured: "Configure the approved TikTok Business Messaging app on the server before connecting.",
+  messaging_connection_failed: "TikTok Business Messaging could not connect. Check approval and authorize all messaging permissions.",
+  messaging_webhook_failed: "Business authorization succeeded, but the messaging webhook could not be enabled. Reconnect after checking the app approval and HTTPS callback.",
+  messaging_account_changed: "Authorize the Business Account already linked to this channel so existing conversations stay with the correct account.",
   denied: "TikTok connection was cancelled.",
   connection_failed: "Something went wrong connecting to TikTok. Please try again.",
   not_configured: "TikTok publishing isn't set up yet — contact support.",
@@ -27,17 +33,21 @@ export default function TikTokConnectionCard({
   const [disconnecting, setDisconnecting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [messagingConnected, setMessagingConnected] = useState(false);
   const [justConnected, setJustConnected] = useState(false);
 
   useEffect(() => {
     const errorCode = searchParams.get("tiktokError");
     const connected = searchParams.get("tiktokConnected");
+    const messaging = searchParams.get("tiktokMessagingConnected");
+    if (messaging === "true") setMessagingConnected(true);
     if (errorCode) setError(ERROR_MESSAGES[errorCode] ?? "Something went wrong connecting to TikTok.");
     if (connected === "true") setJustConnected(true);
-    if (errorCode || connected) {
+    if (errorCode || connected || messaging) {
       const url = new URL(window.location.href);
       url.searchParams.delete("tiktokError");
       url.searchParams.delete("tiktokConnected");
+      url.searchParams.delete("tiktokMessagingConnected");
       router.replace(url.pathname + url.search, { scroll: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,6 +99,7 @@ export default function TikTokConnectionCard({
           )}
         </div>
 
+        {messagingConnected && <p role="status" className="mt-4 text-xs text-emerald-300">TikTok Business Messaging connected. Manage DMs, leads and AI replies in Inbox.</p>}
         {justConnected && (
           <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] text-emerald-300">
             TikTok connected successfully.
@@ -118,6 +129,7 @@ export default function TikTokConnectionCard({
             Connect this calendar to a client&apos;s TikTok account — once connected, approved TikTok posts publish automatically on their scheduled date, no manual posting needed.
           </p>
         )}
+        {isManager && isConnected && <TikTokMessagingPanel calendarId={calendarId} />}
       </div>
 
       <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">

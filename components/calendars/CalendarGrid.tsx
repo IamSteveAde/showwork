@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import CalendarVideoComments, {
   type CalendarVideoCommentData,
 } from "@/components/calendars/CalendarVideoComments";
+import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 import TikTokPrivacySelect from "@/components/calendars/TikTokPrivacySelect";
 import SocialPostPublishing from "@/components/calendars/SocialPostPublishing";
+import ImportCalendar from "@/components/calendars/ImportCalendar";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 type Platform =
@@ -39,7 +41,7 @@ type InstagramPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PU
 type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PUBLISHED" | "FAILED";
 type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 
-interface CalendarPostData {
+export interface CalendarPostData {
   id: string;
   postDate: string;
   platform: Platform;
@@ -5503,7 +5505,7 @@ export default function CalendarGrid({
   clientName: string;
 }) {
   const [theme, setTheme] =
-    useState<Theme>("dark");
+    useState<Theme>("light");
 
   useEffect(() => {
     const saved = localStorage.getItem(
@@ -5536,11 +5538,9 @@ export default function CalendarGrid({
 
   const t = THEMES[theme];
 
-  // Which of the three tabs is showing — the existing calendar grid
-  // stays completely untouched when this is "calendar"; the other
-  // two swap in an entirely different, phone-mockup view instead.
+  // Keep planning and channel previews together under the same filters.
   const [viewMode, setViewMode] = useState<
-    "calendar" | "instagram" | "tiktok"
+    "calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x"
   >("calendar");
   const [isMobileLayout, setIsMobileLayout] = useState(false);
 
@@ -5891,6 +5891,7 @@ export default function CalendarGrid({
       <div className="
         mb-5
         flex
+        flex-wrap
         items-center
         justify-between
         gap-3
@@ -5936,7 +5937,9 @@ export default function CalendarGrid({
               )
               : viewMode === "instagram"
                 ? "Instagram Preview"
-                : "TikTok Preview"}
+                : viewMode === "tiktok" ? "TikTok Preview"
+                : viewMode === "linkedin" ? "LinkedIn Preview"
+                : viewMode === "facebook" ? "Facebook Preview" : "X Preview"}
           </h2>
         </div>
 
@@ -5947,6 +5950,15 @@ export default function CalendarGrid({
           gap-1.5
           sm:gap-2
         ">
+          {userRole === "EDIT_CALENDAR" && <ImportCalendar calendarId={calendarId} theme={theme} onImported={(importedPosts, firstDate) => {
+            setPosts(importedPosts.map(normalize));
+            clearFilters();
+            if (firstDate) {
+              const date = new Date(firstDate);
+              setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+              setViewMode("calendar");
+            }
+          }} />}
           <ThemeToggle
             theme={theme}
             onToggle={toggleTheme}
@@ -6420,13 +6432,15 @@ export default function CalendarGrid({
       )}
 
       {/* =====================================================
-          VIEW MODE TABS — Calendar | Instagram | TikTok
+          CALENDAR AND CHANNEL PREVIEWS
           ===================================================== */}
 
       <div
+        role="group"
+        aria-label="Calendar and channel previews"
         className="
           mb-5
-          flex
+          grid grid-cols-3 sm:flex
           gap-1.5
           rounded-2xl
           p-1.5
@@ -6444,6 +6458,9 @@ export default function CalendarGrid({
             { key: "calendar", label: "Calendar" },
             { key: "instagram", label: "Instagram" },
             { key: "tiktok", label: "TikTok" },
+            { key: "linkedin", label: "LinkedIn" },
+            { key: "facebook", label: "Facebook" },
+            { key: "x", label: "X" },
           ] as const
         ).map((tab) => {
           const active = viewMode === tab.key;
@@ -6458,13 +6475,15 @@ export default function CalendarGrid({
             <button
               key={tab.key}
               type="button"
-              onClick={() =>
-                setViewMode(tab.key)
-              }
+              aria-pressed={active}
+              onClick={() => {
+                setViewMode(tab.key);
+                setPlatformFilter("ALL");
+              }}
               className="
-                flex-1
+                min-h-11 flex-1 shrink-0 whitespace-nowrap
                 rounded-xl
-                px-3 py-2
+                px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF]
                 text-xs
                 font-semibold
                 transition-all
@@ -6502,6 +6521,11 @@ export default function CalendarGrid({
           posts={filteredPosts}
           clientName={clientName}
         />
+      )}
+
+      {(viewMode === "linkedin" || viewMode === "facebook" || viewMode === "x") && (
+        <SocialFeedPreview posts={filteredPosts} clientName={clientName} channel={viewMode}
+          onOpen={setSelectedPost} filtersActive={filtersActive} onClearFilters={clearFilters} />
       )}
 
       {viewMode === "calendar" && (

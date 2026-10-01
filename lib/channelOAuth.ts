@@ -46,12 +46,14 @@ export function buildChannelAuthorizationUrl({
   state,
   codeChallenge,
   linkedInPages = false,
+  linkedInAnalytics = false,
 }: {
   channel: PublishingChannel;
   redirectUri: string;
   state: string;
   codeChallenge?: string;
   linkedInPages?: boolean;
+  linkedInAnalytics?: boolean;
 }) {
   const { clientId } = credentials(channel);
   const params = new URLSearchParams({
@@ -68,7 +70,7 @@ export function buildChannelAuthorizationUrl({
   }
 
   if (channel === "linkedin") {
-    params.set("scope", ["openid", "profile", "w_member_social", ...(linkedInMessagingConfigured() && linkedInPages ? linkedInMessagingProvider!.requiredScopes : []), ...(linkedInPages ? ["rw_organization_admin", "w_organization_social", "r_organization_social"] : []), ...(process.env.LINKEDIN_ANALYTICS_ENABLED === "true" ? ["r_member_postAnalytics"] : [])].join(" "));
+    params.set("scope", ["openid", "profile", "w_member_social", ...(linkedInMessagingConfigured() && linkedInPages ? linkedInMessagingProvider!.requiredScopes : []), ...(linkedInPages ? ["rw_organization_admin", "w_organization_social", "r_organization_social"] : []), ...(linkedInAnalytics || process.env.LINKEDIN_ANALYTICS_ENABLED === "true" ? ["r_member_postAnalytics"] : [])].join(" "));
     return `https://www.linkedin.com/oauth/v2/authorization?${params}`;
   }
 

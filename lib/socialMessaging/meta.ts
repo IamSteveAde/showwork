@@ -15,6 +15,8 @@ export async function sendMetaInboxMessage({
     throw new Error("This platform’s inbox is not enabled yet.");
   }
   if (!connection.accessToken) throw new Error("Reconnect this account to enable replies.");
+  if (connection.status !== "CONNECTED" || (connection.accessTokenExpiresAt && connection.accessTokenExpiresAt.getTime() <= Date.now())) throw new Error("Reconnect this account before replying.");
+  if (!recipientId.trim() || !text.trim()) throw new Error("Select a recipient and enter a reply.");
   const endpointId = connection.platform === "INSTAGRAM"
     ? instagramPageId
     : connection.platformAccountId;
@@ -34,6 +36,7 @@ export async function sendMetaInboxMessage({
       access_token: connection.accessToken,
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
   });
   const result = await response.json().catch(() => ({})) as {
     message_id?: string;
@@ -56,7 +59,8 @@ export async function sendMetaInboxMessage({
     const message = metaError?.message || `Meta could not send the message (${response.status}).`;
     throw new Error(diagnostics.length ? `${message} [Meta ${diagnostics.join(", ")}]` : message);
   }
-  return result.message_id ?? null;
+  if (typeof result.message_id !== "string" || !result.message_id.trim()) throw new Error("Meta did not confirm the sent message. Check the conversation before trying again.");
+  return result.message_id;
 }
 
 /** Best-effort Messenger profile lookup for a Page-scoped user ID (PSID). */
@@ -134,5 +138,5 @@ export async function subscribeMetaMessagingAccount(accountId: string, accessTok
     cache: "no-store",
   });
   const data = await response.json().catch(() => ({})) as { success?: boolean; error?: { message?: string } };
-  if (!response.ok || data.error || data.success === false) throw new Error(data.error?.message || `Meta webhook subscription failed (${response.status}).`);
+  if (!response.ok || data.error || data.success !== true) throw new Error(data.error?.message || `Meta webhook subscription was not confirmed (${response.status}).`);
 }

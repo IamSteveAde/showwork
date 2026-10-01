@@ -54,6 +54,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
       });
       if (!claimed.count) continue;
       summary.analyzed++;
+      let sendAttempted = false;
       try {
         const recent = [...inbound.conversation.messages].reverse().map((message) => ({
           direction: message.direction,
@@ -78,8 +79,10 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           summary.handedOff++;
           continue;
         }
+        sendAttempted = true;
         const providerMessageId = await sendSocialInboxMessage({
           connection: inbound.conversation.connection,
+          conversationId: inbound.conversation.providerConversationId,
           instagramPageId: inbound.conversation.calendar.instagramPageId,
           recipientId: inbound.conversation.participantPlatformId,
           text: generated.replyText,
@@ -100,12 +103,12 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
         summary.sent++;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Automatic reply could not be sent.";
-        const isLastAttempt = inbound.autoReplyAttemptCount + 1 >= 3;
+        const isLastAttempt = sendAttempted || inbound.autoReplyAttemptCount + 1 >= 3;
         await db.socialLeadMessage.update({
           where: { id: inbound.id },
           data: {
             autoReplyClaimedAt: null,
-            ...(isLastAttempt ? { autoReplyHandledAt: new Date(), autoReplyHandoffReason: "Automatic reply failed repeatedly; a human needs to take over." } : {}),
+            ...(isLastAttempt ? { autoReplyHandledAt: new Date(), autoReplyHandoffReason: sendAttempted ? "Reply delivery could not be recorded or confirmed. Check the platform inbox before replying again." : "Automatic reply failed repeatedly; a human needs to take over." } : {}),
             sendError: message.slice(0, 1500),
           },
         });

@@ -8,7 +8,7 @@ This change targets Facebook, Instagram, TikTok, LinkedIn and X. YouTube remains
 | --- | --- | --- | --- |
 | Facebook Page | Text/link, photos, multiple photos, video, Reels | Existing Page adapter | Existing Meta webhook, manual and AI replies |
 | Instagram | Existing images, videos and carousels | Existing account/post adapter | Existing Meta webhook, manual and AI replies |
-| TikTok | Video or photo collection, explicit account-supported visibility | Existing account/video adapter | **Not enabled: separate Business Messaging access and adapter required** |
+| TikTok | Video or photo collection, explicit account-supported visibility | Existing account/video adapter | Separate Business Messaging OAuth, signed webhooks, DM lead capture, replies and opt-in AI; requires approved Business app configuration |
 | LinkedIn member | Text, images/multiple images, video | Member analytics after approval and reauthorization | **Not enabled: Page Messaging approval, Page OAuth and adapter required** |
 | X | Text, up to four photos, or one video | Followers, native timeline and published-post counters | One-to-one DMs polled every five minutes, replies, CRM leads and opt-in AI replies |
 
