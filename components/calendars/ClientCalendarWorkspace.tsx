@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
+import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 
-type WorkspaceView = "overview" | "calendar" | "instagram" | "tiktok" | "review";
+type WorkspaceView = "overview" | "calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x" | "review";
 
 type Platform =
   | "INSTAGRAM"
@@ -274,6 +275,7 @@ export default function ClientCalendarWorkspace({
   posts,
   stats,
 }: Props) {
+  const [previewPostId, setPreviewPostId] = useState<string>();
   const [activeView, setActiveView] = useState<WorkspaceView>("overview");
 
   // Keyboard navigation makes the workspace feel like an application rather than
@@ -335,6 +337,9 @@ export default function ClientCalendarWorkspace({
     { view: "calendar", label: "Calendar", icon: "calendar" },
     { view: "instagram", label: "Instagram", icon: "instagram" },
     { view: "tiktok", label: "TikTok", icon: "tiktok" },
+    { view: "linkedin", label: "LinkedIn", icon: "message" },
+    { view: "facebook", label: "Facebook", icon: "message" },
+    { view: "x", label: "X", icon: "message" },
     { view: "review", label: "Review", icon: "review", count: reviewPosts.length },
   ];
 
@@ -364,14 +369,15 @@ export default function ClientCalendarWorkspace({
         </div>
 
         <div className="border-t border-white/[0.055] px-3 py-2">
-          <div className="flex gap-1 overflow-x-auto">
+          <div role="group" aria-label="Client workspace views" className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap">
             {mobileItems.map((item) => (
               <button
                 key={item.view}
                 type="button"
+                aria-pressed={activeView === item.view}
                 onClick={() => navigate(item.view)}
                 className={[
-                  "flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-[10px] font-semibold transition-all",
+                  "flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2 text-[11px] font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF]",
                   activeView === item.view
                     ? "bg-[#2478FF] text-white"
                     : "text-white/40 hover:bg-white/[0.05] hover:text-white",
@@ -437,6 +443,9 @@ export default function ClientCalendarWorkspace({
             <div className="space-y-1">
               <SidebarItem active={activeView === "instagram"} onClick={() => navigate("instagram")} icon="instagram" label="Instagram" />
               <SidebarItem active={activeView === "tiktok"} onClick={() => navigate("tiktok")} icon="tiktok" label="TikTok" />
+              <SidebarItem active={activeView === "linkedin"} onClick={() => navigate("linkedin")} icon="message" label="LinkedIn" />
+              <SidebarItem active={activeView === "facebook"} onClick={() => navigate("facebook")} icon="message" label="Facebook" />
+              <SidebarItem active={activeView === "x"} onClick={() => navigate("x")} icon="message" label="X" />
             </div>
 
             <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
@@ -613,12 +622,22 @@ export default function ClientCalendarWorkspace({
                     description="Find content by month, platform, status or keyword and open any post for the full review experience."
                   />
                   <ClientCalendarView
+                    key={previewPostId || "calendar"}
+                    initialPostId={previewPostId}
                     slug={slug}
                     planStatus={planStatus}
                     clientName={clientName}
                     posts={posts}
                   />
                 </div>
+              )}
+
+              {(activeView === "linkedin" || activeView === "facebook" || activeView === "x") && (
+                <section className="rounded-3xl border border-white/10 bg-[#101216] p-3 sm:p-6">
+                  <SocialFeedPreview posts={posts} clientName={clientName.trim() || "Your brand"} channel={activeView}
+                    onOpen={(post) => { setPreviewPostId(post.id); navigate("calendar"); }}
+                    filtersActive={false} onClearFilters={() => {}} />
+                </section>
               )}
 
               {activeView === "instagram" && (

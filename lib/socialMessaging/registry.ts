@@ -1,3 +1,5 @@
+import { sendTikTokMessage } from "./tiktok";
+import { tikTokMessagingConfigured } from "@/lib/tiktokMessaging";
 import { sendLinkedInMessage } from "./linkedin";
 import { linkedInMessagingConfigured } from "@/lib/linkedin/messagingAccess";
 import type { SocialConnection } from "@prisma/client";
@@ -5,10 +7,11 @@ import { freshConnection, requireScopes } from "@/lib/socialTokens";
 import { providerJson } from "@/lib/publishing/http";
 import { sendMetaInboxMessage } from "./meta";
 
-export function supportsMessaging(platform: string) { return ["FACEBOOK", "INSTAGRAM", "X"].includes(platform) || (platform === "LINKEDIN" && linkedInMessagingConfigured()); }
+export function supportsMessaging(platform: string) { return ["FACEBOOK", "INSTAGRAM", "X"].includes(platform) || (platform === "TIKTOK" && tikTokMessagingConfigured()) || (platform === "LINKEDIN" && linkedInMessagingConfigured()); }
 export async function sendSocialInboxMessage(input: { connection: SocialConnection; instagramPageId?: string | null; recipientId: string; conversationId?: string; text: string }) {
   if (input.connection.status !== "CONNECTED") throw new Error("Reconnect this account before replying.");
   if (["FACEBOOK", "INSTAGRAM"].includes(input.connection.platform)) return sendMetaInboxMessage(input);
+  if (input.connection.platform === "TIKTOK") return sendTikTokMessage(input);
   if (input.connection.platform === "LINKEDIN") return sendLinkedInMessage(input);
   if (input.connection.platform !== "X") throw new Error("Messaging requires additional platform approval and an enabled adapter for this channel.");
   const connection = await freshConnection(input.connection);

@@ -466,7 +466,7 @@ export default function CalendarWorkspaceShell({
 
   {/* MOBILE WORKSPACE NAVIGATION */}
   {mobileOpen && (
-    <div className="border-t border-white/10 bg-[#125FD6] px-3.5 pb-4 pt-3 lg:hidden">
+    <div className="border-t border-white/10 max-h-[65dvh] overflow-y-auto bg-[#125FD6] px-3.5 pb-4 pt-3 lg:hidden">
       <div className="rounded-[22px] border border-white/10 bg-white/[0.08] p-2 backdrop-blur-xl">
 
         <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2.5">
@@ -496,6 +496,7 @@ export default function CalendarWorkspaceShell({
                   <button
                     key={item.id}
                     type="button"
+                    aria-current={selected ? "page" : undefined}
                     onClick={() => select(item.id)}
                     className={`flex min-h-[52px] items-center gap-2.5 rounded-xl px-3 text-left text-[11px] font-semibold transition ${
                       selected
@@ -542,6 +543,14 @@ export default function CalendarWorkspaceShell({
       </div>
     </div>
   )}
+  <nav aria-label="Quick workspace navigation" className="flex gap-1 overflow-x-auto border-t border-white/15 bg-white px-3 py-2 text-[#667085] lg:hidden">
+    {visibleSections.filter((section) => ["overview", "content", "generate", "inbox"].includes(section.id)).map((section) => (
+      <button key={section.id} type="button" aria-current={active.id === section.id ? "page" : undefined}
+        onClick={() => select(section.id)} className={`flex min-h-11 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF] ${active.id === section.id ? "bg-[#EEF5FF] text-[#1768E8]" : "hover:bg-slate-50"}`}>
+        <SectionIcon name={section.id} className="h-4 w-4 shrink-0" />{section.id === "content" ? "Calendar" : section.id === "generate" ? "Create" : section.label}
+      </button>
+    ))}
+  </nav>
 </header>
 
       <div className="mx-auto grid max-w-[1800px] lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]">
@@ -607,6 +616,7 @@ export default function CalendarWorkspaceShell({
                       <button
                         key={item.id}
                         type="button"
+                        aria-current={selected ? "page" : undefined}
                         onClick={() => select(item.id)}
                         className={`group relative flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-left transition-all ${
                           selected

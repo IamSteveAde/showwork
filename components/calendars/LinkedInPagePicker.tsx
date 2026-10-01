@@ -24,6 +24,7 @@ export default function LinkedInPagePicker({ calendarId }: { calendarId: string 
   return <div className="mt-4 space-y-2 rounded-xl border border-slate-700 p-3 text-xs text-slate-300">
     {capabilities && <p>{capabilities.accountType} · Publishing: {capabilities.publishing ? "authorized" : "reconnect required"} · Analytics: {capabilities.analytics ? "authorized" : "additional approval and reconnection required"}</p>}
     {capabilities && <p>{capabilities.messagingNote}</p>}
+    {capabilities?.accountType === "Personal profile" && !capabilities.analytics && <a className="block text-blue-300 underline" href={`/api/calendars/${calendarId}/channels/linkedin/connect?analytics=true`}>Authorize analytics after LinkedIn approval</a>}
     <button type="button" disabled={busy} className="block text-blue-300 underline disabled:opacity-50" onClick={async () => {
       setBusy(true); setError("");
       try {

@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getFacebookMessengerProfile, getInstagramMessagingProfile, metaWebhookPlatform } from "@/lib/socialMessaging/meta";
-import { socialStatusToPipeline } from "@/lib/calendarLeads";
+import { ingestSocialMessage } from "@/lib/socialMessaging/ingest";
 import { dispatchSocialInboxAutoReply } from "@/lib/socialMessaging/dispatchAutoReply";
 
 export const runtime = "nodejs";
@@ -101,64 +101,21 @@ export async function POST(req: NextRequest) {
         : null;
       const participantName = profile?.name || senderName || (hasUsableSavedName ? existingConversation?.participantName : null) || null;
       const participantUsername = profile?.username || senderUsername || existingConversation?.participantUsername || null;
-      const conversation = await db.socialLeadConversation.upsert({
-        where: conversationKey,
-        create: {
-          calendarId: connection.calendarId,
-          socialConnectionId: connection.id,
-          platform,
-          providerConversationId: senderId,
-          participantPlatformId: senderId,
-          participantName,
-          participantUsername,
-          unreadCount: isEcho ? 0 : 1,
-          lastMessagePreview: text.slice(0, 500),
-          lastMessageAt: messageAt,
-        },
-        update: {
-          ...(isEcho ? {} : { unreadCount: { increment: 1 } }),
-          ...(participantName ? { participantName } : {}),
-          ...(participantUsername ? { participantUsername } : {}),
-          lastMessagePreview: text.slice(0, 500),
-          lastMessageAt: messageAt,
-        },
+      // Echoes update existing threads but must never manufacture a new lead.
+      if (isEcho && !existingConversation) continue;
+      const inserted = await ingestSocialMessage(connection, {
+        conversationId: senderId, messageId: providerMessageId, participantId: senderId,
+        ...(participantName ? { name: participantName } : {}),
+        ...(participantUsername ? { username: participantUsername } : {}),
+        text, createdAt: messageAt, outbound: isEcho,
+        autoReplyEligible: !isEcho && !!event.message?.text?.trim() && settings.aiAutoReplyEnabled,
       });
-      await db.calendarLead.upsert({
-        where: { socialConversationId: conversation.id },
-        create: {
-          calendarId: connection.calendarId,
-          socialConversationId: conversation.id,
-          name: conversation.participantName || conversation.participantUsername || `${platform === "INSTAGRAM" ? "Instagram" : "Facebook"} contact`,
-          username: conversation.participantUsername,
-          status: socialStatusToPipeline(conversation.leadStatus),
-          source: "SOCIAL",
-        },
-        update: {
-          ...(participantName ? { name: participantName } : {}),
-          ...(participantUsername ? { username: participantUsername } : {}),
-        },
-      });
-      const inserted = await db.socialLeadMessage.createMany({
-        data: [{
-          conversationId: conversation.id,
-          providerMessageId,
-          direction: isEcho ? "OUTBOUND" : "INBOUND",
-          status: isEcho ? "SENT" : "RECEIVED",
-          text,
-          platformCreatedAt: messageAt,
-          autoReplyEligible: !isEcho && settings.aiAutoReplyEnabled,
-        }],
-        skipDuplicates: true,
-      });
-      if (inserted.count === 0 && !isEcho) {
-        await db.socialLeadConversation.update({ where: { id: conversation.id }, data: { unreadCount: { decrement: 1 } } });
-      }
-      if (inserted.count > 0 && !isEcho && settings.aiAutoReplyEnabled) {
+      if (inserted && !isEcho && settings.aiAutoReplyEnabled) {
         await dispatchSocialInboxAutoReply(
           (await db.socialLeadMessage.findUniqueOrThrow({
             where: {
               conversationId_providerMessageId: {
-                conversationId: conversation.id,
+                conversationId: (await db.socialLeadConversation.findUniqueOrThrow({ where: conversationKey, select: { id: true } })).id,
                 providerMessageId,
               },
             },

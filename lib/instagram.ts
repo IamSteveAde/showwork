@@ -14,7 +14,7 @@
 // to the browser.
 // ─────────────────────────────────────────────────────────────
 
-const GRAPH_API_VERSION = "v21.0";
+const GRAPH_API_VERSION = process.env.META_GRAPH_API_VERSION || "v26.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 
 const APP_ID = process.env.INSTAGRAM_APP_ID;

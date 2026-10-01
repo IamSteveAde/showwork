@@ -1,9 +1,10 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export type PublishingChannel = "facebook" | "linkedin" | "x";
+export type OAuthChannel = PublishingChannel | "tiktok-messaging";
 
 type OAuthStatePayload = {
-  channel: PublishingChannel;
+  channel: OAuthChannel;
   calendarId: string;
   nonce: string;
   expiresAt: number;
@@ -17,11 +18,11 @@ function secret() {
   return value;
 }
 
-function cookieName(channel: PublishingChannel) {
+function cookieName(channel: OAuthChannel) {
   return `showwork_${channel}_oauth_state`;
 }
 
-export function createChannelOAuthState(channel: PublishingChannel, calendarId: string) {
+export function createChannelOAuthState(channel: OAuthChannel, calendarId: string) {
   const nonce = randomBytes(32).toString("base64url");
   const payload: OAuthStatePayload = {
     channel,
@@ -40,7 +41,7 @@ export function createChannelOAuthState(channel: PublishingChannel, calendarId: 
 }
 
 export function verifyChannelOAuthState(
-  channel: PublishingChannel,
+  channel: OAuthChannel,
   state: string | null,
   cookieNonce: string | undefined,
 ): string | null {
@@ -73,7 +74,7 @@ export function verifyChannelOAuthState(
   }
 }
 
-export function channelOAuthCookieOptions(channel: PublishingChannel, maxAge: number) {
+export function channelOAuthCookieOptions(channel: OAuthChannel, maxAge: number) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

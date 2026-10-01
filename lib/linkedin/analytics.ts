@@ -30,7 +30,7 @@ export async function pagePostMetrics(connection: SocialConnection, posts: Publi
   for (const post of posts.filter(post => /^urn:li:(share|ugcPost):/.test(post.platformPostId || "")).slice(0, 100)) {
     const parameter = post.platformPostId!.includes(":ugcPost:") ? "ugcPosts" : "shares";
     const result = await providerJson<{ elements?: { totalShareStatistics: Statistics }[] }>(`${base}&${parameter}=List(${encodeURIComponent(post.platformPostId!)})`, { headers: linkedInHeaders(connection.accessToken!) });
-    output.set(post.id, normalize(result.elements?.[0]?.totalShareStatistics || { impressionCount: 0, clickCount: 0, likeCount: 0, commentCount: 0, shareCount: 0 }));
+    output.set(post.id, normalize(result.elements?.[0]?.totalShareStatistics || {}));
   }
   return output;
 }

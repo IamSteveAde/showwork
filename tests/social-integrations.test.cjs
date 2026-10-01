@@ -514,6 +514,32 @@ test('X inbound eligibility caches metadata to avoid rescanning on each unlock',
   assert.equal(await hasRecentXInbound({...c,connectedAt:new Date('2026-10-01T00:00:00Z')},'456'),false);assert.equal(calls,2);
 });
 
+test('LinkedIn authorization requests analytics explicitly without requiring it for basic publishing',()=>{
+  const keys=['LINKEDIN_CLIENT_ID','LINKEDIN_CLIENT_SECRET','LINKEDIN_ANALYTICS_ENABLED'];
+  const before=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  try {
+    process.env.LINKEDIN_CLIENT_ID='test';process.env.LINKEDIN_CLIENT_SECRET='test';process.env.LINKEDIN_ANALYTICS_ENABLED='false';
+    const {buildChannelAuthorizationUrl}=load('lib/channelOAuth.ts',{'@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>false}});
+    const base={channel:'linkedin',redirectUri:'https://example.test/callback',state:'state'};
+    const scopes=options=>new URL(buildChannelAuthorizationUrl({...base,...options})).searchParams.get('scope').split(' ');
+    assert.ok(scopes({}).includes('w_member_social'));assert.ok(!scopes({}).includes('r_member_postAnalytics'));
+    assert.ok(scopes({linkedInAnalytics:true}).includes('r_member_postAnalytics'));
+    assert.ok(scopes({linkedInPages:true}).includes('rw_organization_admin'));assert.ok(!scopes({linkedInPages:true}).includes('r_member_postAnalytics'));
+    process.env.LINKEDIN_ANALYTICS_ENABLED='true';assert.ok(scopes({}).includes('r_member_postAnalytics'));
+  }finally{for(const key of keys){if(before[key]===undefined)delete process.env[key];else process.env[key]=before[key];}}
+});
+test('LinkedIn reconnection preserves previously granted analytics permission',async()=>{
+  const {NextRequest}=require('next/server');let authorization;
+  const route=load('app/api/calendars/[id]/channels/[channel]/connect/route.ts',{
+    '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
+    '@/lib/db':{db:{socialCalendar:{findUnique:async()=>({managerId:'owner'})},socialConnection:{findFirst:async()=>({platformAccountId:'123',tokenScopes:'w_member_social,r_member_postAnalytics'})}}},
+    '@/lib/url':{appUrl:()=> 'https://example.test'},
+    '@/lib/channelOAuth':{buildChannelAuthorizationUrl:options=>{authorization=options;return 'https://www.linkedin.com/oauth/v2/authorization';}},
+    '@/lib/channelOAuthState':{createChannelOAuthState:()=>({state:'state',cookieName:'oauth',nonce:'nonce',maxAge:600}),channelOAuthCookieOptions:()=>({})},
+  });
+  await route.GET(new NextRequest('https://example.test/api/calendars/c/channels/linkedin/connect'),{params:Promise.resolve({id:'c',channel:'linkedin'})});
+  assert.equal(authorization.linkedInAnalytics,true);assert.equal(authorization.linkedInPages,false);
+});
 test('LinkedIn Page discovery includes only approved administrators and deduplicates organizations',async()=>{
   const {linkedInPages}=load('lib/linkedin/pages.ts',{'@/lib/socialTokens':tokenMock});
   global.fetch=async url=>url.includes('organizationAcls')?response({elements:[{organization:'urn:li:organization:9',role:'ADMINISTRATOR',state:'APPROVED'},{organization:'urn:li:organization:9',role:'ADMINISTRATOR',state:'APPROVED'},{organization:'urn:li:organization:8',role:'ANALYST',state:'APPROVED'},{organization:'urn:li:organization:7',role:'ADMINISTRATOR',state:'REQUESTED'}]}):response({localizedName:'Test Page'});
@@ -555,6 +581,17 @@ test('LinkedIn Page reporting routes to organization endpoints, with bounded dai
   };
   const account=await linkedinReportingAdapter.fetchAccountMetrics(c);assert.equal(account.followers,500);assert.equal(account.dailySnapshots[0].engagement,6);
   const posts=await linkedinReportingAdapter.fetchPostMetrics(c,[{id:'post',platformPostId:'urn:li:ugcPost:99'}]);assert.equal(posts.get('post').engagement,7);assert.equal(posts.get('post').clicks,5);
+});
+test('LinkedIn Page reporting keeps missing statistics unavailable and preserves explicit zeros',async()=>{
+  const {linkedinReportingAdapter}=load('lib/reporting/adapters/linkedin.ts',{'@/lib/socialTokens':{...tokenMock,freshConnection:async c=>c}});
+  const c={...connection('rw_organization_admin'),platformAccountId:'urn:li:organization:9'};
+  const posts=[{id:'post',platformPostId:'urn:li:share:99'}];
+  global.fetch=async()=>response({elements:[]});
+  const missing=(await linkedinReportingAdapter.fetchPostMetrics(c,posts)).get('post');
+  for(const field of ['impressions','clicks','likes','comments','shares','engagement'])assert.equal(missing[field],null);
+  global.fetch=async()=>response({elements:[{totalShareStatistics:{impressionCount:0,clickCount:0,likeCount:0,commentCount:0,shareCount:0}}]});
+  const zero=(await linkedinReportingAdapter.fetchPostMetrics(c,posts)).get('post');
+  for(const field of ['impressions','clicks','likes','comments','shares','engagement'])assert.equal(zero[field],0);
 });
 test('LinkedIn Page selection rejects unauthorized owners, foreign Pages and cross-origin writes',async()=>{
   const {NextRequest}=require('next/server');let writes=0;let owner=true;
@@ -671,4 +708,146 @@ test('LinkedIn subscription setup cannot be enabled by an unauthorized user or a
   const context={params:Promise.resolve({id:'workspace'})};
   assert.equal((await route.POST(req(),context)).status,403);
   owner=true;assert.equal((await route.POST(req(),context)).status,409);
+});
+
+test('Meta replies require a confirmed message ID and reject expired connections',async()=>{
+  const {sendMetaInboxMessage}=load('lib/socialMessaging/meta.ts');
+  const input={connection:{platform:'FACEBOOK',status:'CONNECTED',platformAccountId:'page',accessToken:'test'},recipientId:'person',text:'Hello'};
+  global.fetch=async()=>response({});
+  await assert.rejects(sendMetaInboxMessage(input),/did not confirm/);
+  global.fetch=async()=>response({message_id:'confirmed'});
+  assert.equal(await sendMetaInboxMessage(input),'confirmed');
+  global.fetch=async()=>assert.fail('expired token must not send');
+  await assert.rejects(sendMetaInboxMessage({...input,connection:{...input.connection,accessTokenExpiresAt:new Date(0)}}),/Reconnect/);
+});
+test('Meta messaging subscription requires explicit confirmation',async()=>{
+  const {subscribeMetaMessagingAccount}=load('lib/socialMessaging/meta.ts');
+  global.fetch=async()=>response({});
+  await assert.rejects(subscribeMetaMessagingAccount('page','token','FACEBOOK'),/not confirmed/);
+  global.fetch=async()=>response({success:true});
+  await subscribeMetaMessagingAccount('page','token','INSTAGRAM');
+});
+function autoReplyFixture({sendFails=false,persistFails=false,disabled=false,claimCount=1}={}) {
+  const updates=[];let sends=0;let generated=0;
+  const inbound={id:'message',conversationId:'thread',autoReplyAttemptCount:0,text:'Hello',conversation:{providerConversationId:'external-thread',platform:'FACEBOOK',participantPlatformId:'person',connection:{platform:'FACEBOOK',status:'CONNECTED'},calendar:{clientName:'Business',aiBusinessSummary:'Summary',instagramPageId:null},messages:[]}};
+  const db={socialInboxSettings:{findMany:async()=>[{calendarId:'calendar'}],findUnique:async()=>({aiAutoReplyEnabled:!disabled})},socialLeadMessage:{findMany:async()=>[inbound],updateMany:async()=>({count:claimCount}),update:async args=>{updates.push(args);}},$transaction:async fn=>{if(persistFails)throw new Error('storage unavailable');await fn({socialLeadMessage:{createMany:async()=>({count:1}),update:async args=>updates.push(args)},socialLeadConversation:{update:async()=>{}}});}};
+  const mod=load('lib/socialMessaging/autoReply.ts',{'@/lib/db':{db},'@/lib/openai':{generateSocialInboxAutoReply:async()=>{generated++;return{shouldReply:true,replyText:'Hi'};}},'@/lib/socialMessaging/registry':{supportsMessaging:()=>true,sendSocialInboxMessage:async input=>{sends++;assert.equal(input.conversationId,'external-thread');if(sendFails)throw new Error('timeout');return 'confirmed';}}});
+  return {...mod,updates,counts:()=>({sends,generated})};
+}
+test('AI replies pass conversation identity and persist confirmed delivery',async()=>{
+  const f=autoReplyFixture();const result=await f.processSocialInboxAutoReplies();
+  assert.equal(result.sent,1);assert.equal(f.counts().sends,1);assert.ok(f.updates.at(-1).data.autoReplyHandledAt);
+});
+test('AI sends with ambiguous delivery or failed persistence are handed off without automatic resend',async()=>{
+  const old=console.error;console.error=()=>{};
+  try{for(const options of [{sendFails:true},{persistFails:true}]){const f=autoReplyFixture(options);const result=await f.processSocialInboxAutoReplies();assert.equal(result.failed,1);assert.equal(f.counts().sends,1);assert.ok(f.updates.at(-1).data.autoReplyHandledAt);assert.match(f.updates.at(-1).data.autoReplyHandoffReason,/Check the platform inbox/);}}finally{console.error=old;}
+});
+test('AI rechecks disabled settings and a duplicate worker cannot send',async()=>{
+  const disabled=autoReplyFixture({disabled:true});assert.equal((await disabled.processSocialInboxAutoReplies()).handedOff,1);assert.equal(disabled.counts().sends,0);
+  const duplicate=autoReplyFixture({claimCount:0});await duplicate.processSocialInboxAutoReplies();assert.deepEqual(duplicate.counts(),{sends:0,generated:0});
+});
+test('Meta webhook ingests transactionally, dispatches only new inbound events, and ignores orphan echoes',async()=>{
+  const {NextRequest}=require('next/server');const {createHmac}=require('node:crypto');
+  const previous=process.env.META_APP_SECRET;process.env.META_APP_SECRET='test-secret';
+  let existing=null;let inserted=true;let ingests=0;let dispatches=0;let eventSeen;
+  const route=load('app/api/webhooks/meta/messaging/route.ts',{
+    '@/lib/db':{db:{socialConnection:{findFirst:async()=>({id:'connection',calendarId:'workspace',platform:'FACEBOOK',platformAccountId:'page'})},socialInboxSettings:{upsert:async()=>({aiAutoReplyEnabled:true})},socialLeadConversation:{findUnique:async()=>existing,findUniqueOrThrow:async()=>({id:'thread'})},socialLeadMessage:{findUniqueOrThrow:async()=>({id:'message'})}}},
+    '@/lib/socialMessaging/meta':{metaWebhookPlatform:()=> 'FACEBOOK'},
+    '@/lib/socialMessaging/ingest':{ingestSocialMessage:async(connection,event)=>{ingests++;eventSeen=event;return inserted;}},
+    '@/lib/socialMessaging/dispatchAutoReply':{dispatchSocialInboxAutoReply:async()=>{dispatches++;}},
+  });
+  const deliver=async(isEcho=false,text='Hello')=>{const raw=JSON.stringify({object:'page',entry:[{id:'page',messaging:[{sender:{id:isEcho?'page':'person'},recipient:{id:isEcho?'person':'page'},timestamp:Date.now(),message:{mid:'m',text,is_echo:isEcho}}]}]});const signature='sha256='+createHmac('sha256','test-secret').update(raw).digest('hex');return route.POST(new NextRequest('https://example.test/api/webhooks/meta/messaging',{method:'POST',headers:{'x-hub-signature-256':signature},body:raw}));};
+  try{
+    assert.equal((await deliver()).status,200);assert.equal(ingests,1);assert.equal(dispatches,1);assert.equal(eventSeen.autoReplyEligible,true);
+    inserted=false;await deliver();assert.equal(dispatches,1);
+    await deliver(true);assert.equal(ingests,2);
+    existing={id:'thread'};inserted=true;await deliver(true);assert.equal(eventSeen.outbound,true);assert.equal(eventSeen.autoReplyEligible,false);assert.equal(dispatches,1);
+  }finally{if(previous===undefined)delete process.env.META_APP_SECRET;else process.env.META_APP_SECRET=previous;}
+});
+test('TikTok analytics keep lifetime video counters separate from daily account metrics',async()=>{
+  const {tiktokReportingAdapter}=load('lib/reporting/adapters/tiktok.ts',{'@/lib/db':{},'@/lib/tiktok':{}});
+  const c={platform:'TIKTOK',tokenScopes:'user.info.stats,video.list',accessToken:'test'};
+  global.fetch=async url=>response({error:{code:'ok'},data:url.includes('/user/info/')?{user:{follower_count:10}}:{videos:[{id:'video',create_time:Math.floor(Date.now()/1000),view_count:100,like_count:2,comment_count:3,share_count:1}],has_more:false}});
+  const data=await tiktokReportingAdapter.fetchAccountMetrics(c);
+  assert.equal(data.followers,10);assert.equal(data.views,null);assert.equal(data.engagement,null);assert.equal(data.accountPosts[0].views,100);assert.equal(data.accountPosts[0].engagement,6);
+  global.fetch=async()=>response({error:{code:'scope_not_authorized',message:'denied'}},403);
+  await assert.rejects(tiktokReportingAdapter.fetchPostMetrics(c,[{id:'post',platformPostId:'video'}]),/permission is missing/);
+});
+function tikTokNativeFixture({duplicate=false,enabled=true}={}) {
+  const connection={id:'tik-connection',calendarId:'calendar',platform:'TIKTOK',status:'CONNECTED',platformAccountId:'publishing-id',accessToken:'publishing-token',
+    tikTokMessagingBusinessId:'business-id',tikTokMessagingConnectedAt:new Date(Date.now()-60_000),tikTokMessagingScopes:'message.list.read,message.list.send,message.list.manage,user.account.type',
+    messagingWebhookSubscribedAt:new Date(),messagingWebhookError:null,tikTokMessagingAccessToken:'business-token',tikTokMessagingTokenExpiresAt:new Date(Date.now()+3600_000)};
+  const wire={conversation_id:'conversation+id',message_id:'message',timestamp:Date.now(),type:'text',text:{body:'Hello'},from:'person',from_user:{id:'person-id',role:'personal_account'},to_user:{id:'business-id',role:'business_account'}};
+  const event={client_key:'business-app',event:'im_receive_msg',user_openid:'business-id',content:JSON.stringify(wire)};
+  let stored=[],dispatches=0;
+  const db={socialConnection:{findMany:async()=>[connection],updateMany:async()=>({count:1})},socialLeadConversation:{findUnique:async()=>null,findFirst:async args=>args.where.participantPlatformId==='person-id'?{messages:[{platformCreatedAt:new Date()}]}:null},socialInboxSettings:{findUnique:async()=>({aiAutoReplyEnabled:true})},socialLeadMessage:{findFirst:async()=>({id:'saved'})}};
+  const mod=load('lib/socialMessaging/tiktok.ts',{'@/lib/db':{db},'@/lib/calendarPermissions':{canAccessCalendarById:async()=>true},
+    '@/lib/tiktokMessaging':{...load('lib/tiktokMessaging.ts'),tikTokMessagingConfigured:()=>enabled},
+    './ingest':{ingestSocialMessage:async(c,m)=>{stored.push(m);return !duplicate;}},'./dispatchAutoReply':{dispatchSocialInboxAutoReply:async()=>{dispatches++;}}});
+  return {...mod,connection,wire,event,db,counts:()=>({stored,dispatches})};
+}
+test('TikTok incoming business messages reach shared lead ingestion and AI dispatch',async()=>{
+  const previous=process.env.TIKTOK_BUSINESS_CLIENT_ID;process.env.TIKTOK_BUSINESS_CLIENT_ID='business-app';
+  try {
+    const f=tikTokNativeFixture();assert.equal((await f.receiveTikTokMessage(f.event)).imported,1);assert.equal(f.counts().dispatches,1);assert.equal(f.counts().stored[0].autoReplyEligible,true);
+    const duplicate=tikTokNativeFixture({duplicate:true});assert.equal((await duplicate.receiveTikTokMessage(duplicate.event)).imported,0);assert.equal(duplicate.counts().dispatches,0);
+  } finally {if(previous===undefined)delete process.env.TIKTOK_BUSINESS_CLIENT_ID;else process.env.TIKTOK_BUSINESS_CLIENT_ID=previous;}
+});
+test('TikTok rejects wrong account identities and disables AI for old, future and media messages',()=>{
+  const f=tikTokNativeFixture();const normalize=f.normalizeTikTokMessage;
+  assert.throws(()=>normalize({...f.wire,to_user:{id:'foreign',role:'business_account'}},'business-id'),/Invalid/);
+  assert.throws(()=>normalize({...f.wire,timestamp:NaN},'business-id'),/Invalid/);
+  assert.equal(normalize({...f.wire,timestamp:Date.now()-11*60_000},'business-id').autoReplyEligible,false);
+  assert.equal(normalize({...f.wire,timestamp:Date.now()+30_000},'business-id').autoReplyEligible,false);
+  assert.equal(normalize({...f.wire,type:'image'},'business-id').autoReplyEligible,false);
+  assert.equal(normalize({...f.wire,message_tag:{source:'API'}},'business-id').autoReplyEligible,false);
+});
+test('TikTok orphan outbound echoes cannot create conversations or leads',async()=>{
+  const previous=process.env.TIKTOK_BUSINESS_CLIENT_ID;process.env.TIKTOK_BUSINESS_CLIENT_ID='business-app';
+  try {const f=tikTokNativeFixture();const wire={...f.wire,from_user:f.wire.to_user,to_user:f.wire.from_user};await f.receiveTikTokMessage({...f.event,event:'im_send_msg',content:JSON.stringify(wire)});assert.equal(f.counts().stored.length,0);}finally{if(previous===undefined)delete process.env.TIKTOK_BUSINESS_CLIENT_ID;else process.env.TIKTOK_BUSINESS_CLIENT_ID=previous;}
+});
+test('TikTok manual and AI replies enforce ownership, Business tokens and confirmed acceptance',async()=>{
+  const f=tikTokNativeFixture();const input={connection:f.connection,conversationId:'conversation+id',recipientId:'person-id',text:'Reply'};
+  global.fetch=async(url,init)=>{assert.match(url,/business\/message\/send\//);assert.equal(init.headers['Access-Token'],'business-token');assert.deepEqual(JSON.parse(init.body),{business_id:'business-id',recipient_type:'CONVERSATION',recipient:'conversation+id',message_type:'TEXT',text:{body:'Reply'}});return response({code:0,data:{message:{message_id:'confirmed'}}});};
+  assert.equal(await f.sendTikTokMessage(input),'confirmed');await assert.rejects(f.sendTikTokMessage({...input,recipientId:'foreign'}),/existing inbound/);
+  global.fetch=async()=>response({code:0,data:{}});await assert.rejects(f.sendTikTokMessage(input),/did not confirm/);
+  await assert.rejects(tikTokNativeFixture({enabled:false}).sendTikTokMessage(input),/approval/);
+  f.db.socialLeadConversation.findFirst=async()=>({messages:[{platformCreatedAt:new Date(Date.now()-49*3600_000)}]});await assert.rejects(f.sendTikTokMessage(input),/48-hour/);
+});
+test('TikTok signatures reject forgery, replay, missing headers and future timestamps',()=>{
+  const {createHmac}=require('node:crypto');const mod=load('lib/tiktokMessaging.ts');const raw='{"event":"im_receive_msg"}';const now=Date.now();const t=String(Math.floor(now/1000));const sign=timestamp=>`t=${timestamp},s=${createHmac('sha256','test-secret').update(timestamp+'.'+raw).digest('hex')}`;
+  assert.equal(mod.verifyTikTokMessagingSignature(raw,sign(t),'test-secret',now),true);
+  assert.equal(mod.verifyTikTokMessagingSignature(raw+' ',sign(t),'test-secret',now),false);
+  assert.equal(mod.verifyTikTokMessagingSignature(raw,sign(String(Number(t)-301)),'test-secret',now),false);
+  assert.equal(mod.verifyTikTokMessagingSignature(raw,sign(String(Number(t)+301)),'test-secret',now),false);
+  assert.equal(mod.verifyTikTokMessagingSignature(raw,null,'test-secret',now),false);
+});
+test('TikTok webhook rejects forged requests and requests retry on processing failure',async()=>{
+  const {NextRequest}=require('next/server');let calls=0;let valid=false;const previous=process.env.TIKTOK_BUSINESS_CLIENT_SECRET;process.env.TIKTOK_BUSINESS_CLIENT_SECRET='test-secret';
+  const route=load('app/api/webhooks/tiktok/messaging/route.ts',{'@/lib/tiktokMessaging':{verifyTikTokMessagingSignature:()=>valid},'@/lib/socialMessaging/tiktok':{receiveTikTokMessage:async()=>{calls++;throw new Error('database unavailable');}}});
+  const req=()=>new NextRequest('https://example.test/api/webhooks/tiktok/messaging',{method:'POST',body:'{}'});
+  try{assert.equal((await route.POST(req())).status,401);assert.equal(calls,0);valid=true;assert.equal((await route.POST(req())).status,503);assert.equal(calls,1);}finally{if(previous===undefined)delete process.env.TIKTOK_BUSINESS_CLIENT_SECRET;else process.env.TIKTOK_BUSINESS_CLIENT_SECRET=previous;}
+});
+test('TikTok history import encodes conversation IDs and never enables AI replies',async()=>{
+  const f=tikTokNativeFixture();let requests=0;
+  global.fetch=async url=>{requests++;const parsed=new URL(url);assert.equal(parsed.searchParams.get('business_id'),'business-id');if(url.includes('conversation/list'))return response({code:0,data:{conversations:[{conversation_id:'conversation+id'}],has_more:false}});assert.match(url,/conversation_id=conversation%2Bid/);return response({code:0,data:{messages:[{...f.wire,message_type:'TEXT'}],participants:[{id:'person-id',display_name:'Customer'}]}});};
+  const result=await f.syncTikTokInbox(f.connection);assert.equal(requests,4);assert.equal(result.imported,2);assert.equal(f.counts().stored[0].autoReplyEligible,false);assert.equal(f.counts().stored[0].name,'Customer');assert.equal(f.counts().dispatches,0);
+});
+test('TikTok Business token refresh uses separate credentials and preserves rotated tokens',async()=>{
+  const f=tikTokNativeFixture();const old={...f.connection,tikTokMessagingTokenExpiresAt:new Date(0),tikTokMessagingRefreshToken:'refresh',tikTokMessagingRefreshExpiresAt:new Date(Date.now()+3600_000)};let saved;
+  f.db.socialConnection.updateMany=async args=>{saved=args;return{count:1}};f.db.socialConnection.findUniqueOrThrow=async()=>({...f.connection,...saved.data});
+  global.fetch=async(url,init)=>{assert.match(url,/tt_user\/oauth2\/refresh_token/);assert.equal(JSON.parse(init.body).refresh_token,'refresh');return response({code:0,data:{access_token:'renewed',refresh_token:'rotated',open_id:'business-id',scope:f.connection.tikTokMessagingScopes,expires_in:86400,refresh_token_expires_in:100000}});};
+  const renewed=await f.freshTikTokMessagingConnection(old);assert.equal(renewed.tikTokMessagingAccessToken,'renewed');assert.equal(renewed.tikTokMessagingRefreshToken,'rotated');assert.equal(saved.where.tikTokMessagingRefreshToken,'refresh');assert.equal(renewed.accessToken,'publishing-token');
+});
+test('TikTok Business OAuth state binds authorization to the connection, channel and browser',()=>{
+  const old=process.env.JWT_SECRET;process.env.JWT_SECRET='test-state-secret';
+  try {const state=load('lib/channelOAuthState.ts');const created=state.createChannelOAuthState('tiktok-messaging','connection-id');assert.equal(state.verifyChannelOAuthState('tiktok-messaging',created.state,created.nonce),'connection-id');assert.equal(state.verifyChannelOAuthState('x',created.state,created.nonce),null);assert.equal(state.verifyChannelOAuthState('tiktok-messaging',created.state,'foreign-browser'),null);assert.equal(state.channelOAuthCookieOptions('tiktok-messaging',600).path,'/api/calendars/channels/tiktok-messaging/callback');}finally{if(old===undefined)delete process.env.JWT_SECRET;else process.env.JWT_SECRET=old;}
+});
+test('TikTok Business authorization validates the official host and requests fresh consent',()=>{
+  const keys=['TIKTOK_BUSINESS_CLIENT_ID','TIKTOK_BUSINESS_CLIENT_SECRET','TIKTOK_BUSINESS_AUTH_URL'];const old=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+  try {process.env.TIKTOK_BUSINESS_CLIENT_ID='app';process.env.TIKTOK_BUSINESS_CLIENT_SECRET='secret';process.env.TIKTOK_BUSINESS_AUTH_URL='https://www.tiktok.com/v2/auth/authorize?client_key=app';const mod=load('lib/tiktokMessaging.ts');const url=new URL(mod.buildTikTokMessagingAuthUrl('signed','https://example.test/callback'));assert.equal(url.searchParams.get('state'),'signed');assert.equal(url.searchParams.get('disable_auto_auth'),'1');assert.equal(url.searchParams.get('redirect_uri'),'https://example.test/callback');assert.equal(url.searchParams.has('client_secret'),false);process.env.TIKTOK_BUSINESS_AUTH_URL='https://evil.test/authorize';assert.throws(()=>mod.buildTikTokMessagingAuthUrl('signed','https://example.test/callback'),/account holder/);}finally{for(const k of keys){if(old[k]===undefined)delete process.env[k];else process.env[k]=old[k];}}
+});
+test('TikTok Business token exchange rejects partial authorization before credentials are stored',async()=>{
+  global.fetch=async(url,init)=>{assert.match(url,/tt_user\/oauth2\/token/);const body=JSON.parse(init.body);assert.equal(body.auth_code,'code');assert.equal(body.redirect_uri,'https://example.test/callback');return response({code:0,data:{access_token:'business',refresh_token:'refresh',open_id:'id',scope:'message.list.read',expires_in:86400,refresh_token_expires_in:100000}});};
+  await assert.rejects(load('lib/tiktokMessaging.ts').tikTokMessagingTokens({code:'code',redirectUri:'https://example.test/callback'}),/all four/);
 });
