@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
 
   if (!calendarId) return redirectTo("/dashboard/calendars?tiktokError=missing_state");
 
-  const settingsPath = `/dashboard/calendars/${calendarId}`;
+  const settingsPath = `/dashboard/calendars/${calendarId}?view=channels`;
 
   if (oauthError || !code) {
-    return redirectTo(`${settingsPath}?tiktokError=denied`);
+    return redirectTo(`${settingsPath}&tiktokError=denied`);
   }
 
   const creator = await getCurrentCreator();
@@ -67,9 +67,9 @@ export async function GET(req: NextRequest) {
       tokenScopes: tokens.scope,
     });
 
-    return redirectTo(`${settingsPath}?tiktokConnected=true`);
+    return redirectTo(`${settingsPath}&tiktokConnected=true`);
   } catch (err) {
     console.error("TikTok OAuth callback failed:", err);
-    return redirectTo(`${settingsPath}?tiktokError=connection_failed`);
+    return redirectTo(`${settingsPath}&tiktokError=connection_failed`);
   }
 }

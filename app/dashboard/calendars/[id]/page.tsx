@@ -1,3 +1,4 @@
+import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import { requirePostPlatform } from "@/lib/calendarPosts";
 import Link from "next/link";
 import type { CSSProperties } from "react";
@@ -1280,6 +1281,8 @@ contentIdea: p.contentIdea,
   ];
 
   return (
+    <>
+    <CalendarPaymentCallbackHandler />
     <CalendarWorkspaceShell
       clientName={calendar.clientName}
       clientUrl={clientUrl}
@@ -1301,5 +1304,6 @@ contentIdea: p.contentIdea,
 }
       sections={sections}
     />
+    </>
   );
 }

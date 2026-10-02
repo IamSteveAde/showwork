@@ -1,3 +1,4 @@
+import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
@@ -201,7 +202,7 @@ export async function POST(req: NextRequest) {
       reference,
 
       callbackUrl:
-        `${appUrl()}/dashboard/calendars?subscriptionPayment=callback`,
+        await calendarPaymentReturn(req, creator.id),
 
       planCode: studioPlanCode,
 

@@ -158,17 +158,21 @@ export async function POST(
       { status: 400 },
     );
   }
-  const posts = await db.$transaction(async (tx) => {
-    await lockCalendar(tx, id);
-    const created = [];
-    for (const postData of data)
-      created.push(
-        await tx.calendarPost.create({
-          data: postData,
-          include: { assets: true, customFields: true },
-        }),
-      );
-    return created;
-  });
+  const posts = await db.$transaction(
+    async (tx) => {
+      await lockCalendar(tx, id);
+      const created = [];
+      for (const postData of data)
+        created.push(
+          await tx.calendarPost.create({
+            data: postData,
+            include: { assets: true, customFields: true },
+          }),
+        );
+      return created;
+    },
+    // Multiple platforms and nested custom fields can exceed Prisma's 5s default.
+    { maxWait: 10000, timeout: 30000 },
+  );
   return NextResponse.json({ post: posts[0], posts });
 }

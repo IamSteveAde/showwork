@@ -21,7 +21,7 @@ export async function GET(
   const { id } = await params;
   const calendar = await db.socialCalendar.findUnique({ where: { id }, select: { managerId: true } });
   if (!calendar || calendar.managerId !== creator.id) {
-    return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?instagramError=not_found`);
+    return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&instagramError=not_found`);
   }
 
   const redirectUri = `${appUrl()}/api/calendars/instagram/callback`;
@@ -31,6 +31,6 @@ export async function GET(
     return NextResponse.redirect(authUrl);
   } catch (err) {
     console.error("Failed to build Instagram auth URL:", err);
-    return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?instagramError=not_configured`);
+    return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&instagramError=not_configured`);
   }
 }
