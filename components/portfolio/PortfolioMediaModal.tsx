@@ -72,14 +72,14 @@ export default function PortfolioMediaModal({
           <button
             onClick={(e) => { e.stopPropagation(); onPrev(); }}
             aria-label="Previous"
-            className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:left-6"
+            className="absolute bottom-4 left-4 sm:bottom-auto sm:top-1/2 z-10 flex h-11 w-11 sm:-translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:left-6"
           >
             ←
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onNext(); }}
             aria-label="Next"
-            className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:right-6"
+            className="absolute bottom-4 right-4 sm:bottom-auto sm:top-1/2 z-10 flex h-11 w-11 sm:-translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:right-6"
           >
             →
           </button>
@@ -93,7 +93,7 @@ export default function PortfolioMediaModal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
-        className={`overflow-hidden rounded-2xl ${item.type === "PDF" || item.type === "DOCUMENT" ? "h-[85vh] w-[92vw] max-w-3xl bg-white" : "max-h-[85vh] max-w-[92vw] bg-black"}`}
+        className={`overflow-hidden rounded-2xl ${item.type === "PDF" || item.type === "DOCUMENT" ? "h-[85dvh] w-[92vw] max-w-3xl bg-white" : "max-h-[85dvh] max-w-[92vw] bg-black"}`}
         style={{ pointerEvents: "auto" }}
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
@@ -102,11 +102,11 @@ export default function PortfolioMediaModal({
           <PortfolioAutoplayVideo
             src={item.url}
             controls
-            className="max-h-[85vh] max-w-[92vw] object-contain"
+            className="max-h-[85dvh] max-w-[92vw] object-contain"
           />
         ) : item.type === "PHOTO" ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.url} alt={item.caption || ""} className="max-h-[85vh] max-w-[92vw] object-contain" draggable={false} />
+          <img src={item.url} alt={item.caption || ""} className="max-h-[85dvh] max-w-[92vw] object-contain" draggable={false} />
         ) : item.type === "PDF" ? (
           <iframe src={item.url} title={item.caption || "Document"} className="h-full w-full border-0" />
         ) : (
@@ -115,7 +115,7 @@ export default function PortfolioMediaModal({
       </motion.div>
 
       {total > 1 && (
-        <p className="absolute bottom-2 left-0 right-0 text-center text-xs font-medium text-white/40">
+        <p className="absolute bottom-8 sm:bottom-2 left-0 right-0 text-center text-xs font-medium text-white/40">
           {index + 1} / {total}
         </p>
       )}

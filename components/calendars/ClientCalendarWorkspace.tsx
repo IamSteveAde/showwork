@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Moon, Sun } from "lucide-react";
 import Image from "next/image";
+import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
 import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
 import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
@@ -277,6 +278,7 @@ export default function ClientCalendarWorkspace({
   posts,
   stats,
 }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
     try {
@@ -370,6 +372,7 @@ export default function ClientCalendarWorkspace({
   const contentScrollRef = useRef<HTMLElement>(null);
 
   const navigate = (view: WorkspaceView) => {
+    setMobileOpen(false);
     setActiveView(view);
     const url = new URL(window.location.href);
     if (url.searchParams.get("view") !== view) {
@@ -380,82 +383,9 @@ export default function ClientCalendarWorkspace({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const mobileItems: Array<{
-    view: WorkspaceView;
-    label: string;
-    icon: Parameters<typeof Icon>[0]["name"];
-    count?: number;
-  }> = [
-    { view: "overview", label: "Overview", icon: "grid" },
-    { view: "calendar", label: "Calendar", icon: "calendar" },
-    { view: "analytics", label: "Analytics & Reporting", icon: "spark" },
-    { view: "instagram", label: "Instagram", icon: "instagram" },
-    { view: "tiktok", label: "TikTok", icon: "tiktok" },
-    { view: "linkedin", label: "LinkedIn", icon: "message" },
-    { view: "facebook", label: "Facebook", icon: "message" },
-    { view: "x", label: "X", icon: "message" },
-    { view: "review", label: "Review", icon: "review", count: reviewPosts.length },
-  ];
-
-  return (
-    <main style={themeStyle} data-client-theme={theme} className="min-h-screen overflow-x-hidden bg-[rgb(var(--client-bg))] text-[rgb(var(--client-ink))] lg:h-dvh lg:min-h-0 lg:overflow-hidden">
-      {/* Mobile app header */}
-      <header className="sticky top-0 z-50 border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/94 backdrop-blur-2xl lg:hidden">
-        <div className="flex h-[68px] items-center gap-3 px-4">
-          <Image
-            src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
-            alt="Showwork"
-            width={80}
-            height={20}
-            className="h-5 w-auto shrink-0"
-            priority
-          />
-          <div className="h-5 w-px bg-[rgb(var(--client-ink))]/10" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
-            <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
-              Client workspace
-            </p>
-          </div>
-          {themeToggle}
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--client-ink))]/[0.08] bg-[rgb(var(--client-ink))]/[0.035]">
-            <Icon name="lock" className="h-4 w-4 text-[rgb(var(--client-muted))]" />
-          </span>
-        </div>
-
-        <div className="border-t border-[rgb(var(--client-ink))]/[0.055] px-3 py-2">
-          <div role="group" aria-label="Client workspace views" className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap">
-            {mobileItems.map((item) => (
-              <button
-                key={item.view}
-                type="button"
-                aria-pressed={activeView === item.view}
-                onClick={() => navigate(item.view)}
-                className={[
-                  "flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2 text-[11px] font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF]",
-                  activeView === item.view
-                    ? "bg-[#2478FF] text-white"
-                    : "text-[rgb(var(--client-muted))] hover:bg-[rgb(var(--client-ink))]/[0.05] hover:text-[rgb(var(--client-ink))]",
-                ].join(" ")}
-              >
-                <Icon name={item.icon} className="h-3.5 w-3.5" />
-                {item.label}
-                {item.count ? (
-                  <span className="rounded-full bg-[#F7B742]/10 px-1.5 py-0.5 text-[8px] text-[rgb(var(--client-amber))]">
-                    {item.count}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <div className="flex min-h-screen lg:h-full lg:min-h-0">
-        {/* Persistent desktop navigation */}
-        <aside className="hidden h-full w-[272px] shrink-0 flex-col overflow-hidden border-r border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] lg:flex">
+  const sidebar = <>
           <div className="border-b border-[rgb(var(--client-ink))]/[0.07] px-5 py-5">
-            <Image
+          <Image
               src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
               alt="Showwork"
               width={80}
@@ -531,6 +461,41 @@ export default function ClientCalendarWorkspace({
               </div>
             </div>
           </div>
+  </>;
+
+  return (
+    <main style={themeStyle} data-client-theme={theme} className="min-h-screen overflow-x-hidden bg-[rgb(var(--client-bg))] text-[rgb(var(--client-ink))] lg:h-dvh lg:min-h-0 lg:overflow-hidden">
+      {/* Mobile app header */}
+      <header className="sticky top-0 z-50 border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/94 backdrop-blur-2xl lg:hidden">
+        <div className="flex h-[68px] items-center gap-2 px-3 sm:gap-3 sm:px-4">
+          <NavigationToggle open={mobileOpen} onClick={() => setMobileOpen(true)} label="workspace navigation" />
+          <Image
+            src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
+            alt="Showwork"
+            width={80}
+            height={20}
+            className="h-5 w-auto shrink-0"
+            priority
+          />
+          <div className="h-5 w-px bg-[rgb(var(--client-ink))]/10" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
+            <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
+              Client workspace
+            </p>
+          </div>
+          {themeToggle}
+
+        </div>
+
+      </header>
+
+      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Client workspace" className="bg-[rgb(var(--client-panel))] text-[rgb(var(--client-ink))]">{sidebar}</MobileDrawer>
+
+      <div className="flex min-h-screen lg:h-full lg:min-h-0">
+        {/* Persistent desktop navigation */}
+        <aside className="hidden h-full w-[272px] shrink-0 flex-col overflow-hidden border-r border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] lg:flex">
+          {sidebar}
         </aside>
 
         {/* Everything below stays mounted. Only the active workspace view changes. */}

@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import ResponsiveSidebar from "@/components/navigation/ResponsiveSidebar";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
@@ -352,7 +353,7 @@ export default async function PortfolioDetailPage({
     <main className="min-h-screen overflow-x-hidden bg-[#F5F7FA] text-[#0A0A0A]">
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07090D]/90 text-white backdrop-blur-2xl">
-        <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between pl-16 pr-4 sm:pl-16 sm:pr-6 lg:px-8">
           <Link
             href="/dashboard"
             className="group inline-flex items-center gap-2.5 rounded-full bg-white/[0.055] px-3.5 py-2.5 text-xs font-semibold text-white/55 transition hover:bg-white/[0.09] hover:text-white"
@@ -435,7 +436,7 @@ export default async function PortfolioDetailPage({
 
       <div className="mx-auto flex max-w-[1600px]">
         {/* Desktop sidebar */}
-        <aside className="sticky top-[68px] hidden h-[calc(100vh-68px)] w-[290px] shrink-0 border-r border-[#E4E8EE] bg-white lg:flex lg:flex-col">
+        <ResponsiveSidebar label="Portfolio navigation" drawerClassName="bg-white text-[#101318]" desktopClassName="sticky top-[68px] hidden h-[calc(100dvh-68px)] w-[290px] shrink-0 border-r border-[#E4E8EE] bg-white lg:flex lg:flex-col">
           <div className="border-b border-[#E9EDF2] p-5">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#2478FF]">
               Portfolio studio
@@ -551,7 +552,7 @@ export default async function PortfolioDetailPage({
               Back to all apps
             </Link>
           </div>
-        </aside>
+        </ResponsiveSidebar>
 
         {/* Main workspace */}
         <section className="min-w-0 flex-1">

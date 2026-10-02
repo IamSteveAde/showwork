@@ -11,6 +11,7 @@ import SectionHeader from "@/components/SectionHeader";
 import DeliveryStatusControl from "@/components/DeliveryStatusControl";
 import EditableField from "@/components/EditableField";
 import CollaboratorsPanel from "@/components/CollaboratorsPanel";
+import ResponsiveSidebar from "@/components/navigation/ResponsiveSidebar";
 import ProjectTabController from "@/components/ProjectTabController";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -786,7 +787,7 @@ export default async function ProjectDetailPage({
 
       {/* Top bar */}
       <header className="fixed inset-x-0 top-0 z-[100] border-b border-white/15 bg-gradient-to-r from-[#123EA8] via-[#2563EB] to-[#4F8CFF] shadow-[0_18px_55px_-28px_rgba(20,68,180,.9)]">
-        <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-[68px] max-w-[1600px] items-center justify-between pl-16 pr-4 sm:pl-16 sm:pr-6 lg:px-8">
           <Link
             href="/dashboard/projects"
             className="group inline-flex items-center gap-2.5 text-sm text-white/80 transition hover:text-white"
@@ -864,7 +865,7 @@ export default async function ProjectDetailPage({
 
       <div className="relative z-10 min-h-screen lg:pl-[292px]">
         {/* Desktop sidebar — fixed independently from the document scroll */}
-        <aside className="fixed bottom-0 left-0 top-[68px] z-[90] hidden w-[292px] border-r border-white/15 bg-gradient-to-b from-[#123EA8] via-[#2563EB] to-[#17398F] text-white shadow-[22px_0_60px_-36px_rgba(18,62,168,.9)] lg:flex lg:flex-col">
+        <ResponsiveSidebar label="Project navigation" drawerClassName="bg-gradient-to-b from-[#123EA8] via-[#2563EB] to-[#17398F] text-white" desktopClassName="fixed bottom-0 left-0 top-[68px] z-[90] hidden w-[292px] border-r border-white/15 bg-gradient-to-b from-[#123EA8] via-[#2563EB] to-[#17398F] text-white shadow-[22px_0_60px_-36px_rgba(18,62,168,.9)] lg:flex lg:flex-col">
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -left-24 top-20 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
             <div className="absolute -right-20 bottom-16 h-72 w-72 rounded-full bg-indigo-950/25 blur-3xl" />
@@ -981,10 +982,10 @@ export default async function ProjectDetailPage({
               Download project report
             </a>
           </div>
-        </aside>
+        </ResponsiveSidebar>
 
         {/* Main content */}
-        <section className="theme-content min-h-screen min-w-0 pt-[68px]">
+        <section className="theme-content min-h-screen min-w-0 lg:pt-[68px]">
           <div className="mx-auto max-w-[1120px] px-4 pb-24 pt-8 sm:px-6 md:pt-10 lg:px-10 lg:pb-28 lg:pt-12">
             {/* Page title */}
             <div className="mb-9 border-b border-blue-200/70 pb-8">

@@ -161,15 +161,18 @@ export async function POST(
   const posts = await db.$transaction(
     async (tx) => {
       await lockCalendar(tx, id);
-      const created = [];
+      const createdIds: string[] = [];
       for (const postData of data)
-        created.push(
-          await tx.calendarPost.create({
-            data: postData,
-            include: { assets: true, customFields: true },
-          }),
+        createdIds.push(
+          (await tx.calendarPost.create({ data: postData, select: { id: true } })).id,
         );
-      return created;
+      // Fetch relations once for the batch instead of once per platform.
+      const created = await tx.calendarPost.findMany({
+        where: { id: { in: createdIds } },
+        include: { assets: true, customFields: true },
+      });
+      const byId = new Map(created.map((post) => [post.id, post]));
+      return createdIds.map((postId) => byId.get(postId)!);
     },
     // Multiple platforms and nested custom fields can exceed Prisma's 5s default.
     { maxWait: 10000, timeout: 30000 },

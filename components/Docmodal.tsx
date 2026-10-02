@@ -133,7 +133,7 @@ export default function DocModal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[85vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-2xl bg-white"
+        className="flex h-[85dvh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-2xl bg-white"
       >
         <div className="relative flex-1">
           {doc.type === "PDF" ? (
