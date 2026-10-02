@@ -569,6 +569,15 @@ export default async function ProjectDeliveryPage() {
 
         <div className="relative z-40 px-4 pt-5 sm:px-6 sm:pt-7 md:px-10 lg:px-16">
           <div className="mx-auto max-w-[1400px]">
+            <Link
+              href="/dashboard"
+              className="group mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Go to apps
+            </Link>
             <header className="sticky top-4">
               <div className="flex items-center justify-between gap-3 rounded-[20px] border border-white/[0.10] bg-[#080A0E]/70 p-2 shadow-[0_24px_70px_rgba(0,0,0,.24)] backdrop-blur-2xl">
                 {/* Brand */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import MobileDrawer, { NavigationToggle } from "./MobileDrawer";
 
 export default function ResponsiveSidebar({
@@ -15,6 +16,8 @@ export default function ResponsiveSidebar({
   label: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!open) return;
     const closeOnNavigation = (event: MouseEvent) => {
@@ -25,13 +28,18 @@ export default function ResponsiveSidebar({
   }, [open]);
   return (
     <>
-      <div className="fixed left-3 top-3 z-[101] text-white lg:hidden">
-        <NavigationToggle
-          open={open}
-          onClick={() => setOpen(true)}
-          label={label}
-        />
-      </div>
+      {/* Keep the trigger above fixed headers, outside page stacking contexts. */}
+      {mounted &&
+        createPortal(
+          <div className="fixed left-3 top-3 z-[101] text-white lg:hidden">
+            <NavigationToggle
+              open={open}
+              onClick={() => setOpen(true)}
+              label={label}
+            />
+          </div>,
+          document.body,
+        )}
       <aside className={desktopClassName}>{children}</aside>
       <MobileDrawer
         open={open}
