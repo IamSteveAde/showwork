@@ -32,13 +32,13 @@ export async function GET(req: NextRequest) {
 
   if (!calendarId) return redirectTo("/dashboard/calendars?instagramError=missing_state");
 
-  const settingsPath = `/dashboard/calendars/${calendarId}`;
+  const settingsPath = `/dashboard/calendars/${calendarId}?view=channels`;
 
   if (oauthError || !code) {
     // The manager denied access, or Facebook sent back an error —
     // either way, nothing to connect, just return them to where they
     // started without touching anything in the database.
-    return redirectTo(`${settingsPath}?instagramError=denied`);
+    return redirectTo(`${settingsPath}&instagramError=denied`);
   }
 
   const creator = await getCurrentCreator();
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     const pageWithInstagram = pages.find((p) => !!p.instagram_business_account);
 
     if (!pageWithInstagram || !pageWithInstagram.instagram_business_account) {
-      return redirectTo(`${settingsPath}?instagramError=no_linked_account`);
+      return redirectTo(`${settingsPath}&instagramError=no_linked_account`);
     }
 
     const igUserId = pageWithInstagram.instagram_business_account.id;
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
             messagingWebhookError: "Instagram messaging needs the MESSAGING task on the linked Facebook Page. Reconnect with a Facebook account that has that Page task.",
           },
         });
-        return redirectTo(`${settingsPath}?instagramConnected=true`);
+        return redirectTo(`${settingsPath}&instagramConnected=true`);
       }
       // Instagram is linked to this Facebook Page. Use the Page for
       // webhook subscription and messaging sends; keep the Instagram
@@ -125,9 +125,9 @@ export async function GET(req: NextRequest) {
       console.warn("Instagram publishing is connected, but messaging webhooks could not be enabled:", error);
     }
 
-    return redirectTo(`${settingsPath}?instagramConnected=true`);
+    return redirectTo(`${settingsPath}&instagramConnected=true`);
   } catch (err) {
     console.error("Instagram OAuth callback failed:", err);
-    return redirectTo(`${settingsPath}?instagramError=connection_failed`);
+    return redirectTo(`${settingsPath}&instagramError=connection_failed`);
   }
 }

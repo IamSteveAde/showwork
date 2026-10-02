@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
@@ -161,6 +162,7 @@ export default function CalendarPeopleManager({
   calendarName: string;
   totalMembers: number;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -362,7 +364,7 @@ export default function CalendarPeopleManager({
       if (data.authorizationUrl) {
         window.location.href = data.authorizationUrl;
       } else {
-        window.location.reload();
+        router.refresh();
       }
     } catch {
       setError("Something went wrong while upgrading.");

@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useMemo, useState } from "react";
 
@@ -217,6 +218,7 @@ export default function CalendarBillingSettings({
   subscriptionRenewsAt: string | null;
   trialEndsAt: string | null;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmingCancel, setConfirmingCancel] =
     useState(false);
@@ -386,7 +388,8 @@ export default function CalendarBillingSettings({
           window.location.href =
             data.authorizationUrl;
         } else {
-          window.location.reload();
+          router.refresh();
+          setLoading(null);
         }
 
         return;
@@ -444,7 +447,8 @@ export default function CalendarBillingSettings({
       const data = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        window.location.reload();
+        router.refresh();
+          setLoading(null);
         return;
       }
 

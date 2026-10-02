@@ -33,6 +33,7 @@ export default function RouteTransitionIndicator() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (
+        event.defaultPrevented ||
         event.button !== 0 ||
         event.metaKey ||
         event.ctrlKey ||
@@ -97,6 +98,10 @@ export default function RouteTransitionIndicator() {
       ) {
         return;
       }
+
+      const destination = new URL(href, window.location.href);
+      if (destination.origin !== window.location.origin) return;
+      if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
 
       const currentUrl =
         pathname +

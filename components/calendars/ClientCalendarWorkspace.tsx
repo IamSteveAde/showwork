@@ -308,17 +308,30 @@ export default function ClientCalendarWorkspace({
     </button>
   );
   const [previewPostId, setPreviewPostId] = useState<string>();
+  const [calendarVisited, setCalendarVisited] = useState(false);
   const [activeView, setActiveView] = useState<WorkspaceView>("overview");
+  useEffect(() => { if (activeView === "calendar") setCalendarVisited(true); }, [activeView]);
+
+  useEffect(() => {
+    const syncView = () => {
+      const view = new URLSearchParams(window.location.search).get("view");
+      const valid = ["overview", "calendar", "instagram", "tiktok", "linkedin", "facebook", "x", "review", "analytics"];
+      setActiveView(valid.includes(view || "") ? view as WorkspaceView : "overview");
+    };
+    syncView();
+    window.addEventListener("popstate", syncView);
+    return () => window.removeEventListener("popstate", syncView);
+  }, []);
 
   // Keyboard navigation makes the workspace feel like an application rather than
   // a collection of page anchors.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.altKey && event.key === "1") setActiveView("overview");
-      if (event.altKey && event.key === "2") setActiveView("calendar");
-      if (event.altKey && event.key === "3") setActiveView("instagram");
-      if (event.altKey && event.key === "4") setActiveView("tiktok");
-      if (event.altKey && event.key === "5") setActiveView("review");
+      if (event.altKey && event.key === "1") { event.preventDefault(); navigate("overview"); }
+      if (event.altKey && event.key === "2") { event.preventDefault(); navigate("calendar"); }
+      if (event.altKey && event.key === "3") { event.preventDefault(); navigate("instagram"); }
+      if (event.altKey && event.key === "4") { event.preventDefault(); navigate("tiktok"); }
+      if (event.altKey && event.key === "5") { event.preventDefault(); navigate("review"); }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -358,6 +371,11 @@ export default function ClientCalendarWorkspace({
 
   const navigate = (view: WorkspaceView) => {
     setActiveView(view);
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("view") !== view) {
+      url.searchParams.set("view", view);
+      window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
     contentScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -659,8 +677,8 @@ export default function ClientCalendarWorkspace({
                 <CalendarReportingPanel calendarId={slug} clientSlug={slug} isManager={false} canAnalyze={false} canApplyRecommendations={false} />
               )}
 
-              {activeView === "calendar" && (
-                <div className="mx-auto max-w-6xl">
+              {(activeView === "calendar" || calendarVisited) && (
+                <div hidden={activeView !== "calendar"} className="mx-auto max-w-6xl">
                   <ViewHeader
                     eyebrow="Workspace / Calendar"
                     title="Your content plan."

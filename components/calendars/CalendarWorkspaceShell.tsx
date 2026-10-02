@@ -199,7 +199,7 @@ export default function CalendarWorkspaceShell({
   const [mountedInsightViews, setMountedInsightViews] = useState<Set<WorkspaceSectionId>>(() => new Set());
 
   const rememberInsightView = (id: WorkspaceSectionId) => {
-    if (id !== "inbox" && id !== "analytics" && id !== "leads") return;
+
     setMountedInsightViews((current) => current.has(id) ? current : new Set(current).add(id));
   };
 
@@ -234,9 +234,7 @@ export default function CalendarWorkspaceShell({
           ? (requestedView as WorkspaceSectionId)
           : "overview",
       );
-      if (requestedView === "inbox" || requestedView === "analytics" || requestedView === "leads") {
-        rememberInsightView(requestedView);
-      }
+      if (validViews.includes(requestedView as WorkspaceSectionId)) rememberInsightView(requestedView as WorkspaceSectionId);
     };
 
     handlePopState();
@@ -743,23 +741,12 @@ export default function CalendarWorkspaceShell({
               </div>
             </div>
 
-            {/* SECTION CONTENT */}
-            <div
-              key={active.id}
-              className="animate-[workspaceEnter_.28s_cubic-bezier(.2,.8,.2,1)]"
-            >
-              {active.id === "inbox" || active.id === "analytics" || active.id === "leads" ? null : active.content}
-            </div>
-
-            {(["leads", "inbox", "analytics"] as const).map((id) => {
-              if (!mountedInsightViews.has(id)) return null;
-              const section = visibleSections.find((item) => item.id === id);
-              if (!section) return null;
-              return (
-                <div key={id} hidden={active.id !== id}>
-                  {section.content}
-                </div>
-              );
+            {/* Keep visited panels mounted so navigation preserves local work. */}
+            {visibleSections.map((section) => {
+              if (section.id !== active.id && !mountedInsightViews.has(section.id)) return null;
+              return <div key={section.id} hidden={active.id !== section.id}>
+                {section.content}
+              </div>;
             })}
 
             <div className="mt-8 flex items-center justify-between border-t border-[#E4E9F0] pt-5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A0A8B4]">

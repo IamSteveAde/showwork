@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
@@ -155,6 +156,7 @@ export default function InviteCollaboratorForm({
 }: {
   calendarId: string;
 }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("ADD_CONTENT");
   const [loading, setLoading] = useState(false);
@@ -257,7 +259,8 @@ export default function InviteCollaboratorForm({
         if (data.authorizationUrl) {
           window.location.href = data.authorizationUrl;
         } else {
-          window.location.reload();
+          router.refresh();
+          setUpgrading(false);
         }
       } else {
         setError(data.error ?? "Failed to upgrade — try again");

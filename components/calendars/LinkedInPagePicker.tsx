@@ -1,6 +1,8 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 export default function LinkedInPagePicker({ calendarId }: { calendarId: string }) {
+  const router = useRouter();
   const [pages, setPages] = useState<{ id: string; name: string }[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +19,7 @@ export default function LinkedInPagePicker({ calendarId }: { calendarId: string 
       const response = await fetch(`/api/calendars/${calendarId}/channels/linkedin/pages`, pageId ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pageId }) } : { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "LinkedIn Pages could not load.");
-      if (pageId) window.location.reload(); else setPages(data.pages);
+      if (pageId) router.refresh(); else setPages(data.pages);
     } catch (err) { setError(err instanceof Error ? err.message : "Could not connect this Page."); }
     finally { setBusy(false); }
   }
@@ -31,7 +33,7 @@ export default function LinkedInPagePicker({ calendarId }: { calendarId: string 
         const response = await fetch(`/api/calendars/${calendarId}/channels/linkedin/messaging`, { method: "POST" });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Messaging setup failed.");
-        window.location.reload();
+        router.refresh();
       } catch (err) { setError(err instanceof Error ? err.message : "Messaging setup failed."); }
       finally { setBusy(false); }
     }}>Set up Page messaging after approval</button>
