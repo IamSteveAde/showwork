@@ -112,7 +112,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       periodEnd: end.toISOString(),
       sampledPostCount: posts.length,
       totalPostCount: allPosts.length,
-      accounts,
+      accounts: [...accounts, {
+        scope: "Selected-period comparison; use these computed deltas for period trends. Null deltas mean history is insufficient. Read each metric basis: observed daily totals may have missing days, rolling totals are not selected-period activity, and post counters are lifetime totals for publication cohorts. Daily reach counts can repeat people across days. Native post metrics are current lifetime counters, not activity earned during the period. Lead stages reflect current state, not historical conversions.",
+        comparisonPeriod: report.comparisonPeriod,
+        performance: report.performance,
+        leads: report.leads ? { total: report.leads.total, acquired: report.leads.acquired, hotOpen: report.leads.hotCount, currentCustomersAmongNewLeads: report.leads.customers } : null,
+      }],
       posts,
     });
     const selectedPlatform = typeof body.platform === "string" && body.platform ? body.platform as SocialPlatform : undefined;

@@ -21,26 +21,6 @@ export async function POST(
   if (typeof body?.enabled !== "boolean") {
     return NextResponse.json({ error: "enabled must be true or false." }, { status: 400 });
   }
-  const now = new Date();
-  const permission = await db.calendarReportingPermission.upsert({
-    where: { calendarId },
-    create: {
-      calendarId,
-      enabled: body.enabled,
-      grantedById: body.enabled ? creator.id : null,
-      grantedAt: body.enabled ? now : null,
-      revokedAt: body.enabled ? null : now,
-    },
-    update: {
-      enabled: body.enabled,
-      grantedById: body.enabled ? creator.id : undefined,
-      grantedAt: body.enabled ? now : undefined,
-      revokedAt: body.enabled ? null : now,
-    },
-  });
-  return NextResponse.json({
-    enabled: permission.enabled,
-    grantedAt: permission.grantedAt?.toISOString() ?? null,
-    revokedAt: permission.revokedAt?.toISOString() ?? null,
-  });
+  // Reporting is always available to clients who can unlock the workspace.
+  return NextResponse.json({ enabled: true });
 }
