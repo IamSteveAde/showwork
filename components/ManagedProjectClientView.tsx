@@ -65,13 +65,13 @@ export default function ManagedProjectClientView({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen px-6 py-16 md:px-20"
+      className="min-h-screen break-words px-4 sm:px-6 py-16 md:px-20"
       style={{ background: bgColor }}
     >
       <div className="mx-auto max-w-2xl">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt="" className="mb-8 h-8 w-auto" />
+          <img src={logoUrl} alt="" className="mb-8 h-8 w-auto max-w-full object-contain" />
         ) : (
           <p className="mb-8 text-lg font-bold text-white">{clientName}</p>
         )}

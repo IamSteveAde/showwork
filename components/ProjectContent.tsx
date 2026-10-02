@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Image from "next/image";
+import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
 import type { MediaItem, DeliverySection, DeliveryFolder } from "@/app/[slug]/DeliveryPage";
 import type { ReviewEntry } from "@/components/ReviewControls";
 import type { VideoCommentEntry } from "@/components/VideoComments";
@@ -92,6 +93,7 @@ function Header({
 }) {
   const [scrolled, setScrolled] = useState(false);
 
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 36);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -99,6 +101,7 @@ function Header({
   }, []);
 
   const scrollToSection = (id: string) => {
+    setMobileOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -144,6 +147,7 @@ function Header({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <div className="text-white md:hidden"><NavigationToggle open={mobileOpen} onClick={() => setMobileOpen(true)} label="delivery navigation" /></div>
           <span className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[9px] font-medium text-white/50 sm:flex">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: primaryColor }} />
             Secure preview
@@ -157,21 +161,10 @@ function Header({
         </div>
       </div>
 
-      {sections.length > 0 && (
-        <div className="border-t border-white/[0.06] md:hidden">
-          <div className="scrollbar-hide flex gap-1.5 overflow-x-auto px-5 py-2.5">
-            {sections.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => scrollToSection(s.id)}
-                className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2 text-[10px] font-medium text-white/65 transition hover:bg-white/10 hover:text-white"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Delivery navigation" breakpoint="md" className="bg-[#090909] text-white">
+        <div className="border-b border-white/10 p-5"><p className="break-words text-lg font-semibold">{clientName}</p><p className="mt-1 text-xs text-white/50">Private project</p></div>
+        <nav aria-label="Delivery sections" className="space-y-2 p-3">{sections.map((section) => <button key={section.id} onClick={() => scrollToSection(section.id)} className="flex min-h-11 w-full items-center rounded-xl px-4 py-3 text-left text-sm text-white/80 hover:bg-white/10 focus-visible:outline focus-visible:outline-2">{section.name}</button>)}</nav>
+      </MobileDrawer>
     </header>
   );
 }
@@ -195,7 +188,7 @@ function Hero({
   const heroScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
 
   return (
-    <section ref={heroRef} className="relative h-[92svh] min-h-[680px] w-full overflow-hidden bg-[#080808]">
+    <section ref={heroRef} className="relative h-[92svh] min-h-[520px] sm:min-h-[680px] w-full overflow-hidden bg-[#080808]">
       <motion.div style={{ scale: heroScale }} className="absolute inset-0 origin-center">
         {heroMedia.type === "VIDEO" ? (
           <PortfolioAutoplayVideo
@@ -884,7 +877,7 @@ export default function ProjectContent({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.65 }}
-      className="min-h-screen bg-[#090909] text-white"
+      className="min-h-screen overflow-x-clip bg-[#090909] text-white"
     >
       <Header
         clientName={clientName}
@@ -954,7 +947,7 @@ export default function ProjectContent({
           >
             <div className="mx-auto max-w-[1500px]">
               <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex min-w-0 items-start gap-4">
                   <span className="mt-1 text-[9px] font-semibold tracking-[0.2em]" style={{ color: isDark ? `${primaryColor}` : "rgba(0,0,0,0.28)" }}>
                     {String(sectionIdx + 1).padStart(2, "0")}
                   </span>
@@ -962,7 +955,7 @@ export default function ProjectContent({
                     <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: isDark ? `${primaryColor}` : "#2563EB" }}>
                       {section.mediaType === "VIDEO" ? "Film" : section.mediaType === "PHOTO" ? "Photography" : "Documents"}
                     </p>
-                    <h2 className="mt-2 text-3xl font-light tracking-[-0.06em] md:text-5xl" style={{ color: textColor }}>
+                    <h2 className="mt-2 break-words text-3xl font-light tracking-[-0.06em] md:text-5xl" style={{ color: textColor }}>
                       {section.name}
                     </h2>
                   </div>

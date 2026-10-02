@@ -1,5 +1,7 @@
 "use client";
 
+import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
+
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import PortfolioMediaModal, { type PortfolioMediaItem } from "@/components/portfolio/PortfolioMediaModal";
@@ -1054,6 +1056,7 @@ export default function PortfolioContent({
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -1080,6 +1083,7 @@ export default function PortfolioContent({
   const selectedCover = selectedSection ? sectionCover(selectedSection) : null;
 
   const handleSelectCategory = (id: string) => {
+    setMobileOpen(false);
     setSelectedSectionId(id);
   };
 
@@ -1096,9 +1100,9 @@ export default function PortfolioContent({
   }, [selectedSectionId]);
 
   return (
-    <main className="min-h-screen" style={{ background: bgColor }}>
+    <main className="min-h-screen overflow-x-clip" style={{ background: bgColor }}>
       <header
-        className="fixed left-[5%] right-[5%] top-4 z-30 flex items-center justify-between rounded-full px-6 py-3.5 transition-shadow duration-500 md:top-6 md:px-8"
+        className="fixed left-[5%] right-[5%] top-4 z-30 flex items-center justify-between gap-3 rounded-full px-4 py-3.5 transition-shadow duration-500 md:top-6 md:px-8"
         style={{
           background: "rgba(10,10,10,0.55)",
           backdropFilter: "blur(20px)",
@@ -1109,14 +1113,15 @@ export default function PortfolioContent({
       >
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logoUrl} alt={companyName} className="h-6 w-auto" />
+          <img src={logoUrl} alt={companyName} className="h-6 w-auto min-w-0 max-w-[45%] object-contain" />
         ) : (
           <span className="truncate text-sm font-medium uppercase text-white" style={{ letterSpacing: "0.15em" }}>
             {companyName}
           </span>
         )}
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="text-white lg:hidden"><NavigationToggle open={mobileOpen} onClick={() => setMobileOpen(true)} label="portfolio navigation" /></div>
           <span className="hidden text-xs font-medium uppercase text-white/40 sm:inline" style={{ letterSpacing: "0.2em" }}>
             Portfolio
           </span>
@@ -1143,12 +1148,20 @@ export default function PortfolioContent({
           )}
         </div>
       </header>
+      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Portfolio navigation" className="bg-[#090909] text-white">
+        <div className="border-b border-white/10 p-5"><p className="break-words text-lg font-semibold">{companyName}</p></div>
+        <nav aria-label="Portfolio sections" className="space-y-2 p-3">
+          <button onClick={() => { setMobileOpen(false); setSelectedSectionId(null); }} aria-current={selectedSectionId === null ? "page" : undefined} className="flex min-h-11 w-full items-center rounded-xl px-4 py-3 text-left text-sm hover:bg-white/10">Overview</button>
+          {renderSections.map((section) => <button key={section.id} onClick={() => handleSelectCategory(section.id)} aria-current={selectedSectionId === section.id ? "page" : undefined} className={`flex min-h-11 w-full items-center rounded-xl px-4 py-3 text-left text-sm ${selectedSectionId === section.id ? "bg-white text-black" : "text-white/80 hover:bg-white/10"}`}>{section.name}</button>)}
+        </nav>
+      </MobileDrawer>
+
 
       {/* ── MAIN BANNER — only on the landing state. Once a category is
            picked, its own image takes over as the banner instead. ── */}
            {selectedSectionId === null && (heroBannerDesktopUrl || heroBannerMobileUrl || heroMedia) && (
         <>
-          <section className="fixed inset-0 z-0 h-screen w-full overflow-hidden bg-black">
+          <section className="fixed inset-0 z-0 h-dvh w-full overflow-hidden bg-black">
                      {heroBannerDesktopUrl || heroBannerMobileUrl ? (
               <>
                 {/* Two dedicated banners, switched purely by CSS media
@@ -1223,7 +1236,7 @@ export default function PortfolioContent({
               </button>
             </motion.div>
           </section>
-          <div className="h-screen w-full" aria-hidden />
+          <div className="h-dvh w-full" aria-hidden />
         </>
       )}
 
