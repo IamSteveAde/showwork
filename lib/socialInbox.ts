@@ -1,3 +1,4 @@
+import { normalizeReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import { tikTokMessagingAccess } from "@/lib/socialMessaging/tiktok";
 import { whatsappMessagingAccess } from "@/lib/socialMessaging/whatsapp";
 import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
@@ -51,7 +52,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     db.socialLeadMessage.count({ where: { conversation: { calendarId } } }),
     db.socialLeadConversation.aggregate({ where: { calendarId }, _sum: { unreadCount: true } }),
     db.socialLeadMessage.count({ where: { conversation: { calendarId }, direction: "INBOUND", platformCreatedAt: { gte: monthStart } } }),
-    db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true } }),
+    db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true, aiReplyProfile: true } }),
     db.socialConnection.findMany({
       where: { calendarId, status: { not: "DISCONNECTED" } },
       select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, accessTokenExpiresAt: true, whatsappBusinessAccountId: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true, tikTokMessagingBusinessId: true, tikTokMessagingScopes: true, tikTokMessagingConnectedAt: true },
@@ -130,7 +131,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
             ? account.messagingSyncError || (["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)) ? (account.messagingLastSyncAt ? "X messages last synced " + account.messagingLastSyncAt.toISOString() + ". Group chats are excluded." : "Connected, but X messages have not synced yet. Use Sync X messages to import them.") : "Reconnect X to authorize direct messages")
             : "Messaging is not supported for this channel",
     })),
-    settings: settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },
+    settings: { ...(settings ?? { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null }), aiReplyProfile: normalizeReplyProfile(settings?.aiReplyProfile) },
     conversations: conversations.map((conversation) => {
       const cutoff = conversation.platform === "X" ? conversation.connection?.connectedAt?.getTime() ?? Infinity : -Infinity;
       const visibleMessages = conversation.messages.filter(message => message.platformCreatedAt.getTime() >= cutoff);
