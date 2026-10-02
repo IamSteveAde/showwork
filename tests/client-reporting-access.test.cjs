@@ -3,14 +3,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 
-function reportingRoute({ token = 'valid', active = true, exists = true } = {}) {
+function reportingRoute({ token = 'valid', active = true, exists = true, lookupError = null, reportError = null } = {}) {
   const calls = [];
   const mocks = {
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status ?? 200 }) } },
-    '@/lib/db': { db: { socialCalendar: { findUnique: async () => exists ? { id: 'calendar', manager: {}, reportingPermission: { enabled: false } } : null } } },
+    '@/lib/db': { db: { socialCalendar: { findUnique: async () => { if (lookupError) throw lookupError; return exists ? { id: 'calendar', manager: {}, reportingPermission: { enabled: false } } : null; } } } },
     '@/lib/auth': { verifyViewerToken: (value, id) => value === 'valid' && id === 'calendar' },
     '@/lib/calendarPermissions': { canAccessCalendar: () => active },
-    '@/lib/reporting/data': { getCalendarReportingData: async (...args) => { calls.push(args); return { insights: [{ recommendation: 'Try videos' }] }; } },
+    '@/lib/reporting/data': { reportingPeriod: () => ({}), getCalendarReportingData: async (...args) => { if (reportError) throw reportError; calls.push(args); return { insights: [{ recommendation: 'Try videos' }] }; } },
   };
   const mod = { exports: {} };
   const source = fs.readFileSync('app/api/social-calendar/[slug]/reporting/route.ts', 'utf8');
@@ -42,3 +42,12 @@ test('client reporting respects inactive and missing workspaces', async () => {
   assert.equal((await reportingRoute({ active: false }).get()).status, 403);
   assert.equal((await reportingRoute({ exists: false }).get()).status, 404);
 });
+
+for (const stage of ['lookupError', 'reportError']) {
+  test(`database connection failures during ${stage} return a retryable error`, async () => {
+    const response = await reportingRoute({ [stage]: Object.assign(new Error('Sensitive database details'), { code: 'P1001' }) }).get();
+    assert.equal(response.status, 503);
+    assert.match(response.body.error, /temporarily unavailable/);
+    assert.doesNotMatch(response.body.error, /Sensitive/);
+  });
+}

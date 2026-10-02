@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyViewerToken } from "@/lib/auth";
-import { getCalendarReportingData } from "@/lib/reporting/data";
+import { getCalendarReportingData, reportingPeriod } from "@/lib/reporting/data";
 import { canAccessCalendar } from "@/lib/calendarPermissions";
 
 function cookieNameFor(calendarId: string) {
@@ -12,35 +12,53 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const { slug } = await params;
-  const calendar = await db.socialCalendar.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      manager: {
-        select: {
-          id: true,
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          contentWorkspaceBillingCycle: true,
-          contentWorkspaceTrialEndsAt: true,
-          isComped: true,
-          compedUntil: true,
+  try {
+    reportingPeriod(req.nextUrl.searchParams);
+    const platform = req.nextUrl.searchParams.get("platform")?.toUpperCase();
+    if (platform && !["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"].includes(platform)) {
+      return NextResponse.json({ error: "Choose a supported social platform." }, { status: 400 });
+    }
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Choose a valid reporting date range." }, { status: 400 });
+  }
+
+  try {
+    const { slug } = await params;
+    const calendar = await db.socialCalendar.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        manager: {
+          select: {
+            id: true,
+            contentWorkspacePlan: true,
+            contentWorkspaceBillingStatus: true,
+            contentWorkspaceBillingCycle: true,
+            contentWorkspaceTrialEndsAt: true,
+            isComped: true,
+            compedUntil: true,
+          },
         },
       },
-    },
-  });
-  if (!calendar) return NextResponse.json({ error: "Not found." }, { status: 404 });
-  const token = req.cookies.get(cookieNameFor(calendar.id))?.value;
-  if (!token || !verifyViewerToken(token, calendar.id)) {
-    return NextResponse.json({ error: "Please unlock this workspace first." }, { status: 401 });
-  }
-  if (!canAccessCalendar(calendar.manager)) {
-    return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
-  }
-  try {
+    });
+    if (!calendar) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    const token = req.cookies.get(cookieNameFor(calendar.id))?.value;
+    if (!token || !verifyViewerToken(token, calendar.id)) {
+      return NextResponse.json({ error: "Please unlock this workspace first." }, { status: 401 });
+    }
+    if (!canAccessCalendar(calendar.manager)) {
+      return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
+    }
     return NextResponse.json(await getCalendarReportingData(calendar.id, req.nextUrl.searchParams, false));
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load reporting." }, { status: 400 });
+    const code = error && typeof error === "object" && "code" in error ? error.code : null;
+    if (["P1001", "P1002", "P1008", "P1017", "P2024"].includes(String(code))) {
+      return NextResponse.json(
+        { error: "Reporting is temporarily unavailable because the database connection failed. Please try refreshing in a moment." },
+        { status: 503, headers: { "Retry-After": "10" } },
+      );
+    }
+    console.error("Could not load client reporting:", { code });
+    return NextResponse.json({ error: "Could not load reporting. Please try again." }, { status: 500 });
   }
 }
