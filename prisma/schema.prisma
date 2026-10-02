@@ -2013,6 +2013,7 @@ model SocialInboxSettings {
   clientAccessEnabled     Boolean        @default(true)
   aiAutoReplyEnabled      Boolean        @default(false)
   aiAutoReplyInstructions String?        @db.Text
+  aiReplyProfile          Json?
   updatedAt               DateTime       @updatedAt
   createdAt               DateTime       @default(now())
 }

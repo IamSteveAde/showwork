@@ -1,3 +1,4 @@
+import { normalizeReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import { db } from "@/lib/db";
 import { generateSocialInboxAutoReply } from "@/lib/openai";
 import { sendSocialInboxMessage, supportsMessaging } from "@/lib/socialMessaging/registry";
@@ -37,7 +38,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           include: {
             connection: true,
             calendar: { select: { clientName: true, aiBusinessSummary: true, instagramPageId: true } },
-            messages: { orderBy: { platformCreatedAt: "desc" }, take: 12 },
+            messages: { orderBy: [{ platformCreatedAt: "desc" }, { createdAt: "desc" }], take: 20 },
           },
         },
       },
@@ -65,15 +66,31 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
             continue;
           }
         }
+        // Do not answer an older message after the customer has moved on or
+        // the team has already responded. The latest message includes the
+        // earlier customer messages in its conversation context.
+        const targetIndex = inbound.conversation.messages.findIndex(message => message.id === inbound.id);
+        const supersedingMessage = inbound.conversation.messages.find((message, index) =>
+          message.id !== inbound.id && (message.platformCreatedAt > inbound.platformCreatedAt || (message.platformCreatedAt.getTime() === inbound.platformCreatedAt.getTime() && (targetIndex === -1 || index < targetIndex))) &&
+          (message.direction === "INBOUND" || ["PENDING", "SENT", "DELIVERED", "READ"].includes(message.status)));
+        if (supersedingMessage) {
+          await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: supersedingMessage.direction === "OUTBOUND" ? "This conversation already received a reply." : "A newer customer message superseded this reply." } });
+          summary.handedOff++;
+          continue;
+        }
         const recent = [...inbound.conversation.messages].reverse().map((message) => ({
           direction: message.direction,
-          text: message.text.slice(0, 1000),
+          text: message.text.slice(0, 2000),
           createdAt: message.platformCreatedAt.toISOString(),
         }));
+        const replySettings = await db.socialInboxSettings.findUnique({ where: { calendarId }, select: { aiAutoReplyInstructions: true, aiReplyProfile: true } });
         const generated = await generateSocialInboxAutoReply({
           clientName: inbound.conversation.calendar.clientName,
           businessSummary: inbound.conversation.calendar.aiBusinessSummary,
-          instructions: (await db.socialInboxSettings.findUnique({ where: { calendarId }, select: { aiAutoReplyInstructions: true } }))?.aiAutoReplyInstructions ?? null,
+          instructions: replySettings?.aiAutoReplyInstructions ?? null,
+          profile: normalizeReplyProfile(replySettings?.aiReplyProfile),
+          platform: inbound.conversation.platform,
+          participantName: inbound.conversation.participantName,
           conversation: recent,
           latestInbound: inbound.text.slice(0, 3000),
         });
