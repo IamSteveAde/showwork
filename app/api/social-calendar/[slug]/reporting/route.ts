@@ -17,7 +17,6 @@ export async function GET(
     where: { slug },
     select: {
       id: true,
-      reportingPermission: { select: { enabled: true } },
       manager: {
         select: {
           id: true,
@@ -38,9 +37,6 @@ export async function GET(
   }
   if (!canAccessCalendar(calendar.manager)) {
     return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
-  }
-  if (!calendar.reportingPermission?.enabled) {
-    return NextResponse.json({ error: "Reporting is not shared with this client." }, { status: 403 });
   }
   try {
     return NextResponse.json(await getCalendarReportingData(calendar.id, req.nextUrl.searchParams, false));

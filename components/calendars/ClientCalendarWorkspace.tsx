@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Moon, Sun } from "lucide-react";
 import Image from "next/image";
+import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
 import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 
-type WorkspaceView = "overview" | "calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x" | "review";
+type WorkspaceView = "overview" | "calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x" | "review" | "analytics";
 
 type Platform =
   | "INSTAGRAM"
@@ -369,6 +370,7 @@ export default function ClientCalendarWorkspace({
   }> = [
     { view: "overview", label: "Overview", icon: "grid" },
     { view: "calendar", label: "Calendar", icon: "calendar" },
+    { view: "analytics", label: "Analytics & Reporting", icon: "spark" },
     { view: "instagram", label: "Instagram", icon: "instagram" },
     { view: "tiktok", label: "TikTok", icon: "tiktok" },
     { view: "linkedin", label: "LinkedIn", icon: "message" },
@@ -470,6 +472,7 @@ export default function ClientCalendarWorkspace({
             <div className="space-y-1">
               <SidebarItem active={activeView === "overview"} onClick={() => navigate("overview")} icon="grid" label="Overview" />
               <SidebarItem active={activeView === "calendar"} onClick={() => navigate("calendar")} icon="calendar" label="Content Calendar" />
+              <SidebarItem active={activeView === "analytics"} onClick={() => navigate("analytics")} icon="spark" label="Analytics & Reporting" />
             </div>
 
             <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
@@ -521,6 +524,8 @@ export default function ClientCalendarWorkspace({
                   ? "Workspace"
                   : activeView === "calendar"
                     ? "Content"
+                    : activeView === "analytics"
+                      ? "Analytics & Reporting"
                     : activeView === "review"
                       ? "Client review"
                       : "Social preview"}
@@ -648,6 +653,10 @@ export default function ClientCalendarWorkspace({
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeView === "analytics" && (
+                <CalendarReportingPanel calendarId={slug} clientSlug={slug} isManager={false} canAnalyze={false} canApplyRecommendations={false} />
               )}
 
               {activeView === "calendar" && (

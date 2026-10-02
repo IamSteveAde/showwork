@@ -97,7 +97,7 @@ const [platformSchedules, setPlatformSchedules] = useState<
     const key = `calendar:${calendarId}:reporting-recommendation`;
     const recommendation = window.sessionStorage.getItem(key);
     if (!recommendation) return;
-    setCustomInstructions(recommendation.slice(0, 1200));
+    setCustomInstructions(recommendation);
     setReportingRecommendationLoaded(true);
     window.sessionStorage.removeItem(key);
   }, [calendarId]);
@@ -973,12 +973,11 @@ const togglePlatform = (platform: string) => {
                   value={customInstructions}
                   onChange={(event) => setCustomInstructions(event.target.value)}
                   rows={4}
-                  maxLength={1200}
                   placeholder="e.g. Focus on our new product launch, keep the tone playful, avoid discussing pricing…"
                   className="mt-3 w-full resize-none rounded-2xl border border-[#D9E2EC] bg-white px-4 py-3.5 text-[11px] leading-6 text-[#344054] outline-none transition-all placeholder:text-[#98A2B3] hover:border-[#B9C7D8] focus:border-[#2478FF] focus:ring-4 focus:ring-[#2478FF]/10"
                 />
                 <div className="mt-1.5 text-right text-[9px] text-[#98A2B3]">
-                  {customInstructions.length}/1200
+                  {customInstructions.length} characters
                 </div>
               </label>
             </>

@@ -2,6 +2,7 @@ import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { getSocialReportingAdapter } from "@/lib/reporting/adapters";
+import { change, compareAccounts } from "@/lib/reporting/comparison";
 import type { FacebookPageActivity } from "@/lib/reporting/types";
 
 export const REPORTING_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"];
@@ -9,10 +10,15 @@ export const REPORTING_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "FA
 export function reportingPeriod(searchParams: URLSearchParams) {
   const endValue = searchParams.get("to");
   const startValue = searchParams.get("from");
-  const end = endValue ? new Date(`${endValue}T23:59:59.999Z`) : new Date();
+  for (const value of [startValue, endValue]) {
+    if (value && (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(new Date(`${value}T00:00:00.000Z`).getTime()) || new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) !== value)) {
+      throw new Error("Choose a valid reporting date range.");
+    }
+  }
+  const end = new Date(`${endValue || new Date().toISOString().slice(0, 10)}T23:59:59.999Z`);
   const start = startValue
     ? new Date(`${startValue}T00:00:00.000Z`)
-    : new Date(end.getTime() - 29 * 24 * 60 * 60 * 1000);
+    : new Date(new Date(end.toISOString().slice(0, 10)).getTime() - 29 * 24 * 60 * 60 * 1000);
   if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end) {
     throw new Error("Choose a valid reporting date range.");
   }
@@ -28,14 +34,15 @@ export async function getCalendarReportingData(
   includeSyncErrors: boolean,
 ) {
   const { start, end } = reportingPeriod(searchParams);
+  const previousEnd = new Date(start.getTime() - 1);
+  const previousStart = new Date(start.getTime() - (end.getTime() - start.getTime() + 1));
   const platformValue = searchParams.get("platform")?.toUpperCase();
   if (platformValue && !REPORTING_PLATFORMS.includes(platformValue as SocialPlatform)) {
     throw new Error("Choose a supported social platform.");
   }
   const platform = platformValue as SocialPlatform | null;
 
-  const [permission, connections, posts, insights, facebookConnection] = await Promise.all([
-    db.calendarReportingPermission.findUnique({ where: { calendarId } }),
+  const [connections, posts, insights, facebookConnection] = await Promise.all([
     db.socialConnection.findMany({
       where: { calendarId, platform: platform || { in: REPORTING_PLATFORMS } },
       select: {
@@ -51,14 +58,14 @@ export async function getCalendarReportingData(
         lastSyncAt: true,
         ...(includeSyncErrors ? { lastSyncError: true } : {}),
         accountMetricSnapshots: {
-          where: { snapshotDate: { gte: start, lte: end } },
+          where: { snapshotDate: { gte: previousStart, lte: end } },
           orderBy: { snapshotDate: "desc" },
-          take: 366,
+          take: 734,
         },
         accountPosts: {
-          where: { publishedAt: { gte: start, lte: end } },
+          where: { publishedAt: { gte: previousStart, lte: end } },
           orderBy: { publishedAt: "desc" },
-          take: 250,
+          take: 500,
           select: {
             id: true,
             platformPostId: true,
@@ -115,8 +122,8 @@ export async function getCalendarReportingData(
     db.reportingInsight.findMany({
       where: {
         calendarId,
-        periodStart: { lte: end },
-        periodEnd: { gte: start },
+        periodStart: start,
+        periodEnd: end,
         ...(platform ? { OR: [{ platform }, { platform: null }] } : {}),
       },
       orderBy: { generatedAt: "desc" },
@@ -157,7 +164,7 @@ export async function getCalendarReportingData(
     }
   }
 
-  const accountPosts = connections.flatMap((connection) => connection.accountPosts.map((post) => ({
+  const accountPosts = connections.flatMap((connection) => connection.accountPosts.filter(post => post.publishedAt >= start).map((post) => ({
     id: `${connection.id}:${post.platformPostId}`,
     connectionId: connection.id,
     platform: connection.platform,
@@ -213,13 +220,28 @@ export async function getCalendarReportingData(
   }
   accountPosts.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
+  const leadWhere = { calendarId, ...(platform ? { socialConversation: { platform } } : {}) };
+  const [leadTotal, newLeads, previousLeads, hotCount, customers, hottest] = includeSyncErrors ? await Promise.all([
+    db.calendarLead.count({ where: { ...leadWhere, createdAt: { lte: end } } }),
+    db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: start, lte: end } } }),
+    db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: previousStart, lte: previousEnd } } }),
+    db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: start, lte: end }, temperature: "HOT", status: { notIn: ["CUSTOMER", "LOST"] } } }),
+    db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: start, lte: end }, status: "CUSTOMER" } }),
+    db.calendarLead.findMany({
+      where: { ...leadWhere, createdAt: { gte: start, lte: end }, temperature: "HOT", status: { notIn: ["CUSTOMER", "LOST"] } },
+      orderBy: [{ updatedAt: "desc" }, { id: "asc" }], take: 5,
+      select: { id: true, name: true, company: true, username: true, status: true, source: true, updatedAt: true,
+        socialConversation: { select: { platform: true, participantName: true, participantUsername: true } } },
+    }),
+  ]) : [0, 0, 0, 0, 0, []] as const;
+  const performance = compareAccounts(connections, start, end, previousStart);
+
   return {
     period: { start: start.toISOString(), end: end.toISOString() },
-    clientSharing: {
-      enabled: permission?.enabled ?? false,
-      grantedAt: permission?.grantedAt?.toISOString() ?? null,
-      revokedAt: permission?.revokedAt?.toISOString() ?? null,
-    },
+    comparisonPeriod: { start: previousStart.toISOString(), end: previousEnd.toISOString() },
+    performance,
+    leads: includeSyncErrors ? { total: leadTotal, acquired: change(newLeads, previousLeads, "vs previous period"), hotCount, customers, hottest } : null,
+    clientSharing: { enabled: true },
     connections: connections.map((connection) => ({
       id: connection.id,
       platform: connection.platform,
@@ -232,7 +254,7 @@ export async function getCalendarReportingData(
       lastSyncAttemptAt: connection.lastSyncAttemptAt,
       lastSyncAt: connection.lastSyncAt,
       ...(includeSyncErrors ? { lastSyncError: "lastSyncError" in connection ? connection.lastSyncError : null } : {}),
-      accountMetricSnapshots: connection.accountMetricSnapshots,
+      accountMetricSnapshots: connection.accountMetricSnapshots.filter(snapshot => snapshot.snapshotDate >= start),
     })),
     posts: posts.map((post) => ({
       id: post.id,
