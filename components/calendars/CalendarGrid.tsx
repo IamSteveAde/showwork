@@ -10,6 +10,7 @@ import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 import TikTokPrivacySelect from "@/components/calendars/TikTokPrivacySelect";
 import SocialPostPublishing from "@/components/calendars/SocialPostPublishing";
+import ResetCalendarButton from "@/components/calendars/ResetCalendarButton";
 import ImportCalendar from "@/components/calendars/ImportCalendar";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
@@ -5497,8 +5498,10 @@ export default function CalendarGrid({
   initialPosts,
   userRole,
   clientName,
+  isOwner = false,
 }: {
   calendarId: string;
+  isOwner?: boolean;
   planStatus: string;
   initialPosts: CalendarPostData[];
   userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
@@ -5950,6 +5953,15 @@ export default function CalendarGrid({
           gap-1.5
           sm:gap-2
         ">
+          {isOwner && <ResetCalendarButton calendarId={calendarId} onReset={() => {
+            setPosts([]);
+            setSelectedPost(null);
+            setAddingDate(null);
+            clearFilters();
+            setViewMode("calendar");
+            const now = new Date();
+            setCurrentMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+          }} />}
           {userRole === "EDIT_CALENDAR" && <ImportCalendar calendarId={calendarId} theme={theme} onImported={(importedPosts, firstDate) => {
             setPosts(importedPosts.map(normalize));
             clearFilters();

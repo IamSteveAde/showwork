@@ -717,6 +717,7 @@ contentIdea: p.contentIdea,
         <div className="overflow-hidden rounded-[26px] border border-[#DCE5F0] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
           <CalendarGrid
             calendarId={calendar.id}
+            isOwner={isManager}
             planStatus={calendar.planStatus}
             userRole={userRole}
             clientName={calendar.clientName}
