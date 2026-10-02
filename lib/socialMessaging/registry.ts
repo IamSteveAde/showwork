@@ -6,10 +6,12 @@ import type { SocialConnection } from "@prisma/client";
 import { freshConnection, requireScopes } from "@/lib/socialTokens";
 import { providerJson } from "@/lib/publishing/http";
 import { sendMetaInboxMessage } from "./meta";
+import { sendWhatsAppMessage, whatsappConfigured } from "./whatsapp";
 
-export function supportsMessaging(platform: string) { return ["FACEBOOK", "INSTAGRAM", "X"].includes(platform) || (platform === "TIKTOK" && tikTokMessagingConfigured()) || (platform === "LINKEDIN" && linkedInMessagingConfigured()); }
+export function supportsMessaging(platform: string) { return ["FACEBOOK", "INSTAGRAM", "X"].includes(platform) || (platform === "WHATSAPP" && whatsappConfigured()) || (platform === "TIKTOK" && tikTokMessagingConfigured()) || (platform === "LINKEDIN" && linkedInMessagingConfigured()); }
 export async function sendSocialInboxMessage(input: { connection: SocialConnection; instagramPageId?: string | null; recipientId: string; conversationId?: string; text: string }) {
   if (input.connection.status !== "CONNECTED") throw new Error("Reconnect this account before replying.");
+  if (input.connection.platform === "WHATSAPP") return sendWhatsAppMessage(input);
   if (["FACEBOOK", "INSTAGRAM"].includes(input.connection.platform)) return sendMetaInboxMessage(input);
   if (input.connection.platform === "TIKTOK") return sendTikTokMessage(input);
   if (input.connection.platform === "LINKEDIN") return sendLinkedInMessage(input);

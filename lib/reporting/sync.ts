@@ -219,7 +219,7 @@ async function syncConnection(initialConnection: SocialConnection & {
 /** Sync each account independently so one provider failure never blocks others. */
 async function syncConnections(calendarId?: string) {
   const connections = await db.socialConnection.findMany({
-    where: { status: { in: ["CONNECTED", "NEEDS_REAUTH"] }, ...(calendarId ? { calendarId } : {}) },
+    where: { platform: { not: "WHATSAPP" }, status: { in: ["CONNECTED", "NEEDS_REAUTH"] }, ...(calendarId ? { calendarId } : {}) },
     include: {
       publishedPosts: {
         where: { status: "PUBLISHED" },

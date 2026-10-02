@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { generateSocialInboxAutoReply } from "@/lib/openai";
 import { sendSocialInboxMessage, supportsMessaging } from "@/lib/socialMessaging/registry";
+import { whatsappAutoReplyHandoff } from "@/lib/socialMessaging/whatsapp";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -56,6 +57,14 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
       summary.analyzed++;
       let sendAttempted = false;
       try {
+        if (inbound.conversation.platform === "WHATSAPP") {
+          const reason = await whatsappAutoReplyHandoff(inbound);
+          if (reason) {
+            await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: reason } });
+            summary.handedOff++;
+            continue;
+          }
+        }
         const recent = [...inbound.conversation.messages].reverse().map((message) => ({
           direction: message.direction,
           text: message.text.slice(0, 1000),
@@ -78,6 +87,14 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: "Automatic replies were disabled before the reply was sent." } });
           summary.handedOff++;
           continue;
+        }
+        if (inbound.conversation.platform === "WHATSAPP") {
+          const reason = await whatsappAutoReplyHandoff(inbound);
+          if (reason) {
+            await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: reason } });
+            summary.handedOff++;
+            continue;
+          }
         }
         sendAttempted = true;
         const providerMessageId = await sendSocialInboxMessage({

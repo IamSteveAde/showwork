@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Moon, Sun } from "lucide-react";
 import Image from "next/image";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
 import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
@@ -215,14 +216,14 @@ function SidebarItem({
         "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 text-left text-[12px] font-medium transition-all duration-200",
         active
           ? "bg-[#2478FF] text-white shadow-[0_10px_24px_rgba(36,120,255,0.22)]"
-          : "text-white/45 hover:bg-white/[0.055] hover:text-white",
+          : "text-[rgb(var(--client-muted))] hover:bg-[rgb(var(--client-ink))]/[0.055] hover:text-[rgb(var(--client-ink))]",
       ].join(" ")}
       aria-current={active ? "page" : undefined}
     >
       <span
         className={[
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-          active ? "bg-white/12 text-white" : "bg-white/[0.035] text-white/40 group-hover:text-white/75",
+          active ? "bg-[rgb(var(--client-ink))]/12 text-[rgb(var(--client-ink))]" : "bg-[rgb(var(--client-ink))]/[0.035] text-[rgb(var(--client-muted))] group-hover:text-[rgb(var(--client-muted))]",
         ].join(" ")}
       >
         <Icon name={icon} className="h-4 w-4" />
@@ -231,7 +232,7 @@ function SidebarItem({
       {typeof count === "number" && count > 0 && (
         <span className={[
           "min-w-5 rounded-full px-1.5 py-0.5 text-center text-[9px] font-bold",
-          active ? "bg-white/15 text-white" : "bg-[#F7B742]/10 text-[#F7B742]",
+          active ? "bg-[rgb(var(--client-ink))]/15 text-[rgb(var(--client-ink))]" : "bg-[#F7B742]/10 text-[#F7B742]",
         ].join(" ")}>
           {count}
         </span>
@@ -251,13 +252,13 @@ function ViewHeader({
 }) {
   return (
     <div className="mb-7">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/25">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
         {eyebrow}
       </p>
-      <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">
+      <h2 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[rgb(var(--client-ink))] sm:text-3xl">
         {title}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-white/38">
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[rgb(var(--client-muted))]">
         {description}
       </p>
     </div>
@@ -275,6 +276,36 @@ export default function ClientCalendarWorkspace({
   posts,
   stats,
 }: Props) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("showwork-calendar-theme");
+      if (saved === "light" || saved === "dark") setTheme(saved);
+    } catch { /* The toggle remains usable when browser storage is unavailable. */ }
+  }, []);
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try { localStorage.setItem("showwork-calendar-theme", next); } catch {}
+  };
+  const themeStyle = {
+    "--client-bg": theme === "dark" ? "8 9 11" : "245 247 251",
+    "--client-panel": theme === "dark" ? "11 13 16" : "255 255 255",
+    "--client-ink": theme === "dark" ? "255 255 255" : "16 24 40",
+    "--client-muted": theme === "dark" ? "156 163 175" : "100 116 139",
+    "--client-blue": theme === "dark" ? "104 178 255" : "23 104 232",
+    "--client-green": theme === "dark" ? "114 232 172" : "22 101 52",
+    "--client-amber": theme === "dark" ? "247 199 102" : "146 64 14",
+    colorScheme: theme,
+  } as CSSProperties;
+  const themeToggle = (
+    <button type="button" onClick={toggleTheme}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--client-ink))]/10 bg-[rgb(var(--client-ink))]/5 text-[rgb(var(--client-ink))] transition hover:bg-[rgb(var(--client-ink))]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF]">
+      {theme === "dark" ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
+    </button>
+  );
   const [previewPostId, setPreviewPostId] = useState<string>();
   const [activeView, setActiveView] = useState<WorkspaceView>("overview");
 
@@ -322,8 +353,11 @@ export default function ClientCalendarWorkspace({
     [posts],
   );
 
+  const contentScrollRef = useRef<HTMLElement>(null);
+
   const navigate = (view: WorkspaceView) => {
     setActiveView(view);
+    contentScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -344,31 +378,32 @@ export default function ClientCalendarWorkspace({
   ];
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#08090B] text-white">
+    <main style={themeStyle} data-client-theme={theme} className="min-h-screen overflow-x-hidden bg-[rgb(var(--client-bg))] text-[rgb(var(--client-ink))] lg:h-dvh lg:min-h-0 lg:overflow-hidden">
       {/* Mobile app header */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#08090B]/94 backdrop-blur-2xl lg:hidden">
+      <header className="sticky top-0 z-50 border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/94 backdrop-blur-2xl lg:hidden">
         <div className="flex h-[68px] items-center gap-3 px-4">
           <Image
-            src="/images/logo/swwhite.svg"
+            src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
             alt="Showwork"
             width={80}
             height={20}
             className="h-5 w-auto shrink-0"
             priority
           />
-          <div className="h-5 w-px bg-white/10" />
+          <div className="h-5 w-px bg-[rgb(var(--client-ink))]/10" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-white/80">{clientName}</p>
-            <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-white/30">
+            <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
+            <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
               Client workspace
             </p>
           </div>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">
-            <Icon name="lock" className="h-4 w-4 text-white/40" />
+          {themeToggle}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[rgb(var(--client-ink))]/[0.08] bg-[rgb(var(--client-ink))]/[0.035]">
+            <Icon name="lock" className="h-4 w-4 text-[rgb(var(--client-muted))]" />
           </span>
         </div>
 
-        <div className="border-t border-white/[0.055] px-3 py-2">
+        <div className="border-t border-[rgb(var(--client-ink))]/[0.055] px-3 py-2">
           <div role="group" aria-label="Client workspace views" className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap">
             {mobileItems.map((item) => (
               <button
@@ -380,13 +415,13 @@ export default function ClientCalendarWorkspace({
                   "flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-2 text-[11px] font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF]",
                   activeView === item.view
                     ? "bg-[#2478FF] text-white"
-                    : "text-white/40 hover:bg-white/[0.05] hover:text-white",
+                    : "text-[rgb(var(--client-muted))] hover:bg-[rgb(var(--client-ink))]/[0.05] hover:text-[rgb(var(--client-ink))]",
                 ].join(" ")}
               >
                 <Icon name={item.icon} className="h-3.5 w-3.5" />
                 {item.label}
                 {item.count ? (
-                  <span className="rounded-full bg-[#F7B742]/10 px-1.5 py-0.5 text-[8px] text-[#F7C766]">
+                  <span className="rounded-full bg-[#F7B742]/10 px-1.5 py-0.5 text-[8px] text-[rgb(var(--client-amber))]">
                     {item.count}
                   </span>
                 ) : null}
@@ -396,12 +431,12 @@ export default function ClientCalendarWorkspace({
         </div>
       </header>
 
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen lg:h-full lg:min-h-0">
         {/* Persistent desktop navigation */}
-        <aside className="sticky top-0 hidden h-screen w-[272px] shrink-0 flex-col border-r border-white/[0.07] bg-[#0B0D10] lg:flex">
-          <div className="border-b border-white/[0.07] px-5 py-5">
+        <aside className="hidden h-full w-[272px] shrink-0 flex-col overflow-hidden border-r border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] lg:flex">
+          <div className="border-b border-[rgb(var(--client-ink))]/[0.07] px-5 py-5">
             <Image
-              src="/images/logo/swwhite.svg"
+              src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
               alt="Showwork"
               width={80}
               height={20}
@@ -410,26 +445,26 @@ export default function ClientCalendarWorkspace({
             />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-5">
-            <div className="mb-7 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-5">
+            <div className="mb-7 rounded-2xl border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-3">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[#68B2FF]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[rgb(var(--client-blue))]">
                   <Icon name="spark" className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-white/85">{clientName}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-white/28">
+                  <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
                     Private workspace
                   </p>
                 </div>
               </div>
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-white/[0.025] px-2.5 py-2">
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-[rgb(var(--client-ink))]/[0.025] px-2.5 py-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#43E097] shadow-[0_0_10px_rgba(67,224,151,0.65)]" />
-                <span className="text-[9px] font-medium text-white/40">Secure client access</span>
+                <span className="text-[9px] font-medium text-[rgb(var(--client-muted))]">Secure client access</span>
               </div>
             </div>
 
-            <div className="mb-2 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
+            <div className="mb-2 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
               Workspace
             </div>
             <div className="space-y-1">
@@ -437,7 +472,7 @@ export default function ClientCalendarWorkspace({
               <SidebarItem active={activeView === "calendar"} onClick={() => navigate("calendar")} icon="calendar" label="Content Calendar" />
             </div>
 
-            <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
+            <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
               Previews
             </div>
             <div className="space-y-1">
@@ -448,7 +483,7 @@ export default function ClientCalendarWorkspace({
               <SidebarItem active={activeView === "x"} onClick={() => navigate("x")} icon="message" label="X" />
             </div>
 
-            <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
+            <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
               Review
             </div>
             <div className="space-y-1">
@@ -462,15 +497,15 @@ export default function ClientCalendarWorkspace({
             </div>
           </div>
 
-          <div className="border-t border-white/[0.07] p-3.5">
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3.5 py-3">
+          <div className="border-t border-[rgb(var(--client-ink))]/[0.07] p-3.5">
+            <div className="rounded-xl border border-[rgb(var(--client-ink))]/[0.06] bg-[rgb(var(--client-ink))]/[0.025] px-3.5 py-3">
               <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.04]">
-                  <Icon name="lock" className="h-3.5 w-3.5 text-white/35" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgb(var(--client-ink))]/[0.04]">
+                  <Icon name="lock" className="h-3.5 w-3.5 text-[rgb(var(--client-muted))]" />
                 </span>
                 <div>
-                  <p className="text-[10px] font-semibold text-white/55">Private workspace</p>
-                  <p className="mt-0.5 text-[9px] text-white/22">Powered by Showwork</p>
+                  <p className="text-[10px] font-semibold text-[rgb(var(--client-muted))]">Private workspace</p>
+                  <p className="mt-0.5 text-[9px] text-[rgb(var(--client-muted))]">Powered by Showwork</p>
                 </div>
               </div>
             </div>
@@ -478,10 +513,10 @@ export default function ClientCalendarWorkspace({
         </aside>
 
         {/* Everything below stays mounted. Only the active workspace view changes. */}
-        <section className="min-w-0 flex-1">
-          <header className="hidden h-[68px] items-center border-b border-white/[0.07] bg-[#08090B]/90 px-6 backdrop-blur-2xl lg:flex xl:px-9">
+        <section ref={contentScrollRef} aria-label="Client workspace content" tabIndex={0} className="min-w-0 flex-1 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+          <header className="sticky top-0 z-30 hidden h-[68px] items-center border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/90 px-6 backdrop-blur-2xl lg:flex xl:px-9">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/25">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
                 {activeView === "overview"
                   ? "Workspace"
                   : activeView === "calendar"
@@ -490,21 +525,22 @@ export default function ClientCalendarWorkspace({
                       ? "Client review"
                       : "Social preview"}
               </p>
-              <p className="mt-1 text-xs font-medium text-white/65">{clientName}</p>
+              <p className="mt-1 text-xs font-medium text-[rgb(var(--client-muted))]">{clientName}</p>
             </div>
 
             <div className="ml-auto flex items-center gap-3">
-              <span className="rounded-full border border-[#43E097]/15 bg-[#43E097]/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#72E8AC]">
+              {themeToggle}
+              <span className="rounded-full border border-[#43E097]/15 bg-[#43E097]/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[rgb(var(--client-green))]">
                 Private
               </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">
-                <Icon name="lock" className="h-4 w-4 text-white/40" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgb(var(--client-ink))]/[0.08] bg-[rgb(var(--client-ink))]/[0.035]">
+                <Icon name="lock" className="h-4 w-4 text-[rgb(var(--client-muted))]" />
               </span>
             </div>
           </header>
 
           {/* Hero is part of the persistent shell and does not reload between views. */}
-          <div className="relative isolate overflow-hidden border-b border-white/[0.06]">
+          <div className="relative isolate overflow-hidden border-b border-[rgb(var(--client-ink))]/[0.06]">
             <div className="absolute inset-0 h-[310px]">
               {mobileBannerUrl && (
                 <img
@@ -525,23 +561,23 @@ export default function ClientCalendarWorkspace({
                   className="absolute inset-0"
                   style={{
                     background:
-                      "radial-gradient(circle at 15% 10%, rgba(36,120,255,0.28), transparent 32%), radial-gradient(circle at 88% 8%, rgba(124,58,237,0.17), transparent 30%), #08090B",
+                      "radial-gradient(circle at 15% 10%, rgba(36,120,255,0.28), transparent 32%), radial-gradient(circle at 88% 8%, rgba(124,58,237,0.17), transparent 30%), rgb(var(--client-bg))",
                   }}
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#08090B]/35 via-[#08090B]/60 to-[#08090B]" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[rgb(var(--client-bg))]/35 via-[rgb(var(--client-bg))]/60 to-[rgb(var(--client-bg))]" />
             </div>
 
             <div className="relative px-5 pb-9 pt-11 sm:px-8 sm:pb-10 sm:pt-13 xl:px-9">
               <div className="max-w-4xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.09] bg-black/30 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/55 backdrop-blur-xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--client-ink))]/[0.09] bg-black/30 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--client-muted))] backdrop-blur-xl">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#43E097] shadow-[0_0_10px_rgba(67,224,151,0.65)]" />
                   Client content workspace
                 </div>
-                <h1 className="mt-5 max-w-3xl text-[2.2rem] font-semibold leading-[1] tracking-[-0.055em] text-white sm:text-5xl xl:text-6xl">
+                <h1 className="mt-5 max-w-3xl text-[2.2rem] font-semibold leading-[1] tracking-[-0.055em] text-[rgb(var(--client-ink))] sm:text-5xl xl:text-6xl">
                   {displayTitle}
                 </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/48 sm:text-[15px]">
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[rgb(var(--client-muted))] sm:text-[15px]">
                   {displayDescription}
                 </p>
               </div>
@@ -565,49 +601,49 @@ export default function ClientCalendarWorkspace({
                       { label: "Needs attention", value: stats.pendingPosts + stats.revisionPosts, sub: "awaiting your action", icon: "review" as const, color: "#F7B742" },
                       { label: "Files", value: stats.totalAssets, sub: "attached assets", icon: "grid" as const, color: "#A78BFA" },
                     ].map((stat) => (
-                      <div key={stat.label} className="rounded-2xl border border-white/[0.065] bg-white/[0.025] p-5">
+                      <div key={stat.label} className="rounded-2xl border border-[rgb(var(--client-ink))]/[0.065] bg-[rgb(var(--client-ink))]/[0.025] p-5">
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ color: stat.color, background: `${stat.color}12` }}>
                           <Icon name={stat.icon} className="h-4 w-4" />
                         </div>
-                        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/28">{stat.label}</p>
-                        <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-white">{stat.value}</p>
-                        <p className="mt-1 text-[10px] text-white/30">{stat.sub}</p>
+                        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">{stat.label}</p>
+                        <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[rgb(var(--client-ink))]">{stat.value}</p>
+                        <p className="mt-1 text-[10px] text-[rgb(var(--client-muted))]">{stat.sub}</p>
                       </div>
                     ))}
                   </div>
 
                   <div className="mt-7 grid gap-3 lg:grid-cols-2">
-                    <button type="button" onClick={() => navigate("calendar")} className="group rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.04]">
+                    <button type="button" onClick={() => navigate("calendar")} className="group rounded-[24px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--client-ink))]/[0.12] hover:bg-[rgb(var(--client-ink))]/[0.04]">
                       <div className="flex items-start justify-between">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[#68B2FF]"><Icon name="calendar" className="h-5 w-5" /></span>
-                        <Icon name="arrow" className="h-4 w-4 text-white/20 transition group-hover:translate-x-1 group-hover:text-white/55" />
+                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[rgb(var(--client-blue))]"><Icon name="calendar" className="h-5 w-5" /></span>
+                        <Icon name="arrow" className="h-4 w-4 text-[rgb(var(--client-muted))] transition group-hover:translate-x-1 group-hover:text-[rgb(var(--client-muted))]" />
                       </div>
-                      <p className="mt-6 text-sm font-semibold text-white">Content calendar</p>
-                      <p className="mt-2 text-xs leading-5 text-white/35">Search, filter and review every planned post without moving through a long page.</p>
+                      <p className="mt-6 text-sm font-semibold text-[rgb(var(--client-ink))]">Content calendar</p>
+                      <p className="mt-2 text-xs leading-5 text-[rgb(var(--client-muted))]">Search, filter and review every planned post without moving through a long page.</p>
                     </button>
 
-                    <button type="button" onClick={() => navigate("review")} className="group rounded-[24px] border border-white/[0.07] bg-white/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.04]">
+                    <button type="button" onClick={() => navigate("review")} className="group rounded-[24px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--client-ink))]/[0.12] hover:bg-[rgb(var(--client-ink))]/[0.04]">
                       <div className="flex items-start justify-between">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[#F7C766]"><Icon name="review" className="h-5 w-5" /></span>
-                        <Icon name="arrow" className="h-4 w-4 text-white/20 transition group-hover:translate-x-1 group-hover:text-white/55" />
+                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[rgb(var(--client-amber))]"><Icon name="review" className="h-5 w-5" /></span>
+                        <Icon name="arrow" className="h-4 w-4 text-[rgb(var(--client-muted))] transition group-hover:translate-x-1 group-hover:text-[rgb(var(--client-muted))]" />
                       </div>
-                      <p className="mt-6 text-sm font-semibold text-white">Review centre</p>
-                      <p className="mt-2 text-xs leading-5 text-white/35">
+                      <p className="mt-6 text-sm font-semibold text-[rgb(var(--client-ink))]">Review centre</p>
+                      <p className="mt-2 text-xs leading-5 text-[rgb(var(--client-muted))]">
                         {reviewPosts.length ? `${reviewPosts.length} ${reviewPosts.length === 1 ? "post is" : "posts are"} waiting for your attention.` : "Nothing is waiting for your attention right now."}
                       </p>
                     </button>
                   </div>
 
-                  <div className="mt-7 rounded-[24px] border border-white/[0.065] bg-[#0E1014] p-6 sm:p-7">
+                  <div className="mt-7 rounded-[24px] border border-[rgb(var(--client-ink))]/[0.065] bg-[rgb(var(--client-panel))] p-6 sm:p-7">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/25">Approval progress</p>
-                        <p className="mt-2 text-lg font-semibold text-white">{stats.approvedPosts} of {stats.totalPosts} posts approved</p>
-                        <p className="mt-1 text-xs text-white/32">{reviewPosts.length ? "Review the outstanding posts from the Review Centre." : "Your workspace is fully up to date."}</p>
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[rgb(var(--client-muted))]">Approval progress</p>
+                        <p className="mt-2 text-lg font-semibold text-[rgb(var(--client-ink))]">{stats.approvedPosts} of {stats.totalPosts} posts approved</p>
+                        <p className="mt-1 text-xs text-[rgb(var(--client-muted))]">{reviewPosts.length ? "Review the outstanding posts from the Review Centre." : "Your workspace is fully up to date."}</p>
                       </div>
                       <div className="w-full max-w-xs">
-                        <div className="mb-2 flex items-center justify-between text-[10px] text-white/30"><span>Progress</span><span className="font-semibold text-white/60">{stats.approvalPercentage}%</span></div>
-                        <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]"><div className="h-full rounded-full bg-[#2478FF] transition-all duration-500" style={{ width: `${stats.approvalPercentage}%` }} /></div>
+                        <div className="mb-2 flex items-center justify-between text-[10px] text-[rgb(var(--client-muted))]"><span>Progress</span><span className="font-semibold text-[rgb(var(--client-muted))]">{stats.approvalPercentage}%</span></div>
+                        <div className="h-2 overflow-hidden rounded-full bg-[rgb(var(--client-ink))]/[0.06]"><div className="h-full rounded-full bg-[#2478FF] transition-all duration-500" style={{ width: `${stats.approvalPercentage}%` }} /></div>
                       </div>
                     </div>
                   </div>
@@ -624,6 +660,8 @@ export default function ClientCalendarWorkspace({
                   <ClientCalendarView
                     key={previewPostId || "calendar"}
                     initialPostId={previewPostId}
+                    controlledTheme={theme}
+                    onThemeChange={toggleTheme}
                     slug={slug}
                     planStatus={planStatus}
                     clientName={clientName}
@@ -633,7 +671,7 @@ export default function ClientCalendarWorkspace({
               )}
 
               {(activeView === "linkedin" || activeView === "facebook" || activeView === "x") && (
-                <section className="rounded-3xl border border-white/10 bg-[#101216] p-3 sm:p-6">
+                <section className="rounded-3xl border border-[rgb(var(--client-ink))]/10 bg-[rgb(var(--client-panel))] p-3 sm:p-6">
                   <SocialFeedPreview posts={posts} clientName={clientName.trim() || "Your brand"} channel={activeView}
                     onOpen={(post) => { setPreviewPostId(post.id); navigate("calendar"); }}
                     filtersActive={false} onClearFilters={() => {}} />
@@ -647,7 +685,7 @@ export default function ClientCalendarWorkspace({
                     title="Instagram"
                     description="See how the planned Instagram content comes together as a complete feed."
                   />
-                  <div className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#080808] p-3 sm:p-6">
+                  <div className="relative overflow-hidden rounded-[28px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] p-3 sm:p-6">
                     <div className="pointer-events-none absolute -left-32 top-10 h-80 w-80 rounded-full bg-[#E1306C]/10 blur-[110px]" />
                     <div className="pointer-events-none absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-[#7C3AED]/10 blur-[110px]" />
                     <div className="relative z-10">
@@ -664,7 +702,7 @@ export default function ClientCalendarWorkspace({
                     title="TikTok"
                     description="Experience the planned vertical content as a viewer would move through the feed."
                   />
-                  <div className="relative overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#050505] p-3 sm:p-6">
+                  <div className="relative overflow-hidden rounded-[28px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] p-3 sm:p-6">
                     <div className="pointer-events-none absolute -left-32 top-10 h-80 w-80 rounded-full bg-[#25F4EE]/10 blur-[110px]" />
                     <div className="pointer-events-none absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-[#FE2C55]/10 blur-[110px]" />
                     <div className="relative z-10">
@@ -684,28 +722,28 @@ export default function ClientCalendarWorkspace({
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-[#F7B742]/15 bg-[#F7B742]/[0.055] p-5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[#F7C766]"><Icon name="clock" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/28">Awaiting review</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{stats.pendingPosts}</p>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[rgb(var(--client-amber))]"><Icon name="clock" className="h-4 w-4" /></div>
+                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Awaiting review</p>
+                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.pendingPosts}</p>
                     </div>
                     <div className="rounded-2xl border border-red-400/15 bg-red-400/[0.045] p-5">
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-400/10 text-red-300"><Icon name="message" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/28">Needs revision</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{stats.revisionPosts}</p>
+                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Needs revision</p>
+                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.revisionPosts}</p>
                     </div>
                     <div className="rounded-2xl border border-[#43E097]/15 bg-[#43E097]/[0.045] p-5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#43E097]/10 text-[#72E8AC]"><Icon name="check" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/28">Approved</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{stats.approvedPosts}</p>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#43E097]/10 text-[rgb(var(--client-green))]"><Icon name="check" className="h-4 w-4" /></div>
+                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Approved</p>
+                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.approvedPosts}</p>
                     </div>
                   </div>
 
                   {reviewPosts.length ? (
-                    <div className="mt-7 rounded-[26px] border border-white/[0.07] bg-white/[0.025] p-6 sm:p-7">
+                    <div className="mt-7 rounded-[26px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 sm:p-7">
                       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-white">You have {reviewPosts.length} {reviewPosts.length === 1 ? "post" : "posts"} to review.</p>
-                          <p className="mt-1 text-xs leading-5 text-white/35">Open the calendar and use the status filter to see exactly what requires your attention.</p>
+                          <p className="text-sm font-semibold text-[rgb(var(--client-ink))]">You have {reviewPosts.length} {reviewPosts.length === 1 ? "post" : "posts"} to review.</p>
+                          <p className="mt-1 text-xs leading-5 text-[rgb(var(--client-muted))]">Open the calendar and use the status filter to see exactly what requires your attention.</p>
                         </div>
                         <button type="button" onClick={() => navigate("calendar")} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-5 text-xs font-semibold text-white shadow-[0_12px_28px_rgba(36,120,255,0.18)] transition hover:-translate-y-0.5">
                           Review posts <Icon name="arrow" className="h-3.5 w-3.5" />
@@ -718,27 +756,27 @@ export default function ClientCalendarWorkspace({
                             key={post.id}
                             type="button"
                             onClick={() => navigate("calendar")}
-                            className="flex w-full items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.02] px-3.5 py-3 text-left transition hover:bg-white/[0.045]"
+                            className="flex w-full items-center gap-3 rounded-xl border border-[rgb(var(--client-ink))]/[0.055] bg-[rgb(var(--client-ink))]/[0.02] px-3.5 py-3 text-left transition hover:bg-[rgb(var(--client-ink))]/[0.045]"
                           >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F7B742]/[0.08] text-[#F7C766]">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F7B742]/[0.08] text-[rgb(var(--client-amber))]">
                               <Icon name={post.approvalStatus === "NEEDS_REVISION" ? "message" : "clock"} className="h-3.5 w-3.5" />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-medium text-white/70">{post.contentIdea || post.caption || "Untitled post"}</span>
-                              <span className="mt-1 block text-[9px] text-white/25">
+                              <span className="block truncate text-xs font-medium text-[rgb(var(--client-muted))]">{post.contentIdea || post.caption || "Untitled post"}</span>
+                              <span className="mt-1 block text-[9px] text-[rgb(var(--client-muted))]">
                                 {post.platform} · {new Date(post.postDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </span>
                             </span>
-                            <Icon name="arrow" className="h-3.5 w-3.5 shrink-0 text-white/20" />
+                            <Icon name="arrow" className="h-3.5 w-3.5 shrink-0 text-[rgb(var(--client-muted))]" />
                           </button>
                         ))}
                       </div>
                     </div>
                   ) : (
                     <div className="mt-7 rounded-[26px] border border-[#43E097]/15 bg-[#43E097]/[0.045] p-8 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#43E097]/10 text-[#72E8AC]"><Icon name="check" className="h-5 w-5" /></div>
-                      <p className="mt-5 text-sm font-semibold text-white">You&apos;re all caught up.</p>
-                      <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-white/35">There are no posts waiting for approval or revision.</p>
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#43E097]/10 text-[rgb(var(--client-green))]"><Icon name="check" className="h-5 w-5" /></div>
+                      <p className="mt-5 text-sm font-semibold text-[rgb(var(--client-ink))]">You&apos;re all caught up.</p>
+                      <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-[rgb(var(--client-muted))]">There are no posts waiting for approval or revision.</p>
                     </div>
                   )}
                 </div>

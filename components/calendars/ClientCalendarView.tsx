@@ -1110,6 +1110,8 @@ export default function ClientCalendarView({
   clientName,
   initialMonth,
   initialPostId,
+  controlledTheme,
+  onThemeChange,
 }: {
   slug: string;
   planStatus: string;
@@ -1117,23 +1119,28 @@ export default function ClientCalendarView({
   clientName: string;
   initialMonth?: string;
   initialPostId?: string;
+  controlledTheme?: Theme;
+  onThemeChange?: () => void;
 }) {
   const router = useRouter();
-  const [theme, setTheme] = useState<Theme>("light");
+  const [localTheme, setTheme] = useState<Theme>("light");
+  const theme = controlledTheme ?? localTheme;
   const [viewMode, setViewMode] = useState<"calendar" | "instagram" | "tiktok" | "linkedin" | "facebook" | "x" | "inbox">("calendar");
   const [currentPlanStatus, setCurrentPlanStatus] = useState(planStatus);
 
   useEffect(() => {
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    if (saved === "dark" || saved === "light") {
-      setTheme(saved);
-    }
-  }, []);
+    if (controlledTheme !== undefined) return;
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === "dark" || saved === "light") setTheme(saved);
+    } catch {}
+  }, [controlledTheme]);
 
   const toggleTheme = () => {
+    if (onThemeChange) { onThemeChange(); return; }
     setTheme((prev) => {
       const next = prev === "dark" ? "light" : "dark";
-      localStorage.setItem(THEME_STORAGE_KEY, next);
+      try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch {}
       return next;
     });
   };

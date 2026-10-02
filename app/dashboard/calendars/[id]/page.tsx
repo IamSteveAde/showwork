@@ -1,3 +1,4 @@
+import { requirePostPlatform } from "@/lib/calendarPosts";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { redirect, notFound } from "next/navigation";
@@ -20,6 +21,7 @@ import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaym
 import InstagramConnectionCard from "@/components/calendars/InstagramConnectionCard";
 import TikTokConnectionCard from "@/components/calendars/TikTokConnectionCard";
 import AdditionalChannelCard from "@/components/calendars/AdditionalChannelCard";
+import WhatsAppConnectionCard from "@/components/calendars/WhatsAppConnectionCard";
 import BusinessKnowledgeCard from "@/components/calendars/BusinessKnowledgeCard";
 import AiContentGeneratorCard from "@/components/calendars/AiContentGeneratorCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
@@ -454,7 +456,7 @@ const aiActive =
   const calendarPosts = calendar.posts.map((p) => ({
     id: p.id,
     postDate: p.postDate.toISOString(),
-    platform: p.platform,
+    platform: requirePostPlatform(p.platform),
     postType: p.postType,
    category: p.category,
 hook: p.hook,
@@ -693,7 +695,7 @@ contentIdea: p.contentIdea,
               <div className="mt-4">
                 <PlatformAnalytics
                   posts={calendar.posts.map((post) => ({
-                    platform: post.platform,
+                    platform: requirePostPlatform(post.platform),
                     postDate: post.postDate.toISOString(),
                   }))}
                 />
@@ -1033,7 +1035,7 @@ contentIdea: p.contentIdea,
             <div className="mt-5">
               <PlatformAnalytics
                 posts={calendar.posts.map((post) => ({
-                  platform: post.platform,
+                  platform: requirePostPlatform(post.platform),
                   postDate: post.postDate.toISOString(),
                 }))}
               />
@@ -1157,7 +1159,7 @@ contentIdea: p.contentIdea,
             eyebrow: "Publishing",
             title: "Connect the channels behind the work.",
             description:
-              "Connect the social accounts used for this client’s content and manage their access here.",
+              "Connect this client’s social and messaging accounts and manage their access here.",
             group: "Publishing" as const,
             content: (
               <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
@@ -1188,6 +1190,7 @@ contentIdea: p.contentIdea,
                   connectedAt={calendar.linkedinConnectedAt?.toISOString() ?? null}
                   isManager={isManager}
                 />
+                <WhatsAppConnectionCard calendarId={calendar.id} isManager={isManager} />
                 <AdditionalChannelCard
                   channel="x"
                   calendarId={calendar.id}

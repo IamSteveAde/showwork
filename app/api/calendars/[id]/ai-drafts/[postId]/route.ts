@@ -1,3 +1,4 @@
+import { requirePostPlatform } from "@/lib/calendarPosts";
   import { NextRequest, NextResponse } from "next/server";
 
   import { getCurrentCreator } from "@/lib/auth";
@@ -328,7 +329,7 @@
         .toISOString()
         .slice(0, 10),
 
-      platform: access.post.platform,
+      platform: requirePostPlatform(access.post.platform),
 
       postType:
         access.post.postType ?? "",

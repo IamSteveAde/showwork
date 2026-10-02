@@ -1817,6 +1817,7 @@ model CalendarBusinessDocument {
 }
 
 enum SocialPlatform {
+  WHATSAPP
   INSTAGRAM
   TIKTOK
   YOUTUBE
@@ -1881,6 +1882,8 @@ enum SocialInboxMessageStatus {
   RECEIVED
   PENDING
   SENT
+  DELIVERED
+  READ
   FAILED
 }
 
@@ -1892,6 +1895,7 @@ model SocialConnection {
   calendarId                   String
   platform                     SocialPlatform
   platformAccountId            String
+  whatsappBusinessAccountId    String?
   accountName                  String?
   username                     String?
   accessToken                  String?                       @db.Text

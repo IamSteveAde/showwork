@@ -1,3 +1,4 @@
+import { requirePostPlatform } from "@/lib/calendarPosts";
 import { notFound } from "next/navigation";
 import type { ComponentProps } from "react";
 import { cookies } from "next/headers";
@@ -348,7 +349,7 @@ export default async function SocialCalendarPage({
   const serializedPosts = calendar.posts.map((p) => ({
     id: p.id,
     postDate: p.postDate.toISOString(),
-    platform: p.platform,
+    platform: requirePostPlatform(p.platform),
     postType: p.postType,
     category: p.category,
     caption: p.caption,
