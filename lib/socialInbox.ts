@@ -1,11 +1,12 @@
 import { tikTokMessagingAccess } from "@/lib/socialMessaging/tiktok";
+import { whatsappMessagingAccess } from "@/lib/socialMessaging/whatsapp";
 import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import type { SocialLeadStatus, SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getFacebookMessengerProfile, getInstagramMessagingProfile } from "@/lib/socialMessaging/meta";
 
 export const SOCIAL_LEAD_STATUSES: SocialLeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "CUSTOMER", "NOT_A_LEAD"];
-export const SOCIAL_INBOX_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "FACEBOOK", "X", "TIKTOK", "LINKEDIN", "YOUTUBE"];
+export const SOCIAL_INBOX_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "FACEBOOK", "X", "TIKTOK", "LINKEDIN", "YOUTUBE", "WHATSAPP"];
 
 export async function getSocialInbox(calendarId: string, params: URLSearchParams) {
   const platform = params.get("platform")?.toUpperCase();
@@ -53,10 +54,16 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     db.socialInboxSettings.findUnique({ where: { calendarId }, select: { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: true } }),
     db.socialConnection.findMany({
       where: { calendarId, status: { not: "DISCONNECTED" } },
-      select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true, tikTokMessagingBusinessId: true, tikTokMessagingScopes: true, tikTokMessagingConnectedAt: true },
+      select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, accessTokenExpiresAt: true, whatsappBusinessAccountId: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true, tikTokMessagingBusinessId: true, tikTokMessagingScopes: true, tikTokMessagingConnectedAt: true },
       orderBy: { platform: "asc" },
     }),
   ]);
+  const whatsappConversationIds = conversations.filter(conversation => conversation.platform === "WHATSAPP").map(conversation => conversation.id);
+  const latestWhatsAppInbound = whatsappConversationIds.length ? await db.socialLeadMessage.groupBy({ by: ["conversationId"],
+    where: { direction: "INBOUND", conversationId: { in: whatsappConversationIds } },
+    _max: { platformCreatedAt: true } }) : [];
+  const whatsappWindows = new Map(latestWhatsAppInbound.map(item => [item.conversationId, item._max.platformCreatedAt
+    ? new Date(item._max.platformCreatedAt.getTime() + 24 * 60 * 60_000).toISOString() : null]));
   // Resolve older conversations that arrived before profile lookup was
   // implemented. Limit each request so a large inbox cannot trigger an
   // unbounded burst of Graph API calls.
@@ -102,12 +109,12 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     accounts: accounts.map(({ tokenScopes, tikTokMessagingScopes, ...account }) => ({
       ...account,
       ...(account.platform === "TIKTOK" && account.tikTokMessagingBusinessId ? { accountName: `TikTok Business Account ${account.tikTokMessagingBusinessId}`, username: null } : {}),
-      messagingAvailable: account.platform === "TIKTOK" ? tikTokMessagingAccess({ ...account, tikTokMessagingScopes }).available : account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).available : account.platform === "FACEBOOK"
+      messagingAvailable: account.platform === "WHATSAPP" ? whatsappMessagingAccess(account).available : account.platform === "TIKTOK" ? tikTokMessagingAccess({ ...account, tikTokMessagingScopes }).available : account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).available : account.platform === "FACEBOOK"
         ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("pages_messaging") && account.messagingWebhookSubscribedAt && !account.messagingWebhookError)
         : account.platform === "INSTAGRAM"
           ? Boolean(account.status === "CONNECTED" && tokenScopes?.split(/[\s,]+/).includes("instagram_manage_messages") && account.messagingWebhookSubscribedAt && (!account.messagingWebhookError || account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded.")))
           : account.platform === "X" && account.status === "CONNECTED" && ["dm.read", "dm.write", "tweet.read", "users.read"].every(scope => tokenScopes?.split(/[\s,]+/).includes(scope)),
-      messagingNote: account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).reason : account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
+      messagingNote: account.platform === "WHATSAPP" ? whatsappMessagingAccess(account).reason : account.platform === "LINKEDIN" ? linkedInMessagingAccess({ ...account, tokenScopes }).reason : account.platform === "FACEBOOK" || account.platform === "INSTAGRAM"
         ? account.messagingWebhookError && !(account.platform === "INSTAGRAM" && account.messagingWebhookError.startsWith("The Facebook Page subscription succeeded."))
           ? account.messagingWebhookError
           : !(account.platform === "FACEBOOK" ? tokenScopes?.includes("pages_messaging") : tokenScopes?.includes("instagram_manage_messages"))
@@ -140,6 +147,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       providerConversationId: conversation.providerConversationId,
       participantPlatformId: conversation.participantPlatformId,
       participantUsername,
+      ...(conversation.platform === "WHATSAPP" ? { replyWindowExpiresAt: whatsappWindows.get(conversation.id) ?? null } : {}),
       leadStatus: conversation.leadStatus,
       unreadCount: previewVisible ? conversation.unreadCount : 0,
       lastMessagePreview: previewVisible ? conversation.lastMessagePreview : null,

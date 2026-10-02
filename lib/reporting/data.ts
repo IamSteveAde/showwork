@@ -37,7 +37,7 @@ export async function getCalendarReportingData(
   const [permission, connections, posts, insights, facebookConnection] = await Promise.all([
     db.calendarReportingPermission.findUnique({ where: { calendarId } }),
     db.socialConnection.findMany({
-      where: { calendarId, ...(platform ? { platform } : {}) },
+      where: { calendarId, platform: platform || { in: REPORTING_PLATFORMS } },
       select: {
         id: true,
         platform: true,

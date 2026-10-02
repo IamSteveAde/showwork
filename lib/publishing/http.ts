@@ -3,7 +3,7 @@ export async function providerJson<T>(url: string, init: RequestInit = {}): Prom
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.error || (Array.isArray(data.errors) && data.errors.length && !data.data)) {
     const message = data.error?.message || data.errors?.[0]?.detail || data.detail || data.message || `Platform request failed (${response.status}).`;
-    throw Object.assign(new Error(message), { status: response.status });
+    throw Object.assign(new Error(message), { status: response.status, providerCode: data.error?.code });
   }
   return data as T;
 }

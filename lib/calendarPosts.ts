@@ -13,6 +13,10 @@ export const POST_PLATFORMS: SocialPlatform[] = [
   "X",
   "LINKEDIN",
 ];
+export function requirePostPlatform(platform: SocialPlatform): Exclude<SocialPlatform, "WHATSAPP"> {
+  if (platform === "WHATSAPP") throw new Error("WhatsApp is a messaging-only channel.");
+  return platform;
+}
 export const POST_TEXT_FIELDS = [
   "postType",
   "category",
