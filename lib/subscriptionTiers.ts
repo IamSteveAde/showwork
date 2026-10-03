@@ -31,8 +31,8 @@ export const TIERS: Record<
   },
   GROWTH: {
     name: "Growth",
-    priceNgnMonthly: 10500,
-    priceNgnAnnual: 119700,
+    priceNgnMonthly: 12500,
+    priceNgnAnnual: 142500,
     limit: 20,
     planCodeEnv: {
       MONTHLY: "PAYSTACK_PLAN_CODE_GROWTH_MONTHLY",
@@ -41,8 +41,8 @@ export const TIERS: Record<
   },
   UNLIMITED: {
     name: "Unlimited",
-    priceNgnMonthly: 15000,
-    priceNgnAnnual: 171000,
+    priceNgnMonthly: 22500,
+    priceNgnAnnual: 256500,
     limit: Infinity,
     planCodeEnv: {
       MONTHLY: "PAYSTACK_PLAN_CODE_UNLIMITED_MONTHLY",
@@ -77,8 +77,8 @@ export function planCodeForTier(tier: PaidTier, cycle: BillingCycle): string {
  */
 export function tierFromPlanCode(planCode: string): { tier: PaidTier; cycle: BillingCycle } | null {
   for (const tier of PAID_TIER_ORDER) {
-    if (process.env[TIERS[tier].planCodeEnv.MONTHLY] === planCode) return { tier, cycle: "MONTHLY" };
-    if (process.env[TIERS[tier].planCodeEnv.ANNUAL] === planCode) return { tier, cycle: "ANNUAL" };
+    if ([process.env[TIERS[tier].planCodeEnv.MONTHLY], process.env[`${TIERS[tier].planCodeEnv.MONTHLY}_LEGACY`]].includes(planCode)) return { tier, cycle: "MONTHLY" };
+    if ([process.env[TIERS[tier].planCodeEnv.ANNUAL], process.env[`${TIERS[tier].planCodeEnv.ANNUAL}_LEGACY`]].includes(planCode)) return { tier, cycle: "ANNUAL" };
   }
   return null;
 }

@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 
+import { TIERS } from "@/lib/subscriptionTiers";
 import SubscribeButton from "@/components/SubscribeButton";
 import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
 import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
 
 import {
   CONTENT_WORKSPACE_PLANS,
+  CONTENT_WORKSPACE_PLAN_ORDER,
+  formatWorkspaceLimit,
   type ContentWorkspacePlan,
 } from "@/lib/contentWorkspaceEntitlements";
 
@@ -51,8 +53,6 @@ usage: {
   isComped: boolean;
   compedUntil: Date | null;
 } | null;
-
-  portfolioCount: number;
 
   selectedProduct: Product;
   selectedTier: string | null;
@@ -507,7 +507,7 @@ function DeliverySubscription({
       description:
         "A simple place to start delivering creative work.",
       features: [
-        "1 project per month",
+        "1 project per 30 days",
         "Password-protected delivery",
         "Custom presentation",
         "Client feedback",
@@ -517,12 +517,12 @@ function DeliverySubscription({
     {
       key: "STARTER" as const,
       name: "Starter",
-      priceMonthly: 5900,
-      priceAnnual: 67260,
+      priceMonthly: TIERS.STARTER.priceNgnMonthly,
+      priceAnnual: TIERS.STARTER.priceNgnAnnual,
       description:
         "For creators taking on clients consistently.",
       features: [
-        "Up to 5 projects per month",
+        "Up to 5 projects per billing cycle",
         "Password-protected delivery",
         "Client feedback",
         "Individual + ZIP downloads",
@@ -532,12 +532,12 @@ function DeliverySubscription({
     {
       key: "GROWTH" as const,
       name: "Growth",
-      priceMonthly: 10500,
-      priceAnnual: 119700,
+      priceMonthly: TIERS.GROWTH.priceNgnMonthly,
+      priceAnnual: TIERS.GROWTH.priceNgnAnnual,
       description:
         "For studios and creators delivering every week.",
       features: [
-        "Up to 20 projects per month",
+        "Up to 20 projects per billing cycle",
         "Client feedback",
         "Individual + ZIP downloads",
         "Dashboard analytics",
@@ -547,8 +547,8 @@ function DeliverySubscription({
     {
       key: "UNLIMITED" as const,
       name: "Unlimited",
-      priceMonthly: 15000,
-      priceAnnual: 171000,
+      priceMonthly: TIERS.UNLIMITED.priceNgnMonthly,
+      priceAnnual: TIERS.UNLIMITED.priceNgnAnnual,
       description:
         "For teams who no longer want to count projects.",
       features: [
@@ -858,9 +858,7 @@ function DeliverySubscription({
                       )}
                     </div>
                   ) : plan.key === "FREE" ? (
-                    <div className="text-[11px] font-medium text-[#98A2B3]">
-                      Included with Showwork
-                    </div>
+                    <CancelSubscriptionButton label="Downgrade to Free" />
                   ) : (
                     <SubscribeButton
                       tier={plan.key}
@@ -994,7 +992,7 @@ function ContentWorkspaceSubscription({
 
                 <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3">
                   {[
-                    "3-day free trial",
+                    "7-day free trial",
                     "No payment to start",
                     "AI Studio included",
                     "Client collaboration",
@@ -1023,7 +1021,7 @@ function ContentWorkspaceSubscription({
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-[#667085]">
-                  You can start with a 3-day free trial.
+                  You can start with a 7-day free trial.
                   No payment is required to begin.
                 </p>
 
@@ -1130,27 +1128,20 @@ function ContentWorkspaceSubscription({
         <div className="grid gap-px bg-[#EAECF0] sm:grid-cols-4">
           <WorkspaceMetric
             label="Workspaces"
-            value={String(
-              planDetails.activeWorkspaces
-            )}
+            value={formatWorkspaceLimit(planDetails.activeWorkspaces)}
             detail="Active client spaces"
           />
 
           <WorkspaceMetric
             label="Collaborators"
-            value={String(
-              planDetails.collaborators
-            )}
+            value={formatWorkspaceLimit(planDetails.collaborators)}
             detail="Team members"
           />
 
           <WorkspaceMetric
             label="Storage"
             value={
-              planDetails.storageBytes >=
-              50_000_000_000
-                ? "50 GB"
-                : "5 GB"
+              `${planDetails.storageBytes / 1_000_000_000} GB`
             }
             detail="Included storage"
           />
@@ -1298,10 +1289,7 @@ function WorkspacePlanComparison({
   selectedCycle: BillingCycle;
   currentPlan: ContentWorkspacePlan | null;
 }) {
-  const plans: ContentWorkspacePlan[] = [
-    "CREATOR",
-    "STUDIO",
-  ];
+  const plans = CONTENT_WORKSPACE_PLAN_ORDER;
 
   return (
     <div>
@@ -1315,7 +1303,7 @@ function WorkspacePlanComparison({
         </h3>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         {plans.map((planKey) => {
           const plan =
             CONTENT_WORKSPACE_PLANS[planKey];
@@ -1337,9 +1325,9 @@ function WorkspacePlanComparison({
                   : "border-[#E7E9EE] hover:-translate-y-0.5 hover:border-[#D0D5DD] hover:shadow-[0_14px_40px_rgba(16,24,40,0.06)]"
               }`}
             >
-              {planKey === "STUDIO" && (
+              {planKey === "UNLIMITED" && !isCurrent && (
                 <div className="absolute right-5 top-5 rounded-full bg-[#101828] px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.08em] text-white">
-                  For teams
+                  Recommended for teams
                 </div>
               )}
 
@@ -1374,24 +1362,18 @@ function WorkspacePlanComparison({
               <div className="mt-6 grid grid-cols-2 gap-2">
                 <WorkspaceMiniStat
                   label="Workspaces"
-                  value={String(
-                    plan.activeWorkspaces
-                  )}
+                  value={formatWorkspaceLimit(plan.activeWorkspaces)}
                 />
 
                 <WorkspaceMiniStat
                   label="Collaborators"
-                  value={String(
-                    plan.collaborators
-                  )}
+                  value={formatWorkspaceLimit(plan.collaborators)}
                 />
 
                 <WorkspaceMiniStat
                   label="Storage"
                   value={
-                    planKey === "STUDIO"
-                      ? "50 GB"
-                      : "5 GB"
+                    `${plan.storageBytes / 1_000_000_000} GB`
                   }
                 />
 
@@ -1484,321 +1466,95 @@ export default function BillingSubscriptions({
   creator,
   usage,
   workspaceBilling,
-  portfolioCount,
   selectedProduct,
   selectedTier,
   selectedCycle,
 }: BillingSubscriptionsProps) {
-  const [activeProduct, setActiveProduct] =
-    useState<Product>(selectedProduct);
+  const workspacePlan = workspaceBilling?.contentWorkspacePlan;
+  const workspaceStatus = workspaceBilling?.isComped
+    ? "Complimentary access"
+    : getWorkspaceStatus(workspaceBilling?.contentWorkspaceBillingStatus ?? "PENDING_SETUP").label;
+  const products = [
+    {
+      key: "delivery",
+      title: "Project Delivery",
+      icon: <DeliveryIcon />,
+      plan: getDeliveryPlanName(usage.tier),
+      status: getDeliveryStatus(usage.tier).label,
+      href: `/dashboard/billing?product=delivery&cycle=${selectedCycle}#subscription-details`,
+      action: "Manage Project Delivery",
+    },
+    {
+      key: "content-workspace",
+      title: "Content Workspace",
+      icon: <WorkspaceIcon />,
+      plan: workspacePlan ? CONTENT_WORKSPACE_PLANS[workspacePlan].name : "Not started",
+      status: workspaceStatus,
+      href: `/dashboard/billing?product=content-workspace&cycle=${selectedCycle}#subscription-details`,
+      action: "Manage Content Workspace",
+    },
+    {
+      key: "portfolio",
+      title: "Portfolio",
+      icon: <PortfolioIcon />,
+      plan: "Free",
+      status: "No subscription required",
+      href: "/dashboard/portfolio",
+      action: "Manage Portfolio",
+    },
+  ];
 
-  const workspaceStatus =
-    workspaceBilling?.contentWorkspaceBillingStatus ??
-    "PENDING_SETUP";
-
-  const workspacePlan =
-    workspaceBilling?.contentWorkspacePlan;
-
-  const deliveryStatus = getDeliveryStatus(
-  usage.tier
-);
-
-const planName = getDeliveryPlanName(usage.tier);
-
-const workspaceStatusMeta =
-  getWorkspaceStatus(workspaceStatus);
   return (
     <main className="min-h-screen bg-[#F5F7FA] text-[#101828]">
-      {/* ======================================================
-          HEADER
-      ======================================================= */}
-
       <header className="border-b border-[#E7E9EE] bg-white">
         <div className="mx-auto max-w-[1180px] px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#98A2B3] transition hover:text-[#101828]"
-          >
-            <span aria-hidden>←</span>
-            Dashboard
+          <Link href="/dashboard" className="text-xs font-semibold text-[#667085] hover:text-[#101828]">
+            ← Dashboard
           </Link>
-
-          <div className="mt-7 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mt-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
-                Account billing
-              </p>
-
-              <h1 className="mt-2 text-[32px] font-semibold tracking-[-0.045em] text-[#101828] sm:text-[42px]">
-                Subscriptions
-              </h1>
-
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">Account billing</p>
+              <h1 className="mt-2 text-[32px] font-semibold tracking-tight sm:text-[42px]">Billing & subscriptions</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#667085]">
-                Everything you pay for on Showwork,
-                organized in one place.
+                Manage Project Delivery, Content Workspace and your free Portfolio in one place.
               </p>
             </div>
-
             <div className="rounded-2xl border border-[#E7E9EE] bg-[#F9FAFB] px-4 py-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
-                Account
-              </p>
-
-              <p className="mt-1 max-w-[220px] truncate text-xs font-semibold text-[#344054]">
-                {creator.name || creator.email}
-              </p>
+              <p className="text-[10px] font-semibold text-[#98A2B3]">Account</p>
+              <p className="mt-1 text-xs font-semibold text-[#344054]">{creator.name || creator.email}</p>
             </div>
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1180px] px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
-        {/* ==================================================
-            PRODUCT SWITCHER
-        =================================================== */}
-
-        <section>
-          <div
-            role="tablist"
-            aria-label="Showwork subscriptions"
-            className="flex flex-col gap-2 rounded-[24px] border border-[#E7E9EE] bg-[#EEF0F4] p-2 sm:flex-row"
-          >
-            <ProductTab
-              active={
-                activeProduct === "delivery"
-              }
-              icon={<DeliveryIcon />}
-              title="Project Delivery"
-              description="Client projects, files & approvals"
-              badge={
-                usage.tier === "FREE"
-                  ? "Free"
-                  : undefined
-              }
-              onClick={() =>
-                setActiveProduct("delivery")
-              }
-            />
-
-            <ProductTab
-              active={
-                activeProduct ===
-                "content-workspace"
-              }
-              icon={<WorkspaceIcon />}
-              title="Content Workspace"
-              description="Plan, collaborate & publish"
-              badge={
-                workspacePlan
-                  ? undefined
-                  : "3-day trial"
-              }
-              onClick={() =>
-                setActiveProduct(
-                  "content-workspace"
-                )
-              }
-            />
-          </div>
+        <section aria-label="Your products" className="grid gap-4 md:grid-cols-3">
+          {products.map((product) => (
+            <article key={product.key} className={`rounded-[24px] border bg-white p-6 ${selectedProduct === product.key ? "border-[#2478FF]" : "border-[#E7E9EE]"}`}>
+              <div className="flex items-center gap-3">
+                <span className="rounded-xl bg-[#EEF4FF] p-3 text-[#2478FF]">{product.icon}</span>
+                <h2 className="text-sm font-semibold">{product.title}</h2>
+              </div>
+              <p className="mt-5 text-xl font-semibold">{product.plan}</p>
+              <p className="mt-1 text-xs text-[#667085]">{product.status}</p>
+              <Link href={product.href} aria-current={selectedProduct === product.key ? "true" : undefined}
+                className="mt-6 inline-flex items-center gap-2 text-xs font-semibold text-[#2478FF] hover:underline">
+                {product.action}<ArrowRightIcon />
+              </Link>
+            </article>
+          ))}
         </section>
 
-        {/* ==================================================
-            ACTIVE PRODUCT SUMMARY
-        =================================================== */}
-
-        <section className="mt-7">
-          <div className="flex flex-col gap-4 rounded-[24px] border border-[#E7E9EE] bg-white p-5 shadow-[0_8px_30px_rgba(16,24,40,0.035)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                  activeProduct === "delivery"
-                    ? "bg-[#F2F4F7] text-[#344054]"
-                    : "bg-[#EEF4FF] text-[#2478FF]"
-                }`}
-              >
-                {activeProduct ===
-                "delivery" ? (
-                  <DeliveryIcon className="h-[18px] w-[18px]" />
-                ) : (
-                  <WorkspaceIcon className="h-[18px] w-[18px]" />
-                )}
-              </div>
-
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#98A2B3]">
-                  Managing
-                </p>
-
-                <p className="mt-0.5 text-sm font-semibold text-[#101828]">
-                  {activeProduct ===
-                  "delivery"
-                    ? "Project Delivery"
-                    : "Content Workspace"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-bold"
-                style={{
-                  color:
-                    activeProduct ===
-                    "delivery"
-                      ? deliveryStatus.text
-                      : workspaceStatusMeta.text,
-                  background:
-                    activeProduct ===
-                    "delivery"
-                      ? deliveryStatus.bg
-                      : workspaceStatusMeta.bg,
-                  borderColor:
-                    activeProduct ===
-                    "delivery"
-                      ? deliveryStatus.border
-                      : workspaceStatusMeta.border,
-                }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background:
-                      activeProduct ===
-                      "delivery"
-                        ? deliveryStatus.dot
-                        : workspaceStatusMeta.dot,
-                  }}
-                />
-
-                {activeProduct ===
-                "delivery"
-                  ? deliveryStatus.label
-                  : workspaceStatusMeta.label}
-              </span>
-
-              <span className="text-[10px] text-[#98A2B3]">
-                {activeProduct ===
-                "delivery"
-                  ? planName
-                  : workspacePlan
-                    ? workspacePlan ===
-                      "STUDIO"
-                      ? "Studio"
-                      : "Creator"
-                    : "Not started"}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* ==================================================
-            ACTIVE SUBSCRIPTION CONTENT
-        =================================================== */}
-
-        <div className="mt-8">
-          {activeProduct === "delivery" ? (
-            <DeliverySubscription
-              usage={usage}
-              selectedTier={selectedTier}
-              selectedCycle={selectedCycle}
-            />
+        <section id="subscription-details" aria-label="Manage subscription" className="mt-8 scroll-mt-6">
+          {selectedProduct === "delivery" ? (
+            <DeliverySubscription usage={usage} selectedTier={selectedTier} selectedCycle={selectedCycle} />
           ) : (
-            <ContentWorkspaceSubscription
-              workspaceBilling={
-                workspaceBilling
-              }
-              selectedCycle={
-                selectedCycle
-              }
-            />
+            <ContentWorkspaceSubscription workspaceBilling={workspaceBilling} selectedCycle={selectedCycle} />
           )}
-        </div>
-
-        {/* ==================================================
-            PORTFOLIO
-        =================================================== */}
-
-        <section className="mt-12">
-          <div className="mb-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
-              Included product
-            </p>
-
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
-              Portfolio
-            </h2>
-          </div>
-
-          <div className="flex flex-col gap-5 rounded-[24px] border border-[#E7E9EE] bg-white p-5 shadow-[0_8px_30px_rgba(16,24,40,0.035)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F2F4F7] text-[#344054]">
-                <PortfolioIcon className="h-[18px] w-[18px]" />
-              </div>
-
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-[#101828]">
-                    Your Portfolio
-                  </h3>
-
-                  <span className="rounded-full border border-[#D1FADF] bg-[#ECFDF3] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.08em] text-[#067647]">
-                    Included
-                  </span>
-                </div>
-
-                <p className="mt-1 text-xs leading-5 text-[#667085]">
-                  {portfolioCount > 0
-                    ? `${portfolioCount} portfolio${
-                        portfolioCount === 1
-                          ? ""
-                          : "s"
-                      } on your account.`
-                    : "Your portfolio is included with Showwork."}
-                </p>
-              </div>
-            </div>
-
-            <Link
-              href="/dashboard/portfolio"
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2.5 text-xs font-semibold text-[#344054] shadow-sm transition hover:bg-[#F9FAFB]"
-            >
-              Manage portfolio
-              <ArrowUpRightIcon className="h-3.5 w-3.5" />
-            </Link>
-          </div>
         </section>
-
-        {/* ==================================================
-            BILLING PRINCIPLES
-        =================================================== */}
-
-        <section className="mt-12 border-t border-[#E1E4E9] pt-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            <BillingPrinciple
-              number="01"
-              title="One subscription per product"
-              body="Project Delivery and Content Workspace are separate products, so you can subscribe to exactly what you need."
-            />
-
-            <BillingPrinciple
-              number="02"
-              title="No surprise AI bill"
-              body="AI Studio is included inside Content Workspace. There is no separate AI subscription."
-            />
-
-            <BillingPrinciple
-              number="03"
-              title="Change when you need"
-              body="Your plans and billing cycles can be managed from this Billing center without hunting through the dashboard."
-            />
-          </div>
-        </section>
-
-        <div className="mt-10 pb-8 text-center">
-          <p className="text-[10px] text-[#98A2B3]">
-            Showwork billing · Secure payments powered by Paystack
-          </p>
-        </div>
+        <p className="mt-10 pb-8 text-center text-[10px] text-[#98A2B3]">
+          Project Delivery and Content Workspace are billed separately. Portfolio is free.
+        </p>
       </div>
     </main>
   );

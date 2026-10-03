@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     const result = await initializeSubscription({
       email: creator.email,
       reference,
-      callbackUrl: `${appUrl()}/dashboard/billing?payment=callback`,
+      callbackUrl: `${appUrl()}/dashboard/billing?product=delivery&payment=callback`,
       planCode,
       amount,
     });

@@ -1498,9 +1498,8 @@ export default function StartPage() {
             </h1>
 
             <p className="mt-6 max-w-2xl text-sm leading-7 text-black/50 sm:text-base">
-              Create a private client workspace, organise your
-              deliverables, and share everything through one
-              polished Showwork link.
+              Create a private project delivery page, organize your files
+              and share them with your client through one Showwork link.
             </p>
           </div>
 

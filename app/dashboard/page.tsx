@@ -377,7 +377,7 @@ export default async function DashboardPage() {
               )}
 
               <Link
-                href="/dashboard/billing"
+                href="/dashboard/billing?product=delivery"
                 className="rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:border-[#CBD1DA] hover:bg-[#F9FAFB] hover:text-[#101114]"
               >
                 Billing
@@ -498,7 +498,7 @@ export default async function DashboardPage() {
                     )}
 
                     <Link
-                      href="/dashboard/billing"
+                      href="/dashboard/billing?product=delivery"
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
                     >
                       <span>Billing</span>
@@ -614,7 +614,7 @@ export default async function DashboardPage() {
 
                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                   <p className="text-[10px] leading-4 text-[#7B828D]">
-                    Learn how to plan, create, approve and publish client content.
+                    Learn the content planning, review and publishing workflow.
                   </p>
 
                   <span className="shrink-0 rounded-full bg-[#101114] px-2.5 py-1 text-[9px] font-bold text-white">
@@ -678,8 +678,8 @@ export default async function DashboardPage() {
                 </h3>
 
                 <p className="mt-4 max-w-xl text-sm leading-6 text-[#617087]">
-                  Manage ongoing client content, use AI with business context,
-                  collect approvals and keep publishing moving.
+                  Plan content with AI, collect approvals, manage conversations
+                  and leads, and track client performance.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-2">

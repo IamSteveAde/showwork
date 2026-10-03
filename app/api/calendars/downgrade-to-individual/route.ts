@@ -5,16 +5,15 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   initializeSubscription,
-  cancelSubscription,
 } from "@/lib/paystack";
-import { appUrl } from "@/lib/url";
 import {
   getContentWorkspacePlanCode,
+  CONTENT_WORKSPACE_PLANS,
+  isHigherContentWorkspacePlan,
+  type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
 
-const CREATOR_MONTHLY_NGN = 2800;
-const CREATOR_ANNUAL_NGN = 31920;
 
 function resolveBillingCycle(
   value: unknown,
@@ -31,14 +30,7 @@ function resolveBillingCycle(
   return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — switches a Studio Content Workspace account back to Creator.
-//
-// Creator allows collaboration, so collaborators and pending invites
-// are NOT blockers.
-//
-// The Creator plan supports only 1 active client workspace, so the
-// account must reduce its active workspaces to 1 or fewer before
-// downgrading.
+// POST — switches to any lower Content Workspace plan after checking its workspace limit.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
 
@@ -50,6 +42,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
+
+  if (body.plan !== undefined && body.plan !== "CREATOR" && body.plan !== "STUDIO") {
+    return NextResponse.json({ error: "Choose Creator or Studio to downgrade." }, { status: 400 });
+  }
+  const targetPlan: ContentWorkspacePlan = body.plan === "STUDIO" ? "STUDIO" : "CREATOR";
+  const limits = CONTENT_WORKSPACE_PLANS[targetPlan];
 
   const payNow =
     body?.payNow === true;
@@ -79,18 +77,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (creator.contentWorkspacePlan !== "STUDIO") {
-    return NextResponse.json(
-      {
-        error:
-          "Your Content Workspace account is already on Creator",
-      },
-      { status: 400 }
-    );
+  if (!creator.contentWorkspacePlan || !isHigherContentWorkspacePlan(creator.contentWorkspacePlan, targetPlan)) {
+    return NextResponse.json({ error: "Choose a lower plan to downgrade." }, { status: 400 });
   }
 
   /*
-   * Creator supports only 1 active client workspace.
+   * The target plan must support the existing active workspaces.
    *
    * Collaborators are allowed on Creator, so we deliberately
    * do not block this downgrade based on collaborators or
@@ -103,13 +95,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  if (activeWorkspaceCount > 1) {
+  if (activeWorkspaceCount > limits.activeWorkspaces) {
     return NextResponse.json(
       {
         error:
-          "Creator supports 1 active client workspace. Remove or deactivate your extra workspaces before switching to Creator.",
+          `${limits.name} supports ${limits.activeWorkspaces} active client workspace${limits.activeWorkspaces === 1 ? "" : "s"}. Remove your extra workspaces before switching to ${limits.name}.`,
         activeWorkspaceCount,
-        allowedWorkspaceCount: 1,
+        allowedWorkspaceCount: limits.activeWorkspaces,
       },
       { status: 400 }
     );
@@ -130,19 +122,6 @@ export async function POST(req: NextRequest) {
       creator.contentWorkspaceBillingCycle
     );
 
-  /*
-   * Change the selected plan and billing cycle immediately.
-   */
-  await db.creator.update({
-    where: {
-      id: creator.id,
-    },
-    data: {
-      contentWorkspacePlan: "CREATOR",
-      contentWorkspaceBillingCycle: billingCycle,
-    },
-  });
-
   const trialStillValid =
     creator.contentWorkspaceBillingStatus === "TRIAL" &&
     !!creator.contentWorkspaceTrialEndsAt &&
@@ -154,11 +133,14 @@ export async function POST(req: NextRequest) {
    * explicitly chooses to pay immediately.
    */
   if (trialStillValid && !payNow) {
+    await db.creator.update({ where: { id: creator.id }, data: {
+      contentWorkspacePlan: targetPlan, contentWorkspaceBillingCycle: billingCycle,
+    } });
     return NextResponse.json({
       ok: true,
       requiresPayment: false,
       stillInTrial: true,
-      plan: "CREATOR",
+      plan: targetPlan,
       billingCycle,
     });
   }
@@ -171,7 +153,7 @@ export async function POST(req: NextRequest) {
 
   try {
     creatorPlanCode = getContentWorkspacePlanCode(
-      "CREATOR",
+      targetPlan,
       billingCycle
     );
   } catch (error) {
@@ -189,39 +171,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  /*
-   * Cancel the existing Studio subscription before starting
-   * the new Creator subscription.
-   */
-  if (
-    creator.contentWorkspacePaystackSubscriptionCode &&
-    creator.contentWorkspacePaystackEmailToken
-  ) {
-    try {
-      await cancelSubscription(
-        creator.contentWorkspacePaystackSubscriptionCode,
-        creator.contentWorkspacePaystackEmailToken
-      );
-    } catch (error) {
-      /*
-       * Preserve existing behavior: a Paystack cancellation
-       * failure should not prevent the customer from attempting
-       * the new checkout.
-       */
-      console.error(
-        "Failed to cancel previous Content Workspace subscription during Creator downgrade:",
-        error
-      );
-    }
-  }
+  // The subscription webhook cancels the previous subscription after payment.
 
   const reference =
     `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
 
   const amount =
     billingCycle === "ANNUAL"
-      ? CREATOR_ANNUAL_NGN
-      : CREATOR_MONTHLY_NGN;
+      ? limits.priceNgnAnnual
+      : limits.priceNgnMonthly;
 
   try {
     const result = await initializeSubscription({
@@ -238,7 +196,7 @@ export async function POST(req: NextRequest) {
 
       metadata: {
         creatorId: creator.id,
-        contentWorkspacePlan: "CREATOR",
+        contentWorkspacePlan: targetPlan,
         billingCycle,
       },
     });
@@ -257,7 +215,7 @@ export async function POST(req: NextRequest) {
       authorizationUrl:
         result.data.authorization_url,
       requiresPayment: true,
-      plan: "CREATOR",
+      plan: targetPlan,
       billingCycle,
     });
   } catch (error) {

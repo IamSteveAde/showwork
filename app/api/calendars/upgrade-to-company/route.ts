@@ -5,16 +5,16 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   initializeSubscription,
-  cancelSubscription,
 } from "@/lib/paystack";
 import { appUrl } from "@/lib/url";
 import {
   getContentWorkspacePlanCode,
+  CONTENT_WORKSPACE_PLANS,
+  isHigherContentWorkspacePlan,
+  type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
 
-const STUDIO_MONTHLY_NGN = 15000;
-const STUDIO_ANNUAL_NGN = 171000;
 
 function resolveBillingCycle(
   value: unknown,
@@ -31,9 +31,9 @@ function resolveBillingCycle(
   return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — switches a Creator Content Workspace account to Studio.
+// POST — upgrades a Content Workspace account to Studio or Unlimited.
 //
-// If the account is still inside its valid 3-day trial, the switch can
+// If the account is still inside its valid 7-day trial, the switch can
 // happen without immediate payment unless `payNow` is true.
 //
 // If the account is already paying, has an expired trial, is pending
@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
+
+  const targetPlan: ContentWorkspacePlan = body?.plan === "UNLIMITED" ? "UNLIMITED" : "STUDIO";
 
   const payNow =
     body?.payNow === true;
@@ -78,11 +80,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (creator.contentWorkspacePlan === "STUDIO") {
+  if (creator.contentWorkspacePlan === targetPlan) {
     return NextResponse.json({
       ok: true,
       alreadyStudio: true,
     });
+  }
+
+  if (creator.contentWorkspacePlan && !isHigherContentWorkspacePlan(targetPlan, creator.contentWorkspacePlan)) {
+    return NextResponse.json({ error: "Choose a higher plan to upgrade." }, { status: 400 });
   }
 
   /*
@@ -100,22 +106,6 @@ export async function POST(req: NextRequest) {
       creator.contentWorkspaceBillingCycle
     );
 
-  /*
-   * Update the selected plan and billing cycle immediately.
-   *
-   * This records the customer's intended Content Workspace
-   * configuration even before payment is completed.
-   */
-  await db.creator.update({
-    where: {
-      id: creator.id,
-    },
-    data: {
-      contentWorkspacePlan: "STUDIO",
-      contentWorkspaceBillingCycle: billingCycle,
-    },
-  });
-
   const trialStillValid =
     creator.contentWorkspaceBillingStatus === "TRIAL" &&
     !!creator.contentWorkspaceTrialEndsAt &&
@@ -128,11 +118,14 @@ export async function POST(req: NextRequest) {
    * explicitly chooses `payNow`.
    */
   if (trialStillValid && !payNow) {
+    await db.creator.update({ where: { id: creator.id }, data: {
+      contentWorkspacePlan: targetPlan, contentWorkspaceBillingCycle: billingCycle,
+    } });
     return NextResponse.json({
       ok: true,
       requiresPayment: false,
       stillInTrial: true,
-      plan: "STUDIO",
+      plan: targetPlan,
       billingCycle,
     });
   }
@@ -145,7 +138,7 @@ export async function POST(req: NextRequest) {
 
   try {
     studioPlanCode = getContentWorkspacePlanCode(
-      "STUDIO",
+      targetPlan,
       billingCycle
     );
   } catch (error) {
@@ -163,38 +156,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  /*
-   * If there is an existing Content Workspace subscription,
-   * cancel it before creating the new Studio subscription.
-   */
-  if (
-    creator.contentWorkspacePaystackSubscriptionCode &&
-    creator.contentWorkspacePaystackEmailToken
-  ) {
-    try {
-      await cancelSubscription(
-        creator.contentWorkspacePaystackSubscriptionCode,
-        creator.contentWorkspacePaystackEmailToken
-      );
-    } catch (error) {
-      /*
-       * Preserve existing behavior: cancellation failure should
-       * not prevent the customer from attempting the new checkout.
-       */
-      console.error(
-        "Failed to cancel previous Content Workspace subscription during Studio upgrade:",
-        error
-      );
-    }
-  }
+  // The subscription webhook cancels the previous subscription after payment.
 
   const reference =
     `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
 
   const amount =
     billingCycle === "ANNUAL"
-      ? STUDIO_ANNUAL_NGN
-      : STUDIO_MONTHLY_NGN;
+      ? CONTENT_WORKSPACE_PLANS[targetPlan].priceNgnAnnual
+      : CONTENT_WORKSPACE_PLANS[targetPlan].priceNgnMonthly;
 
   try {
     const result = await initializeSubscription({
@@ -211,7 +181,7 @@ export async function POST(req: NextRequest) {
 
       metadata: {
         creatorId: creator.id,
-        contentWorkspacePlan: "STUDIO",
+        contentWorkspacePlan: targetPlan,
         billingCycle,
       },
     });
@@ -230,7 +200,7 @@ export async function POST(req: NextRequest) {
       authorizationUrl:
         result.data.authorization_url,
       requiresPayment: true,
-      plan: "STUDIO",
+      plan: targetPlan,
       billingCycle,
     });
   } catch (error) {

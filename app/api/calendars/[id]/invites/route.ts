@@ -1,3 +1,4 @@
+import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID, createHash } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
@@ -269,7 +270,7 @@ export async function POST(
   );
 
   const collaboratorLimit =
-    plan === "CREATOR" ? 3 : 15;
+    plan ? CONTENT_WORKSPACE_PLANS[plan].collaborators : 0;
 
   if (
     collaboratorCount + pendingInviteCount >=

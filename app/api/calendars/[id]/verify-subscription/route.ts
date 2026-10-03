@@ -157,7 +157,8 @@ export async function POST(
       metadata?.contentWorkspacePlan ===
         "CREATOR" ||
       metadata?.contentWorkspacePlan ===
-        "STUDIO"
+        "STUDIO" || metadata?.contentWorkspacePlan ===
+        "UNLIMITED"
         ? (metadata.contentWorkspacePlan as ContentWorkspacePlan)
         : null;
 

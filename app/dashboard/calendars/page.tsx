@@ -1,3 +1,4 @@
+import { syncContentWorkspaceRenewal } from "@/lib/syncContentWorkspaceRenewal";
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -239,6 +240,10 @@ const calendarBilling = await db.creator.findUnique({
 },
 });
 
+  if (calendarBilling?.contentWorkspaceBillingStatus === "ACTIVE") {
+    calendarBilling.contentWorkspaceSubscriptionRenewsAt = await syncContentWorkspaceRenewal(creator.id);
+  }
+
  const params = await searchParams;
 const currentPage = getPageNumber(params?.page);
 
@@ -354,8 +359,8 @@ const onboardingTestMode = params?.onboarding === "test";
               </h1>
 
               <p className="mt-4 max-w-xl text-sm leading-6 text-white/35 sm:text-[15px]">
-                Plan, organize and manage every client’s social content from
-                one focused workspace.
+                Manage each client’s content, approvals, conversations, leads
+                and performance in a dedicated workspace.
               </p>
             </div>
 
@@ -409,7 +414,7 @@ const onboardingTestMode = params?.onboarding === "test";
       </div>
 
       <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.025em] text-white">
-        {calendarBilling.contentWorkspacePlan === "STUDIO"
+        {calendarBilling.contentWorkspacePlan === "UNLIMITED" ? "Unlimited" : calendarBilling.contentWorkspacePlan === "STUDIO"
           ? "Studio"
           : "Creator"}
       </p>
@@ -458,6 +463,7 @@ const onboardingTestMode = params?.onboarding === "test";
     calendarBilling.contentWorkspaceTrialEndsAt) ||
     calendarBilling.isComped) && (
     <TrialCountdownBanner
+      billingStatus={calendarBilling.contentWorkspaceBillingStatus}
       trialEndsAt={
         calendarBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? ""
       }
@@ -521,7 +527,7 @@ const onboardingTestMode = params?.onboarding === "test";
                     Create a client workspace
                   </p>
                   <p className="mt-0.5 text-[11px] text-white/30">
-                    Create an ongoing content workspace for a client.
+                    Bring a client’s content, conversations, leads and reports together.
                   </p>
                 </div>
               </div>

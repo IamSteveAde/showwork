@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { processReferralCommission } from "@/lib/partnerCommissions";
 import { db } from "@/lib/db";
-import { verifyTransaction } from "@/lib/paystack";
+import { verifyTransaction, fetchCustomerSubscriptions, cancelSubscription } from "@/lib/paystack";
 import {
   contentWorkspacePlanFromPaystackPlanCode,
+  getContentWorkspacePlanCode,
   type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
@@ -57,7 +58,8 @@ export async function POST() {
    */
   if (
     creator.contentWorkspaceBillingStatus === "ACTIVE" &&
-    creator.contentWorkspacePaystackSubscriptionCode
+    creator.contentWorkspacePaystackSubscriptionCode &&
+    !creator.contentWorkspacePendingSubscriptionRef
   ) {
     return NextResponse.json({
       ok: true,
@@ -122,7 +124,7 @@ export async function POST() {
 
     const metadataPlan =
       metadata?.contentWorkspacePlan === "CREATOR" ||
-      metadata?.contentWorkspacePlan === "STUDIO"
+      metadata?.contentWorkspacePlan === "STUDIO" || metadata?.contentWorkspacePlan === "UNLIMITED"
         ? (metadata.contentWorkspacePlan as ContentWorkspacePlan)
         : null;
 
@@ -167,6 +169,24 @@ export async function POST() {
       );
     }
 
+    const customerCode = verification?.data?.customer?.customer_code;
+    let matchedSubscription: any = null;
+    if (customerCode) {
+      try {
+        const subscriptions = await fetchCustomerSubscriptions(customerCode);
+        matchedSubscription = subscriptions.data?.find((sub: any) =>
+          sub.status === "active" && sub.plan?.plan_code === (transactionPlanCode ?? getContentWorkspacePlanCode(plan, cycle)) &&
+          sub.subscription_code !== creator.contentWorkspacePaystackSubscriptionCode
+        ) ?? null;
+      } catch (error) {
+        console.error("Could not fetch verified workspace subscription", error);
+      }
+    }
+
+    if (matchedSubscription && creator.contentWorkspacePaystackSubscriptionCode && creator.contentWorkspacePaystackEmailToken && matchedSubscription.subscription_code !== creator.contentWorkspacePaystackSubscriptionCode) {
+      await cancelSubscription(creator.contentWorkspacePaystackSubscriptionCode, creator.contentWorkspacePaystackEmailToken);
+    }
+
     /*
      * Activate the account-level Content Workspace subscription.
      */
@@ -180,6 +200,11 @@ export async function POST() {
         contentWorkspaceBillingCycle: cycle,
         contentWorkspacePaystackCustomerCode:
           verification?.data?.customer?.customer_code ?? null,
+        ...(matchedSubscription ? {
+          contentWorkspacePaystackSubscriptionCode: matchedSubscription.subscription_code,
+          contentWorkspacePaystackEmailToken: matchedSubscription.email_token,
+          contentWorkspaceSubscriptionRenewsAt: matchedSubscription.next_payment_date ? new Date(matchedSubscription.next_payment_date) : null,
+        } : {}),
         contentWorkspaceWentOfflineAt: null,
       },
     });

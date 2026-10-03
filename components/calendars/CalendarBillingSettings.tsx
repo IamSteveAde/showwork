@@ -1,9 +1,10 @@
 "use client";
+import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
 import { useRouter } from "next/navigation";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 type BillingCycle = "MONTHLY" | "ANNUAL";
 type BillingStatus =
   | "PENDING_SETUP"
@@ -169,37 +170,16 @@ function ShieldIcon({
   );
 }
 
-const PLAN_DETAILS: Record<
-  ContentWorkspacePlan,
-  {
-    name: string;
-    monthlyPrice: number;
-    annualPrice: number;
-    workspaces: string;
-    collaborators: string;
-    storage: string;
-    ai: string;
-  }
-> = {
-  CREATOR: {
-    name: "Creator",
-    monthlyPrice: 2800,
-    annualPrice: 31920,
-    workspaces: "1 active client workspace",
-    collaborators: "Up to 3 collaborators",
-    storage: "5 GB storage",
-    ai: "100 AI generations / month",
-  },
-  STUDIO: {
-    name: "Studio",
-    monthlyPrice: 15000,
-    annualPrice: 171000,
-    workspaces: "Up to 10 active client workspaces",
-    collaborators: "Up to 15 collaborators",
-    storage: "50 GB storage",
-    ai: "500 AI generations / month",
-  },
-};
+const PLAN_DETAILS = Object.fromEntries(CONTENT_WORKSPACE_PLAN_ORDER.map(key => {
+ const plan = CONTENT_WORKSPACE_PLANS[key];
+ return [key, {
+  name: plan.name, monthlyPrice: plan.priceNgnMonthly, annualPrice: plan.priceNgnAnnual,
+  workspaces: `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspaces`,
+  collaborators: `${formatWorkspaceLimit(plan.collaborators)} collaborators`,
+  storage: `${plan.storageBytes / 1_000_000_000} GB storage`,
+  ai: `${plan.aiGenerations.toLocaleString("en-NG")} AI generations / month`,
+ }];
+})) as Record<ContentWorkspacePlan, { name: string; monthlyPrice: number; annualPrice: number; workspaces: string; collaborators: string; storage: string; ai: string }>;
 
 function formatNaira(value: number) {
   return `₦${value.toLocaleString("en-NG")}`;
@@ -222,28 +202,20 @@ export default function CalendarBillingSettings({
   const [open, setOpen] = useState(false);
   const [confirmingCancel, setConfirmingCancel] =
     useState(false);
-  const [loading, setLoading] = useState<string | null>(
-    null
-  );
+  const [loading, setLoading] = useState<"upgrade" | "unlimited" | "downgrade" | "cancel" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingSwitch, setPendingSwitch] =
     useState<PendingSwitch>(null);
 
-  /*
-   * Billing cycle used specifically for a plan switch.
-   *
-   * Important:
-   * - Existing annual subscribers start on Annual.
-   * - Existing monthly subscribers start on Monthly.
-   * - Trial accounts with no cycle start on Monthly.
-   *
-   * The customer can explicitly change this in the
-   * switch confirmation modal.
-   */
-  const [switchBillingCycle, setSwitchBillingCycle] =
-    useState<BillingCycle>(
-      billingCycle ?? "MONTHLY"
-    );
+  const [selectedPlan, setSelectedPlan] = useState<ContentWorkspacePlan>(plan);
+  const [planBillingCycle, setPlanBillingCycle] = useState<BillingCycle>(billingCycle ?? "MONTHLY");
+  const [switchBillingCycle, setSwitchBillingCycle] = useState<BillingCycle>("MONTHLY");
+  const errorDialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = errorDialogRef.current;
+    if (error && open && dialog && !dialog.open) dialog.showModal();
+  }, [error, open]);
 
   const currentPlan = PLAN_DETAILS[plan];
 
@@ -331,10 +303,7 @@ export default function CalendarBillingSettings({
     );
   }, [trialEndsAt]);
 
-  const targetPlan: ContentWorkspacePlan =
-    pendingSwitch === "upgrade"
-      ? "STUDIO"
-      : "CREATOR";
+  const targetPlan = selectedPlan;
 
   const targetPlanDetails = PLAN_DETAILS[targetPlan];
 
@@ -358,7 +327,8 @@ export default function CalendarBillingSettings({
   const runSwitch = async (
     kind: "upgrade" | "downgrade",
     payNow: boolean,
-    selectedBillingCycle: BillingCycle
+    selectedBillingCycle: BillingCycle,
+    nextPlan: ContentWorkspacePlan = selectedPlan
   ) => {
     setLoading(kind);
     setError(null);
@@ -377,6 +347,7 @@ export default function CalendarBillingSettings({
         },
         body: JSON.stringify({
           payNow,
+          plan: nextPlan,
           billingCycle: selectedBillingCycle,
         }),
       });
@@ -406,30 +377,15 @@ export default function CalendarBillingSettings({
     }
   };
 
-  const startSwitch = (
-    kind: "upgrade" | "downgrade"
-  ) => {
-    /*
-     * Always initialize the switch choice from the
-     * customer's current billing cycle.
-     *
-     * A trial has no billing cycle, so it starts at
-     * Monthly rather than silently choosing Annual.
-     */
-    setSwitchBillingCycle(
-      billingCycle ?? "MONTHLY"
-    );
-
+  const startSwitch = (nextPlan: ContentWorkspacePlan) => {
+    const kind = CONTENT_WORKSPACE_PLAN_ORDER.indexOf(nextPlan) > CONTENT_WORKSPACE_PLAN_ORDER.indexOf(plan) ? "upgrade" : "downgrade";
+    setSelectedPlan(nextPlan);
+    setSwitchBillingCycle(planBillingCycle);
     if (isStillInTrial) {
       setPendingSwitch(kind);
       return;
     }
-
-    void runSwitch(
-      kind,
-      false,
-      billingCycle ?? "MONTHLY"
-    );
+    void runSwitch(kind, false, planBillingCycle, nextPlan);
   };
 
   const cancel = async () => {
@@ -508,7 +464,7 @@ export default function CalendarBillingSettings({
         </div>
 
         <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-[#475467]">
-          Manage
+          Manage billing
           <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </button>
@@ -639,8 +595,8 @@ export default function CalendarBillingSettings({
                 {isActive && formattedBillingDate
                   ? formattedBillingDate
                   : billingStatus === "TRIAL"
-                    ? "After your trial"
-                    : "—"}
+                    ? formattedTrialDate ?? "Trial end date pending"
+                    : isActive ? "Confirming renewal date" : "No scheduled payment"}
               </p>
 
               <p className="mt-1 text-xs text-[#667085]">
@@ -653,14 +609,6 @@ export default function CalendarBillingSettings({
             </div>
           </div>
 
-          {error && (
-            <div
-              role="alert"
-              className="mt-5 rounded-2xl border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3.5 text-xs leading-5 text-[#B42318]"
-            >
-              {error}
-            </div>
-          )}
 
           <div className="mt-7">
             <div className="mb-4">
@@ -669,16 +617,16 @@ export default function CalendarBillingSettings({
               </p>
 
               <h3 className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[#101828]">
-                Everything you need to manage client content.
+                Content, conversations, leads and analytics for your client accounts.
               </h3>
             </div>
 
-            <div className="rounded-[24px] border border-[#D1E9FF] bg-[#F5FAFF] p-5 sm:p-6">
+            <div className="rounded-[24px] border border-[#EAECF0] bg-white p-5 sm:p-6">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-2xl">
                   <div className="flex items-center gap-2">
                     <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E5F0FF] text-[#2478FF]">
-                      {plan === "STUDIO" ? (
+                      {plan !== "CREATOR" ? (
                         <UsersIcon className="h-4 w-4" />
                       ) : (
                         <SparklesIcon className="h-4 w-4" />
@@ -686,7 +634,7 @@ export default function CalendarBillingSettings({
                     </span>
 
                     <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#175CD3]">
-                      {plan === "STUDIO"
+                      {plan !== "CREATOR"
                         ? "Built for teams & agencies"
                         : "Built for independent creators"}
                     </span>
@@ -770,162 +718,46 @@ export default function CalendarBillingSettings({
               </h3>
             </div>
 
-            {plan === "CREATOR" ? (
-              <div className="relative overflow-hidden rounded-[24px] border border-[#D1E9FF] bg-[#F5FAFF] p-5 sm:p-6">
-                <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#2478FF] opacity-[0.08] blur-[55px]" />
+            <div className="mb-5 inline-flex rounded-xl border border-[#E7E9EE] bg-[#F9FAFB] p-1" role="group" aria-label="Plan billing cycle">
+              {(["MONTHLY", "ANNUAL"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={planBillingCycle === option}
+                  disabled={loading !== null}
+                  onClick={() => setPlanBillingCycle(option)}
+                  className={`rounded-lg px-4 py-2 text-xs font-semibold transition-colors disabled:opacity-50 ${planBillingCycle === option ? "bg-[#2478FF] text-white" : "text-[#475467] hover:bg-white"}`}
+                >
+                  {option === "MONTHLY" ? "Monthly" : "Annual · Save 5%"}
+                </button>
+              ))}
+            </div>
 
-                <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="max-w-2xl">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E5F0FF] text-[#2478FF]">
-                        <UsersIcon className="h-4 w-4" />
-                      </span>
-
-                      <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#175CD3]">
-                        Recommended for teams
-                      </span>
+            <p className="mb-4 text-sm leading-6 text-[#667085]">
+              Choose any plan below. During your trial, you can switch and keep your remaining trial time. Paid plan changes open checkout and take effect after payment. Lower plans must fit your active workspace count.
+            </p>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {CONTENT_WORKSPACE_PLAN_ORDER.map((key) => {
+                const details = PLAN_DETAILS[key];
+                const isCurrent = key === plan;
+                const isUpgrade = CONTENT_WORKSPACE_PLAN_ORDER.indexOf(key) > CONTENT_WORKSPACE_PLAN_ORDER.indexOf(plan);
+                return (
+                  <div key={key} className={`flex flex-col rounded-2xl border p-5 ${key === "UNLIMITED" ? "border-[#D1E9FF] bg-[#F5FAFF]" : "border-[#EAECF0] bg-white"}`}>
+                    <div className="mb-3 min-h-6">
+                      {isCurrent ? <span className="text-xs font-semibold text-[#027A48]">Current plan</span> : key === "UNLIMITED" ? <span className="text-xs font-semibold text-[#175CD3]">Recommended for teams</span> : null}
                     </div>
-
-                    <h4 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
-                      Upgrade to Studio
-                    </h4>
-
-                    <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Manage more client workspaces and collaborate
-                      with a larger team while keeping your content,
-                      approvals and AI tools in one workspace.
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-                      {[
-                        "Up to 10 active workspaces",
-                        "Up to 15 collaborators",
-                        "50 GB storage",
-                        "500 AI generations / month",
-                      ].map((feature) => (
-                        <span
-                          key={feature}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#344054]"
-                        >
-                          <CheckIcon className="h-3.5 w-3.5 text-[#12B76A]" />
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 lg:text-right">
-                    <p className="text-2xl font-semibold tracking-tight text-[#101828]">
-                      {formatNaira(
-                        cycle === "ANNUAL"
-                          ? PLAN_DETAILS.STUDIO.annualPrice
-                          : PLAN_DETAILS.STUDIO.monthlyPrice
-                      )}
-
-                      <span className="ml-1 text-xs font-normal text-[#667085]">
-                        /{cycle === "ANNUAL" ? "year" : "month"}
-                      </span>
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startSwitch("upgrade")
-                      }
-                      disabled={loading === "upgrade"}
-                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-5 py-3 text-xs font-semibold text-white shadow-[0_10px_28px_rgba(36,120,255,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
-                    >
-                      {loading === "upgrade" ? (
-                        <>
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                          Switching...
-                        </>
-                      ) : (
-                        <>
-                          Upgrade to Studio
-                          <ArrowRightIcon className="h-3.5 w-3.5" />
-                        </>
-                      )}
+                    <h4 className="text-lg font-semibold text-[#101828]">{details.name}</h4>
+                    <p className="mt-2 text-xl font-semibold text-[#101828]">{formatNaira(planBillingCycle === "ANNUAL" ? details.annualPrice : details.monthlyPrice)}<span className="text-xs font-normal text-[#667085]">/{planBillingCycle === "ANNUAL" ? "year" : "month"}</span></p>
+                    <ul className="my-5 space-y-2 text-xs text-[#475467]">
+                      {[details.workspaces, details.collaborators, details.storage, details.ai].map(feature => <li key={feature} className="flex gap-2"><CheckIcon className="h-4 w-4 shrink-0 text-[#12B76A]" />{feature}</li>)}
+                    </ul>
+                    <button type="button" disabled={isCurrent || loading !== null} onClick={() => startSwitch(key)} className={`mt-auto min-h-11 rounded-xl px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${key === "UNLIMITED" ? "bg-[#2478FF] text-white" : "border border-[#D0D5DD] bg-white text-[#344054]"}`}>
+                      {isCurrent ? "Current plan" : loading !== null && selectedPlan === key ? "Switching…" : `${isUpgrade ? "Upgrade" : "Downgrade"} to ${details.name}`}
                     </button>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-[24px] border border-[#EAECF0] bg-[#F9FAFB] p-5 sm:p-6">
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="max-w-2xl">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#475467] shadow-sm ring-1 ring-[#EAECF0]">
-                        <SparklesIcon className="h-4 w-4" />
-                      </span>
-
-                      <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#667085]">
-                        For independent creators
-                      </span>
-                    </div>
-
-                    <h4 className="mt-4 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
-                      Switch to Creator
-                    </h4>
-
-                    <p className="mt-2 text-sm leading-6 text-[#475467]">
-                      Move to the Creator plan for a single active
-                      client workspace, up to 3 collaborators and
-                      5 GB of storage.
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-                      {[
-                        "1 active workspace",
-                        "Up to 3 collaborators",
-                        "5 GB storage",
-                        "100 AI generations / month",
-                      ].map((feature) => (
-                        <span
-                          key={feature}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#344054]"
-                        >
-                          <CheckIcon className="h-3.5 w-3.5 text-[#12B76A]" />
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 lg:text-right">
-                    <p className="text-2xl font-semibold tracking-tight text-[#101828]">
-                      {formatNaira(
-                        cycle === "ANNUAL"
-                          ? PLAN_DETAILS.CREATOR.annualPrice
-                          : PLAN_DETAILS.CREATOR.monthlyPrice
-                      )}
-
-                      <span className="ml-1 text-xs font-normal text-[#667085]">
-                        /{cycle === "ANNUAL" ? "year" : "month"}
-                      </span>
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startSwitch("downgrade")
-                      }
-                      disabled={loading === "downgrade"}
-                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-5 py-3 text-xs font-semibold text-[#344054] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
-                    >
-                      {loading === "downgrade" ? (
-                        <>
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#98A2B3]/30 border-t-[#475467]" />
-                          Switching...
-                        </>
-                      ) : (
-                        "Switch to Creator"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
 
           {isActive && (
@@ -949,7 +781,7 @@ export default function CalendarBillingSettings({
                       <button
                         type="button"
                         onClick={() => void cancel()}
-                        disabled={loading === "cancel"}
+                        disabled={loading !== null}
                         className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#D92D20] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#B42318] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {loading === "cancel"
@@ -962,7 +794,7 @@ export default function CalendarBillingSettings({
                         onClick={() =>
                           setConfirmingCancel(false)
                         }
-                        disabled={loading === "cancel"}
+                        disabled={loading !== null}
                         className="inline-flex min-h-10 items-center justify-center rounded-xl px-4 py-2.5 text-xs font-semibold text-[#475467] transition-colors hover:bg-white disabled:opacity-60"
                       >
                         Keep my plan
@@ -998,6 +830,30 @@ export default function CalendarBillingSettings({
           )}
         </div>
       </section>
+
+      {error && (
+        <dialog
+          ref={errorDialogRef}
+          aria-labelledby="billing-error-title"
+          aria-describedby="billing-error-description"
+          onCancel={() => setError(null)}
+          onClose={() => setError(null)}
+          className="w-[calc(100%-2rem)] max-w-md rounded-[26px] border border-[#FECDCA] bg-white p-6 shadow-2xl backdrop:bg-[#0A0D12]/70 backdrop:backdrop-blur-sm sm:p-7"
+        >
+          <h3 id="billing-error-title" className="text-xl font-semibold tracking-tight text-[#101828]">
+            {error.startsWith("Creator supports") ? "Unable to switch to Creator" : "Unable to complete this action"}
+          </h3>
+          <p id="billing-error-description" className="mt-3 text-sm leading-6 text-[#475467]">{error}</p>
+          <button
+            type="button"
+            autoFocus
+            onClick={() => errorDialogRef.current?.close()}
+            className="mt-6 min-h-11 w-full rounded-xl bg-[#2478FF] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1768E8]"
+          >
+            Got it
+          </button>
+        </dialog>
+      )}
 
       {pendingSwitch && (
         <div

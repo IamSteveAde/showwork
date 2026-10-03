@@ -3,6 +3,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { portfolioUrl } from "@/lib/portfolioUrl";
 import Navbar from "@/components/Navbar";
+import SiteFooter from "@/components/landing/SiteFooter";
 import SpotlightHero from "@/components/spotlight/SpotlightHero";
 import SpotlightSubmissionForm from "@/components/spotlight/SpotlightSubmissionForm";
 import SpotlightLeaderboardSection from "@/components/spotlight/SpotlightLeaderboardSection";
@@ -74,6 +75,7 @@ export default async function SpotlightPage() {
       <SpotlightLeaderboardSection
         entries={leaderboardEntries.map((e) => ({ ...e, periodDate: e.periodDate.toISOString() }))}
       />
+      <SiteFooter />
     </main>
   );
 }

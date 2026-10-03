@@ -1,5 +1,7 @@
 "use client";
 
+import SiteFooter from "@/components/landing/SiteFooter";
+
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
@@ -2724,40 +2726,7 @@ export default function CreativoContent({
       {/* FOOTER                                                           */}
       {/* ================================================================ */}
 
-      <footer
-        className="border-t border-white/5 px-6 py-8"
-        style={{
-          background:
-            COLOR.black,
-        }}
-      >
-
-        <div className="mx-auto flex max-w-[1350px] flex-col items-center justify-between gap-4 sm:flex-row">
-
-          <p className="text-xs text-white/30">
-
-            Creativo is a community
-            powered by Showwork.
-
-          </p>
-
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold transition-colors hover:text-white"
-            style={{
-              color:
-                COLOR.blueLight,
-            }}
-          >
-
-            Back to Showwork <ArrowUpRight className="h-3.5 w-3.5" />
-
-          </Link>
-
-        </div>
-
-      </footer>
+      <SiteFooter />
 
 
            <HostApplicationModal

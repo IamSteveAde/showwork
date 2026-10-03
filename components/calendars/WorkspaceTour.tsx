@@ -35,7 +35,7 @@ const TOUR_STEPS: TourStep[] = [
     eyebrow: "Workspace",
     title: "Your client's command center.",
     description:
-      "This is where everything comes together. Get a quick view of what is planned, what is waiting for review, what has been approved and what needs your attention next.",
+      "See what needs attention across content, conversations and leads. Use the workspace sections to plan work, collaborate with your client and track results.",
   },
   {
     id: "knowledge",
@@ -49,7 +49,7 @@ const TOUR_STEPS: TourStep[] = [
     eyebrow: "AI Studio · Generate",
     title: "Turn business knowledge into a content strategy.",
     description:
-      "Once Showwork understands the business, use Generate to build content around that context. AI can turn the client's knowledge, goals and current insights into relevant content ideas and drafts instead of starting from a blank page.",
+      "Use the client's knowledge, goals and research to generate content ideas, drafts and calendars. You can also bring recommendations from Analytics into your next content batch.",
   },
   {
     id: "content",
@@ -63,14 +63,14 @@ const TOUR_STEPS: TourStep[] = [
     eyebrow: "Publishing",
     title: "Connect where the content will live.",
     description:
-      "Connect the client's social channels so Showwork knows where approved content is going. Your content workflow can stay inside the workspace while the connected channels handle publishing.",
+      "Connect the client's social accounts and WhatsApp Business here. Connected accounts power supported publishing, performance reporting and inbox conversations. Each platform's granted permissions determine which features are available.",
   },
   {
     id: "publish",
     eyebrow: "Publishing",
     title: "Move approved work toward publication.",
     description:
-      "Use Publish to manage the final publishing workflow. Review what is ready, control what gets shared and keep the client-facing presentation aligned before content goes live.",
+      "Manage the client-facing plan, its approval state and presentation here. Update the header and banners, and control when the plan is published for your client to review.",
   },
   {
     id: "team",
@@ -89,32 +89,32 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "analytics",
     eyebrow: "Insights",
-    title: "Understand what is happening across the workspace.",
+    title: "See what performs and what to do next.",
     description:
-      "Keep an eye on the content operation and quickly see what is moving, what is waiting and where attention is needed so the team can keep the account progressing.",
+      "Choose a date range and platform to explore reach, views, engagement and post performance from connected accounts. Track new leads and your five hottest opportunities, then use AI analysis to identify wins, improvements and recommendations for your next content batch. Connect and sync supported accounts to start collecting data.",
   },
   {
     id: "inbox",
     eyebrow: "Leads & Messages",
     title: "Keep client conversations and new leads together.",
     description:
-      "Review incoming social messages, track each conversation as a lead and reply from the workspace when the connected platform grants messaging access.",
+      "Read conversations from connected social accounts and WhatsApp, track unread messages and reply where messaging access is available. AI customer care can prepare replies using the client's business knowledge, with automatic replies available for supported channels. Managers can also let clients view message history in their portal.",
   },
   {
     id: "leads",
     eyebrow: "Leads & Messages · Leads",
     title: "Keep contact details and follow-up organized.",
     description:
-      "Manage social contacts alongside leads you add manually or import. Keep names, email addresses, phone numbers, hot/warm/cold temperature, notes and pipeline status current, then export the list as a CSV when you need it elsewhere.",
+      "Add contacts manually, import a CSV or follow up with contacts captured in Inbox. Store contact details, company and notes, qualify leads as hot, warm or cold, and update their pipeline status. Search and filter the list, export it as CSV, and find hot opportunities again in Analytics.",
   },
   {
-  id: "knowledge",
-  eyebrow: "Get started",
-  title: "Now build the client's content engine.",
-  description:
-    "You're ready to start. Upload the client's business documents so Showwork can understand the business, then let AI use that context and ongoing research to build a content calendar for you. You can use the AI-generated calendar as your starting point or create the calendar manually whenever you prefer.",
-  final: true,
-},
+    id: "knowledge",
+    eyebrow: "Get started",
+    title: "Make the workspace your own.",
+    description:
+      "Start with the client's business knowledge, then create your first content calendar. Connect accounts to bring in conversations and performance data, organize leads as they arrive, and use Analytics to guide what you create next.",
+    final: true,
+  },
 ];
 
 function ArrowRight() {
@@ -181,9 +181,16 @@ export default function WorkspaceTour({
   const steps = useMemo(() => {
     const available = new Set(availableSections);
 
-    return TOUR_STEPS.filter(
-      (step) => step.final || available.has(step.id),
+    const sectionSteps = TOUR_STEPS.filter(
+      (step) => !step.final && available.has(step.id),
     );
+    if (!sectionSteps.length) return [];
+
+    const finalStep = TOUR_STEPS.find((step) => step.final)!;
+    const startSection = ["knowledge", "content", "overview"].find((id) =>
+      available.has(id as TourSectionId),
+    ) as TourSectionId | undefined;
+    return [...sectionSteps, { ...finalStep, id: startSection ?? sectionSteps[0].id }];
   }, [availableSectionsKey]);
 
   const initializedRef = useRef(false);
@@ -224,26 +231,24 @@ export default function WorkspaceTour({
   }, [finish]);
 
   const navigateToStep = useCallback(
-  (index: number) => {
-    const nextStep = steps[index];
+    (index: number) => {
+      const nextStep = steps[index];
 
-    if (!nextStep) {
-      finish();
-      return;
-    }
+      if (!nextStep) {
+        finish();
+        return;
+      }
 
-    setStepIndex(index);
+      setStepIndex(index);
+      window.dispatchEvent(
+        new CustomEvent("showwork-workspace-navigate", {
+          detail: { id: nextStep.id },
+        }),
+      );
+    },
+    [finish, steps],
+  );
 
-    window.dispatchEvent(
-      new CustomEvent("showwork-workspace-navigate", {
-        detail: {
-          id: nextStep.id,
-        },
-      }),
-    );
-  },
-  [finish, steps],
-);
   const next = useCallback(() => {
     if (!steps.length) {
       finish();
@@ -315,6 +320,7 @@ export default function WorkspaceTour({
 
     return () => {
       window.clearTimeout(timer);
+      initializedRef.current = false;
     };
   }, [isTestMode, steps, storageKey]);
 
@@ -326,6 +332,11 @@ export default function WorkspaceTour({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         finish();
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button, a, [contenteditable]")) {
         return;
       }
 
@@ -356,6 +367,8 @@ export default function WorkspaceTour({
         fixed
         right-4
         top-[88px]
+        max-h-[calc(100dvh-104px)]
+        overflow-y-auto
         z-[80]
         w-[min(400px,calc(100vw-32px))]
         sm:right-6
@@ -466,35 +479,46 @@ export default function WorkspaceTour({
                 Skip tour
               </button>
 
-              <button
-                type="button"
-                onClick={next}
-                className="
-                  inline-flex
-                  min-h-[38px]
-                  items-center
-                  justify-center
-                  gap-2
-                  rounded-xl
-                  bg-[#1768E8]
-                  px-4
-                  text-[11px]
-                  font-bold
-                  text-white
-                  shadow-[0_8px_20px_rgba(23,104,232,0.20)]
-                  transition-all
-                  duration-150
-                  hover:-translate-y-0.5
-                  hover:bg-[#125CCF]
-                  hover:shadow-[0_12px_26px_rgba(23,104,232,0.24)]
-                  active:translate-y-0
-                  sm:px-5
-                "
-              >
-                {isLastStep ? "Get started" : "Next"}
+              <div className="flex items-center gap-2">
+                {stepIndex > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigateToStep(stepIndex - 1)}
+                    className="rounded-lg px-3 py-2 text-[11px] font-semibold text-[#667085] hover:bg-[#F2F5F9]"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={next}
+                  className="
+                    inline-flex
+                    min-h-[38px]
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-xl
+                    bg-[#1768E8]
+                    px-4
+                    text-[11px]
+                    font-bold
+                    text-white
+                    shadow-[0_8px_20px_rgba(23,104,232,0.20)]
+                    transition-all
+                    duration-150
+                    hover:-translate-y-0.5
+                    hover:bg-[#125CCF]
+                    hover:shadow-[0_12px_26px_rgba(23,104,232,0.24)]
+                    active:translate-y-0
+                    sm:px-5
+                  "
+                >
+                  {isLastStep ? "Get started" : "Next"}
 
-                <ArrowRight />
-              </button>
+                  <ArrowRight />
+                </button>
+              </div>
             </div>
 
             {isTestMode && (

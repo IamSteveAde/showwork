@@ -1,5 +1,7 @@
 "use client";
 
+import SiteFooter from "@/components/landing/SiteFooter";
+
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -67,7 +69,7 @@ const workflow = [
 const features = [
   {
     eyebrow: "PRESENT",
-    title: "Your work should look as good as the work itself.",
+    title: "Give clients a clear view of every deliverable.",
     description:
       "Create a polished project experience where your client can see exactly what you have created, without the clutter of ordinary file sharing.",
     icon: Sparkles,
@@ -93,7 +95,7 @@ const features = [
     eyebrow: "DELIVERY",
     title: "One project. One place. One experience.",
     description:
-      "Everything your client needs to move a project forward can live inside one professional destination.",
+      "Keep project files, feedback, approvals and final downloads together in one client delivery page.",
     icon: FolderOpen,
     side: "right",
   },
@@ -1127,116 +1129,7 @@ export default function DeliveryPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-12">
-          <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <Link
-                href="/"
-                className="flex items-center gap-2"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-950 text-xs font-bold text-white">
-                  S
-                </div>
-                <span className="text-sm font-bold tracking-[-0.03em] text-slate-950">
-                  SHOWWORK
-                </span>
-              </Link>
-
-              <p className="mt-4 max-w-xs text-xs leading-5 text-slate-400">
-                The workspace for creative work.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-16 gap-y-8 text-xs sm:grid-cols-3">
-              <div>
-                <p className="font-semibold text-slate-950">
-                  Solutions
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  <Link
-                    href="/portfolio"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Portfolio
-                  </Link>
-
-                  <Link
-                    href="/delivery"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Project Delivery
-                  </Link>
-
-                  <Link
-                    href="/content-workspace"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Content Workspace
-                  </Link>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-semibold text-slate-950">
-                  Explore
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  <Link
-                    href="/"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Home
-                  </Link>
-
-                  <Link
-                    href="/creativo"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Creativo
-                  </Link>
-
-                  <Link
-                    href="/blog"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Blog
-                  </Link>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-semibold text-slate-950">
-                  Account
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  <Link
-                    href="/login"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Log in
-                  </Link>
-
-                  <Link
-                    href="/signup"
-                    className="block text-slate-400 transition hover:text-slate-950"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 flex flex-col gap-3 border-t border-slate-100 pt-6 text-[10px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} Showwork. All rights reserved.</p>
-            <p>Built for people who make things.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

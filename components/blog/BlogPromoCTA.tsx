@@ -7,8 +7,8 @@ const COLOR = { blue: "#2478FF", blueDark: "#0052FF", lime: "#B8FF35", orange: "
 const VARIANTS = {
   deliver: {
     eyebrow: "Try it on your next project",
-    headline: "Deliver like the premium brand you already are.",
-    body: "A branded, password-protected handover — not another WeTransfer link. Your first delivery is free.",
+    headline: "Give clients a clear place to review your work.",
+    body: "Share files, collect feedback and deliver approved work through a branded, password-protected project link. Start free.",
     cta: "Deliver your first project",
     href: "/start",
     background: `linear-gradient(135deg, ${COLOR.blue} 0%, ${COLOR.blueDark} 100%)`,
@@ -17,7 +17,7 @@ const VARIANTS = {
   portfolio: {
     eyebrow: "Your work deserves a real home",
     headline: "Create a portfolio for your brand.",
-    body: "A real, always-on portfolio — not a scattered feed. Free to start, live in minutes.",
+    body: "Show your projects, services and testimonials in one professional portfolio. Free to start.",
     cta: "Create your portfolio",
     href: "/signup?next=/dashboard/portfolio",
     background: `linear-gradient(135deg, #101010 0%, #1A1A1A 100%)`,

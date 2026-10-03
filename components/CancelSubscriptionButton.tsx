@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CancelSubscriptionButton() {
+export default function CancelSubscriptionButton({ label = "Cancel subscription" }: { label?: string }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,10 @@ export default function CancelSubscriptionButton() {
         const data = await res.json();
         throw new Error(data.error ?? "Failed to cancel");
       }
+      router.replace("/dashboard/billing?product=delivery");
       router.refresh();
+      setConfirming(false);
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
@@ -28,8 +31,8 @@ export default function CancelSubscriptionButton() {
   if (confirming) {
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-white/60">
-          Cancelling stops this plan at the end of the current billing cycle — you&apos;ll drop to the free tier (1 project/month). Projects you&apos;ve already published stay live.
+        <p className="text-xs text-[#667085]">
+          Cancelling stops recurring payments and switches Project Delivery to Free (1 project/month). Projects you&apos;ve already published stay live. Content Workspace access stays unchanged.
         </p>
         <div className="flex gap-2">
           <button
@@ -41,7 +44,7 @@ export default function CancelSubscriptionButton() {
           </button>
           <button
             onClick={() => setConfirming(false)}
-            className="rounded-lg px-4 py-2 text-xs text-white/50"
+            className="rounded-lg px-4 py-2 text-xs text-[#667085]"
           >
             Never mind
           </button>
@@ -54,9 +57,9 @@ export default function CancelSubscriptionButton() {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs text-white/40 underline transition-colors hover:text-white/70"
+      className="text-xs text-[#667085] underline transition-colors hover:text-[#101828]"
     >
-      Cancel subscription
+      {label}
     </button>
   );
 }

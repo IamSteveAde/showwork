@@ -1,3 +1,4 @@
+import SiteFooter from "@/components/landing/SiteFooter";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
@@ -160,42 +161,7 @@ export default async function WebinarLandingPage({
 
       <div className="pointer-events-none relative z-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
-      <footer className="relative z-10 border-t border-white/[0.06] bg-[#08090B]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between md:px-12">
-          <div>
-            <p className="text-sm font-semibold tracking-[-0.02em] text-white">
-              Showwork
-            </p>
-
-            <p className="mt-1 text-xs text-white/35">
-              The workspace for creatives and creative teams.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-white/35">
-            <a
-              href="/"
-              className="transition-colors hover:text-white"
-            >
-              Showwork
-            </a>
-
-            <a
-              href="/creativo"
-              className="transition-colors hover:text-white"
-            >
-              Creativo Community
-            </a>
-
-            <a
-              href="/webinars"
-              className="transition-colors hover:text-white"
-            >
-              Webinars
-            </a>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

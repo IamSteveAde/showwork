@@ -134,7 +134,7 @@ const SOLUTIONS: Solution[] = [
     label: "Content Workspace",
     eyebrow: "MANAGE THE WORK",
     description:
-      "Plan, present and approve content with clients and teams in one living workspace.",
+      "Manage client content, approvals, conversations, leads and analytics in one workspace.",
     href: "/content-workspace",
     icon: Layers3,
     number: "03",
@@ -431,7 +431,7 @@ function SolutionsDropdown({
               </p>
 
               <p className="mt-1 text-[9px] text-black/35">
-                One workspace. Three ways to work.
+                One platform. Three ways to work.
               </p>
             </div>
           </div>

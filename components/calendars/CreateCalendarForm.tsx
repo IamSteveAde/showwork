@@ -1,42 +1,24 @@
 "use client";
 
+import { CONTENT_WORKSPACE_PLANS as PLAN_CONFIG, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
 import { useState } from "react";
 
-type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 type Step = "closed" | "choose-plan" | "form";
 
-const CONTENT_WORKSPACE_PLANS: {
-value: ContentWorkspacePlan;
-label: string;
-price: string;
-description: string;
-bullets: string[];
-}[] = [
-{
-value: "CREATOR",
-label: "Creator",
-price: "₦2,800/mo",
-description:
-"For freelancers, independent creators and social media professionals.",
-bullets: [
-"1 active client workspace",
-"Up to 3 collaborators",
-"100 AI generations/month",
-],
-},
-{
-value: "STUDIO",
-label: "Studio",
-price: "₦15,000/mo",
-description:
-"For agencies, studios and teams managing multiple client workspaces.",
-bullets: [
-"Up to 10 active workspaces",
-"Up to 15 collaborators",
-"500 AI generations/month",
-],
-},
-];
+const CONTENT_WORKSPACE_PLANS = CONTENT_WORKSPACE_PLAN_ORDER.map(value => {
+ const plan = PLAN_CONFIG[value];
+ return {
+  value, label: plan.name, price: `₦${plan.priceNgnMonthly.toLocaleString("en-NG")}/mo`,
+  description: value === "CREATOR" ? "For independent creators." : "For agencies and teams managing client workspaces.",
+  bullets: [
+   `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspaces`,
+   `${formatWorkspaceLimit(plan.collaborators)} collaborators`,
+   `${plan.storageBytes / 1_000_000_000} GB storage`,
+   `${plan.aiGenerations.toLocaleString("en-NG")} AI generations/month`,
+  ],
+ };
+});
 
 export default function CreateCalendarForm({
 contentWorkspacePlan,
@@ -208,7 +190,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
       </button>
     </div>
 
-    <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-3">
       {CONTENT_WORKSPACE_PLANS.map((plan) => (
         <button
           key={plan.value}
@@ -223,15 +205,15 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
 }}
           className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.035] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#2478FF]/40 hover:bg-white/[0.055]"
         >
-          {plan.value === "STUDIO" && (
+          {plan.value === "UNLIMITED" && (
             <span className="absolute right-4 top-4 rounded-full bg-[#2478FF] px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-white">
-              For teams
+              Recommended
             </span>
           )}
 
           <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[#6FA7FF]">
             <span className="text-sm font-semibold">
-              {plan.value === "STUDIO" ? "02" : "01"}
+              {plan.value === "UNLIMITED" ? "03" : plan.value === "STUDIO" ? "02" : "01"}
             </span>
           </div>
 
@@ -267,7 +249,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
     </div>
 
     <p className="relative mt-6 text-center text-[10px] text-white/25">
-      Your first use includes a free 3-day trial. No payment is needed to
+      Your first use includes a free 7-day trial. No payment is needed to
       get started.
     </p>
   </div>
@@ -314,7 +296,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
 
         <p className="text-xs leading-5 text-white/55">
           Your account includes a free{" "}
-          <span className="font-semibold text-white">3-day trial</span>.
+          <span className="font-semibold text-white">7-day trial</span>.
           No payment is needed to get started.
         </p>
       </div>
@@ -401,7 +383,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
     <p className="mt-4 text-center text-[10px] leading-5 text-white/20">
       {hasExistingPlan
         ? "Your existing Content Workspace plan applies to this workspace."
-        : "Your 3-day trial starts when your first workspace is created."}
+        : "Your 7-day trial starts when your first workspace is created."}
     </p>
   </div>
 </div>

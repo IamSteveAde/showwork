@@ -118,7 +118,7 @@ function getContentWorkspacePlanFromMetadata(
 ): ContentWorkspacePlan | null {
   const value = data?.metadata?.contentWorkspacePlan;
 
-  if (value === "CREATOR" || value === "STUDIO") {
+  if (value === "CREATOR" || value === "STUDIO" || value === "UNLIMITED") {
     return value;
   }
 

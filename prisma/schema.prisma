@@ -37,6 +37,7 @@ enum BillingCycle {
 enum ContentWorkspacePlan {
   CREATOR
   STUDIO
+  UNLIMITED
 }
 
 model Creator {

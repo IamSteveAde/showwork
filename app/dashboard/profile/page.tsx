@@ -923,7 +923,7 @@ export default async function ProfilePage() {
                     </Link>
 
                     <Link
-                      href="/dashboard/billing"
+                      href="/dashboard/billing?product=delivery"
                       className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/[0.08] bg-white px-3.5 text-[11px] font-semibold text-[#344054] transition hover:bg-[#F9FAFB]"
                     >
                       <CreditCardIcon className="h-3.5 w-3.5" />
@@ -992,7 +992,7 @@ export default async function ProfilePage() {
 
               <div className="mt-5 space-y-3">
                 <Link
-                  href="/dashboard/billing"
+                  href="/dashboard/billing?product=delivery"
                   className="group flex items-center justify-between rounded-xl border border-[#EAECF0] p-3.5 transition hover:border-[#D0D5DD] hover:bg-[#FCFCFD]"
                 >
                   <div>
@@ -1156,7 +1156,7 @@ export default async function ProfilePage() {
                 </Link>
 
                 <Link
-                  href="/dashboard/billing"
+                  href="/dashboard/billing?product=delivery"
                   className="flex items-center justify-between rounded-xl px-3 py-3 transition hover:bg-white/[0.06]"
                 >
                   <span className="text-[11px] font-medium text-white/75">
@@ -1185,7 +1185,7 @@ export default async function ProfilePage() {
               </Link>
 
               <Link
-                href="/dashboard/billing"
+                href="/dashboard/billing?product=delivery"
                 className="hover:text-[#344054]"
               >
                 Billing

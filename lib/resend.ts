@@ -1,3 +1,4 @@
+import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -713,14 +714,14 @@ export async function sendWelcomeEmail({
         ? `Good to have you here, ${firstName}.`
         : "Good to have you here.",
       body: `
-        Showwork gives your creative business a more polished way to run the work — from the first conversation to the final delivery.
+        Showwork helps creators and agencies build portfolios, deliver projects and manage client accounts. Content Workspace brings content, approvals, conversations, leads and analytics together for each client.
         <br /><br />
-        Your workspace is ready. Start with one thing that matters most to you today.
+        Your account is ready. Build a portfolio, create a project delivery or start a client workspace from your dashboard.
       `,
       detailsHtml: `
         <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
           <p style="margin:0 0 7px;font-family:Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:#2478FF;">Your Showwork workspace</p>
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;font-weight:700;color:#172033;">Plan it. Present it. Deliver it beautifully.</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;font-weight:700;color:#172033;">Show your work. Deliver projects. Manage client accounts.</p>
         </div>
       `,
       ctaLabel: "Open Showwork",
@@ -1273,7 +1274,7 @@ export async function sendCalendarInviteEmail({
     to,
     subject: `${invitedByName} invited you to ${clientName}'s client workspace`,
     html: emailShell({
-      eyebrow: "Client Workspace · You're invited",
+      eyebrow: "Content Workspace · You're invited",
       headline: `${invitedByName} wants you in ${clientName}'s workspace.`,
       body: `
         You've been invited to help create and manage content for <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> on Showwork.
@@ -1374,13 +1375,13 @@ export async function sendCalendarPaymentFailedEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Payment failed — your Client Workspace is offline",
+    subject: "Payment failed — your Content Workspace is offline",
     html: emailShell({
-      eyebrow: "Client Workspace · Payment issue",
+      eyebrow: "Content Workspace · Payment issue",
       headline: "Your client workspaces need your attention.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your recurring Client Workspace payment didn't go through, so the workspaces covered by that subscription are currently offline.
+        Your recurring Content Workspace payment didn't go through, so the workspaces covered by that subscription are currently offline.
         <br /><br />
         Your content is not deleted. Resolve the billing issue and pick up where you left off.
       `,
@@ -1392,9 +1393,9 @@ export async function sendCalendarPaymentFailedEmail({
         </div>
       `,
       ctaLabel: "Open billing",
-      ctaUrl: `${APP_URL}/dashboard/billing`,
+      ctaUrl: `${APP_URL}/dashboard/billing?product=content-workspace`,
       accent: "#F97316",
-      footer: "Billing notice from Showwork Client Workspace.",
+      footer: "Billing notice from Showwork Content Workspace.",
     }),
   });
 }
@@ -1403,14 +1404,14 @@ function calendarSubscribeButton(price: string): string {
   return buttonHtml(`Subscribe — ${price}/month`, `${APP_URL}/dashboard/calendars`);
 }
 
-type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 
 function contentWorkspacePlanLabel(plan: ContentWorkspacePlan): string {
-  return plan === "STUDIO" ? "Studio" : "Creator";
+  return CONTENT_WORKSPACE_PLANS[plan].name;
 }
 
 function contentWorkspacePlanPrice(plan: ContentWorkspacePlan): string {
-  return plan === "STUDIO" ? "₦15,000" : "₦2,800";
+  return `₦${CONTENT_WORKSPACE_PLANS[plan].priceNgnMonthly.toLocaleString("en-NG")}`;
 }
 
 export async function sendCalendarTrial2DaysLeftEmail({
@@ -1428,13 +1429,13 @@ export async function sendCalendarTrial2DaysLeftEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "2 days left on your Showwork Client Workspace trial",
+    subject: "2 days left on your Showwork Content Workspace trial",
     html: emailShell({
-      eyebrow: "Client Workspace · 2 days left",
+      eyebrow: "Content Workspace · 2 days left",
       headline: "Your trial is almost at the finish line.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        You have <strong style="color:#FFFFFF;">2 days left</strong> on your free Client Workspace trial.
+        You have <strong style="color:#FFFFFF;">2 days left</strong> on your free Content Workspace trial.
         <br /><br />
         Keep your client work moving without interruption by choosing your plan before the trial ends.
       `,
@@ -1466,15 +1467,15 @@ export async function sendCalendarTrialFollowUpEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Client Workspace trial ends tomorrow",
+    subject: "Your Content Workspace trial ends tomorrow",
     html: emailShell({
-      eyebrow: "Client Workspace · Tomorrow",
+      eyebrow: "Content Workspace · Tomorrow",
       headline: "Still thinking about it?",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your free trial ends tomorrow. If you're getting value from keeping your client content, approvals and people in one place, now is a good time to choose your plan.
+        Your free trial ends tomorrow. If you're getting value from keeping your client content, approvals, conversations, leads and analytics in one place, now is a good time to choose your plan.
         <br /><br />
-        And if something is holding you back, reply to this email. We'd genuinely like to know.
+        And if something is holding you back, reply to this email. We'd like to help.
       `,
       detailsHtml: `
         <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
@@ -1503,13 +1504,13 @@ export async function sendCalendarTrialEndsTodayEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork Client Workspace trial ends today",
+    subject: "Your Showwork Content Workspace trial ends today",
     html: emailShell({
-      eyebrow: "Client Workspace · Ends today",
+      eyebrow: "Content Workspace · Ends today",
       headline: "Today is the last day of your trial.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your free Client Workspace trial ends today.
+        Your free Content Workspace trial ends today.
         <br /><br />
         Subscribe now and keep your client work accessible without interruption.
       `,
@@ -1541,13 +1542,13 @@ export async function sendCalendarTrialEndedEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork Client Workspace trial has ended",
+    subject: "Your Showwork Content Workspace trial has ended",
     html: emailShell({
-      eyebrow: "Client Workspace · Trial ended",
+      eyebrow: "Content Workspace · Trial ended",
       headline: "Your work is still here. Your trial has simply ended.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your free trial has ended and your Client Workspace access is currently locked until you subscribe.
+        Your free trial has ended and your Content Workspace access is currently locked until you subscribe.
         <br /><br />
         Your content hasn't gone anywhere. Subscribe and everything can continue from where you left off.
       `,

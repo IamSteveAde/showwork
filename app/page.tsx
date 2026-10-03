@@ -2,17 +2,10 @@ import type { Metadata } from "next";
 import { getCurrentCreator } from "@/lib/auth";
 import HomeClient from "./HomeClient";
 
-// Strong, Nigeria-targeted SEO. Title and description use language a
-// Nigerian creator would actually type into Google, not generic SaaS
-// copy — this is what actually drives ranking and click-through.
-// Positioning matches the actual product now: premium positioning and
-// pricing power for creators, not just "a delivery tool" — and the
-// current subscription model (free to start) rather than the old flat
-// one-time fee.
 export const metadata: Metadata = {
-  title: "Showwork | Portfolios, Client Delivery & Content Workspaces",
+  title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
   description:
-    "Build a portfolio, deliver client projects, plan social media content and manage approvals in one platform for Nigerian creators, agencies and creative teams.",
+    "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
   keywords: [
     "client delivery Nigeria",
     "creator portfolio Nigeria",
@@ -24,26 +17,28 @@ export const metadata: Metadata = {
     "Dropbox alternative for creators",
     "premium client presentation Lagos",
     "social media content approval platform",
+    "social media lead management",
+    "social media analytics and reporting",
     "creative agency project management Nigeria",
     "creator community Nigeria",
     "Creativo",
     "Showwork",
   ],
     openGraph: {
-    title: "Showwork | The Creator Business Platform",
+    title: "Showwork | The Platform for Creative Client Work",
     description:
-      "Build a creative portfolio, deliver client projects, plan social content and grow your creative business with Showwork.",
+      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     url: "/",
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
-    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork creator business platform" }],
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and client workspaces" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork | Portfolios, Project Delivery & Content Planning",
+    title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
     description:
-      "One platform for your portfolio, professional client delivery, social media calendar, content approvals and creative community.",
+      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     images: ["/images/work.jpg"],
   },
   robots: {

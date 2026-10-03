@@ -1,6 +1,10 @@
 import crypto from "crypto";
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
+function paystackSecretKey(): string {
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim();
+  if (!key) throw new Error("Missing PAYSTACK_SECRET_KEY");
+  return key;
+}
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 // Flat ₦5,000 per project. Paystack amounts are in kobo (smallest unit),
@@ -59,7 +63,7 @@ export async function initializeTransaction({
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${paystackSecretKey()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -116,7 +120,7 @@ export async function initializeSubscription({
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${paystackSecretKey()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -164,7 +168,7 @@ export async function createPlan({
   const res = await fetch(`${PAYSTACK_BASE_URL}/plan`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${paystackSecretKey()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -189,7 +193,8 @@ export async function createPlan({
  */
 export async function fetchCustomerSubscriptions(customerCode: string) {
   const res = await fetch(`${PAYSTACK_BASE_URL}/subscription?customer=${encodeURIComponent(customerCode)}`, {
-    headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+    cache: "no-store",
+    headers: { Authorization: `Bearer ${paystackSecretKey()}` },
   });
   if (!res.ok) {
     throw new Error(`Paystack fetch subscriptions failed: ${await res.text()}`);
@@ -208,7 +213,7 @@ export async function cancelSubscription(subscriptionCode: string, emailToken: s
   const res = await fetch(`${PAYSTACK_BASE_URL}/subscription/disable`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      Authorization: `Bearer ${paystackSecretKey()}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ code: subscriptionCode, token: emailToken }),
@@ -234,7 +239,7 @@ export function verifyWebhookSignature(
   if (!signatureHeader) return false;
 
   const hash = crypto
-    .createHmac("sha512", PAYSTACK_SECRET_KEY)
+    .createHmac("sha512", paystackSecretKey())
     .update(rawBody)
     .digest("hex");
 
@@ -250,7 +255,7 @@ export async function verifyTransaction(reference: string) {
   const res = await fetch(
     `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
     {
-      headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
+      headers: { Authorization: `Bearer ${paystackSecretKey()}` },
     }
   );
   if (!res.ok) {

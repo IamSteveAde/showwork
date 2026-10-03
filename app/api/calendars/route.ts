@@ -104,7 +104,7 @@ export async function GET() {
 // - Creator: 1 active workspace
 // - Studio: 10 active workspaces
 //
-// Every account gets one 3-day trial, ever.
+// Every account gets one 7-day trial, ever.
 // The trial is attached to the Content Workspace subscription,
 // not to an individual calendar/workspace.
 //
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
   if (!plan) {
     if (
       body.plan === "CREATOR" ||
-      body.plan === "STUDIO"
+      body.plan === "STUDIO" || body.plan === "UNLIMITED"
     ) {
       plan = body.plan;
     } else {
@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator or Studio",
+          "Choose a Content Workspace plan first: Creator, Studio or Unlimited",
       },
       { status: 400 }
     );
@@ -328,7 +328,7 @@ if (
   /*
    * FIRST-EVER CONTENT WORKSPACE:
    *
-   * Start the 3-day free trial.
+   * Start the 7-day free trial.
    *
    * No payment is requested.
    * No Paystack subscription is created.
