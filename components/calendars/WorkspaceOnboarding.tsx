@@ -28,14 +28,14 @@ const STEP_COPY: Record<
   create: {
     title: "Create a client workspace",
     description:
-      "Start by creating a dedicated workspace for one of your clients. This is where you’ll plan, organize and manage their content.",
+      "Start by creating a dedicated workspace for one of your clients. This is where you’ll manage their content, conversations, leads and analytics.",
     button: "Open workspace setup",
   },
 
   plan: {
     title: "Choose your workspace plan",
     description:
-      "Choose the Content Workspace plan that fits how you manage your clients. Your first workspace includes a 3-day trial.",
+      "Choose the Content Workspace plan that fits how you manage your clients. Your first workspace includes a 7-day trial.",
     button: "Choose a plan",
   },
 
@@ -555,7 +555,7 @@ export default function WorkspaceOnboarding({
 
                   <p className="mt-1 text-[11px] leading-5 text-white/30">
                     A dedicated space for managing
-                    one client’s content.
+                    one client’s content, leads and performance.
                   </p>
                 </div>
               </div>

@@ -175,6 +175,9 @@ function planMeta(
         bg: "rgba(96,165,250,0.12)",
       };
 
+    case "UNLIMITED":
+      return { label: "Unlimited", color: COLOR.gold, bg: "rgba(245,200,66,0.12)" };
+
     case "STUDIO":
       return {
         label: "Studio",
@@ -458,7 +461,7 @@ export default async function AdminSocialCalendarsPage({
     workspaceFilters.push({
       manager: {
         contentWorkspacePlan:
-          planFilter as "CREATOR" | "STUDIO",
+          planFilter as "CREATOR" | "STUDIO" | "UNLIMITED",
       },
     });
   }
@@ -1248,6 +1251,7 @@ export default async function AdminSocialCalendarsPage({
                     "STUDIO",
                     "Studio",
                   ],
+                  ["UNLIMITED", "Unlimited"],
                 ]}
               />
 

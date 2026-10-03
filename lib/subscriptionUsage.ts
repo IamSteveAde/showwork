@@ -21,9 +21,9 @@ export interface UsageInfo {
 
 /**
  * Counts how many projects a creator has created in their current
- * billing cycle and compares it against their tier's cap. isComped
- * (admin-granted free access) overrides everything else — treated as
- * Unlimited regardless of what Paystack actually says. A lapsed or
+ * billing cycle and compares it against their tier's cap. An active paid
+ * subscription determines the tier, including after a downgrade. Complimentary
+ * Content Workspace access does not grant a Project Delivery plan. A lapsed or
  * cancelled paid subscription is treated as FREE — subscriptionTier
  * alone is not trusted as the source of truth for access.
  * freeTierLimitOverride raises (or lowers) a specific creator's Free
@@ -31,11 +31,9 @@ export interface UsageInfo {
  * only applies while they're actually on Free.
  */
 export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageInfo> {
-  const effectiveTier: Tier = creator.isComped
-    ? "UNLIMITED"
-    : creator.subscriptionActive
-      ? creator.subscriptionTier
-      : "FREE";
+  const effectiveTier: Tier = creator.subscriptionActive
+    ? creator.subscriptionTier
+    : "FREE";
 
   const limit =
     effectiveTier === "FREE" && creator.freeTierLimitOverride !== null

@@ -633,7 +633,7 @@ export default async function ProjectDeliveryPage() {
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   {/* Plan */}
                   <Link
-                    href="/dashboard/billing"
+                    href="/dashboard/billing?product=delivery"
                     className="hidden items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3.5 py-2.5 text-[10px] font-semibold text-white/65 transition hover:border-white/[0.15] hover:bg-white/[0.08] hover:text-white lg:flex"
                   >
                     <span
@@ -892,7 +892,7 @@ export default async function ProjectDeliveryPage() {
                     </div>
 
                     <Link
-                      href="/dashboard/billing"
+                      href="/dashboard/billing?product=delivery"
                       className="mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold text-white/30 transition hover:text-white/70"
                     >
                       <span>

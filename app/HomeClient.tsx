@@ -6,7 +6,9 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 
 import Navbar from "@/components/Navbar";
+import SiteFooter from "@/components/landing/SiteFooter";
 import PricingSection from "@/components/landing/PricingSection";
+import IntegrationsSection from "@/components/landing/IntegrationsSection";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -784,7 +786,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
                 <span className="relative h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
               </span>
 
-              The workspace for creative work
+              For creators, agencies and social media teams
             </span>
 
             <span className="h-px w-7 bg-[#2478FF]/25" />
@@ -795,13 +797,13 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
           =================================================== */}
 
           <h1 className="font-[var(--font-fraunces)] text-[clamp(2.0rem,6.0vw,6.0rem)] font-normal leading-[0.87] tracking-[-0.055em] text-[#07080A]">
-            <span className="block">Your work deserves</span>
+            <span className="block">Your work. Your clients.</span>
 
             <span className="relative mt-1 block">
               <span className="relative z-10">
-                better than a{" "}
+                One place to{" "}
                 <em className="relative font-normal not-italic text-[#2478FF]">
-                  random link
+                  grow
                 </em>
               </span>
 
@@ -843,7 +845,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
             }}
             className="mx-auto mt-10 max-w-[600px] text-[15px] leading-7 text-black/55 sm:text-[17px] sm:leading-8"
           >
-            Deliver client work through a premium, password-protected showcase. Build your portfolio, manage projects, collaborate with client and hand off work the way a top creative should
+            Build your portfolio, deliver projects and manage client accounts. Plan content with AI, collect approvals, reply to conversations, organize leads and understand what performs with Showwork.
           </motion.p>
 
           {/* ==================================================
@@ -996,16 +998,16 @@ const WORLDS = [
   {
     number: "01",
     title: "Content Workspace",
-    label: "Plan together",
-    body: "An ongoing space for teams and clients to plan, present and approve.",
-    href: "/signup?next=/dashboard/calendars",
+    label: "Manage client accounts",
+    body: "Plan content with AI, collect approvals, manage conversations and leads, and track performance in a dedicated workspace for each client.",
+    href: "/content-workspace",
     Icon: WorkspaceIcon,
   },
     {
     number: "02",
     title: "Project Delivery",
     label: "Move the work",
-    body: "Deliver beautifully, collect feedback and get projects across the line.",
+    body: "Share project files, collect feedback and approvals, and deliver final downloads through a branded project delivery page for each client.",
     href: "/start",
     Icon: DeliveryIcon,
   },
@@ -1013,7 +1015,7 @@ const WORLDS = [
     number: "03",
     title: "Portfolio",
     label: "Show the work",
-    body: "A considered home for the work you're proud to put your name on.",
+    body: "Show projects, services and testimonials in a professional portfolio you can share with potential clients.",
     href: "/signup?next=/dashboard/portfolio",
     Icon: PortfolioIcon,
   },
@@ -1062,8 +1064,9 @@ function Worlds() {
           </h2>
 
           <p className="mt-7 max-w-[540px] text-sm leading-7 text-[#737982] sm:text-base">
-            Showwork gives the creative process a place to live —
-            from the first impression to the final approval.
+            Showwork brings your portfolio, project delivery and client
+            workspaces together. Choose the tools you need to showcase
+            your work, collaborate with clients and manage their accounts.
           </p>
         </div>
 
@@ -1188,9 +1191,8 @@ function ProductMoment({
             </h2>
 
             <p className="mt-7 max-w-[480px] text-sm leading-7 text-white/50 sm:text-base">
-              No generic folder. No awkward handover. A client
-              experience that makes the work feel as valuable as
-              the work itself.
+              Share a branded project link where clients can view files,
+              leave feedback, approve work and download the final delivery.
             </p>
 
             <button
@@ -1302,10 +1304,10 @@ function Philosophy() {
             </h2>
 
             <p className="mt-10 max-w-[650px] text-base leading-8 text-[#737982] sm:text-lg">
-              Everything else should make getting there easier.
-              Showwork exists to remove the friction around creative
-              work — presenting it, delivering it, collaborating on
-              it and building a business around it.
+              Showwork helps you spend less time chasing files, feedback
+              and updates. Keep client work organized, follow up on
+              opportunities and use performance insights to decide
+              what to create next.
             </p>
 
             <div className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-[#E5E7EB] pt-6">
@@ -1364,8 +1366,8 @@ function FinalCTA({ isLoggedIn }: { isLoggedIn: boolean }) {
         </h2>
 
         <p className="mx-auto mt-8 max-w-[520px] text-sm leading-7 text-white/70 sm:text-base">
-          One place for your work, your clients and the business
-          behind your craft.
+          Start with a free portfolio or project delivery. When you
+          manage ongoing client accounts, try Content Workspace free for 7 days.
         </p>
 
         <div className="mt-9 flex justify-center">
@@ -1387,92 +1389,6 @@ function FinalCTA({ isLoggedIn }: { isLoggedIn: boolean }) {
    FOOTER
 ============================================================ */
 
-function Footer() {
-  return (
-    <footer className="bg-[#07080A] px-5 py-12 text-white sm:px-8 sm:py-14 lg:px-16">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="flex flex-col justify-between gap-10 border-b border-white/10 pb-10 md:flex-row md:items-end">
-          <div>
-            <Wordmark color="#FFFFFF" size="md" />
-
-            <p className="mt-4 max-w-sm text-sm leading-6 text-white/35">
-              The workspace for people who take creative work
-              seriously.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-12 gap-y-8 text-sm">
-            <div className="flex flex-col gap-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/25">
-                Explore
-              </p>
-
-              <Link
-                href="/start"
-                className="text-white/60 transition hover:text-white"
-              >
-                Project delivery
-              </Link>
-
-              <Link
-                href="/signup?next=/dashboard/portfolio"
-                className="text-white/60 transition hover:text-white"
-              >
-                Portfolio
-              </Link>
-
-              <a
-                href={COMMUNITY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/60 transition hover:text-white"
-              >
-                Creativo
-              </a>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-white/25">
-                Account
-              </p>
-
-              <Link
-                href="/login"
-                className="text-white/60 transition hover:text-white"
-              >
-                Log in
-              </Link>
-
-              <Link
-                href="/start"
-                className="text-white/60 transition hover:text-white"
-              >
-                Get started
-              </Link>
-
-              <a
-                href="mailto:hello@useshowwork.com"
-                className="text-white/60 transition hover:text-white"
-              >
-                Contact
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between gap-3 pt-6 text-[10px] text-white/25 sm:flex-row">
-          <span>
-            © {new Date().getFullYear()} Showwork. All rights reserved.
-          </span>
-
-          <span>
-            Considered work, considered delivery.
-          </span>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 /* ============================================================
    VIDEO MODAL
@@ -1556,6 +1472,8 @@ export default function HomeClient({
 
       <Hero isLoggedIn={isLoggedIn} />
 
+      <IntegrationsSection />
+
       <Worlds />
 
 <PricingSection />
@@ -1566,7 +1484,7 @@ export default function HomeClient({
 
       <FinalCTA isLoggedIn={isLoggedIn} />
 
-      <Footer />
+      <SiteFooter />
 
       {showVideo && (
         <VideoModal

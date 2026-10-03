@@ -15,7 +15,7 @@ import {
 function resolvePlan(
   value: unknown
 ): ContentWorkspacePlan | null {
-  if (value === "CREATOR" || value === "STUDIO") {
+  if (value === "CREATOR" || value === "STUDIO" || value === "UNLIMITED") {
     return value;
   }
 
@@ -35,12 +35,12 @@ function resolveBillingCycle(
 // not to an individual calendar/workspace.
 //
 // Creator:
-//   ₦2,800/month
+//   ₦4,900/month
 //
 // Studio:
-//   ₦15,000/month
+//   ₦29,900/month
 //
-// AI is included in both plans.
+// AI is included in all plans.
 export async function POST(req: NextRequest) {
   const session = await getCurrentCreator();
 
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator or Studio",
+          "Choose a Content Workspace plan first: Creator, Studio or Unlimited",
       },
       { status: 400 }
     );

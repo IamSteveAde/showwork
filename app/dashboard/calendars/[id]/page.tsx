@@ -414,7 +414,7 @@ const totalMembers = 1 + calendar._count.collaborators;
           <p className="mt-3 text-sm leading-6 text-white/45">
             {isManager
               ? trialExpired
-                ? "Your 3-day trial for this workspace is over. Subscribe to continue using it."
+                ? "Your 7-day trial for this workspace is over. Subscribe to continue using it."
                 : "This workspace's first payment was not completed, so it isn't active yet."
               : "This workspace isn't active right now. Check back once the manager completes payment."}
           </p>
@@ -1016,7 +1016,7 @@ contentIdea: p.contentIdea,
       eyebrow: "Insights",
       title: "Know what is moving.",
       description:
-        "Review social performance, published post metrics, connected account health, and approval progress.",
+        "Explore social performance, post metrics, new leads and hot opportunities. Use AI recommendations to guide your next content batch.",
       group: "Insights",
       content: (
         <div className="space-y-6">
@@ -1079,7 +1079,7 @@ contentIdea: p.contentIdea,
       label: "Inbox",
       eyebrow: "Social inbox",
       title: "Manage conversations in one inbox.",
-      description: "Review incoming messages across connected channels and respond from one workspace.",
+      description: "Read connected social and WhatsApp conversations, reply where supported and prepare AI replies using business knowledge.",
       group: "Leads & Messages",
       content: (
         <SocialLeadInbox

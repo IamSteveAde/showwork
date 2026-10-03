@@ -14,7 +14,7 @@ import {
 function resolvePlan(
   value: unknown
 ): ContentWorkspacePlan | null {
-  if (value === "CREATOR" || value === "STUDIO") {
+  if (value === "CREATOR" || value === "STUDIO" || value === "UNLIMITED") {
     return value;
   }
 
@@ -167,7 +167,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator or Studio",
+          "Choose a Content Workspace plan first: Creator, Studio or Unlimited",
       },
       { status: 400 }
     );

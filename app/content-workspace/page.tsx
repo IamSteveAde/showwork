@@ -1,5 +1,7 @@
 "use client";
 
+import SiteFooter from "@/components/landing/SiteFooter";
+
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -25,37 +27,52 @@ import {
   CalendarDays,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import IntegrationsSection from "@/components/landing/IntegrationsSection";
 
 const BLUE = "#2478FF";
 
 const features = [
   {
     eyebrow: "ONE CLIENT. ONE SPACE.",
-    title: "A workspace that grows with the relationship.",
+    title: "Keep each client account in one place.",
     description:
-      "Create one living workspace for each client. Keep adding content, campaigns, ideas, feedback and approvals without starting over every month.",
+      "Give each client a dedicated workspace for content, business knowledge, feedback, conversations, leads and performance. Keep your account history together as campaigns change.",
     icon: LayoutDashboard,
   },
   {
     eyebrow: "AI STUDIO",
-    title: "Create with the context already in the room.",
+    title: "Create content that understands the business.",
     description:
-      "Give AI your business knowledge, then generate content ideas and drafts around the client's real brand, direction and goals.",
+      "Upload brand documents, briefs and business information. Use that knowledge, research and analytics recommendations to generate ideas, drafts and content calendars.",
     icon: WandSparkles,
   },
   {
     eyebrow: "CLIENT REVIEW",
-    title: "Make approval feel effortless.",
+    title: "Give clients a clear place to review.",
     description:
-      "Clients see a clean presentation of the work, filter what matters and respond directly to each piece. No hunting through chats.",
+      "Share a private client view where clients can preview posts, leave feedback, request revisions and approve content.",
     icon: FileCheck2,
   },
   {
     eyebrow: "TEAMWORK",
-    title: "Bring the right people in.",
+    title: "Work together with clear access.",
     description:
-      "Invite collaborators and clients with the access they need. Keep everyone working from the same source of truth.",
+      "Invite your team with the permissions they need. Give clients their own review experience and enable access to message history when appropriate.",
     icon: Users,
+  },
+  {
+    eyebrow: "LEADS & MESSAGES",
+    title: "Turn conversations into follow-up.",
+    description:
+      "Bring connected social and WhatsApp conversations into Inbox. Keep contact details, notes, lead temperature and pipeline status organized in Leads, so your team can follow up with context.",
+    icon: MessageSquare,
+  },
+  {
+    eyebrow: "ANALYTICS & REPORTING",
+    title: "Know what works. Plan what comes next.",
+    description:
+      "Explore reach, views, engagement and post performance from supported connected accounts. Track new leads and hot opportunities, then use AI analysis to guide your next content batch.",
+    icon: BarChart3,
   },
 ];
 
@@ -64,7 +81,7 @@ const workflow = [
     number: "01",
     title: "Create the workspace",
     description:
-      "Set up a dedicated space for the client and give the relationship a permanent home.",
+      "Create a workspace, add the client’s business knowledge and invite your team. Connect supported accounts for publishing, messages and reporting.",
     icon: Plus,
   },
   {
@@ -83,9 +100,9 @@ const workflow = [
   },
   {
     number: "04",
-    title: "Keep moving",
+    title: "Publish, follow up and learn",
     description:
-      "Approved work is locked, revisions stay editable, and the workspace continues growing with the account.",
+      "Publish approved posts to supported connected channels, manage incoming conversations and leads, then use performance insights to plan your next content batch.",
     icon: CircleCheck,
   },
 ];
@@ -97,8 +114,11 @@ const capabilities = [
   ["People & permissions", "Invite clients and collaborators with clear levels of access.", Users],
   ["Business knowledge", "Keep brand information, documents and references available to the AI Studio.", FolderKanban],
   ["Approvals that mean something", "Once a client approves a post, it becomes locked so the approved version stays protected.", LockKeyhole],
-  ["Publishing workflow", "Move approved content toward publishing without losing the decision trail.", Send],
-  ["Insights", "Understand what is planned, in review and approved so the next action is obvious.", BarChart3],
+  ["Connected publishing", "Schedule and publish approved posts to supported connected social channels, and track their publishing status.", Send],
+  ["Analytics & Reporting", "Compare social performance by date and platform, explore post metrics and turn AI recommendations into your next content batch.", BarChart3],
+  ["Inbox & customer care", "Read conversations from connected social accounts and WhatsApp. Reply where supported and prepare AI replies using business knowledge.", MessageSquare],
+  ["Lead management", "Add or import contacts, qualify them as hot, warm or cold, track pipeline status and export your list as CSV.", Users],
+  ["Opportunity tracking", "See new leads and your five hottest opportunities in Analytics so your team knows who to follow up with.", BarChart3],
 ];
 
 function Grid({ dark = false }: { dark?: boolean }) {
@@ -203,8 +223,10 @@ function WorkspacePreview() {
                   ["Overview", true],
                   ["Content", false],
                   ["AI Studio", false],
+                  ["Inbox", false],
+                  ["Leads", false],
+                  ["Analytics & Reporting", false],
                   ["People", false],
-                  ["Insights", false],
                   ["Publish", false],
                 ].map(([label, active]) => (
                   <div
@@ -549,7 +571,7 @@ export default function ContentWorkspacePage() {
             >
               One place for
               <br />
-              <span className="text-[#2478FF]">the whole client relationship.</span>
+              <span className="text-[#2478FF]">content, leads and results.</span>
             </motion.h1>
 
             <motion.p
@@ -558,9 +580,9 @@ export default function ContentWorkspacePage() {
               transition={{ delay: 0.2, duration: 0.8 }}
               className="mx-auto mt-7 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg"
             >
-              Plan content, create with AI, share work, collect feedback and
-              get approvals — inside one living workspace that keeps growing
-              with every client.
+              Built for social media managers and agencies. Plan content with AI,
+              collect client approvals, publish to supported channels, manage
+              conversations and leads, and track performance for each client.
             </motion.p>
 
             <motion.div
@@ -596,6 +618,8 @@ export default function ContentWorkspacePage() {
         </div>
       </section>
 
+      <IntegrationsSection />
+
       {/* POSITIONING */}
       <section className="relative overflow-hidden bg-slate-950 py-28 text-white sm:py-36">
         <Grid dark />
@@ -604,25 +628,26 @@ export default function ContentWorkspacePage() {
           <div className="grid gap-16 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">
-                Built differently
+                Built for ongoing client accounts
               </p>
               <h2 className="mt-6 max-w-xl text-4xl font-semibold leading-[0.98] tracking-[-0.06em] sm:text-6xl">
-                Not another
+                From content plans
                 <br />
-                content calendar.
+                to client results.
               </h2>
             </div>
 
             <div>
               <p className="max-w-2xl text-lg leading-8 text-white/60">
-                A content calendar tells you what is scheduled. Showwork gives
-                the client relationship somewhere to live.
+                Keep the work and the results connected. Your content plan,
+                client feedback, incoming messages, lead pipeline and
+                performance reports belong in the same client workspace.
               </p>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-white/60">
-                Create the workspace once. Add your team. Add the client. Keep
-                planning, creating, reviewing and approving there as the work
-                evolves.
+                Create the workspace once and keep building on it. Use business
+                knowledge to guide content, conversations to identify
+                opportunities and analytics to improve the next campaign.
               </p>
             </div>
           </div>
@@ -631,8 +656,8 @@ export default function ContentWorkspacePage() {
             {[
               ["01", "Plan", "Turn direction into a clear content plan."],
               ["02", "Create", "Build content with your team or AI."],
-              ["03", "Review", "Put the right work in front of the client."],
-              ["04", "Approve", "Know exactly what is ready to move."],
+              ["03", "Connect", "Publish content and manage conversations and leads."],
+              ["04", "Improve", "Use performance insights to guide the next campaign."],
             ].map(([number, title, description]) => (
               <div
                 key={number}
@@ -669,7 +694,7 @@ export default function ContentWorkspacePage() {
             <h2 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-6xl">
               From first idea
               <br />
-              to ready to publish.
+              to the next campaign.
             </h2>
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-500">
               Every step stays connected, so your team and your client always
@@ -1049,6 +1074,11 @@ export default function ContentWorkspacePage() {
               );
             })}
           </div>
+          <p className="mt-8 max-w-3xl text-xs leading-5 text-slate-500 sm:text-sm sm:leading-6">
+            Publishing, messaging and reporting availability depends on the connected
+            platform and the permissions it grants. AI customer care can prepare replies
+            from business knowledge; automatic replies are available on supported channels.
+          </p>
         </div>
       </section>
 
@@ -1086,7 +1116,7 @@ export default function ContentWorkspacePage() {
                 ],
                 [
                   "Growing teams",
-                  "Bring strategy, creation, feedback and approvals into one shared system.",
+                  "Bring content, customer conversations, lead follow-up and performance reporting into one shared workspace.",
                   BarChart3,
                 ],
               ].map(([title, description, Icon]) => {
@@ -1171,8 +1201,8 @@ export default function ContentWorkspacePage() {
           </h2>
 
           <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-slate-500">
-            Create a client workspace and bring planning, AI, collaboration,
-            review and approvals into one place.
+            Try Content Workspace free for 7 days. Bring content, approvals,
+            conversations, leads and analytics into one place for your client.
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -1198,222 +1228,7 @@ export default function ContentWorkspacePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-200 bg-white">
-  <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
-    {/* Main footer */}
-    <div className="grid gap-14 py-16 sm:py-20 lg:grid-cols-[1.35fr_1fr_1fr_1fr] lg:gap-16">
-      {/* Brand */}
-      <div className="max-w-sm">
-        <Link
-          href="/"
-          className="group inline-flex items-center"
-          aria-label="Showwork home"
-        >
-          <img
-            src="/images/logo/sw.svg"
-            alt="Showwork"
-            className="h-9 w-auto transition-opacity duration-200 group-hover:opacity-80"
-          />
-        </Link>
-
-        <p className="mt-6 max-w-[280px] text-[14px] leading-6 text-slate-500">
-          The workspace for people who make things — from first idea to final
-          delivery.
-        </p>
-
-        <Link
-          href="/signup"
-          className="group mt-7 inline-flex h-12 items-center gap-2.5 rounded-full bg-slate-950 px-6 text-[13px] font-semibold text-white shadow-[0_10px_25px_rgba(15,23,42,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2478FF] hover:shadow-[0_14px_30px_rgba(36,120,255,0.18)]"
-        >
-          Get started
-          <ArrowRight
-            size={15}
-            className="transition-transform duration-200 group-hover:translate-x-1"
-          />
-        </Link>
-      </div>
-
-      {/* Solutions */}
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          Solutions
-        </p>
-
-        <div className="mt-6 space-y-4">
-          <Link
-            href="/portfolio"
-            className="group flex items-center justify-between text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            <span>Portfolio</span>
-            <ArrowUpRight
-              size={13}
-              className="opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-            />
-          </Link>
-
-          <Link
-            href="/delivery"
-            className="group flex items-center justify-between text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            <span>Project Delivery</span>
-            <ArrowUpRight
-              size={13}
-              className="opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-            />
-          </Link>
-
-          <Link
-            href="/content-workspace"
-            className="group flex items-center justify-between text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            <span>Content Workspace</span>
-            <ArrowUpRight
-              size={13}
-              className="opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-            />
-          </Link>
-
-          <Link
-            href="/creativo"
-            className="group flex items-center justify-between text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            <span>Creativo</span>
-            <ArrowUpRight
-              size={13}
-              className="opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-            />
-          </Link>
-        </div>
-      </div>
-
-      {/* Product */}
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          Product
-        </p>
-
-        <div className="mt-6 space-y-4">
-          <Link
-            href="/"
-            className="block text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/blog"
-            className="block text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            Blog
-          </Link>
-
-          <Link
-            href="/login"
-            className="block text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            Log in
-          </Link>
-
-          <Link
-            href="/signup"
-            className="block text-[13px] font-medium text-slate-600 transition-colors hover:text-slate-950"
-          >
-            Create an account
-          </Link>
-        </div>
-      </div>
-
-      {/* Support */}
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
-          Support
-        </p>
-
-        <div className="mt-6">
-          <a
-            href={`https://wa.me/2347018819588?text=${encodeURIComponent(
-              "Hello Showwork Support 👋\n\nI’d like some help with Showwork.\n\nCould you please assist me?\n\nThank you."
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group block rounded-[20px] border border-slate-200 bg-[#FAFBFC] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-[0_14px_35px_rgba(15,23,42,0.07)]"
-          >
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF8EF] text-[#25D366]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-[17px] w-[17px]"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M20.52 3.449A11.86 11.86 0 0 0 12.058 0C5.5 0 .164 5.337.162 11.895c0 2.097.547 4.144 1.587 5.948L.06 24l6.3-1.653a11.86 11.86 0 0 0 5.692 1.45h.005c6.557 0 11.893-5.337 11.895-11.895a11.85 11.85 0 0 0-3.432-8.453Zm-8.462 18.277h-.004a9.84 9.84 0 0 1-5.015-1.372l-.36-.214-3.74.981.998-3.646-.234-.374a9.86 9.86 0 0 1-1.512-5.205C2.193 6.46 6.61 2.043 12.063 2.043a9.82 9.82 0 0 1 6.987 2.897 9.82 9.82 0 0 1 2.892 6.992c-.002 5.454-4.419 9.794-9.884 9.794Zm5.407-7.349c-.296-.148-1.753-.865-2.025-.964-.272-.099-.47-.148-.667.149-.198.296-.766.964-.939 1.162-.173.198-.346.223-.642.074-.296-.148-1.252-.462-2.385-1.473-.882-.787-1.477-1.758-1.65-2.054-.173-.296-.018-.456.13-.604.134-.133.296-.346.445-.519.148-.173.198-.297.297-.495.099-.198.05-.371-.025-.519-.074-.148-.667-1.607-.914-2.202-.241-.579-.486-.5-.667-.509-.173-.009-.371-.01-.568-.01-.198 0-.519.074-.791.371-.272.296-1.038 1.014-1.038 2.473s1.063 2.869 1.211 3.067c.148.198 2.092 3.194 5.071 4.481.709.306 1.262.489 1.693.626.712.226 1.36.194 1.872.118.571-.085 1.753-.717 2.001-1.41.247-.692.247-1.285.173-1.409-.074-.123-.272-.197-.568-.346Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-slate-900">
-                  Talk to Showwork
-                </p>
-
-                <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                  Need help choosing a workspace or getting something sorted?
-                </p>
-
-                <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#2478FF]">
-                  Chat with us
-                  <ArrowUpRight
-                    size={12}
-                    className="transition-transform duration-200 group-hover:translate-x-0.5"
-                  />
-                </div>
-              </div>
-            </div>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    {/* Bottom bar */}
-    <div className="flex flex-col gap-5 border-t border-slate-100 py-7 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-col gap-1.5">
-        <p className="text-[11px] font-medium text-slate-500">
-          © {new Date().getFullYear()} Showwork. All rights reserved.
-        </p>
-
-        <p className="text-[10px] text-slate-400">
-          Built for people who make things.
-        </p>
-      </div>
-
-      <div className="flex items-center gap-5 text-[10px] font-medium text-slate-400">
-        <Link
-          href="/privacy"
-          className="transition-colors hover:text-slate-900"
-        >
-          Privacy
-        </Link>
-
-        <Link
-          href="/terms"
-          className="transition-colors hover:text-slate-900"
-        >
-          Terms
-        </Link>
-
-        <a
-          href="mailto:hello@useshowwork.com"
-          className="transition-colors hover:text-slate-900"
-        >
-          Contact
-        </a>
-      </div>
-    </div>
-  </div>
-</footer>
+      <SiteFooter />
     </main>
   );
 }

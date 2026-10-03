@@ -46,9 +46,9 @@ const ROUTES = [
     key: "social",
     number: "02",
     eyebrow: "FOR SOCIAL MEDIA TEAMS",
-    title: "You manage the content.",
+    title: "You manage client accounts.",
     description:
-      "Build client workspaces, give AI the business context, generate content calendars and manage the entire social media workflow in one place.",
+      "Plan content with AI, collect client approvals, publish to supported channels, manage conversations and leads, and track performance in a workspace for each client.",
     href: "/dashboard/calendars",
     icon: WandSparkles,
     tag: "AI-powered client workspaces",
@@ -135,9 +135,8 @@ export default function WelcomePage() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-[590px] text-[14px] leading-7 text-[#667085] sm:text-[15px]">
-            Showwork gives creative professionals the tools to present their
-            work, deliver projects and manage ongoing client content — all in
-            one place.
+            Build a portfolio, deliver a project or manage a client account.
+            Choose where you want to start with Showwork.
           </p>
         </motion.section>
 

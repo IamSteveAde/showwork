@@ -1,29 +1,16 @@
 "use client";
 
+import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { useEffect, useMemo, useState } from "react";
 
-type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 type BillingCycle = "MONTHLY" | "ANNUAL";
 
-const PLAN_PRICING: Record<
-  ContentWorkspacePlan,
-  {
-    name: string;
-    monthly: number;
-    annual: number;
-  }
-> = {
-  CREATOR: {
-    name: "Creator",
-    monthly: 2800,
-    annual: 31920,
-  },
-  STUDIO: {
-    name: "Studio",
-    monthly: 15000,
-    annual: 171000,
-  },
-};
+const PLAN_PRICING = Object.fromEntries(
+  Object.entries(CONTENT_WORKSPACE_PLANS).map(([key, plan]) => [key, {
+    name: plan.name, monthly: plan.priceNgnMonthly, annual: plan.priceNgnAnnual,
+  }])
+) as Record<ContentWorkspacePlan, { name: string; monthly: number; annual: number }>;
 
 function SparkIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -107,11 +94,13 @@ function getMonthsAndDaysRemaining(msLeft: number) {
 
 export default function TrialCountdownBanner({
   trialEndsAt,
+  billingStatus,
   plan,
   isComped = false,
   compedUntil = null,
 }: {
   trialEndsAt: string;
+  billingStatus: "PENDING_SETUP" | "TRIAL" | "ACTIVE" | "OFFLINE";
   plan: ContentWorkspacePlan;
   isComped?: boolean;
   compedUntil?: string | null;
@@ -125,6 +114,7 @@ export default function TrialCountdownBanner({
   const pricing = PLAN_PRICING[plan];
 
   const complimentaryAccess = isComped;
+  const subscribed = billingStatus === "ACTIVE";
 
   // Keep the countdown fresh without requiring a page refresh.
   useEffect(() => {
@@ -226,6 +216,7 @@ export default function TrialCountdownBanner({
   ]);
 
   const subscribe = async () => {
+    if (subscribed) return;
     setLoading(true);
     setError(null);
 
@@ -290,6 +281,9 @@ export default function TrialCountdownBanner({
     : expired
       ? "Subscribe to restore access to your client content workspaces."
       : "Keep your workspaces active after your free trial ends.";
+
+  // Keep complimentary access visible even after a paid subscription starts.
+  if (subscribed && !complimentaryAccess) return null;
 
   return (
     <section
@@ -510,10 +504,15 @@ export default function TrialCountdownBanner({
               <button
                 type="button"
                 onClick={subscribe}
-                disabled={loading}
+                disabled={loading || subscribed}
                 className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] hover:shadow-[0_16px_36px_rgba(36,120,255,0.28)] focus:outline-none focus:ring-2 focus:ring-[#2478FF]/40 focus:ring-offset-2 focus:ring-offset-[#101318] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading ? (
+                {subscribed ? (
+                  <>
+                    <CheckIcon />
+                    Subscribed
+                  </>
+                ) : loading ? (
                   <>
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                     Starting checkout...

@@ -47,3 +47,41 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes integrations-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.integrations-track {
+  animation: integrations-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.integrations-marquee:hover .integrations-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integrations-marquee {
+    mask-image: none !important;
+  }
+
+  .integrations-track {
+    width: 100%;
+    animation: none;
+    will-change: auto;
+  }
+
+  .integrations-group {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-right: 0;
+    row-gap: 2rem;
+  }
+
+  .integrations-group[aria-hidden="true"] {
+    display: none;
+  }
+}

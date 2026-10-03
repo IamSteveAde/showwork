@@ -1,3 +1,4 @@
+import { syncContentWorkspaceRenewal } from "@/lib/syncContentWorkspaceRenewal";
 import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -57,11 +58,10 @@ export default async function BillingPage({
    * BILLING CYCLE
    * ------------------------------------------------------------
    *
-   * Annual is the default because that is the preferred pricing
-   * presentation throughout Showwork.
+   * Monthly is the default; explicit annual links keep their selection.
    */
   const selectedCycle: BillingCycle =
-    cycleParam === "MONTHLY" ? "MONTHLY" : "ANNUAL";
+    cycleParam === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 
   /*
    * ------------------------------------------------------------
@@ -115,7 +115,9 @@ export default async function BillingPage({
    */
   const ref = reference ?? trxref;
 
-  if (payment === "callback" && ref) {
+  let paymentVerified = false;
+  if (selectedProduct === "delivery" && payment === "callback" && ref &&
+      ref.startsWith(`showwork_sub_${creator.id}_`)) {
     try {
       const verification = await verifyTransaction(ref);
 
@@ -141,7 +143,15 @@ export default async function BillingPage({
       const customerCode =
         verification?.data?.customer?.customer_code;
 
-      if (isSuccessful && match && customerCode) {
+      const paidAt = verification?.data?.paid_at;
+      const alreadyProcessed = paidAt && creator.currentCycleStart &&
+        new Date(paidAt).getTime() < creator.currentCycleStart.getTime();
+
+      if (isSuccessful && match && customerCode && alreadyProcessed) {
+        paymentVerified = true;
+      }
+
+      if (isSuccessful && match && customerCode && !alreadyProcessed) {
         const { tier, cycle } = match;
 
         const subs =
@@ -207,6 +217,7 @@ export default async function BillingPage({
             currentCycleStart: new Date(),
           },
         });
+        paymentVerified = true;
       }
     } catch (error) {
       console.error(
@@ -214,6 +225,12 @@ export default async function BillingPage({
         error
       );
     }
+  }
+
+  // Remove the transaction from the URL so refreshes and cancellation cannot
+  // replay an old checkout and restore the previous plan.
+  if (paymentVerified) {
+    redirect(`/dashboard/billing?product=delivery&cycle=${creator.subscriptionCycle ?? selectedCycle}`);
   }
 
   /*
@@ -225,7 +242,6 @@ export default async function BillingPage({
   const [
     usage,
     workspaceBilling,
-    portfolioCount,
   ] = await Promise.all([
     getCreatorUsage(creator),
 
@@ -246,12 +262,11 @@ export default async function BillingPage({
 },
     }),
 
-    db.portfolio.count({
-      where: {
-        creatorId: creator.id,
-      },
-    }),
   ]);
+
+  if (workspaceBilling?.contentWorkspaceBillingStatus === "ACTIVE") {
+    workspaceBilling.contentWorkspaceSubscriptionRenewsAt = await syncContentWorkspaceRenewal(creator.id);
+  }
 
   /*
    * ------------------------------------------------------------
@@ -267,7 +282,6 @@ export default async function BillingPage({
       }}
       usage={usage}
       workspaceBilling={workspaceBilling}
-      portfolioCount={portfolioCount}
       selectedProduct={selectedProduct}
       selectedTier={selectedTierParam ?? null}
       selectedCycle={selectedCycle}

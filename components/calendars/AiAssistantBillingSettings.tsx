@@ -8,7 +8,7 @@ type BillingStatus =
   | "ACTIVE"
   | "OFFLINE";
 
-type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 
 export default function AiAssistantBillingSettings({
   billingStatus,
@@ -22,7 +22,7 @@ export default function AiAssistantBillingSettings({
   const [open, setOpen] = useState(false);
 
   const planName =
-    plan === "STUDIO"
+    plan === "UNLIMITED" ? "Unlimited" : plan === "STUDIO"
       ? "Studio"
       : plan === "CREATOR"
         ? "Creator"

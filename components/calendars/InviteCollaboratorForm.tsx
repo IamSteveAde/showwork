@@ -581,7 +581,7 @@ export default function InviteCollaboratorForm({
                 </p>
                 <p className="mt-1.5 text-xs leading-5 text-[#667085]">
                   Your account is on Individual. Switch to Company
-                  (₦15,000/month) to invite up to 10 people with role-based
+                  (₦29,900/month) to invite up to 15 people with role-based
                   permissions.
                 </p>
                 <button

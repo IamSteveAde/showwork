@@ -111,8 +111,8 @@ const accountOptions: Array<{
   {
     type: "SOCIAL_MEDIA_MANAGER",
     title: "Social media manager",
-    description: "Plan, approve and publish client content.",
-    detail: "Content workspaces are billed from ₦2,800/month per client.",
+    description: "Manage client content, leads and performance.",
+    detail: "Content Workspace plans start at ₦4,900/month for 1 active client workspace.",
   },
 ];
 
@@ -312,15 +312,16 @@ const referralCode = searchParams.get("ref");
             </h1>
 
             <p className="mt-7 max-w-md text-[16px] leading-7 text-white/45">
-              Showwork gives creators, agencies and social media managers one
-              place to present, deliver and move creative work forward.
+              Build a portfolio, deliver projects and manage client accounts.
+              Keep content, approvals, conversations, leads and performance
+              together with Showwork.
             </p>
 
             <div className="mt-12 grid max-w-lg grid-cols-3 gap-3">
               {[
                 ["01", "Present", "A portfolio clients remember."],
                 ["02", "Deliver", "Projects without the chaos."],
-                ["03", "Grow", "Workspaces built to scale."],
+                ["03", "Manage", "Content, leads and results."],
               ].map(([number, title, description]) => (
                 <div
                   key={number}
@@ -348,7 +349,7 @@ const referralCode = searchParams.get("ref");
             </p>
             <h1 className="text-4xl font-semibold tracking-[-0.045em]">Create your account.</h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-white/40">
-              Set up your Showwork workspace and start turning creative work into a better client experience.
+              Create your account to build a portfolio, deliver a project or set up a client workspace.
             </p>
           </div>
 
@@ -372,7 +373,7 @@ const referralCode = searchParams.get("ref");
                       Create your account
                     </h2>
                     <p className="mt-2 text-sm leading-5 text-white/35">
-                      Your first delivery could be live in the next ten minutes.
+                      Choose where to start after creating your account.
                     </p>
                   </div>
 

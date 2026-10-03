@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import Navbar from "@/components/Navbar";
+import SiteFooter from "@/components/landing/SiteFooter";
 
 /* -------------------------------------------------------------------------- */
 /*                               BRAND SYSTEM                                 */
@@ -288,8 +289,9 @@ function Hero() {
           }}
           className="mt-7 max-w-[560px] text-center text-[15px] leading-7 text-black/45 sm:text-[17px]"
         >
-          Create a portfolio that turns your work into an experience —
-          beautiful, organized and ready to share.
+          Show your projects, services and testimonials in a professional
+          portfolio. Share one link so potential clients can see your
+          work and contact you.
         </motion.p>
 
         {/* CTA */}
@@ -708,61 +710,6 @@ function FinalCTA() {
 /*                                FOOTER                                      */
 /* -------------------------------------------------------------------------- */
 
-function Footer() {
-  return (
-    <footer className="border-t border-white/[0.08] bg-[#090B0F] px-5 pb-10 sm:px-8 lg:px-12">
-      <div className="mx-auto flex max-w-[1250px] flex-col gap-8 pt-8 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[12px] font-semibold text-white/60">
-            Showwork
-          </p>
-
-          <p className="mt-1 text-[9px] text-white/25">
-            The workspace for creative work.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-5">
-          <Link
-            href="/"
-            className="text-[10px] font-medium text-white/30 transition-colors hover:text-white"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/delivery"
-            className="text-[10px] font-medium text-white/30 transition-colors hover:text-white"
-          >
-            Project Delivery
-          </Link>
-
-          <Link
-            href="/content-workspace"
-            className="text-[10px] font-medium text-white/30 transition-colors hover:text-white"
-          >
-            Content Workspace
-          </Link>
-
-          <Link
-            href="/blog"
-            className="text-[10px] font-medium text-white/30 transition-colors hover:text-white"
-          >
-            Blog
-          </Link>
-        </div>
-      </div>
-
-      <div className="mx-auto mt-8 flex max-w-[1250px] items-center gap-3">
-        <div className="h-px flex-1 bg-gradient-to-r from-[#2478FF]/50 to-transparent" />
-
-        <span className="text-[7px] font-bold uppercase tracking-[0.17em] text-white/15">
-          SHOW YOUR WORK
-        </span>
-      </div>
-    </footer>
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 /*                               PAGE                                         */
@@ -776,7 +723,7 @@ export default function PortfolioLandingPage() {
       <Features />
       <Experience />
       <FinalCTA />
-      <Footer />
+      <SiteFooter />
     </main>
   );
 }

@@ -18,9 +18,9 @@ const brandFont = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://useshowwork.com"),
-  title: "Showwork | Creator Business Platform",
+  title: "Showwork | The Platform for Creative Client Work",
   description:
-    "Showwork helps Nigerian photographers, videographers, agencies and social media managers build portfolios, deliver client projects, plan social content and manage approvals in one platform.",
+    "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
   keywords: [
     "creator business platform Nigeria",
     "photographer portfolio Nigeria",
@@ -34,18 +34,18 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Showwork",
-    title: "Showwork | Creator Business Platform",
+    title: "Showwork | The Platform for Creative Client Work",
     description:
-      "Build a creative portfolio, deliver client projects, plan social content and manage approvals with Showwork.",
+      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     url: "/",
     locale: "en_NG",
-    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork creator business platform" }],
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and client workspaces" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork | Creator Business Platform",
+    title: "Showwork | The Platform for Creative Client Work",
     description:
-      "Portfolios, client delivery and social content workspaces for Nigerian creators and creative teams.",
+      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     images: ["/images/work.jpg"],
   },
   robots: { index: true, follow: true },

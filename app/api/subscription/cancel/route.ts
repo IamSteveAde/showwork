@@ -18,7 +18,7 @@ export async function POST() {
     // immediately so the dashboard updates right away.
     await db.creator.update({
       where: { id: creator.id },
-      data: { subscriptionActive: false },
+      data: { subscriptionActive: false, subscriptionTier: "FREE" },
     });
 
     return NextResponse.json({ ok: true });

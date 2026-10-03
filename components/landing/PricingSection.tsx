@@ -1,5 +1,8 @@
 "use client";
 
+import { TIERS } from "@/lib/subscriptionTiers";
+import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
+
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -25,7 +28,7 @@ const DELIVERY_PLANS: PricingPlan[] = [
     annual: 0,
     description: "A simple way to start delivering your work.",
     features: [
-      "1 active project",
+      "1 project per 30 days",
       "Basic client delivery",
       "Secure project links",
     ],
@@ -34,11 +37,11 @@ const DELIVERY_PLANS: PricingPlan[] = [
   },
   {
     name: "Starter",
-    monthly: 5900,
-    annual: 67260,
+    monthly: TIERS.STARTER.priceNgnMonthly,
+    annual: TIERS.STARTER.priceNgnAnnual,
     description: "For creators starting to manage more client work.",
     features: [
-      "5 active projects",
+      "5 projects per billing cycle",
       "Client collaboration",
       "File delivery",
       "Project feedback",
@@ -48,11 +51,11 @@ const DELIVERY_PLANS: PricingPlan[] = [
   },
   {
     name: "Growth",
-    monthly: 10500,
-    annual: 119700,
+    monthly: TIERS.GROWTH.priceNgnMonthly,
+    annual: TIERS.GROWTH.priceNgnAnnual,
     description: "For busy creatives handling work at scale.",
     features: [
-      "15 active projects",
+      "15 projects per billing cycle",
       "Advanced client delivery",
       "Client feedback & approvals",
       "Project collaboration",
@@ -63,8 +66,8 @@ const DELIVERY_PLANS: PricingPlan[] = [
   },
   {
     name: "Unlimited",
-    monthly: 15000,
-    annual: 171000,
+    monthly: TIERS.UNLIMITED.priceNgnMonthly,
+    annual: TIERS.UNLIMITED.priceNgnAnnual,
     description: "For established creative businesses.",
     features: [
       "Unlimited projects",
@@ -77,39 +80,26 @@ const DELIVERY_PLANS: PricingPlan[] = [
   },
 ];
 
-const WORKSPACE_PLANS: PricingPlan[] = [
-  {
-    name: "Creator",
-    monthly: 2800,
-    annual: 31920,
-    description:
-      "For freelancers and independent creative professionals.",
+const WORKSPACE_PLANS: PricingPlan[] = CONTENT_WORKSPACE_PLAN_ORDER.map((key) => {
+  const plan = CONTENT_WORKSPACE_PLANS[key];
+  return {
+    name: plan.name,
+    monthly: plan.priceNgnMonthly,
+    annual: plan.priceNgnAnnual,
+    description: key === "CREATOR" ? "For freelancers and independent creative professionals." : key === "STUDIO" ? "For agencies and teams managing multiple clients." : "For growing agencies managing clients at scale.",
     features: [
-      "1 active client workspace",
-      "Up to 3 collaborators",
-      "5 GB storage",
-      "100 AI generations / month",
+      key === "UNLIMITED" ? "Unlimited active client workspaces" : `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspace${plan.activeWorkspaces === 1 ? "" : "s"}`,
+      key === "UNLIMITED" ? "Unlimited collaborators" : `Up to ${plan.collaborators} collaborators`,
+      `${plan.storageBytes / 1_000_000_000} GB storage`,
+      `${plan.aiGenerations.toLocaleString("en-NG")} AI generations / month`,
+      "Lead management & inbox",
+      "Analytics & reporting",
     ],
-    cta: "Start 3-day trial",
-    href: "/signup?next=/dashboard/calendars&plan=CREATOR&cycle=MONTHLY",
-  },
-  {
-    name: "Studio",
-    monthly: 15000,
-    annual: 171000,
-    description:
-      "For agencies, studios and teams managing multiple clients.",
-    features: [
-      "Up to 10 active client workspaces",
-      "Up to 15 collaborators",
-      "50 GB storage",
-      "500 AI generations / month",
-    ],
-    cta: "Start 3-day trial",
-    href: "/signup?next=/dashboard/calendars&plan=STUDIO&cycle=MONTHLY",
-    popular: true,
-  },
-];
+    cta: "Start 7-day trial",
+    href: `/signup?next=/dashboard/calendars&plan=${key}&cycle=MONTHLY`,
+    popular: key === "UNLIMITED",
+  };
+});
 
 function formatNaira(amount: number) {
   if (amount === 0) {
@@ -259,10 +249,10 @@ function ProductIcon({
 
 export default function PricingSection() {
   const [product, setProduct] =
-    useState<Product>("delivery");
+    useState<Product>("workspace");
 
   const [cycle, setCycle] =
-    useState<BillingCycle>("annual");
+    useState<BillingCycle>("monthly");
 
   const plans =
     product === "delivery"
@@ -327,19 +317,6 @@ export default function PricingSection() {
         <div className="mx-auto mt-12 flex w-fit rounded-full border border-[#E1E4E9] bg-[#F7F8FA] p-1.5">
           <button
             type="button"
-            onClick={() => setProduct("delivery")}
-            className={`flex items-center gap-2 rounded-full px-5 py-3 text-xs font-semibold transition-all ${
-              product === "delivery"
-                ? "bg-[#111317] text-white shadow-sm"
-                : "text-[#737982] hover:text-[#111317]"
-            }`}
-          >
-            <ProductIcon product="delivery" />
-            Project Delivery
-          </button>
-
-          <button
-            type="button"
             onClick={() => setProduct("workspace")}
             className={`flex items-center gap-2 rounded-full px-5 py-3 text-xs font-semibold transition-all ${
               product === "workspace"
@@ -349,6 +326,19 @@ export default function PricingSection() {
           >
             <ProductIcon product="workspace" />
             Content Workspace
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProduct("delivery")}
+            className={`flex items-center gap-2 rounded-full px-5 py-3 text-xs font-semibold transition-all ${
+              product === "delivery"
+                ? "bg-[#111317] text-white shadow-sm"
+                : "text-[#737982] hover:text-[#111317]"
+            }`}
+          >
+            <ProductIcon product="delivery" />
+            Project Delivery
           </button>
         </div>
 
@@ -370,7 +360,7 @@ export default function PricingSection() {
           <p className="mt-2 text-sm text-[#8A9099]">
             {product === "delivery"
               ? "Present, collaborate, collect feedback and hand off projects beautifully."
-              : "Plan content, upload assets, collaborate, get approvals and manage publishing."}
+              : "Manage client content, approvals, publishing, conversations, leads and analytics."}
           </p>
         </motion.div>
 
@@ -418,7 +408,7 @@ export default function PricingSection() {
           className={`mt-12 grid gap-4 ${
             product === "delivery"
               ? "lg:grid-cols-4"
-              : "mx-auto max-w-[900px] md:grid-cols-2"
+              : "mx-auto max-w-[1200px] md:grid-cols-3"
           }`}
         >
           {plans.map((plan) => {
@@ -449,6 +439,7 @@ if (product === "delivery") {
   const workspacePlanMap: Record<string, string> = {
     Creator: "CREATOR",
     Studio: "STUDIO",
+    Unlimited: "UNLIMITED",
   };
 
   const workspacePlan = workspacePlanMap[plan.name];
@@ -476,7 +467,7 @@ if (product === "delivery") {
 
                 {plan.popular && (
                   <div className="absolute right-6 top-6 rounded-full bg-[#2478FF] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
-                    Most popular
+                    {product === "workspace" ? "Recommended for teams" : "Most popular"}
                   </div>
                 )}
 
@@ -639,7 +630,7 @@ if (product === "delivery") {
                         : "text-[#9CA2AB]"
                     }`}
                   >
-                    3-day free trial · no payment
+                    7-day free trial · no payment
                     required to start
                   </p>
                 )}

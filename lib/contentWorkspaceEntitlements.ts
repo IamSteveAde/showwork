@@ -10,7 +10,7 @@
  * without rewriting billing or feature-enforcement logic.
  */
 
-export type ContentWorkspacePlan = "CREATOR" | "STUDIO";
+export type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 
 export type ContentWorkspaceBillingCycle = "MONTHLY" | "ANNUAL";
 
@@ -67,6 +67,7 @@ export interface ContentWorkspacePlanConfig
 export const STORAGE_GB = {
   CREATOR: 5,
   STUDIO: 50,
+  UNLIMITED: 200,
 } as const;
 
 const GB = 1_000_000_000;
@@ -78,8 +79,8 @@ export const CONTENT_WORKSPACE_PLANS: Record<
   CREATOR: {
     name: "Creator",
 
-    priceNgnMonthly: 2_800,
-    priceNgnAnnual: 31_920,
+    priceNgnMonthly: 4_900,
+    priceNgnAnnual: 55_860,
 
     activeWorkspaces: 1,
     collaborators: 3,
@@ -96,8 +97,8 @@ export const CONTENT_WORKSPACE_PLANS: Record<
   STUDIO: {
     name: "Studio",
 
-    priceNgnMonthly: 15_000,
-    priceNgnAnnual: 171_000,
+    priceNgnMonthly: 29_900,
+    priceNgnAnnual: 340_860,
 
     activeWorkspaces: 10,
     collaborators: 15,
@@ -110,11 +111,31 @@ export const CONTENT_WORKSPACE_PLANS: Record<
       ANNUAL: "PAYSTACK_CONTENT_WORKSPACE_STUDIO_ANNUAL_PLAN_CODE",
     },
   },
+  UNLIMITED: {
+    name: "Unlimited",
+    priceNgnMonthly: 59_900,
+    priceNgnAnnual: 682_860,
+    // Finite sentinel preserves numeric limits through JSON serialization.
+    activeWorkspaces: Number.MAX_SAFE_INTEGER,
+    collaborators: Number.MAX_SAFE_INTEGER,
+    storageBytes: STORAGE_GB.UNLIMITED * GB,
+    aiGenerations: 2_000,
+    aiRegenerations: 600,
+    planCodeEnv: {
+      MONTHLY: "PAYSTACK_CONTENT_WORKSPACE_UNLIMITED_MONTHLY_PLAN_CODE",
+      ANNUAL: "PAYSTACK_CONTENT_WORKSPACE_UNLIMITED_ANNUAL_PLAN_CODE",
+    },
+  },
 };
+
+export function formatWorkspaceLimit(limit: number): string {
+  return limit === Number.MAX_SAFE_INTEGER ? "Unlimited" : String(limit);
+}
 
 export const CONTENT_WORKSPACE_PLAN_ORDER: ContentWorkspacePlan[] = [
   "CREATOR",
   "STUDIO",
+  "UNLIMITED",
 ];
 
 export const CONTENT_WORKSPACE_PLAN_DISPLAY_NAME: Record<
@@ -123,6 +144,7 @@ export const CONTENT_WORKSPACE_PLAN_DISPLAY_NAME: Record<
 > = {
   CREATOR: "Creator",
   STUDIO: "Studio",
+  UNLIMITED: "Unlimited",
 };
 
 /**
@@ -130,7 +152,7 @@ export const CONTENT_WORKSPACE_PLAN_DISPLAY_NAME: Record<
  *
  * No payment method is required to start the trial.
  */
-export const CONTENT_WORKSPACE_TRIAL_DAYS = 3;
+export const CONTENT_WORKSPACE_TRIAL_DAYS = 7;
 
 /**
  * Returns the configured entitlements for a plan.
@@ -213,14 +235,14 @@ export function contentWorkspacePlanFromPaystackPlanCode(
   for (const plan of CONTENT_WORKSPACE_PLAN_ORDER) {
     const config = CONTENT_WORKSPACE_PLANS[plan];
 
-    if (process.env[config.planCodeEnv.MONTHLY] === planCode) {
+    if ([process.env[config.planCodeEnv.MONTHLY], process.env[`${config.planCodeEnv.MONTHLY}_LEGACY`]].includes(planCode)) {
       return {
         plan,
         cycle: "MONTHLY",
       };
     }
 
-    if (process.env[config.planCodeEnv.ANNUAL] === planCode) {
+    if ([process.env[config.planCodeEnv.ANNUAL], process.env[`${config.planCodeEnv.ANNUAL}_LEGACY`]].includes(planCode)) {
       return {
         plan,
         cycle: "ANNUAL",
@@ -234,8 +256,8 @@ export function contentWorkspacePlanFromPaystackPlanCode(
 /**
  * Returns the next available paid plan.
  *
- * Creator → Studio
- * Studio → null
+ * Creator → Studio → Unlimited
+ * Unlimited → null
  */
 export function getNextContentWorkspacePlan(
   plan: ContentWorkspacePlan
