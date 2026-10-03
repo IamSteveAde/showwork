@@ -1627,9 +1627,11 @@ model SpotlightSubmission {
   // Snapshot at submission time, not read live from the Creator row —
   // a name change later shouldn't silently rewrite a past submission.
   name          String
-  // The only way to ever reach a winner who didn't have an account —
-  // required regardless of whether they were logged in or not.
+  // Contact details captured for reaching winners.
   email         String
+  // Nullable for historical submissions; required for new submissions by the API.
+  phone         String?
+  whatsappNumber String?
   category      String // "Video" | "Graphics" | "Photography" | "Branding"
   projectLink   String // either a real Showwork portfolio URL, or a manual link
   description   String // max 150 chars, enforced in the API route

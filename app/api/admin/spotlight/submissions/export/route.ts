@@ -25,10 +25,12 @@ export async function GET() {
     orderBy: { submittedAt: "desc" },
   });
 
-  const header = ["Name", "Email", "Category", "Project link", "Description", "Note", "Shortlisted", "Rank", "Submitted at"];
+  const header = ["Name", "Email", "Phone number", "WhatsApp number", "Category", "Project link", "Description", "Note", "Shortlisted", "Rank", "Submitted at"];
   const rows = submissions.map((s) => [
     s.name,
     s.email,
+    s.phone ?? "",
+    s.whatsappNumber ?? "",
     s.category,
     s.projectLink,
     s.description,

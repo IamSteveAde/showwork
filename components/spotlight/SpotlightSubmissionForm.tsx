@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { isValidContactPhone } from "@/lib/phone";
 import {
   ArrowRight,
   Check,
@@ -44,6 +45,7 @@ export default function SpotlightSubmissionForm({
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
   const [phone, setPhone] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [manualLink, setManualLink] = useState("");
   const [description, setDescription] = useState("");
@@ -65,8 +67,17 @@ export default function SpotlightSubmissionForm({
       !description.trim()
     ) {
       setError(
-        "Please fill in your name, email, WhatsApp number, project link, and description."
+        "Please fill in your name, email, phone number, project link, and description."
       );
+      return;
+    }
+
+    if (!isValidContactPhone(phone)) {
+      setError("Please enter a valid phone number (7–15 digits).");
+      return;
+    }
+    if (whatsappNumber.trim() && !isValidContactPhone(whatsappNumber)) {
+      setError("Please enter a valid WhatsApp number (7–15 digits).");
       return;
     }
 
@@ -88,6 +99,7 @@ export default function SpotlightSubmissionForm({
           name,
           email,
           phone,
+          whatsappNumber,
           category,
           projectLink,
           description,
@@ -397,12 +409,13 @@ export default function SpotlightSubmissionForm({
               </div>
 
               <div>
-                <label className={labelClass}>
+                <label htmlFor="spotlight-phone" className={labelClass}>
                   <Phone size={12} />
-                  WhatsApp number
+                  Phone number (required)
                 </label>
 
                 <input
+                  id="spotlight-phone"
                   type="tel"
                   required
                   inputMode="tel"
@@ -415,7 +428,27 @@ export default function SpotlightSubmissionForm({
                 />
 
                 <p className="mt-2 text-[10px] leading-4 text-black/30">
-                  Use the number clients can reach you on WhatsApp.
+                  We’ll use this number to reach you if you win. Include your country code.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="spotlight-whatsapp" className={labelClass}>
+                  <Phone size={12} />
+                  WhatsApp number (optional)
+                </label>
+                <input
+                  id="spotlight-whatsapp"
+                  type="tel"
+                  inputMode="tel"
+                  value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(e.target.value)}
+                  style={{ fontSize: "16px" }}
+                  className={inputClass}
+                  placeholder="+234 800 000 0000"
+                />
+                <p className="mt-2 text-[10px] leading-4 text-black/30">
+                  Add your WhatsApp number if we can also reach you there.
                 </p>
               </div>
 

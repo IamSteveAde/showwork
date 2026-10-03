@@ -9,6 +9,8 @@ interface Submission {
   id: string;
   name: string;
   email: string;
+  phone: string | null;
+  whatsappNumber: string | null;
   category: string;
   projectLink: string;
   description: string;
@@ -139,6 +141,8 @@ export default function SpotlightSubmissionManager({
                 <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-white/30">
                   <a href={s.projectLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">View project</a>
                   <span>{s.email}</span>
+                  {s.phone && <a href={`tel:${s.phone.replace(/[^+\d]/g, "")}`} className="underline hover:text-white/60">Phone: {s.phone}</a>}
+                  {s.whatsappNumber && <a href={`https://wa.me/${s.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">WhatsApp: {s.whatsappNumber}</a>}
                 </div>
                 {s.note && <p className="mt-1.5 text-xs italic text-white/30">&ldquo;{s.note}&rdquo;</p>}
               </div>

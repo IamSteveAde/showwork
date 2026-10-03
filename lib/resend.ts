@@ -1018,6 +1018,8 @@ export async function sendPortfolioOfflineReminderEmail({
 export async function sendSpotlightSubmissionEmail({
   name,
   email,
+  phone,
+  whatsappNumber,
   category,
   projectLink,
   description,
@@ -1025,6 +1027,8 @@ export async function sendSpotlightSubmissionEmail({
 }: {
   name: string;
   email: string;
+  phone: string;
+  whatsappNumber: string | null;
   category: string;
   projectLink: string;
   description: string;
@@ -1044,6 +1048,9 @@ export async function sendSpotlightSubmissionEmail({
         <div style="height:10px;line-height:10px;">&nbsp;</div>
         ${infoBox("Email", email)}
         <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${infoBox("Phone number", phone)}
+        <div style="height:10px;line-height:10px;">&nbsp;</div>
+        ${whatsappNumber ? `${infoBox("WhatsApp number", whatsappNumber)}<div style="height:10px;line-height:10px;">&nbsp;</div>` : ""}
         ${infoBox("Category", category)}
         <div style="height:10px;line-height:10px;">&nbsp;</div>
         ${infoBox("Project link", projectLink)}

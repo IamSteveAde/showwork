@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
+import { isValidContactPhone } from "@/lib/phone";
 import { db } from "@/lib/db";
 import { sendSpotlightSubmissionEmail } from "@/lib/resend";
 
@@ -105,10 +106,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, email, phone, category, projectLink, description, note, eventId } = await req.json();
+  const { name, email, phone, whatsappNumber, category, projectLink, description, note, eventId } = await req.json();
 
   if (!name?.trim() || !email?.trim() || !projectLink?.trim() || !description?.trim()) {
     return NextResponse.json({ error: "Name, email, project link, and description are all required" }, { status: 400 });
+  }
+  if (!isValidContactPhone(phone)) {
+    return NextResponse.json({ error: "A valid phone number is required (7–15 digits)" }, { status: 400 });
+  }
+  if (whatsappNumber != null && (typeof whatsappNumber !== "string" || (whatsappNumber.trim() && !isValidContactPhone(whatsappNumber)))) {
+    return NextResponse.json({ error: "Please enter a valid WhatsApp number (7–15 digits)" }, { status: 400 });
   }
   if (!VALID_CATEGORIES.includes(category)) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
@@ -128,6 +135,8 @@ export async function POST(req: NextRequest) {
       creatorId: loggedInCreator?.id ?? null,
       name: name.trim(),
       email: email.trim(),
+      phone: phone.trim(),
+      whatsappNumber: whatsappNumber?.trim() || null,
       category,
       projectLink: projectLink.trim(),
       description: description.trim(),
@@ -142,6 +151,8 @@ export async function POST(req: NextRequest) {
     await sendSpotlightSubmissionEmail({
       name: submission.name,
       email: submission.email,
+      phone: submission.phone!,
+      whatsappNumber: submission.whatsappNumber,
       category: submission.category,
       projectLink: submission.projectLink,
       description: submission.description,
