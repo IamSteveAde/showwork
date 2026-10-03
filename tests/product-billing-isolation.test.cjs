@@ -14,7 +14,9 @@ function load(file, dependencies = {}) {
 }
 const plans = load('lib/contentWorkspaceEntitlements.ts');
 const tiers = load('lib/subscriptionTiers.ts');
+const uiSymbol = load('components/ui/UiSymbol.tsx');
 const View = load('app/dashboard/billing/BillingSubscriptions.tsx', {
+  '@/components/ui/UiSymbol': uiSymbol,
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children), __esModule: true },
   '@/lib/contentWorkspaceEntitlements': plans,
   '@/lib/subscriptionTiers': tiers,

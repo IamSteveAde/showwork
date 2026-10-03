@@ -256,10 +256,13 @@ export async function verifyTransaction(reference: string) {
     `${PAYSTACK_BASE_URL}/transaction/verify/${encodeURIComponent(reference)}`,
     {
       headers: { Authorization: `Bearer ${paystackSecretKey()}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
     }
   );
-  if (!res.ok) {
-    throw new Error(`Paystack verify failed: ${await res.text()}`);
+  const result = await res.json();
+  if (!res.ok && result?.code !== "transaction_not_found") {
+    throw new Error(`Paystack verify failed (${res.status})`);
   }
-  return res.json();
+  return result;
 }

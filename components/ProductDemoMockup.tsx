@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -101,17 +102,13 @@ export default function ProductDemoMockup() {
                       <span
                         className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold"
                         style={{ background: "#22C55E", color: "#080808" }}
-                      >
-                        ✓ Approved
-                      </span>
+                      ><>{" "}<UiSymbol name="check" />{" Approved "}</></span>
                     )}
                     {tile.status === "revision" && (
                       <span
                         className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold"
                         style={{ background: "#F97316", color: "#080808" }}
-                      >
-                        ✎ Revision
-                      </span>
+                      ><>{" "}<UiSymbol name="edit" />{" Revision "}</></span>
                     )}
                   </div>
                 ))}

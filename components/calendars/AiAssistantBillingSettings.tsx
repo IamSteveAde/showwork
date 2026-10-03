@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 
 type BillingStatus =
@@ -78,9 +79,7 @@ export default function AiAssistantBillingSettings({
           </div>
         </div>
 
-        <span className="text-xs text-white/30">
-          View details →
-        </span>
+        <span className="text-xs text-white/30"><>{" View details "}<UiSymbol name="right" />{" "}</></span>
       </button>
     );
   }

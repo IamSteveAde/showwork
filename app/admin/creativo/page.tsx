@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -22,9 +23,7 @@ export default async function CreativoAdminPage() {
   return (
     <main className="min-h-screen px-6 py-12 md:px-20" style={{ background: COLOR.black }}>
       <div className="mx-auto max-w-4xl">
-        <Link href="/admin" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white">
-          ← Back to admin
-        </Link>
+        <Link href="/admin" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white"><>{" "}<UiSymbol name="left" />{" Back to admin "}</></Link>
 
                 <div className="mb-8 flex items-center justify-between">
           <div>
@@ -37,9 +36,7 @@ export default async function CreativoAdminPage() {
             href="/admin/spotlight"
             className="rounded-lg px-4 py-2 text-xs font-semibold"
             style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
-          >
-            Manage Spotlight →
-          </Link>
+          ><>{" Manage Spotlight "}<UiSymbol name="right" />{" "}</></Link>
         </div>
 
         <div className="flex flex-col gap-6">

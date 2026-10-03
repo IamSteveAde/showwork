@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import Image from "next/image";
@@ -244,9 +245,7 @@ function Hero({
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full text-white transition-transform group-hover:translate-y-0.5"
               style={{ background: primaryColor }}
-            >
-              ↓
-            </span>
+            ><UiSymbol name="down" /></span>
           </motion.button>
         </div>
       </motion.div>
@@ -503,7 +502,7 @@ function WallTile({
                 : { background: "#F97316", color: "#160A02" }
             }
           >
-            {item.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+            {item.approvalStatus === "APPROVED" ? <><UiSymbol name="check" />{" Approved"}</> : <><UiSymbol name="edit" />{" Revision"}</>}
           </div>
         )}
 
@@ -590,7 +589,7 @@ function DocTile({
                 : { background: "#F97316", color: "#160A02" }
             }
           >
-            {doc.approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+            {doc.approvalStatus === "APPROVED" ? <><UiSymbol name="check" />{" Approved"}</> : <><UiSymbol name="edit" />{" Revision"}</>}
           </div>
         )}
 
@@ -1087,9 +1086,7 @@ export default function ProjectContent({
               rel="noopener noreferrer"
               className="mt-8 inline-flex rounded-full border px-4 py-2 text-[10px] font-semibold transition hover:bg-white/5"
               style={{ color: primaryColor, borderColor: `${primaryColor}40` }}
-            >
-              Presented with Showwork →
-            </a>
+            ><>{" Presented with Showwork "}<UiSymbol name="right" />{" "}</></a>
           )}
         </div>
       </footer>

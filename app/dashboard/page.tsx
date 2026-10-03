@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
@@ -617,9 +618,7 @@ export default async function DashboardPage() {
                     Learn the content planning, review and publishing workflow.
                   </p>
 
-                  <span className="shrink-0 rounded-full bg-[#101114] px-2.5 py-1 text-[9px] font-bold text-white">
-                    Start here →
-                  </span>
+                  <span className="shrink-0 rounded-full bg-[#101114] px-2.5 py-1 text-[9px] font-bold text-white"><>{" Start here "}<UiSymbol name="right" />{" "}</></span>
                 </div>
               </div>
             </div>
@@ -867,7 +866,7 @@ export default async function DashboardPage() {
 
             <a
               href={`https://wa.me/2347018819588?text=${encodeURIComponent(
-                "Hello Showwork Support 👋\n\nI’m on my Showwork dashboard and I’d like some help choosing the right workspace for what I’m trying to accomplish.\n\nCould you please point me in the right direction?\n\nThank you."
+                "Hello Showwork Support\n\nI’m on my Showwork dashboard and I’d like some help choosing the right workspace for what I’m trying to accomplish.\n\nCould you please point me in the right direction?\n\nThank you."
               )}`}
               target="_blank"
               rel="noopener noreferrer"

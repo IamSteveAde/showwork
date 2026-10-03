@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
 
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -158,7 +159,7 @@ function IntroSection({
                   backgroundColor: primaryColor,
                 }}
               >
-                <span className="text-lg font-light text-white">↗</span>
+                <span className="text-lg font-light text-white"><><UiSymbol name="upRight" /></></span>
               </div>
 
               {/* Image frame */}

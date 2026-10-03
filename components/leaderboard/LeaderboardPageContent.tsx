@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -633,7 +634,7 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
                   className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full bg-[#2478FF] px-6 py-4 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF]"
                 >
                   Deliver a project
-                  <span className="transition-transform group-hover:translate-x-1">→</span>
+                  <span className="transition-transform group-hover:translate-x-1"><><UiSymbol name="right" /></></span>
                 </Link>
 
                 <Link
@@ -641,7 +642,7 @@ export default function LeaderboardPageContent({ entries }: { entries: Leaderboa
                   className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-6 py-4 text-xs font-extrabold text-white transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/10"
                 >
                   Create your portfolio
-                  <span className="text-[#FFCC00] transition-transform group-hover:translate-x-1">→</span>
+                  <span className="text-[#FFCC00] transition-transform group-hover:translate-x-1"><><UiSymbol name="right" /></></span>
                 </Link>
               </div>
             </div>

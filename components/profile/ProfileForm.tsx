@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -118,9 +119,7 @@ export default function ProfileForm({
             className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] disabled:opacity-50"
             style={{ background: COLOR.gold, color: COLOR.black }}
             aria-label="Change avatar"
-          >
-            ✎
-          </button>
+          ><UiSymbol name="edit" /></button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
         </div>
         <p className="text-xs text-white/40">{uploadingAvatar ? `Uploading ${avatarProgress}%` : "Click the pencil to upload a photo"}</p>
@@ -160,9 +159,7 @@ export default function ProfileForm({
         <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-3">
           <span className="text-sm text-white/60">{email}</span>
           {emailVerified && (
-            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>
-              ✓ Verified
-            </span>
+            <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}><>{" "}<UiSymbol name="check" />{" Verified "}</></span>
           )}
         </div>
       </div>
@@ -189,7 +186,7 @@ export default function ProfileForm({
         className="w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
         style={{ background: COLOR.gold, color: COLOR.black }}
       >
-        {saving ? "Saving..." : saved ? "Saved ✓" : "Save changes"}
+        {saving ? "Saving..." : saved ? <>{"Saved "}<UiSymbol name="check" /></> : "Save changes"}
       </button>
     </div>
   );

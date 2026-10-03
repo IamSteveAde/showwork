@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -619,9 +620,7 @@ export default function WebinarLandingContent({
                 href="/webinars"
                 className="group mb-10 inline-flex items-center gap-2 text-xs font-semibold text-white/45 transition-colors hover:text-white"
               >
-                <span className="transition-transform duration-300 group-hover:-translate-x-1">
-                  ←
-                </span>
+                <span className="transition-transform duration-300 group-hover:-translate-x-1"><UiSymbol name="left" /></span>
                 All webinars
               </Link>
 
@@ -802,9 +801,7 @@ export default function WebinarLandingContent({
               className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35 transition-colors hover:text-white"
             >
               Explore
-              <span className="transition-transform duration-300 group-hover:translate-y-0.5">
-                ↓
-              </span>
+              <span className="transition-transform duration-300 group-hover:translate-y-0.5"><UiSymbol name="down" /></span>
             </a>
           </div>
         </div>

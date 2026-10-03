@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -80,9 +81,7 @@ export default function HostApplicationModal({ open, onClose }: { open: boolean;
               onClick={handleClose}
               aria-label="Close"
               className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-black/40 hover:bg-black/5 hover:text-black"
-            >
-              ✕
-            </button>
+            ><UiSymbol name="close" /></button>
 
             {done ? (
               <div className="py-6 text-center">

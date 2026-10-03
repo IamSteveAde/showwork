@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useState } from "react";
 
 interface DraftPost {
@@ -470,9 +471,7 @@ export default function AiDraftReviewModal({
               }
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Previous draft"
-            >
-              ←
-            </button>
+            ><UiSymbol name="left" /></button>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
@@ -545,9 +544,7 @@ export default function AiDraftReviewModal({
               }
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DDE3EB] bg-white text-[#344054] shadow-sm transition hover:bg-[#F7F9FC] disabled:cursor-not-allowed disabled:opacity-30"
               aria-label="Next draft"
-            >
-              →
-            </button>
+            ><UiSymbol name="right" /></button>
           </div>
 
           {/* Mobile bulk confirmation */}
@@ -565,7 +562,7 @@ export default function AiDraftReviewModal({
                     : `Confirm all ${drafts.length} drafts`}
                 </span>
                 {!saving && (
-                  <span className="text-white/50">→</span>
+                  <span className="text-white/50"><><UiSymbol name="right" /></></span>
                 )}
               </button>
             </div>
@@ -724,7 +721,7 @@ export default function AiDraftReviewModal({
                     <div className="rounded-2xl border border-[#DDE8F8] bg-[#F4F8FF] p-4">
                       <div className="flex items-center gap-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2478FF] text-xs text-white">
-                          ✦
+                          <UiSymbol name="sparkles" />
                         </span>
                         <div>
                           <p className="text-xs font-bold text-[#101828]">Ask AI to take another pass</p>
@@ -772,9 +769,7 @@ export default function AiDraftReviewModal({
                           }
                           disabled={generationIndex <= 0}
                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E1E7EF] text-[#667085] disabled:opacity-30"
-                        >
-                          ←
-                        </button>
+                        ><UiSymbol name="left" /></button>
                         <span className="px-2 text-[10px] font-bold text-[#667085]">
                           {generationIndex + 1} / {generations.length}
                         </span>
@@ -786,9 +781,7 @@ export default function AiDraftReviewModal({
                           }
                           disabled={generationIndex >= generations.length - 1}
                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E1E7EF] text-[#667085] disabled:opacity-30"
-                        >
-                          →
-                        </button>
+                        ><UiSymbol name="right" /></button>
                       </div>
                     </div>
 
@@ -844,9 +837,7 @@ export default function AiDraftReviewModal({
             ) : (
               <div className="flex min-h-full items-center justify-center p-8 text-center">
                 <div>
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF2FF] text-2xl text-[#2478FF]">
-                    ✓
-                  </div>
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF2FF] text-2xl text-[#2478FF]"><UiSymbol name="check" /></div>
                   <h2 className="mt-4 text-lg font-semibold text-[#101828]">All clear</h2>
                   <p className="mt-1 text-xs text-[#667085]">
                     Every AI draft has been reviewed.

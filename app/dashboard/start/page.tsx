@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
@@ -355,9 +356,7 @@ export default async function StartProjectPage() {
                     style={{ color: COLOR.blueBright }}
                   >
                     Start a delivery
-                    <span className="transition-transform duration-300 group-hover:translate-x-1">
-                      →
-                    </span>
+                    <span className="transition-transform duration-300 group-hover:translate-x-1"><UiSymbol name="right" /></span>
                   </div>
                 </div>
               </div>
@@ -433,9 +432,7 @@ export default async function StartProjectPage() {
                     style={{ color: COLOR.blueBright }}
                   >
                     Start a managed project
-                    <span className="transition-transform duration-300 group-hover:translate-x-1">
-                      →
-                    </span>
+                    <span className="transition-transform duration-300 group-hover:translate-x-1"><UiSymbol name="right" /></span>
                   </div>
                 </div>
               </div>
@@ -452,9 +449,7 @@ export default async function StartProjectPage() {
                   className="h-4 w-4"
                   style={{ color: COLOR.blueBright }}
                 />
-                <p className="text-xs font-semibold text-white/50">
-                  Finished work → client
-                </p>
+                <p className="text-xs font-semibold text-white/50"><>{" Finished work "}<UiSymbol name="right" />{" client "}</></p>
               </div>
             </div>
 
@@ -464,9 +459,7 @@ export default async function StartProjectPage() {
                   className="h-4 w-4"
                   style={{ color: COLOR.blueBright }}
                 />
-                <p className="text-xs font-semibold text-white/50">
-                  Work in progress → team → client
-                </p>
+                <p className="text-xs font-semibold text-white/50"><>{" Work in progress "}<UiSymbol name="right" />{" team "}<UiSymbol name="right" />{" client "}</></p>
               </div>
             </div>
           </div>
@@ -480,9 +473,7 @@ export default async function StartProjectPage() {
           <Link
             href="/dashboard/projects"
             className="text-xs font-medium text-white/30 transition hover:text-white/65"
-          >
-            ← Return to projects
-          </Link>
+          ><>{" "}<UiSymbol name="left" />{" Return to projects "}</></Link>
         </div>
       </section>
     </main>

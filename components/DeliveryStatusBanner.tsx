@@ -1,5 +1,7 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
+
 type DeliveryStatus = "DELIVERED" | "APPROVED" | "PAID";
 
 const STAGES: { key: DeliveryStatus; label: string }[] = [
@@ -43,7 +45,7 @@ export default function DeliveryStatusBanner({ status }: { status: DeliveryStatu
                       color: reached ? "#0A0A0A" : "rgba(255,255,255,0.4)",
                     }}
                   >
-                    {reached ? "✓" : i + 1}
+                    {reached ? <><UiSymbol name="check" /></> : i + 1}
                   </span>
                   <span
                     className="text-xs font-semibold uppercase"

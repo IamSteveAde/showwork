@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 
@@ -65,9 +66,7 @@ export default function ReviewsModal({
         onClick={onClose}
         aria-label="Close"
         className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10"
-      >
-        ✕
-      </button>
+      ><UiSymbol name="close" /></button>
 
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
@@ -119,7 +118,7 @@ export default function ReviewsModal({
                           : { background: "rgba(249,115,22,0.15)", color: "#fdba74" }
                       }
                     >
-                      {r.status === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+                      {r.status === "APPROVED" ? <><UiSymbol name="check" />{" Approved"}</> : <><UiSymbol name="edit" />{" Revision"}</>}
                     </span>
                   </div>
                   {r.note && (

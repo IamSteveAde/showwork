@@ -1224,6 +1224,8 @@ model PaymentRecord {
   creator              Creator               @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId            String
   amountNgn            Int
+  revenueStatus        String                @default("UNVERIFIED")
+  revenueReason        String?
   type                 PaymentType
   tier                 SubscriptionTier?
   cycle                BillingCycle?
@@ -1240,6 +1242,7 @@ model PaymentRecord {
   @@index([creatorId])
   @@index([createdAt])
   @@index([portfolioId])
+  @@index([revenueStatus])
 }
 
 // ─────────────────────────────────────────────

@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type TourSectionId =
@@ -119,12 +120,7 @@ const TOUR_STEPS: TourStep[] = [
 
 function ArrowRight() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
       <path
         d="M5 12h13M13 6l6 6-6 6"
         stroke="currentColor"
@@ -156,12 +152,7 @@ function CloseIcon() {
 
 function SparkIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
       <path
         d="M12 3 13.7 9.3 20 11l-6.3 1.7L12 19l-1.7-6.3L4 11l6.3-1.7L12 3Z"
         fill="currentColor"
@@ -175,6 +166,10 @@ export default function WorkspaceTour({
 }: WorkspaceTourProps) {
   const [visible, setVisible] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [mobile, setMobile] = useState(false);
+  const [position, setPosition] = useState({ left: 260, top: 88 });
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const availableSectionsKey = availableSections.join("|");
 
@@ -190,7 +185,10 @@ export default function WorkspaceTour({
     const startSection = ["knowledge", "content", "overview"].find((id) =>
       available.has(id as TourSectionId),
     ) as TourSectionId | undefined;
-    return [...sectionSteps, { ...finalStep, id: startSection ?? sectionSteps[0].id }];
+    return [
+      ...sectionSteps,
+      { ...finalStep, id: startSection ?? sectionSteps[0].id },
+    ];
   }, [availableSectionsKey]);
 
   const initializedRef = useRef(false);
@@ -211,8 +209,7 @@ export default function WorkspaceTour({
     }
 
     return (
-      new URLSearchParams(window.location.search).get("onboarding") ===
-      "test"
+      new URLSearchParams(window.location.search).get("onboarding") === "test"
     );
   }, []);
 
@@ -224,6 +221,7 @@ export default function WorkspaceTour({
     }
 
     setVisible(false);
+    window.dispatchEvent(new Event("showwork-workspace-tour-finish"));
   }, [storageKey]);
 
   const skip = useCallback(() => {
@@ -242,7 +240,7 @@ export default function WorkspaceTour({
       setStepIndex(index);
       window.dispatchEvent(
         new CustomEvent("showwork-workspace-navigate", {
-          detail: { id: nextStep.id },
+          detail: { id: nextStep.id, tour: true },
         }),
       );
     },
@@ -272,51 +270,36 @@ export default function WorkspaceTour({
 
     initializedRef.current = true;
 
-    if (isTestMode) {
-      setStepIndex(0);
-      setVisible(true);
-
-      const firstStep = steps[0];
-
-      if (!firstStep.final) {
-        window.dispatchEvent(
-          new CustomEvent("showwork-workspace-navigate", {
-            detail: {
-              id: firstStep.id,
-            },
-          }),
-        );
-      }
-
-      return;
-    }
-
     try {
       const completed = window.localStorage.getItem(storageKey);
 
-      if (completed === "completed") {
+      if (!isTestMode && completed === "completed") {
         return;
       }
     } catch {
       // If localStorage is unavailable, continue with the tour.
     }
 
-    const timer = window.setTimeout(() => {
-      setStepIndex(0);
-      setVisible(true);
+    const timer = window.setTimeout(
+      () => {
+        setStepIndex(0);
+        setVisible(true);
 
-      const firstStep = steps[0];
+        const firstStep = steps[0];
 
-      if (!firstStep.final) {
-        window.dispatchEvent(
-          new CustomEvent("showwork-workspace-navigate", {
-            detail: {
-              id: firstStep.id,
-            },
-          }),
-        );
-      }
-    }, 650);
+        if (!firstStep.final) {
+          window.dispatchEvent(
+            new CustomEvent("showwork-workspace-navigate", {
+              detail: {
+                id: firstStep.id,
+                tour: true,
+              },
+            }),
+          );
+        }
+      },
+      isTestMode ? 0 : 650,
+    );
 
     return () => {
       window.clearTimeout(timer);
@@ -336,7 +319,9 @@ export default function WorkspaceTour({
       }
 
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, button, a, [contenteditable]")) {
+      if (
+        target?.closest("input, textarea, select, button, a, [contenteditable]")
+      ) {
         return;
       }
 
@@ -353,6 +338,67 @@ export default function WorkspaceTour({
     };
   }, [finish, next, visible]);
 
+  useEffect(() => {
+    if (!visible || !currentStep) return;
+    const update = () => {
+      const isMobile = window.innerWidth < 1024;
+      setMobile(isMobile);
+      const targets = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          `[data-tour-target="${currentStep.id}"]`,
+        ),
+      );
+      const target = targets.find(
+        (element) =>
+          element.getClientRects().length > 0 &&
+          Boolean(element.closest("dialog")) === isMobile,
+      );
+      if (!target) return;
+      const slot =
+        target.parentElement?.querySelector<HTMLElement>("[data-tour-slot]") ??
+        null;
+      setAnchor(isMobile ? slot : null);
+      const rect = target.getBoundingClientRect();
+      const height = cardRef.current?.offsetHeight ?? 300;
+      setPosition({
+        left: Math.min(rect.right + 12, window.innerWidth - 332),
+        top: Math.max(12, Math.min(rect.top, window.innerHeight - height - 12)),
+      });
+    };
+    const timer = window.setTimeout(() => {
+      update();
+      cardRef.current
+        ?.querySelector<HTMLButtonElement>("[data-tour-next]")
+        ?.focus({ preventScroll: true });
+      const target = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          `[data-tour-target="${currentStep.id}"]`,
+        ),
+      ).find((element) => element.getClientRects().length > 0);
+      target?.scrollIntoView({ block: "start", behavior: "instant" });
+    }, 350);
+    update();
+    const observer = new ResizeObserver(update);
+    if (cardRef.current) observer.observe(cardRef.current);
+    let resizeTimer: number | undefined;
+    const handleResize = () => {
+      update();
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(update, 350);
+    };
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("showwork-workspace-tour-dismiss", finish);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("showwork-workspace-tour-dismiss", finish);
+    };
+  }, [visible, currentStep, finish]);
+
   if (!visible || !currentStep) {
     return null;
   }
@@ -360,21 +406,17 @@ export default function WorkspaceTour({
   const isLastStep = stepIndex === steps.length - 1;
   const progress = `${stepIndex + 1} of ${steps.length}`;
 
-  return (
+  const card = (
     <div
-      className="
-        pointer-events-none
-        fixed
-        right-4
-        top-[88px]
-        max-h-[calc(100dvh-104px)]
-        overflow-y-auto
-        z-[80]
-        w-[min(400px,calc(100vw-32px))]
-        sm:right-6
-        lg:right-7
-        xl:right-9
-      "
+      ref={cardRef}
+      role="dialog"
+      aria-label="Workspace tour"
+      style={mobile ? undefined : position}
+      className={
+        mobile
+          ? "relative my-3 w-full"
+          : "fixed z-[80] w-[320px] max-h-[calc(100dvh-24px)] overflow-y-auto"
+      }
       aria-live="polite"
     >
       <div
@@ -391,7 +433,7 @@ export default function WorkspaceTour({
         <div className="relative">
           <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#1768E8]/[0.07] blur-3xl" />
 
-          <div className="relative px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+          <div className="relative p-3 sm:p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[#EEF5FF] text-[#1768E8]">
@@ -418,8 +460,8 @@ export default function WorkspaceTour({
                 onClick={skip}
                 className="
                   flex
-                  h-7
-                  w-7
+                  h-11
+                  w-11
                   shrink-0
                   items-center
                   justify-center
@@ -435,38 +477,35 @@ export default function WorkspaceTour({
               </button>
             </div>
 
-            <div className="mt-4">
-              <h2 className="text-[17px] font-semibold leading-[1.2] tracking-[-0.025em] text-[#101828] sm:text-[18px]">
+            <div className="mt-2">
+              <h2 className="text-[14px] font-semibold leading-[1.2] tracking-[-0.025em] text-[#101828] sm:text-[16px]">
                 {currentStep.title}
               </h2>
 
-              <p className="mt-2 text-[11px] leading-[1.7] text-[#667085] sm:text-[12px]">
+              <p className="mt-2 max-h-24 overflow-y-auto text-[11px] leading-[1.6] text-[#667085] sm:text-[12px]">
                 {currentStep.description}
               </p>
             </div>
 
-            <div className="mt-5 flex items-center gap-1.5">
+            <div className="mt-3 flex items-center gap-1.5">
               {steps.map((step, index) => (
                 <span
                   key={`${step.id}-${index}`}
                   className={`
                     h-1 flex-1 rounded-full transition-all duration-300
-                    ${
-                      index <= stepIndex
-                        ? "bg-[#1768E8]"
-                        : "bg-[#E8EDF4]"
-                    }
+                    ${index <= stepIndex ? "bg-[#1768E8]" : "bg-[#E8EDF4]"}
                   `}
                 />
               ))}
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="mt-3 flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={skip}
                 className="
                   rounded-lg
+                  min-h-11
                   px-2
                   py-2
                   text-[10px]
@@ -484,17 +523,18 @@ export default function WorkspaceTour({
                   <button
                     type="button"
                     onClick={() => navigateToStep(stepIndex - 1)}
-                    className="rounded-lg px-3 py-2 text-[11px] font-semibold text-[#667085] hover:bg-[#F2F5F9]"
+                    className="min-h-11 rounded-lg px-3 py-2 text-[11px] font-semibold text-[#667085] hover:bg-[#F2F5F9]"
                   >
                     Back
                   </button>
                 )}
                 <button
                   type="button"
+                  data-tour-next
                   onClick={next}
                   className="
                     inline-flex
-                    min-h-[38px]
+                    min-h-[44px]
                     items-center
                     justify-center
                     gap-2
@@ -531,4 +571,6 @@ export default function WorkspaceTour({
       </div>
     </div>
   );
+  if (mobile) return anchor ? createPortal(card, anchor) : null;
+  return card;
 }

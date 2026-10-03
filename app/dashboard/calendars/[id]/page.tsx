@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import { requirePostPlatform } from "@/lib/calendarPosts";
 import Link from "next/link";
@@ -428,9 +429,7 @@ const totalMembers = 1 + calendar._count.collaborators;
           <Link
             href="/dashboard/calendars"
             className="mt-8 text-xs font-medium text-white/35 transition-colors hover:text-white"
-          >
-            ← Back to client workspaces
-          </Link>
+          ><>{" "}<UiSymbol name="left" />{" Back to client workspaces "}</></Link>
         </div>
       </main>
     );
@@ -531,9 +530,7 @@ contentIdea: p.contentIdea,
                   <span className="text-[9px] font-black uppercase tracking-[0.16em] text-[#98A2B3]">
                     {label}
                   </span>
-                  <span className="text-[#B2BCC9] transition group-hover:translate-x-0.5 group-hover:text-[#1768E8]">
-                    →
-                  </span>
+                  <span className="text-[#B2BCC9] transition group-hover:translate-x-0.5 group-hover:text-[#1768E8]"><UiSymbol name="right" /></span>
                 </div>
                 <p className="mt-5 text-[36px] font-semibold tracking-[-0.06em] text-[#0B1220]">
                   {value}
@@ -612,8 +609,7 @@ contentIdea: p.contentIdea,
                       </span>
                     </span>
                     <span className="shrink-0 text-[10px] font-bold text-[#1768E8] opacity-0 transition group-hover:opacity-100">
-                      {item.action} →
-                    </span>
+                      {item.action}<UiSymbol name="right" /></span>
                   </WorkspaceActionButton>
                 ))}
               </div>
@@ -689,9 +685,7 @@ contentIdea: p.contentIdea,
                 <WorkspaceActionButton
                   target="analytics"
                   className="text-[10px] font-bold text-[#1768E8]"
-                >
-                  Full analytics →
-                </WorkspaceActionButton>
+                ><>{" Full analytics "}<UiSymbol name="right" />{" "}</></WorkspaceActionButton>
               </div>
               <div className="mt-4">
                 <PlatformAnalytics
@@ -1298,7 +1292,7 @@ contentIdea: p.contentIdea,
      publishAction={
   canEditWorkspace ? (
     <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
-      Publish workspace <span aria-hidden>→</span>
+      Publish workspace <span aria-hidden><><UiSymbol name="right" /></></span>
     </PublishTrigger>
   ) : undefined
 }

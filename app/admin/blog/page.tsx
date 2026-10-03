@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -20,9 +21,7 @@ export default async function AdminBlogPage() {
   return (
     <main className="min-h-screen px-6 py-12 md:px-20" style={{ background: COLOR.black }}>
       <div className="mx-auto max-w-4xl">
-        <Link href="/admin" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white">
-          ← Back to admin
-        </Link>
+        <Link href="/admin" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white"><>{" "}<UiSymbol name="left" />{" Back to admin "}</></Link>
 
         <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.gold, letterSpacing: "0.1em" }}>
           Admin

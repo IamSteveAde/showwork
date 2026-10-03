@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -52,7 +53,7 @@ export default function CreatorRowActions({
             : { background: "rgba(255,255,255,0.08)", color: "white" }
         }
       >
-        {loading === "comp" ? "..." : isComped ? "✓ Comped free" : "Grant free access"}
+        {loading === "comp" ? "..." : isComped ? <><UiSymbol name="check" />{" Comped free"}</> : "Grant free access"}
       </button>
 
       <div className="flex items-center gap-1">

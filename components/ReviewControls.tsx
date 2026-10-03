@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 
 type Status = "APPROVED" | "NEEDS_REVISION";
@@ -83,7 +84,7 @@ export default function ReviewControls({
                     className="flex-shrink-0 font-semibold"
                     style={{ color: r.status === "APPROVED" ? "#22C55E" : "#F97316" }}
                   >
-                    {r.status === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+                    {r.status === "APPROVED" ? <><UiSymbol name="check" />{" Approved"}</> : <><UiSymbol name="edit" />{" Revision"}</>}
                   </span>
                 </div>
                 {r.note && <p className="mt-1 text-white/50">&ldquo;{r.note}&rdquo;</p>}
@@ -146,7 +147,7 @@ export default function ReviewControls({
                 : { background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }
             }
           >
-            {myReview?.status === "APPROVED" ? "✓ You approved this" : "✓ Approve"}
+            {myReview?.status === "APPROVED" ? <><UiSymbol name="check" />{" You approved this"}</> : <><UiSymbol name="check" />{" Approve"}</>}
           </button>
           <button
             onClick={handleRevisionClick}
@@ -157,7 +158,7 @@ export default function ReviewControls({
                 : { background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.7)" }
             }
           >
-            {myReview?.status === "NEEDS_REVISION" ? "✎ You flagged this" : "✎ Needs revision"}
+            {myReview?.status === "NEEDS_REVISION" ? <><UiSymbol name="edit" />{" You flagged this"}</> : <><UiSymbol name="edit" />{" Needs revision"}</>}
           </button>
         </div>
       )}

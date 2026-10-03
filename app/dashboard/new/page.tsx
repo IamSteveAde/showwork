@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -769,7 +770,7 @@ export default function NewProjectPage() {
                       <span className="max-w-[220px] truncate text-white/70">{f.file.name}</span>
                       <span className="flex items-center gap-1.5 font-medium">
                         {isDone ? (
-                          <span style={{ color: COLOR.green }}>✓ Done</span>
+                          <span style={{ color: COLOR.green }}><><UiSymbol name="check" />{" Done"}</></span>
                         ) : isError ? (
                           <span className="text-red-400">Failed</span>
                         ) : (
@@ -796,7 +797,7 @@ export default function NewProjectPage() {
               return (
                 <div key={section.sectionLocalId}>
                   <p className="mb-1.5 text-xs font-semibold uppercase text-white/40">
-                    {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                    {section.mediaType === "VIDEO" ? <><UiSymbol name="video" /></> : <><UiSymbol name="image" /></>} {section.name}
                   </p>
                   <div className="flex flex-col gap-2">{section.files.map(renderFileRow)}</div>
 
@@ -841,9 +842,7 @@ export default function NewProjectPage() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-10 lg:px-12 lg:py-14">
-        <Link href="/dashboard/projects" className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2.5 text-sm text-white/50 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white">
-          ← Back to projects
-        </Link>
+        <Link href="/dashboard/projects" className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2.5 text-sm text-white/50 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"><>{" "}<UiSymbol name="left" />{" Back to projects "}</></Link>
 
         <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-end lg:gap-14">
           <div>
@@ -870,7 +869,7 @@ export default function NewProjectPage() {
             <p className="mt-2 text-sm font-semibold text-white/65">View your plan</p>
             <span className="mt-5 inline-flex items-center gap-2 text-xs font-semibold" style={{ color: COLOR.blue }}>
               Billing & usage
-              <span className="transition-transform group-hover:translate-x-1">→</span>
+              <span className="transition-transform group-hover:translate-x-1"><><UiSymbol name="right" /></></span>
             </span>
           </Link>
         </div>
@@ -892,7 +891,7 @@ export default function NewProjectPage() {
                   <p className="mt-0.5 truncate text-[10px] text-white/25">{note}</p>
                 </div>
                 {index < 3 && (
-                  <span className="absolute -right-1.5 top-1/2 z-10 hidden -translate-y-1/2 text-[10px] text-white/20 sm:block">→</span>
+                  <span className="absolute -right-1.5 top-1/2 z-10 hidden -translate-y-1/2 text-[10px] text-white/20 sm:block"><><UiSymbol name="right" /></></span>
                 )}
               </div>
             ))}
@@ -930,7 +929,7 @@ export default function NewProjectPage() {
               style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
             >
               Upgrade to {usage.nextTier.name}
-              <span aria-hidden>→</span>
+              <span aria-hidden><><UiSymbol name="right" /></></span>
             </Link>
           </div>
         )}
@@ -984,9 +983,7 @@ export default function NewProjectPage() {
                 onClick={() => setPassword(suggestCode())}
                 className="flex-shrink-0 whitespace-nowrap rounded-lg px-3.5 py-3 text-xs font-semibold transition-colors hover:opacity-80"
                 style={{ background: "rgba(36,120,255,0.15)", color: COLOR.blue }}
-              >
-                🎲 Suggest
-              </button>
+              ><>{" "}<UiSymbol name="dice" />{" Suggest "}</></button>
             </div>
           </div>
 
@@ -1052,7 +1049,7 @@ export default function NewProjectPage() {
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-sm text-white/80">
-                        {section.mediaType === "VIDEO" ? "🎬" : "🖼️"} {section.name}
+                        {section.mediaType === "VIDEO" ? <><UiSymbol name="video" /></> : <><UiSymbol name="image" /></>} {section.name}
                         <span className="ml-2 text-xs text-white/30">
                           {section.files.length} file{section.files.length === 1 ? "" : "s"}
                         </span>
@@ -1254,7 +1251,7 @@ export default function NewProjectPage() {
                     className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-2xl">🖼️</span>
+                    <span className="text-2xl"><><UiSymbol name="image" /></></span>
                     <span className="text-sm font-semibold text-white">Images</span>
                     <span className="text-xs text-white/40">Photos, renders, mockups</span>
                   </button>
@@ -1264,7 +1261,7 @@ export default function NewProjectPage() {
                     className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-2xl">🎬</span>
+                    <span className="text-2xl"><><UiSymbol name="video" /></></span>
                     <span className="text-sm font-semibold text-white">Videos</span>
                     <span className="text-xs text-white/40">Films, walkthroughs, reels</span>
                   </button>
@@ -1274,7 +1271,7 @@ export default function NewProjectPage() {
                     className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-2xl">📄</span>
+                    <span className="text-2xl"><><UiSymbol name="document" /></></span>
                     <span className="text-sm font-semibold text-white">Documents</span>
                     <span className="text-xs text-white/40">Word docs (.docx)</span>
                   </button>
@@ -1284,7 +1281,7 @@ export default function NewProjectPage() {
                     className="flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-6 text-center transition-all hover:border-[#2478FF]/30 hover:bg-[#2478FF]/[0.045]"
                     style={{ borderColor: "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
                   >
-                    <span className="text-2xl">📕</span>
+                    <span className="text-2xl"><><UiSymbol name="book" /></></span>
                     <span className="text-sm font-semibold text-white">PDFs</span>
                     <span className="text-xs text-white/40">Proposals, contracts, decks</span>
                   </button>
@@ -1299,12 +1296,12 @@ export default function NewProjectPage() {
               <div className="flex flex-col gap-3 rounded-lg p-4" style={{ background: "rgba(255,255,255,0.04)" }}>
                 <p className="text-xs font-semibold text-white/70">
                   {builderType === "VIDEO"
-                    ? "🎬 Videos"
+                    ? <><UiSymbol name="video" />{" Videos"}</>
                     : builderType === "PHOTO"
-                      ? "🖼️ Images"
+                      ? <><UiSymbol name="image" />{" Images"}</>
                       : builderType === "PDF"
-                        ? "📕 PDFs"
-                        : "📄 Documents"} — name this section
+                        ? <><UiSymbol name="book" />{" PDFs"}</>
+                        : <><UiSymbol name="document" />{" Documents"}</>} — name this section
                 </p>
                 <input
                   type="text"
@@ -1355,9 +1352,7 @@ export default function NewProjectPage() {
                     onClick={confirmSection}
                     className="rounded-lg px-4 py-2.5 text-sm font-semibold"
                     style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
-                  >
-                    ✓ Save section
-                  </button>
+                  ><>{" "}<UiSymbol name="check" />{" Save section "}</></button>
                   <button type="button" onClick={cancelBuilder} className="text-xs text-white/40 underline">
                     Cancel
                   </button>
@@ -1408,18 +1403,14 @@ export default function NewProjectPage() {
                             )
                           )}
                           {section.mediaType === "VIDEO" && (
-                            <div className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white">
-                              🎬
-                            </div>
+                            <div className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[9px] text-white"><UiSymbol name="video" /></div>
                           )}
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/25">
                               <span
                                 className="rounded-full px-2 py-1 text-[10px] font-bold"
                                 style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
-                              >
-                                ✓ Banner
-                              </span>
+                              ><>{" "}<UiSymbol name="check" />{" Banner "}</></span>
                             </div>
                           )}
                         </button>
@@ -1446,9 +1437,7 @@ export default function NewProjectPage() {
                 <Link
                   href="/dashboard/billing?product=delivery"
                   className="inline-flex w-fit flex-shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25"
-                >
-                  Upgrade now →
-                </Link>
+                ><>{" Upgrade now "}<UiSymbol name="right" />{" "}</></Link>
               )}
             </div>
           )}

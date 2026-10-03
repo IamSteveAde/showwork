@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { MessageCircle } from "lucide-react";
 
@@ -79,7 +80,7 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
     <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
       {loading ? <p className="text-xs text-[#AAB4C3]">Loading WhatsApp…</p> : !isManager ? <p className="text-xs text-[#718096]">Only the workspace owner can manage this connection.</p> : editing ?
         <form onSubmit={connect} className="space-y-3">
-          <p className="text-[11px] leading-5 text-[#AAB4C3]">Use a registered Cloud API number and a system-user access token from your Meta app. Find the IDs in WhatsApp → API Setup in Meta.</p>
+          <p className="text-[11px] leading-5 text-[#AAB4C3]"><>{"Use a registered Cloud API number and a system-user access token from your Meta app. Find the IDs in WhatsApp "}<UiSymbol name="right" />{" API Setup in Meta."}</></p>
           <label className="block text-xs text-[#AAB4C3]">WhatsApp Business Account ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={businessAccountId} onChange={e => setBusinessAccountId(e.target.value)} disabled={busy} className={inputClass} /></label>
           <label className="block text-xs text-[#AAB4C3]">Phone Number ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={phoneNumberId} onChange={e => setPhoneNumberId(e.target.value)} disabled={busy} className={inputClass} /></label>
           <label className="block text-xs text-[#AAB4C3]">Access token<input required type="password" autoComplete="new-password" maxLength={4096} value={accessToken} onChange={e => setAccessToken(e.target.value)} disabled={busy} className={inputClass} /></label>

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import CalendarVideoComments, {
@@ -2533,9 +2534,7 @@ function AddPostPanel({
 
                         {isVideo && (
                           <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-[10px] text-white">
-                              ▶
-                            </span>
+                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-[10px] text-white"><UiSymbol name="play" /></span>
                           </span>
                         )}
 
@@ -3023,9 +3022,7 @@ function AddPostPanel({
             ) : (
               <>
                 Add to calendar
-                <span className="text-white/70">
-                  →
-                </span>
+                <span className="text-white/70"><UiSymbol name="right" /></span>
               </>
             )}
           </button>
@@ -3864,7 +3861,7 @@ caption: draftDetails.caption,
                             style={{ color: "#E1306C" }}
                           >
                             View on Instagram
-                            <span aria-hidden>↗</span>
+                            <span aria-hidden><><UiSymbol name="upRight" /></></span>
                           </a>
                         )}
                       </>
@@ -4166,9 +4163,7 @@ caption: draftDetails.caption,
                                       bg-black/60
                                       text-[9px]
                                       text-white
-                                    ">
-                                      ▶
-                                    </span>
+                                    "><UiSymbol name="play" /></span>
                                   </span>
                                 </>
                               ) : (
@@ -4460,7 +4455,7 @@ caption: draftDetails.caption,
       onClick={startEditingDetails}
       className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
     >
-      <span className="text-sm">✎</span>
+      <span className="text-sm"><><UiSymbol name="edit" /></></span>
       Edit details
     </button>
 
@@ -4474,7 +4469,7 @@ caption: draftDetails.caption,
 }}
   className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
 >
-  <span className="text-sm">✦</span>
+  <span className="text-sm"><UiSymbol name="sparkles" /></span>
   Edit with AI
 </button>
   </div>
@@ -4566,7 +4561,7 @@ caption: draftDetails.caption,
               : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
           } disabled:cursor-not-allowed disabled:opacity-50`}
         >
-          {selected ? "✓ " : ""}
+          {selected ? <><UiSymbol name="check" />{" "}</> : ""}
           {field.label}
         </button>
       );
@@ -5048,7 +5043,7 @@ caption: draftDetails.caption,
                       ) : (
                         <>
                           Save changes
-                          <span className="text-white/70">→</span>
+                          <span className="text-white/70"><><UiSymbol name="right" /></></span>
                         </>
                       )}
                     </button>
@@ -5141,9 +5136,7 @@ caption: draftDetails.caption,
                           {post.cta}
                         </p>
                       </div>
-                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(36,120,255,0.1)", color: "#2478FF" }}>
-                        →
-                      </span>
+                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl" style={{ background: "rgba(36,120,255,0.1)", color: "#2478FF" }}><UiSymbol name="right" /></span>
                     </div>
                   )}
 
@@ -5305,9 +5298,7 @@ caption: draftDetails.caption,
                             {post.linkUrl}
                           </span>
 
-                          <span className="flex-shrink-0">
-                            ↗
-                          </span>
+                          <span className="flex-shrink-0"><UiSymbol name="upRight" /></span>
                         </a>
                       </div>
                     )}
@@ -5997,9 +5988,7 @@ export default function CalendarGrid({
                   background: t.pillBg,
                   color: t.textMuted,
                 }}
-              >
-                ←
-              </button>
+              ><UiSymbol name="left" /></button>
 
               <button
                 type="button"
@@ -6020,9 +6009,7 @@ export default function CalendarGrid({
                   background: t.pillBg,
                   color: t.textMuted,
                 }}
-              >
-                →
-              </button>
+              ><UiSymbol name="right" /></button>
             </>
           )}
         </div>

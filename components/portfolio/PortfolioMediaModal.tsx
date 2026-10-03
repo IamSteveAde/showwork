@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import PortfolioAutoplayVideo from "@/components/portfolio/PortfolioAutoplayVideo";
@@ -63,9 +64,7 @@ export default function PortfolioMediaModal({
         onClick={onClose}
         aria-label="Close"
         className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10"
-      >
-        ✕
-      </button>
+      ><UiSymbol name="close" /></button>
 
       {total > 1 && (
         <>
@@ -73,16 +72,12 @@ export default function PortfolioMediaModal({
             onClick={(e) => { e.stopPropagation(); onPrev(); }}
             aria-label="Previous"
             className="absolute bottom-4 left-4 sm:bottom-auto sm:top-1/2 z-10 flex h-11 w-11 sm:-translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:left-6"
-          >
-            ←
-          </button>
+          ><UiSymbol name="left" /></button>
           <button
             onClick={(e) => { e.stopPropagation(); onNext(); }}
             aria-label="Next"
             className="absolute bottom-4 right-4 sm:bottom-auto sm:top-1/2 z-10 flex h-11 w-11 sm:-translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:right-6"
-          >
-            →
-          </button>
+          ><UiSymbol name="right" /></button>
         </>
       )}
 

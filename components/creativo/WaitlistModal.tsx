@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -78,9 +79,7 @@ export default function WaitlistModal({ open, onClose }: { open: boolean; onClos
               onClick={handleClose}
               aria-label="Close"
               className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/50 hover:bg-white/5 hover:text-white"
-            >
-              ✕
-            </button>
+            ><UiSymbol name="close" /></button>
 
             {done ? (
               <div className="py-6 text-center">

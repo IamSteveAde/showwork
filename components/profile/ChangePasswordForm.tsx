@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A" };
@@ -82,7 +83,7 @@ export default function ChangePasswordForm() {
         className="w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
         style={{ background: COLOR.gold, color: COLOR.black }}
       >
-        {loading ? "Updating..." : success ? "Updated ✓" : "Update password"}
+        {loading ? "Updating..." : success ? <>{"Updated "}<UiSymbol name="check" /></> : "Update password"}
       </button>
     </form>
   );

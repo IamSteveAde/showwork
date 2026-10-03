@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { MediaItem } from "@/app/[slug]/DeliveryPage";
@@ -91,9 +92,7 @@ export default function VideoModal({
         onClick={onClose}
         aria-label="Close"
         className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10"
-      >
-        ✕
-      </button>
+      ><UiSymbol name="close" /></button>
 
       <div className="absolute right-[4.5rem] top-5 z-10">
         <button
@@ -135,16 +134,12 @@ export default function VideoModal({
             onClick={(e) => { e.stopPropagation(); onPrev(); }}
             aria-label="Previous video"
             className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:left-6"
-          >
-            ←
-          </button>
+          ><UiSymbol name="left" /></button>
           <button
             onClick={(e) => { e.stopPropagation(); onNext(); }}
             aria-label="Next video"
             className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 text-white transition-colors hover:bg-white/10 md:right-6"
-          >
-            →
-          </button>
+          ><UiSymbol name="right" /></button>
         </>
       )}
 

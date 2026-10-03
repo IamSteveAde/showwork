@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -299,9 +300,7 @@ export default function AgencyPortfolioList({
             href="/dashboard"
             className="group inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
           >
-            <span className="transition-transform group-hover:-translate-x-0.5">
-              ←
-            </span>
+            <span className="transition-transform group-hover:-translate-x-0.5"><UiSymbol name="left" /></span>
             All apps
           </Link>
 

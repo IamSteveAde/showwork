@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, type FormEvent } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
@@ -458,7 +459,7 @@ if (presignContentType.includes("application/json")) {
             className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#2478FF] px-5 py-3 text-xs font-semibold text-white shadow-[0_12px_28px_rgba(36,120,255,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] sm:mt-0 sm:w-auto"
           >
             Activate AI
-            <span className="ml-2">→</span>
+            <span className="ml-2"><><UiSymbol name="right" /></></span>
           </a>
         </div>
       </section>
