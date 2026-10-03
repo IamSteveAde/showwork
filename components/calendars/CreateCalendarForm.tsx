@@ -1,391 +1,269 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
-import UiSymbol from "@/components/ui/UiSymbol";
-import { CONTENT_WORKSPACE_PLANS as PLAN_CONFIG, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, Plus, ShieldCheck, X } from "lucide-react";
+import {
+  CONTENT_WORKSPACE_PLANS as PLAN_CONFIG,
+  CONTENT_WORKSPACE_PLAN_ORDER,
+  formatWorkspaceLimit,
+} from "@/lib/contentWorkspaceEntitlements";
 
 type ContentWorkspacePlan = "CREATOR" | "STUDIO" | "UNLIMITED";
 type Step = "closed" | "choose-plan" | "form";
 
-const CONTENT_WORKSPACE_PLANS = CONTENT_WORKSPACE_PLAN_ORDER.map(value => {
- const plan = PLAN_CONFIG[value];
- return {
-  value, label: plan.name, price: `₦${plan.priceNgnMonthly.toLocaleString("en-NG")}/mo`,
-  description: value === "CREATOR" ? "For independent creators." : "For agencies and teams managing client workspaces.",
-  bullets: [
-   `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspaces`,
-   `${formatWorkspaceLimit(plan.collaborators)} collaborators`,
-   `${plan.storageBytes / 1_000_000_000} GB storage`,
-   `${plan.aiGenerations.toLocaleString("en-NG")} AI generations/month`,
-  ],
- };
-});
-
 export default function CreateCalendarForm({
-contentWorkspacePlan,
+  contentWorkspacePlan,
 }: {
-contentWorkspacePlan: ContentWorkspacePlan | null;
+  contentWorkspacePlan: ContentWorkspacePlan | null;
 }) {
-const [step, setStep] = useState<Step>("closed");
-const [chosenPlan, setChosenPlan] =
-useState<ContentWorkspacePlan | null>(contentWorkspacePlan);
-const [clientName, setClientName] = useState("");
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>("closed");
+  const [chosenPlan, setChosenPlan] = useState(contentWorkspacePlan);
+  const [clientName, setClientName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const hasExistingPlan = Boolean(contentWorkspacePlan);
+  const emit = (name: string, detail?: Record<string, unknown>) =>
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  const close = () => {
+    if (loading) return;
+    setStep("closed");
+    setError(null);
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  };
+  useEffect(() => {
+    if (step === "form") inputRef.current?.focus();
+  }, [step]);
 
-const hasExistingPlan = Boolean(contentWorkspacePlan);
-const emitOnboardingEvent = (
-  name: string,
-  detail?: Record<string, unknown>,
-) => {
-  if (typeof window === "undefined") {
-    return;
-  }
+  const submit = async () => {
+    if (loading) return;
+    if (!clientName.trim()) {
+      setError("Enter the client’s name.");
+      inputRef.current?.focus();
+      return;
+    }
+    if (!chosenPlan) {
+      setError("Choose a Content Workspace plan.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/calendars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: clientName.trim(),
+          plan: chosenPlan,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        emit("showwork:workspace-created");
+        window.location.href =
+          data.authorizationUrl ?? `/dashboard/calendars/${data.calendarId}`;
+      } else {
+        setError(
+          data.error ?? "Couldn’t create the workspace. Please try again.",
+        );
+        setLoading(false);
+      }
+    } catch {
+      setError("Couldn’t connect. Please try again.");
+      setLoading(false);
+    }
+  };
 
-  window.dispatchEvent(
-    new CustomEvent(name, {
-      detail,
-    }),
-  );
-};
-
-const openForm = () => {
-setStep(hasExistingPlan ? "form" : "choose-plan");
-};
-
-const close = () => {
-if (loading) return;
-setStep("closed");
-setError(null);
-};
-
-const submit = async () => {
-if (!clientName.trim()) {
-setError("Enter the client's name");
-return;
-}
-
-
-if (!chosenPlan) {
-  setError("Choose a Content Workspace plan");
-  return;
-}
-
-setLoading(true);
-setError(null);
-
-try {
-  const res = await fetch("/api/calendars", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clientName: clientName.trim(),
-      plan: chosenPlan,
-    }),
-  });
-
-  const data = await res.json();
-
-if (res.ok) {
-  emitOnboardingEvent("showwork:workspace-created");
-
-  if (data.authorizationUrl) {
-    window.location.href = data.authorizationUrl;
-  } else {
-    window.location.href = `/dashboard/calendars/${data.calendarId}`;
-  }
-} else {
-  setError(data.error ?? "Failed to create workspace");
-  setLoading(false);
-}
-} catch {
-  setError("Something went wrong. Please try again.");
-  setLoading(false);
-}
-
-
-};
-
-const activePlanInfo = CONTENT_WORKSPACE_PLANS.find(
-(plan) => plan.value === chosenPlan
-);
-
-if (step === "closed") {
-return ( <button
-     type="button"
-     data-onboarding="create-trigger"
-     onClick={openForm}
-     className="group relative w-full overflow-hidden rounded-[24px] border border-[#D9E4F3] bg-[linear-gradient(135deg,#F7FAFF_0%,#EEF5FF_100%)] p-5 text-left shadow-[0_10px_35px_rgba(36,120,255,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#BCD1F2] hover:shadow-[0_18px_45px_rgba(36,120,255,0.10)] sm:p-6"
-   > <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#2478FF]/10 blur-[45px]" /> <div className="pointer-events-none absolute bottom-0 left-0 h-px w-1/2 bg-gradient-to-r from-[#2478FF] to-transparent" />
-
-
-    <div className="relative flex items-center justify-between gap-5">
-      <div className="flex min-w-0 items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#2478FF] shadow-sm ring-1 ring-[#2478FF]/10">
-          <svg
-            viewBox="0 0 24 24"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-          >
-            <rect x="3" y="4" width="18" height="17" rx="2.5" />
-            <path
-              d="M8 2.5v4M16 2.5v4M3 9h18"
-              strokeLinecap="round"
-            />
-            <path d="M12 12v6M9 15h6" strokeLinecap="round" />
-          </svg>
-        </div>
-
-        <div className="min-w-0">
-          <p className="text-sm font-semibold tracking-[-0.01em] text-[#0A0D12]">
-            Create another client workspace
-          </p>
-
-          <p className="mt-1 max-w-xl text-xs leading-5 text-[#667085]">
-            {hasExistingPlan
-              ? "Your current Content Workspace plan already covers your client workspaces. Just enter the next client."
-              : "Set up your first client workspace and choose the plan that fits how you work."}
-          </p>
-        </div>
-      </div>
-
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2478FF] text-white shadow-[0_8px_22px_rgba(36,120,255,0.22)] transition-transform duration-300 group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
-    </div>
-  </button>
-);
-
-
-}
-
-if (step === "choose-plan") {
-return ( <div className="relative overflow-hidden rounded-[28px] border border-[#202630] bg-[#0D1117] p-6 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:p-8"> <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#2478FF]/15 blur-[75px]" />
-
-
-    <div data-onboarding="plan" className="relative mb-7 flex items-start justify-between gap-5">
-      <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#79AEFF]">
-          One-time setup
-        </div>
-
-        <h3 className="text-2xl font-semibold tracking-[-0.035em]">
-          Choose your plan.
-        </h3>
-
-        <p className="mt-2 max-w-lg text-sm leading-6 text-white/45">
-          Your Content Workspace plan determines how many client
-          workspaces, collaborators and AI generations are included.
-        </p>
-      </div>
-
+  if (step === "closed")
+    return (
       <button
+        ref={triggerRef}
         type="button"
-        onClick={close}
-        aria-label="Close"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white"
+        data-onboarding="create-trigger"
+        aria-expanded="false"
+        onClick={() => {
+          const stage = hasExistingPlan ? "form" : "choose-plan";
+          setStep(stage);
+          window.dispatchEvent(
+            new Event("showwork:workspace-dashboard-tour-dismiss"),
+          );
+          emit("showwork:workspace-form-opened", { stage });
+        }}
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#1768E8] px-4 py-3 text-sm font-semibold text-white hover:bg-[#125CCF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1768E8] sm:w-auto"
       >
-        ×
+        <Plus aria-hidden="true" className="h-4 w-4" />
+        New workspace
       </button>
-    </div>
+    );
 
-    <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {CONTENT_WORKSPACE_PLANS.map((plan) => (
+  return (
+    <section
+      aria-label="New client workspace"
+      className="rounded-2xl border border-[#E4E7EC] bg-white p-4 sm:p-5"
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-[#101828]">
+            {step === "choose-plan" ? "Choose a plan" : "Add your client"}
+          </h2>
+          <p className="mt-1 text-sm text-[#667085]">
+            {step === "choose-plan"
+              ? "Pick the space and tools you need. Start with a 7-day free trial."
+              : "Enter a client name to create their workspace."}
+          </p>
+        </div>
         <button
-          key={plan.value}
           type="button"
-          onClick={() => {
-  setChosenPlan(plan.value);
-  setStep("form");
-
-  emitOnboardingEvent(
-    "showwork:workspace-plan-selected",
-  );
-}}
-          className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.035] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#2478FF]/40 hover:bg-white/[0.055]"
+          onClick={close}
+          disabled={loading}
+          aria-label="Cancel workspace setup"
+          className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#667085] hover:bg-slate-50 disabled:opacity-50"
         >
-          {plan.value === "UNLIMITED" && (
-            <span className="absolute right-4 top-4 rounded-full bg-[#2478FF] px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-white">
-              Recommended
-            </span>
-          )}
-
-          <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[#6FA7FF]">
-            <span className="text-sm font-semibold">
-              {plan.value === "UNLIMITED" ? "03" : plan.value === "STUDIO" ? "02" : "01"}
-            </span>
-          </div>
-
-          <div className="flex items-end justify-between gap-3">
-            <h4 className="text-lg font-semibold">{plan.label}</h4>
-            <span className="text-sm font-semibold text-[#79AEFF]">
-              {plan.price}
-            </span>
-          </div>
-
-          <p className="mt-2 text-xs leading-5 text-white/45">
-            {plan.description}
-          </p>
-
-          <ul className="mt-5 space-y-2.5">
-            {plan.bullets.map((bullet) => (
-              <li
-                key={bullet}
-                className="flex items-start gap-2 text-[11px] text-white/55"
-              >
-                <span className="mt-0.5 text-[#4ADE80]"><><UiSymbol name="check" /></></span>
-                {bullet}
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-6 flex items-center justify-between border-t border-white/[0.07] pt-4 text-[10px] font-semibold text-white/35 group-hover:text-white">
-            Select {plan.label}
-            <span><><UiSymbol name="right" /></></span>
-          </div>
+          <X aria-hidden="true" className="h-4 w-4" />
         </button>
-      ))}
-    </div>
-
-    <p className="relative mt-6 text-center text-[10px] text-white/25">
-      Your first use includes a free 7-day trial. No payment is needed to
-      get started.
-    </p>
-  </div>
-);
-
-
-}
-
-return ( <div className="relative overflow-hidden rounded-[28px] border border-[#202630] bg-[#0D1117] p-6 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:p-8"> <div className="pointer-events-none absolute -right-28 -top-28 h-64 w-64 rounded-full bg-[#2478FF]/15 blur-[75px]" />
-
-
-  <div className="relative">
-    <div className="mb-7 flex items-start justify-between gap-5">
-      <div>
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#2478FF]/20 bg-[#2478FF]/10 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-[#79AEFF]">
-          {activePlanInfo?.label ?? "Content Workspace"} plan
+      </div>
+      {step === "choose-plan" ? (
+        <div data-onboarding="plan" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {CONTENT_WORKSPACE_PLAN_ORDER.map((value) => {
+            const plan = PLAN_CONFIG[value];
+            const benefits = [
+              `${formatWorkspaceLimit(plan.activeWorkspaces)} active workspaces`,
+              `${formatWorkspaceLimit(plan.collaborators)} collaborators`,
+              `${plan.storageBytes / 1_000_000_000} GB storage`,
+              `${plan.aiGenerations.toLocaleString("en-NG")} AI generations/month`,
+            ];
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  setChosenPlan(value);
+                  setStep("form");
+                  emit("showwork:workspace-plan-selected");
+                }}
+                className="rounded-xl border border-[#D0D5DD] p-4 text-left transition hover:border-[#1768E8] hover:bg-blue-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="font-semibold text-[#101828]">{plan.name}</h3>
+                  <p className="text-sm font-semibold text-[#1768E8]">
+                    ₦{plan.priceNgnMonthly.toLocaleString("en-NG")}
+                    <span className="font-normal text-[#667085]">/mo</span>
+                  </p>
+                </div>
+                <ul className="my-3 space-y-1.5">
+                  {benefits.map((benefit) => (
+                    <li
+                      key={benefit}
+                      className="flex items-center gap-2 text-xs leading-5 text-[#667085]"
+                    >
+                      <Check
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 shrink-0 text-[#1768E8]"
+                      />
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+                <span className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-[#1768E8]">
+                  Choose {plan.name}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                </span>
+              </button>
+            );
+          })}
         </div>
-
-        <h3 className="text-2xl font-semibold tracking-[-0.035em]">
-          Create the workspace.
-        </h3>
-
-        <p className="mt-2 max-w-lg text-sm leading-6 text-white/45">
-          Give your client a permanent place for content, reviews,
-          approvals and collaboration.
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={close}
-        aria-label="Close"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/40 transition-colors hover:bg-white/[0.06] hover:text-white"
-      >
-        ×
-      </button>
-    </div>
-
-    {!hasExistingPlan && (
-      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.055] px-4 py-3.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300"><UiSymbol name="check" /></span>
-
-        <p className="text-xs leading-5 text-white/55">
-          Your account includes a free{" "}
-          <span className="font-semibold text-white">7-day trial</span>.
-          No payment is needed to get started.
-        </p>
-      </div>
-    )}
-
-    <div className="space-y-5">
-      <div>
-        <label className="mb-2 block text-[9px] font-bold uppercase tracking-[0.14em] text-white/40">
-          Client name
-        </label>
-
-        <input
-        data-onboarding="client-name"
-          type="text"
-          value={clientName}
-          onChange={(event) => {
-  const value = event.target.value;
-
-  setClientName(value);
-  setError(null);
-
-  emitOnboardingEvent(
-    "showwork:client-name-changed",
-    {
-      hasValue: Boolean(value.trim()),
-    },
+      ) : (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+          className="max-w-xl"
+        >
+          <label
+            htmlFor="new-workspace-client"
+            className="mb-2 block text-sm font-medium text-[#344054]"
+          >
+            Client name
+          </label>
+          <input
+            ref={inputRef}
+            id="new-workspace-client"
+            data-onboarding="client-name"
+            value={clientName}
+            onChange={(event) => {
+              setClientName(event.target.value);
+              setError(null);
+              emit("showwork:client-name-changed", {
+                hasValue: Boolean(event.target.value.trim()),
+              });
+            }}
+            disabled={loading}
+            type="text"
+            autoComplete="organization"
+            placeholder="e.g. MTN"
+            aria-invalid={Boolean(error)}
+            aria-describedby={
+              error ? "new-workspace-error" : "workspace-access-note"
+            }
+            className="min-h-11 w-full rounded-lg border border-[#D0D5DD] bg-white px-3 py-3 text-base text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#1768E8] focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50"
+          />
+          <p
+            id="workspace-access-note"
+            className="mt-3 flex items-start gap-2 text-xs leading-5 text-[#667085]"
+          >
+            <ShieldCheck
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 shrink-0"
+            />
+            A secure client password is created automatically.
+          </p>
+          <p className="mt-2 text-xs text-[#667085]">
+            {hasExistingPlan
+              ? `${PLAN_CONFIG[contentWorkspacePlan!].name} plan · covered by your existing subscription`
+              : `${PLAN_CONFIG[chosenPlan!].name} plan · your 7-day trial starts when you create this workspace`}
+          </p>
+          {error && (
+            <p
+              id="new-workspace-error"
+              role="alert"
+              className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+            >
+              {error}
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              type="submit"
+              data-onboarding="submit"
+              disabled={loading}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#1768E8] px-4 text-sm font-semibold text-white hover:bg-[#125CCF] disabled:opacity-60"
+            >
+              {loading ? "Creating workspace…" : "Create workspace"}
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </button>
+            {!hasExistingPlan && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setStep("choose-plan")}
+                className="min-h-11 rounded-lg px-3 text-sm font-medium text-[#475467] hover:bg-slate-50"
+              >
+                Change plan
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={close}
+              disabled={loading}
+              className="min-h-11 rounded-lg px-3 text-sm font-medium text-[#475467] hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
   );
-}}
-          placeholder="e.g. MTN"
-          autoComplete="organization"
-          className="w-full rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3.5 text-base text-white outline-none transition-all placeholder:text-white/20 focus:border-[#2478FF]/60 focus:bg-white/[0.06] focus:ring-4 focus:ring-[#2478FF]/10"
-        />
-      </div>
-
-      <div className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#2478FF]/10 text-[#79AEFF]">
-          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-        </span>
-
-        <p className="text-xs leading-5 text-white/45">
-          A secure client password will be generated automatically. You
-          can change it whenever you need.
-        </p>
-      </div>
-    </div>
-
-    {error && (
-      <div className="mt-5 rounded-2xl border border-red-400/15 bg-red-400/[0.06] px-4 py-3 text-xs leading-5 text-red-300">
-        {error}
-      </div>
-    )}
-
-    <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-      <button
-        type="button"
-        data-onboarding="submit"
-        onClick={submit}
-        disabled={loading}
-        className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#2478FF] to-[#0052FF] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.20)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(36,120,255,0.28)] disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? (
-          <>
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            Creating workspace...
-          </>
-        ) : (
-          <>
-            Create workspace
-            <span className="text-white/70"><><UiSymbol name="right" /></></span>
-          </>
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={close}
-        disabled={loading}
-        className="rounded-2xl border border-white/10 px-5 py-3.5 text-xs font-semibold text-white/40 transition-colors hover:bg-white/[0.05] hover:text-white disabled:opacity-50"
-      >
-        Cancel
-      </button>
-    </div>
-
-    <p className="mt-4 text-center text-[10px] leading-5 text-white/20">
-      {hasExistingPlan
-        ? "Your existing Content Workspace plan applies to this workspace."
-        : "Your 7-day trial starts when your first workspace is created."}
-    </p>
-  </div>
-</div>
-
-
-);
 }

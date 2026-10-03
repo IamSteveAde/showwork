@@ -34,86 +34,83 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: "overview",
     eyebrow: "Workspace",
-    title: "Your client's command center.",
-    description:
-      "See what needs attention across content, conversations and leads. Use the workspace sections to plan work, collaborate with your client and track results.",
+    title: "Your workspace at a glance",
+    description: "See upcoming content, messages and leads in one place.",
   },
   {
     id: "knowledge",
     eyebrow: "AI Studio · Knowledge",
-    title: "Give AI the context behind the business.",
+    title: "Add business knowledge",
     description:
-      "Start by uploading the client's business book, brand guidelines, product information, service details, briefs and other important documents. Showwork uses this knowledge to understand the business, its audience, positioning and voice. AI can also research the business weekly to keep its understanding fresh and surface relevant trends and developments.",
+      "Upload brand details and documents so AI understands your client.",
   },
   {
     id: "generate",
     eyebrow: "AI Studio · Generate",
-    title: "Turn business knowledge into a content strategy.",
+    title: "Create with AI",
     description:
-      "Use the client's knowledge, goals and research to generate content ideas, drafts and calendars. You can also bring recommendations from Analytics into your next content batch.",
+      "Turn your client’s brand details into content ideas, drafts and calendars.",
   },
   {
     id: "content",
     eyebrow: "Content Workspace",
-    title: "Your entire content operation lives here.",
+    title: "Plan your content",
     description:
-      "This is where the content calendar appears. AI-generated calendars can be created from the client's business context, or you can build the calendar manually when you want complete control. Plan posts, add creative, manage captions, review feedback and approvals, and preview how content will look across formats such as Instagram and TikTok before it goes live.",
+      "Schedule posts, add creative and manage client feedback and approvals.",
   },
   {
     id: "channels",
     eyebrow: "Publishing",
-    title: "Connect where the content will live.",
+    title: "Connect your channels",
     description:
-      "Connect the client's social accounts and WhatsApp Business here. Connected accounts power supported publishing, performance reporting and inbox conversations. Each platform's granted permissions determine which features are available.",
+      "Link social accounts and WhatsApp to publish, track results and manage messages.",
   },
   {
     id: "publish",
     eyebrow: "Publishing",
-    title: "Move approved work toward publication.",
+    title: "Share the client plan",
     description:
-      "Manage the client-facing plan, its approval state and presentation here. Update the header and banners, and control when the plan is published for your client to review.",
+      "Update the workspace presentation and publish it for your client to review.",
   },
   {
     id: "team",
     eyebrow: "Collaboration",
-    title: "Bring the whole team into the workflow.",
-    description:
-      "Invite the people working on the account and give them the access they need. Everyone can work from the same client context instead of keeping strategy, content and feedback scattered across different tools.",
+    title: "Invite your team",
+    description: "Add teammates and choose what each person can access.",
   },
   {
     id: "access",
     eyebrow: "Client",
-    title: "Give your client a focused experience.",
+    title: "Set up client access",
     description:
-      "Your client can have their own view of the work for reviewing content, giving feedback and following approvals, while your internal team keeps control of the production workspace.",
+      "Give your client a secure place to review content and leave feedback.",
   },
   {
     id: "analytics",
     eyebrow: "Insights",
-    title: "See what performs and what to do next.",
-    description:
-      "Choose a date range and platform to explore reach, views, engagement and post performance from connected accounts. Track new leads and your five hottest opportunities, then use AI analysis to identify wins, improvements and recommendations for your next content batch. Connect and sync supported accounts to start collecting data.",
+    title: "Track your results",
+    description: "See how content performs and find opportunities to improve.",
   },
   {
     id: "inbox",
     eyebrow: "Leads & Messages",
-    title: "Keep client conversations and new leads together.",
+    title: "Manage messages",
     description:
-      "Read conversations from connected social accounts and WhatsApp, track unread messages and reply where messaging access is available. AI customer care can prepare replies using the client's business knowledge, with automatic replies available for supported channels. Managers can also let clients view message history in their portal.",
+      "Read and reply to conversations from connected social accounts and WhatsApp.",
   },
   {
     id: "leads",
     eyebrow: "Leads & Messages · Leads",
-    title: "Keep contact details and follow-up organized.",
+    title: "Follow up with leads",
     description:
-      "Add contacts manually, import a CSV or follow up with contacts captured in Inbox. Store contact details, company and notes, qualify leads as hot, warm or cold, and update their pipeline status. Search and filter the list, export it as CSV, and find hot opportunities again in Analytics.",
+      "Save contacts, track opportunities and keep follow-ups organized.",
   },
   {
     id: "knowledge",
     eyebrow: "Get started",
-    title: "Make the workspace your own.",
+    title: "You’re ready to start",
     description:
-      "Start with the client's business knowledge, then create your first content calendar. Connect accounts to bring in conversations and performance data, organize leads as they arrive, and use Analytics to guide what you create next.",
+      "Add your client’s brand details, then create your first content calendar.",
     final: true,
   },
 ];
@@ -145,17 +142,6 @@ function CloseIcon() {
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SparkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-      <path
-        d="M12 3 13.7 9.3 20 11l-6.3 1.7L12 19l-1.7-6.3L4 11l6.3-1.7L12 3Z"
-        fill="currentColor"
       />
     </svg>
   );
@@ -270,10 +256,17 @@ export default function WorkspaceTour({
 
     initializedRef.current = true;
 
+    const hostname = window.location.hostname;
+    const isLocalhost =
+      hostname === "localhost" ||
+      hostname.endsWith(".localhost") ||
+      hostname === "127.0.0.1" ||
+      hostname === "[::1]";
+
     try {
       const completed = window.localStorage.getItem(storageKey);
 
-      if (!isTestMode && completed === "completed") {
+      if (!isLocalhost && !isTestMode && completed === "completed") {
         return;
       }
     } catch {
@@ -414,158 +407,58 @@ export default function WorkspaceTour({
       style={mobile ? undefined : position}
       className={
         mobile
-          ? "relative my-3 w-full"
+          ? "relative my-2 w-full"
           : "fixed z-[80] w-[320px] max-h-[calc(100dvh-24px)] overflow-y-auto"
       }
       aria-live="polite"
     >
-      <div
-        className="
-          pointer-events-auto
-          overflow-hidden
-          rounded-[22px]
-          border
-          border-[#DDE6F2]
-          bg-white
-          shadow-[0_22px_70px_rgba(15,23,42,0.14),0_4px_18px_rgba(15,23,42,0.05)]
-        "
-      >
-        <div className="relative">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-[#1768E8]/[0.07] blur-3xl" />
-
-          <div className="relative p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] bg-[#EEF5FF] text-[#1768E8]">
-                  <SparkIcon />
-                </span>
-
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-[9px] font-black uppercase tracking-[0.16em] text-[#1768E8]">
-                      {currentStep.eyebrow}
-                    </span>
-
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-[#CBD5E1]" />
-
-                    <span className="shrink-0 text-[9px] font-semibold text-[#98A2B3]">
-                      {progress}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
+      <div className="rounded-2xl border border-[#DCE7F5] bg-white p-3 shadow-[0_4px_16px_rgba(15,23,42,0.06)] sm:p-4">
+        <div className="flex min-h-7 items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-[#667085]">
+            Quick tour <span className="mx-1 text-[#CBD5E1]">·</span> {progress}
+          </span>
+          <button
+            type="button"
+            onClick={skip}
+            className="-my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[#667085] hover:bg-[#F2F5F9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+            aria-label="Close onboarding"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+        <h2 className="mt-1 text-sm font-semibold leading-5 text-[#101828]">
+          {currentStep.title}
+        </h2>
+        <p className="mt-1.5 text-xs leading-5 text-[#667085]">
+          {currentStep.description}
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-1">
+          <button
+            type="button"
+            onClick={skip}
+            className="min-h-11 rounded-lg px-1 text-xs font-medium text-[#667085] hover:text-[#344054] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+          >
+            Skip tour
+          </button>
+          <div className="flex items-center gap-1">
+            {stepIndex > 0 && (
               <button
                 type="button"
-                onClick={skip}
-                className="
-                  flex
-                  h-11
-                  w-11
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-lg
-                  text-[#98A2B3]
-                  transition-colors
-                  hover:bg-[#F2F5F9]
-                  hover:text-[#344054]
-                "
-                aria-label="Close onboarding"
+                onClick={() => navigateToStep(stepIndex - 1)}
+                className="min-h-11 rounded-lg px-2 text-xs font-medium text-[#475467] hover:bg-[#F2F5F9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
               >
-                <CloseIcon />
+                Back
               </button>
-            </div>
-
-            <div className="mt-2">
-              <h2 className="text-[14px] font-semibold leading-[1.2] tracking-[-0.025em] text-[#101828] sm:text-[16px]">
-                {currentStep.title}
-              </h2>
-
-              <p className="mt-2 max-h-24 overflow-y-auto text-[11px] leading-[1.6] text-[#667085] sm:text-[12px]">
-                {currentStep.description}
-              </p>
-            </div>
-
-            <div className="mt-3 flex items-center gap-1.5">
-              {steps.map((step, index) => (
-                <span
-                  key={`${step.id}-${index}`}
-                  className={`
-                    h-1 flex-1 rounded-full transition-all duration-300
-                    ${index <= stepIndex ? "bg-[#1768E8]" : "bg-[#E8EDF4]"}
-                  `}
-                />
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={skip}
-                className="
-                  rounded-lg
-                  min-h-11
-                  px-2
-                  py-2
-                  text-[10px]
-                  font-semibold
-                  text-[#98A2B3]
-                  transition-colors
-                  hover:text-[#475467]
-                "
-              >
-                Skip tour
-              </button>
-
-              <div className="flex items-center gap-2">
-                {stepIndex > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => navigateToStep(stepIndex - 1)}
-                    className="min-h-11 rounded-lg px-3 py-2 text-[11px] font-semibold text-[#667085] hover:bg-[#F2F5F9]"
-                  >
-                    Back
-                  </button>
-                )}
-                <button
-                  type="button"
-                  data-tour-next
-                  onClick={next}
-                  className="
-                    inline-flex
-                    min-h-[44px]
-                    items-center
-                    justify-center
-                    gap-2
-                    rounded-xl
-                    bg-[#1768E8]
-                    px-4
-                    text-[11px]
-                    font-bold
-                    text-white
-                    shadow-[0_8px_20px_rgba(23,104,232,0.20)]
-                    transition-all
-                    duration-150
-                    hover:-translate-y-0.5
-                    hover:bg-[#125CCF]
-                    hover:shadow-[0_12px_26px_rgba(23,104,232,0.24)]
-                    active:translate-y-0
-                    sm:px-5
-                  "
-                >
-                  {isLastStep ? "Get started" : "Next"}
-
-                  <ArrowRight />
-                </button>
-              </div>
-            </div>
-
-            {isTestMode && (
-              <p className="mt-3 text-center text-[8px] font-bold uppercase tracking-[0.14em] text-[#1768E8]/45">
-                Local onboarding test mode
-              </p>
             )}
+            <button
+              type="button"
+              data-tour-next
+              onClick={next}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#1768E8] px-3 text-xs font-semibold text-white hover:bg-[#125CCF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1768E8]"
+            >
+              {isLastStep ? "Start" : "Next"}
+              <ArrowRight />
+            </button>
           </div>
         </div>
       </div>

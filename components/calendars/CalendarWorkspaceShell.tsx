@@ -284,8 +284,8 @@ export default function CalendarWorkspaceShell({
     label: "AI Studio",
     featured: true,
     items: compact([
-      byId("generate"),
       byId("knowledge"),
+      byId("generate"),
     ]),
   },
 
@@ -345,7 +345,7 @@ export default function CalendarWorkspaceShell({
   };
 
   const sidebar = <>
-          <div className="border-b border-[#E7ECF3] p-3 xl:p-4">
+          <div className="hidden border-b border-[#E7ECF3] p-3 lg:block xl:p-4">
             <button
               type="button"
               onClick={() => select("content")}
@@ -367,28 +367,28 @@ export default function CalendarWorkspaceShell({
           </div>
 
           <nav
-            className="min-h-0 flex-1 overflow-y-auto px-3 py-4 xl:px-4"
+            className="min-h-0 flex-1 overflow-y-auto px-3 py-3 xl:px-4"
             aria-label="Workspace sections"
           >
             {nav.map((cluster) => (
               <div
                 key={cluster.label}
-                className={`mb-5 last:mb-0 ${
+                className={`mb-4 last:mb-0 ${
                   cluster.featured
-                    ? "rounded-[20px] border border-[#D3E4FF] bg-[linear-gradient(145deg,#F2F7FF_0%,#FFFFFF_60%,#EDF5FF_100%)] p-2.5 shadow-[0_12px_30px_rgba(23,104,232,0.07)]"
+                    ? "lg:rounded-[20px] lg:border lg:border-[#D3E4FF] lg:bg-[linear-gradient(145deg,#F2F7FF_0%,#FFFFFF_60%,#EDF5FF_100%)] lg:p-2.5 lg:shadow-[0_12px_30px_rgba(23,104,232,0.07)]"
                     : ""
                 }`}
               >
                 <div className="mb-1.5 flex items-center justify-between px-2">
                   <p
-                    className={`text-[8px] font-bold uppercase tracking-[0.17em] ${
+                    className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${
                       cluster.featured ? "text-[#1768E8]" : "text-[#98A2B3]"
                     }`}
                   >
                     {cluster.label}
                   </p>
                   {cluster.featured && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#1768E8] px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.1em] text-white">
+                    <span className="hidden items-center gap-1 rounded-full bg-[#1768E8] px-1.5 lg:inline-flex py-0.5 text-[7px] font-black uppercase tracking-[0.1em] text-white">
                       <SparkMark className="h-2.5 w-2.5" /> AI
                     </span>
                   )}
@@ -406,25 +406,25 @@ export default function CalendarWorkspaceShell({
                         type="button"
                         aria-current={selected ? "page" : undefined}
                         onClick={() => select(item.id)}
-                        className={`${tourId === item.id ? "ring-2 ring-[#1768E8] ring-offset-2" : ""} group relative flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-left transition-all ${
+                        className={`${tourId === item.id ? "outline outline-1 outline-[#A9C9FA]" : ""} group relative flex w-full scroll-mt-2 items-center gap-3 min-h-11 rounded-xl px-2.5 py-2 text-left transition-all ${
                           selected
                             ? generate
-                              ? "bg-[#1768E8] text-white shadow-[0_9px_20px_rgba(23,104,232,0.24)]"
-                              : "bg-white text-[#1768E8] shadow-[0_6px_16px_rgba(15,23,42,0.06)] ring-1 ring-[#DCE7F5]"
+                              ? "bg-[#EEF5FF] text-[#1768E8] lg:bg-[#1768E8] lg:text-white lg:shadow-[0_9px_20px_rgba(23,104,232,0.24)]"
+                              : "bg-[#EEF5FF] text-[#1768E8] lg:bg-white lg:shadow-[0_6px_16px_rgba(15,23,42,0.06)] lg:ring-1 lg:ring-[#DCE7F5]"
                             : "text-[#5E6B7C] hover:bg-white/80 hover:text-[#172033]"
                         }`}
                       >
                         {selected && !generate && (
-                          <span className="absolute -left-3 h-5 w-[3px] rounded-r-full bg-[#1768E8] xl:-left-4" />
+                          <span className="absolute -left-3 hidden lg:block h-5 w-[3px] rounded-r-full bg-[#1768E8] xl:-left-4" />
                         )}
                         <span
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] ${
                             selected
                               ? generate
-                                ? "bg-white/12 text-white"
+                                ? "bg-[#DCEAFF] text-[#1768E8] lg:bg-white/12 lg:text-white"
                                 : "bg-[#EEF5FF] text-[#1768E8]"
                               : cluster.featured
-                                ? "bg-white text-[#1768E8] shadow-sm ring-1 ring-[#E3ECFA]"
+                                ? "bg-[#EEF5FF] text-[#1768E8] lg:bg-white lg:shadow-sm lg:ring-1 lg:ring-[#E3ECFA]"
                                 : "bg-[#F1F4F8] text-[#7D8999]"
                           }`}
                         >
@@ -434,7 +434,7 @@ export default function CalendarWorkspaceShell({
                           {item.label}
                         </span>
                         {generate && !selected && (
-                          <span className="rounded-full bg-[#1768E8]/[0.08] px-1.5 py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-[#1768E8]">
+                          <span className="hidden rounded-full bg-[#1768E8]/[0.08] px-1.5 lg:block py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-[#1768E8]">
                             Create
                           </span>
                         )}
@@ -449,7 +449,7 @@ export default function CalendarWorkspaceShell({
           </nav>
 
           <div className="border-t border-[#E7ECF3] p-3 xl:p-4">
-            <div className="rounded-[18px] border border-[#E1E8F1] bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.035)]">
+            <div className="rounded-xl border border-[#E1E8F1] bg-white px-3 py-1.5 lg:rounded-[18px] lg:p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#98A2B3]">
@@ -463,7 +463,7 @@ export default function CalendarWorkspaceShell({
                   href={clientUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#F2F6FB] text-[#667085] transition hover:bg-[#EEF5FF] hover:text-[#1768E8]"
+                  className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#F2F6FB] text-[#667085] transition hover:bg-[#EEF5FF] hover:text-[#1768E8]"
                   aria-label="Open client view"
                 >
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -609,7 +609,7 @@ export default function CalendarWorkspaceShell({
     </div>
   </div>
 
-  <MobileDrawer open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label="Workspace navigation" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
+  <MobileDrawer open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label="Workspace" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
   <nav aria-label="Quick workspace navigation" className="flex gap-1 overflow-x-auto border-t border-white/15 bg-white px-3 py-2 text-[#667085] lg:hidden">
     {visibleSections.filter((section) => ["overview", "content", "generate", "inbox"].includes(section.id)).map((section) => (
       <button key={section.id} type="button" aria-current={active.id === section.id ? "page" : undefined}

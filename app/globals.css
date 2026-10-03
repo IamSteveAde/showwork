@@ -85,3 +85,10 @@ body {
     display: none;
   }
 }
+
+/* The dashboard tour highlights one control without blocking the page. */
+.calendar-dashboard [data-tour-highlight="true"] {
+  outline: 2px solid #A9C9FA;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
