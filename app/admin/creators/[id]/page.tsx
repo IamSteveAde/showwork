@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -317,6 +318,7 @@ export default async function CreatorDetailPage({
 
   const paymentRecords = await db.paymentRecord.findMany({
     where: {
+      revenueStatus: "LIVE",
       creatorId: creator.id,
     },
     orderBy: {
@@ -389,7 +391,7 @@ export default async function CreatorDetailPage({
             className="mb-6 inline-flex items-center gap-2 text-sm transition-colors hover:text-white"
             style={{ color: COLOR.subtle }}
           >
-            <span aria-hidden="true">←</span>
+            <span aria-hidden="true"><><UiSymbol name="left" /></></span>
             Back to admin
           </Link>
 
@@ -754,7 +756,7 @@ export default async function CreatorDetailPage({
                   {calendars.length ? calendars.map((calendar) => (
                     <Link key={calendar.id} href={`/dashboard/calendars/${calendar.id}`} className="flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:bg-white/[0.04]" style={{ borderColor: COLOR.border, background: COLOR.panelSoft }}>
                       <span className="min-w-0 truncate text-sm font-medium text-white">{calendar.clientName} <span className="ml-1 text-xs text-white/40">/{calendar.slug}</span></span>
-                      <span className="shrink-0 text-xs text-white/50">Open →</span>
+                      <span className="shrink-0 text-xs text-white/50"><>{"Open "}<UiSymbol name="right" /></></span>
                     </Link>
                   )) : <p className="text-xs" style={{ color: COLOR.subtle }}>No workspaces created.</p>}
                 </div>
@@ -766,7 +768,7 @@ export default async function CreatorDetailPage({
                 {portfolios.length ? portfolios.map((portfolio) => (
                   <a key={portfolio.id} href={`/portfolio/${portfolio.slug}`} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 rounded-xl border p-3 transition hover:bg-white/[0.04]" style={{ borderColor: COLOR.border, background: COLOR.panelSoft }}>
                     <span className="min-w-0 truncate text-sm font-medium text-white">{portfolio.companyName} <span className="ml-1 text-xs text-white/40">/portfolio/{portfolio.slug}</span></span>
-                    <span className="shrink-0 text-xs text-white/50">Visit ↗</span>
+                    <span className="shrink-0 text-xs text-white/50"><>{"Visit "}<UiSymbol name="upRight" /></></span>
                   </a>
                 )) : <p className="text-xs" style={{ color: COLOR.subtle }}>No portfolios created.</p>}
               </div>
@@ -1069,9 +1071,7 @@ export default async function CreatorDetailPage({
                   <span
                     className="text-lg"
                     style={{ color: COLOR.subtle }}
-                  >
-                    →
-                  </span>
+                  ><UiSymbol name="right" /></span>
                 </Link>
 
                 <Link
@@ -1095,9 +1095,7 @@ export default async function CreatorDetailPage({
                   <span
                     className="text-lg"
                     style={{ color: COLOR.subtle }}
-                  >
-                    →
-                  </span>
+                  ><UiSymbol name="right" /></span>
                 </Link>
 
                 <Link
@@ -1121,9 +1119,7 @@ export default async function CreatorDetailPage({
                   <span
                     className="text-lg"
                     style={{ color: COLOR.subtle }}
-                  >
-                    →
-                  </span>
+                  ><UiSymbol name="right" /></span>
                 </Link>
               </div>
             </Section>
@@ -1332,7 +1328,7 @@ export default async function CreatorDetailPage({
                 style={{ color: COLOR.gold }}
               >
                 Open activity trail
-                <span aria-hidden="true">→</span>
+                <span aria-hidden="true"><><UiSymbol name="right" /></></span>
               </Link>
             </div>
           </aside>

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import {
   useEffect,
   useRef,
@@ -1092,9 +1093,7 @@ export default function StartPage() {
                                     style={{
                                       color: COLOR.green,
                                     }}
-                                  >
-                                    ✓ Done
-                                  </span>
+                                  ><>{" "}<UiSymbol name="check" />{" Done "}</></span>
                                 ) : status ===
                                   "error" ? (
                                   <span className="text-red-400">

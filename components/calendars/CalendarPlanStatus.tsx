@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -194,7 +195,7 @@ if (variant === "desktop") {
                 {uploadingDesktop ? (
                   `Uploading ${desktopProgress}%`
                 ) : desktopUrl ? (
-                  <span className="text-green-400">✓ Banner set — tap to replace</span>
+                  <span className="text-green-400"><><UiSymbol name="check" />{" Banner set — tap to replace"}</></span>
                 ) : (
                   "Tap to upload a landscape image"
                 )}
@@ -221,7 +222,7 @@ if (variant === "desktop") {
                 {uploadingMobile ? (
                   `Uploading ${mobileProgress}%`
                 ) : mobileUrl ? (
-                  <span className="text-green-400">✓ Banner set — tap to replace</span>
+                  <span className="text-green-400"><><UiSymbol name="check" />{" Banner set — tap to replace"}</></span>
                 ) : (
                   "Tap to upload a portrait image"
                 )}

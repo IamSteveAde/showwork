@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -603,6 +604,7 @@ const media = await db.media.findMany({
   // ------------------------------------------------------------
 
   const payments = await db.paymentRecord.findMany({
+    where: { revenueStatus: "LIVE" },
     select: {
       id: true,
       creatorId: true,
@@ -1322,7 +1324,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                   href="/admin"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-950"
                 >
-                  <span aria-hidden="true">←</span>
+                  <span aria-hidden="true"><><UiSymbol name="left" /></></span>
                   Admin
                 </Link>
 
@@ -1756,9 +1758,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                                     </span>
                                   )}
 
-                                  <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500">
-                                    →
-                                  </span>
+                                  <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500"><UiSymbol name="right" /></span>
                                 </div>
                               </div>
                             </div>
@@ -1830,13 +1830,9 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                 <Link
                   href={pageHref(safePage - 1)}
                   className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  ← Previous
-                </Link>
+                ><>{" "}<UiSymbol name="left" />{" Previous "}</></Link>
               ) : (
-                <span className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs font-semibold text-slate-300">
-                  ← Previous
-                </span>
+                <span className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs font-semibold text-slate-300"><>{" "}<UiSymbol name="left" />{" Previous "}</></span>
               )}
 
               <div className="hidden items-center gap-1 sm:flex">
@@ -1879,13 +1875,9 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                 <Link
                   href={pageHref(safePage + 1)}
                   className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  Next →
-                </Link>
+                ><>{" Next "}<UiSymbol name="right" />{" "}</></Link>
               ) : (
-                <span className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs font-semibold text-slate-300">
-                  Next →
-                </span>
+                <span className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs font-semibold text-slate-300"><>{" Next "}<UiSymbol name="right" />{" "}</></span>
               )}
             </div>
           </div>

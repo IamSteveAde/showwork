@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -147,9 +148,7 @@ export default function Lightbox({
         onClick={onClose}
         aria-label="Close"
         className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/50 hover:text-white"
-      >
-        ✕
-      </button>
+      ><UiSymbol name="close" /></button>
 
       <div className="absolute right-16 top-4 z-10">
         <button

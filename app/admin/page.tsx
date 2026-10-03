@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
@@ -255,6 +256,7 @@ export default async function AdminPage({
   );
 
   const allTimeRevenue = await db.paymentRecord.aggregate({
+    where: { revenueStatus: "LIVE" },
     _sum: {
       amountNgn: true,
     },
@@ -265,6 +267,7 @@ export default async function AdminPage({
       amountNgn: true,
     },
     where: {
+      revenueStatus: "LIVE",
       createdAt: {
         gte: startOfMonth,
       },
@@ -276,6 +279,7 @@ export default async function AdminPage({
       amountNgn: true,
     },
     where: {
+      revenueStatus: "LIVE",
       createdAt: {
         gte: startOfYear,
       },
@@ -465,7 +469,7 @@ export default async function AdminPage({
           managedProjects: true,
           portfolios: true,
           ownedCalendars: true,
-          paymentRecords: true,
+          paymentRecords: { where: { revenueStatus: "LIVE" } },
         },
       },
     },
@@ -484,6 +488,7 @@ export default async function AdminPage({
       ? await db.paymentRecord.groupBy({
           by: ["creatorId"],
           where: {
+            revenueStatus: "LIVE",
             creatorId: {
               in: creatorIds,
             },
@@ -1562,9 +1567,7 @@ function AdminNavCard({
           {title}
         </h3>
 
-        <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-          ↗
-        </span>
+        <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="upRight" /></span>
       </div>
 
       <p className="mt-2 text-xs leading-5 text-[#667085]">

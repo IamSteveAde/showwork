@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
@@ -57,7 +58,7 @@ export default async function FacebookPageSelectionPage({
           href={`/dashboard/calendars/${calendarId}?view=channels`}
           className="inline-flex items-center gap-2 text-sm font-medium text-[#94A3B8] transition hover:text-white"
         >
-          <span aria-hidden="true">←</span>
+          <span aria-hidden="true"><><UiSymbol name="left" /></></span>
           Back to channels
         </a>
 

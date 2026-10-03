@@ -96,7 +96,7 @@ export default function ShowworkSupport() {
 
   const message = encodeURIComponent(
     [
-      "Hello Showwork Support 👋",
+      "Hello Showwork Support",
       "",
       "I'm using Showwork and I'd like some assistance with my account.",
       "",

@@ -1,12 +1,13 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const MESSAGES = [
-  "Let's create something meaningful ✨",
+  <>Let's create something meaningful <UiSymbol name="sparkles" /></>,
   "Content that gets attention — let's talk",
-  "Got a project in mind? Say hello 👋",
+  <>Got a project in mind? Say hello <UiSymbol name="greeting" /></>,
   "Ready when you are",
 ];
 

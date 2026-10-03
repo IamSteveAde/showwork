@@ -1,4 +1,5 @@
 "use client";
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useRouter } from "next/navigation";
 
 import { createPortal } from "react-dom";
@@ -401,9 +402,7 @@ export default function CalendarPeopleManager({
 
         <span className="flex shrink-0 items-center gap-2 text-[12px] font-semibold text-[#2478FF]">
           Manage People
-          <span className="transition-transform group-hover/people:translate-x-0.5">
-            →
-          </span>
+          <span className="transition-transform group-hover/people:translate-x-0.5"><UiSymbol name="right" /></span>
         </span>
       </button>
 

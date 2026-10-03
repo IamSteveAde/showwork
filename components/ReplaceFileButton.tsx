@@ -79,7 +79,7 @@ export default function ReplaceFileButton({
 }: {
   mediaId: string;
   type: MediaKind;
-  label: string;
+  label: React.ReactNode;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);

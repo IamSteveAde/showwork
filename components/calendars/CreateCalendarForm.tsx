@@ -1,5 +1,7 @@
 "use client";
 
+import { ShieldCheck } from "lucide-react";
+import UiSymbol from "@/components/ui/UiSymbol";
 import { CONTENT_WORKSPACE_PLANS as PLAN_CONFIG, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
 import { useState } from "react";
 
@@ -150,9 +152,7 @@ return ( <button
         </div>
       </div>
 
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2478FF] text-white shadow-[0_8px_22px_rgba(36,120,255,0.22)] transition-transform duration-300 group-hover:translate-x-0.5">
-        →
-      </span>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2478FF] text-white shadow-[0_8px_22px_rgba(36,120,255,0.22)] transition-transform duration-300 group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
     </div>
   </button>
 );
@@ -234,7 +234,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
                 key={bullet}
                 className="flex items-start gap-2 text-[11px] text-white/55"
               >
-                <span className="mt-0.5 text-[#4ADE80]">✓</span>
+                <span className="mt-0.5 text-[#4ADE80]"><><UiSymbol name="check" /></></span>
                 {bullet}
               </li>
             ))}
@@ -242,7 +242,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
 
           <div className="mt-6 flex items-center justify-between border-t border-white/[0.07] pt-4 text-[10px] font-semibold text-white/35 group-hover:text-white">
             Select {plan.label}
-            <span>→</span>
+            <span><><UiSymbol name="right" /></></span>
           </div>
         </button>
       ))}
@@ -290,9 +290,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
 
     {!hasExistingPlan && (
       <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.055] px-4 py-3.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
-          ✓
-        </span>
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300"><UiSymbol name="check" /></span>
 
         <p className="text-xs leading-5 text-white/55">
           Your account includes a free{" "}
@@ -333,7 +331,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
 
       <div className="flex items-start gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-4 py-3.5">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#2478FF]/10 text-[#79AEFF]">
-          ⌁
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
         </span>
 
         <p className="text-xs leading-5 text-white/45">
@@ -365,7 +363,7 @@ return ( <div className="relative overflow-hidden rounded-[28px] border border-[
         ) : (
           <>
             Create workspace
-            <span className="text-white/70">→</span>
+            <span className="text-white/70"><><UiSymbol name="right" /></></span>
           </>
         )}
       </button>

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -134,7 +135,7 @@ export default function FileGridItem({
                 : { background: "#F97316", color: "#080808" }
             }
           >
-            {approvalStatus === "APPROVED" ? "✓ Approved" : "✎ Revision"}
+            {approvalStatus === "APPROVED" ? <><UiSymbol name="check" />{" Approved"}</> : <><UiSymbol name="edit" />{" Revision"}</>}
           </div>
         )}
 
@@ -150,8 +151,7 @@ export default function FileGridItem({
           <div
             className="absolute bottom-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-medium text-white/80"
             style={{ background: "rgba(0,0,0,0.6)" }}
-          >
-            💬 {comments!.length}
+          ><UiSymbol name="message" />{comments!.length}
           </div>
         )}
 
@@ -235,7 +235,7 @@ export default function FileGridItem({
               &ldquo;{approvalNote}&rdquo;
             </p>
           )}
-          <ReplaceFileButton mediaId={mediaId} type={type} label="↑ Upload revised version" />
+          <ReplaceFileButton mediaId={mediaId} type={type} label={<><UiSymbol name="up" />{" Upload revised version"}</>} />
         </>
       )}
 

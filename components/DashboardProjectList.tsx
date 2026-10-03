@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
@@ -223,7 +224,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                       style={{ background: "rgba(36,120,255,0.1)", color: COLOR.blue }}
                     >
                       View project
-                      <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
+                      <span className="transition-transform group-hover:translate-x-0.5" aria-hidden><><UiSymbol name="right" /></></span>
                     </div>
                   </Link>
                 ))}
@@ -240,9 +241,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                         ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)" }
                         : { background: COLOR.charcoal, color: "white" }
                     }
-                  >
-                    ← Previous
-                  </button>
+                  ><>{" "}<UiSymbol name="left" />{" Previous "}</></button>
 
                   <span className="text-sm text-white/40">
                     Page {currentPage} of {totalPages}
@@ -257,9 +256,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                         ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)" }
                         : { background: COLOR.charcoal, color: "white" }
                     }
-                  >
-                    Next →
-                  </button>
+                  ><>{" Next "}<UiSymbol name="right" />{" "}</></button>
                 </div>
               )}
             </>
@@ -320,7 +317,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                       style={{ background: "rgba(36,120,255,0.1)", color: COLOR.blue }}
                     >
                       View project
-                      <span className="transition-transform group-hover:translate-x-0.5" aria-hidden>→</span>
+                      <span className="transition-transform group-hover:translate-x-0.5" aria-hidden><><UiSymbol name="right" /></></span>
                     </div>
                   </Link>
                 ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -45,9 +46,7 @@ function StarPicker({
             style={{
               color: active ? "#F59E0B" : "#CBD5E1",
             }}
-          >
-            ★
-          </button>
+          ><UiSymbol name="star" /></button>
         );
       })}
     </div>
@@ -71,9 +70,7 @@ function RatingStars({ rating }: { rating: number }) {
           style={{
             color: n <= rating ? "#F59E0B" : "#E2E8F0",
           }}
-        >
-          ★
-        </span>
+        ><UiSymbol name="star" /></span>
       ))}
     </div>
   );

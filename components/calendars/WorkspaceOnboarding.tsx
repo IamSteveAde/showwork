@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type OnboardingStep =
@@ -584,9 +585,7 @@ export default function WorkspaceOnboarding({
               className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#2478FF] to-[#0052FF] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.20)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(36,120,255,0.28)] active:translate-y-0"
             >
               Let’s get started
-              <span className="text-white/70">
-                →
-              </span>
+              <span className="text-white/70"><UiSymbol name="right" /></span>
             </button>
 
             {testMode && (
@@ -772,9 +771,7 @@ export default function WorkspaceOnboarding({
         >
           {STEP_COPY[step].button}
 
-          <span className="text-white/55">
-            →
-          </span>
+          <span className="text-white/55"><UiSymbol name="right" /></span>
         </button>
       </div>
     </div>

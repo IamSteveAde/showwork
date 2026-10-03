@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import LinkedInPagePicker from "./LinkedInPagePicker";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -155,7 +156,7 @@ export default function AdditionalChannelCard({
           )
         ) : (
           <a href={`/api/calendars/${calendarId}/channels/${channel}/connect`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-semibold text-white transition hover:brightness-110" style={{ backgroundColor: meta.color }}>
-            Connect {meta.name}<span aria-hidden="true">→</span>
+            Connect {meta.name}<span aria-hidden="true"><><UiSymbol name="right" /></></span>
           </a>
         )}
       </div>

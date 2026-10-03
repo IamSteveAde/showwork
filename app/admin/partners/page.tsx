@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -198,9 +199,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
             <Link
               href="/admin"
               className="text-xs font-medium text-[#667085] transition hover:text-[#2478FF]"
-            >
-              ← Back to Admin
-            </Link>
+            ><>{" "}<UiSymbol name="left" />{" Back to Admin "}</></Link>
 
             <p className="mt-6 text-[9px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
               Operations
@@ -310,9 +309,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
       Partners
     </h3>
 
-    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-      ↗
-    </span>
+    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="upRight" /></span>
   </div>
 
   <p className="mt-2 text-xs leading-5 text-[#667085]">
@@ -339,9 +336,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
       Commissions
     </h3>
 
-    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-      ↗
-    </span>
+    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="upRight" /></span>
   </div>
 
   <p className="mt-2 text-xs leading-5 text-[#667085]">
@@ -368,9 +363,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
       Payouts
     </h3>
 
-    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-      ↗
-    </span>
+    <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="upRight" /></span>
   </div>
 
   <p className="mt-2 text-xs leading-5 text-[#667085]">
@@ -941,9 +934,7 @@ function AdminNavCard({
           {title}
         </h3>
 
-        <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-          ↗
-        </span>
+        <span className="text-[#98A2B3] transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="upRight" /></span>
       </div>
 
       <p className="mt-2 text-xs leading-5 text-[#667085]">

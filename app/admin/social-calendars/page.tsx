@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
@@ -718,6 +719,7 @@ export default async function AdminSocialCalendarsPage({
     managerIds.length > 0
       ? await db.paymentRecord.findMany({
           where: {
+            revenueStatus: "LIVE",
             creatorId: {
               in: managerIds,
             },
@@ -778,6 +780,7 @@ export default async function AdminSocialCalendarsPage({
         amountNgn: true,
       },
       where: {
+        revenueStatus: "LIVE",
         type: {
           in: [
             ...workspacePaymentTypes,
@@ -795,6 +798,7 @@ export default async function AdminSocialCalendarsPage({
         amountNgn: true,
       },
       where: {
+        revenueStatus: "LIVE",
         type: {
           in: [
             ...workspacePaymentTypes,
@@ -937,9 +941,7 @@ export default async function AdminSocialCalendarsPage({
                   color:
                     "rgba(255,255,255,0.72)",
                 }}
-              >
-                ← Admin overview
-              </Link>
+              ><>{" "}<UiSymbol name="left" />{" Admin overview "}</></Link>
 
               <Link
                 href="/dashboard/calendars"
@@ -1904,9 +1906,7 @@ export default async function AdminSocialCalendarsPage({
                       ? "none"
                       : undefined,
                 }}
-              >
-                ← Previous
-              </Link>
+              ><>{" "}<UiSymbol name="left" />{" Previous "}</></Link>
 
               <span
                 className="text-xs"
@@ -1945,9 +1945,7 @@ export default async function AdminSocialCalendarsPage({
                       ? "none"
                       : undefined,
                 }}
-              >
-                Next →
-              </Link>
+              ><>{" Next "}<UiSymbol name="right" />{" "}</></Link>
             </div>
           )}
         </section>

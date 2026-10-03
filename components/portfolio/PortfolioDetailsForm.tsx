@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -569,7 +570,7 @@ export default function PortfolioDetailsForm({
         className="mt-2 w-fit rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
         style={{ background: "#0A0A0A", color: "#FFFFFF" }}
       >
-        {saving ? "Saving..." : saved ? "✓ Saved" : "Save changes"}
+        {saving ? "Saving..." : saved ? <><UiSymbol name="check" />{" Saved"}</> : "Save changes"}
       </button>
     </div>
   );

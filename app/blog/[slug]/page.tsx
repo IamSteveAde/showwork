@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -89,9 +90,7 @@ export default async function BlogPostPage({
             </>
           )}
           <div className="relative mx-auto max-w-3xl">
-            <Link href="/blog" className="mb-6 inline-flex items-center gap-2 text-sm hover:underline" style={{ color: COLOR.blue }}>
-              ← All posts
-            </Link>
+            <Link href="/blog" className="mb-6 inline-flex items-center gap-2 text-sm hover:underline" style={{ color: COLOR.blue }}><>{" "}<UiSymbol name="left" />{" All posts "}</></Link>
             {post.category && (
               <p className="mb-3 text-xs font-bold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.22em" }}>
                 {post.category}

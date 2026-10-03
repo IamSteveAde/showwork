@@ -51,8 +51,8 @@ Because sometimes, the thing standing between where we are and where we want to 
 
 Tomorrow, we’re unpacking that conversation together.
 
-📅 *13th September*
-⏰ *7:00 PM WAT*
+*13th September*
+*7:00 PM WAT*
 
 So, *save the date, set your alarm, and make sure you’re there.*
 

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 
 function StarPicker({ value, onChange, accentColor }: { value: number; onChange: (n: number) => void; accentColor: string }) {
@@ -13,9 +14,7 @@ function StarPicker({ value, onChange, accentColor }: { value: number; onChange:
           aria-label={`${n} star${n === 1 ? "" : "s"}`}
           className="text-2xl leading-none transition-transform hover:scale-110"
           style={{ color: n <= value ? accentColor : "rgba(255,255,255,0.15)" }}
-        >
-          ★
-        </button>
+        ><UiSymbol name="star" /></button>
       ))}
     </div>
   );

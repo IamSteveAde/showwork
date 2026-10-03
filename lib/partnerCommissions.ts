@@ -21,11 +21,14 @@ type PaymentForCommission = {
   amountNgn: number;
   type: string;
   createdAt: Date;
+  revenueStatus?: string;
 };
 
 export async function processReferralCommission(
   payment: PaymentForCommission
 ): Promise<void> {
+  if (payment.revenueStatus !== "LIVE") return;
+
   // Only qualifying Showwork and Content Workspace
   // subscription payments can generate partner commissions.
   if (!QUALIFYING_PAYMENT_TYPES.has(payment.type)) {

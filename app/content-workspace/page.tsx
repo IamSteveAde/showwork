@@ -1,5 +1,7 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
+
 import SiteFooter from "@/components/landing/SiteFooter";
 
 import Link from "next/link";
@@ -660,7 +662,7 @@ export default function ContentWorkspacePage() {
               ["04", "Improve", "Use performance insights to guide the next campaign."],
             ].map(([number, title, description]) => (
               <div
-                key={number}
+                key={String(number)}
                 className="border-b border-white/10 px-0 py-8 last:border-b-0 sm:border-b-0 sm:border-r sm:px-7 sm:last:border-r-0"
               >
                 <p className="text-[9px] font-bold tracking-[0.15em] text-white/25">
@@ -1165,11 +1167,11 @@ export default function ContentWorkspacePage() {
           <div className="mx-auto mt-16 grid max-w-3xl border-y border-white/10 sm:grid-cols-3">
             {[
               ["01", "One space", "Everything for the client"],
-              ["02", "One flow", "Plan → create → review"],
+              ["02", "One flow", <>Plan <UiSymbol name="right" /> create <UiSymbol name="right" /> review</>],
               ["03", "One relationship", "Keep building together"],
             ].map(([number, title, subtitle]) => (
               <div
-                key={number}
+                key={String(number)}
                 className="border-b border-white/10 p-7 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
               >
                 <p className="text-[9px] font-bold tracking-[0.15em] text-white/25">

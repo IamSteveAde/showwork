@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
@@ -1020,9 +1021,7 @@ export default function PortfolioAddSection({
           </div>
         </div>
 
-        <span className="hidden text-xs font-semibold text-[#2478FF] sm:block">
-          Add section →
-        </span>
+        <span className="hidden text-xs font-semibold text-[#2478FF] sm:block"><>{" Add section "}<UiSymbol name="right" />{" "}</></span>
       </button>
     ) : (
       <button
@@ -1149,9 +1148,7 @@ export default function PortfolioAddSection({
                       )}
                     </div>
 
-                    <span className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]">
-                      →
-                    </span>
+                    <span className="text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#2478FF]"><UiSymbol name="right" /></span>
                   </div>
 
                   <div className="relative mt-7">
@@ -1344,9 +1341,7 @@ export default function PortfolioAddSection({
               {files.length > 0 &&
                 resumedCount > 0 && (
                   <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5">
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                      ✓
-                    </div>
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><UiSymbol name="check" /></div>
 
                     <div>
                       <p className="text-xs font-semibold text-emerald-800">
@@ -1480,16 +1475,12 @@ export default function PortfolioAddSection({
                     0 ? (
                     <>
                       Retry remaining
-                      <span>
-                        →
-                      </span>
+                      <span><UiSymbol name="right" /></span>
                     </>
                   ) : (
                     <>
                       Save section
-                      <span className="transition-transform group-hover:translate-x-0.5">
-                        →
-                      </span>
+                      <span className="transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
                     </>
                   )}
                 </button>

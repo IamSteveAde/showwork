@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
@@ -773,9 +774,7 @@ export default async function ProjectDeliveryPage() {
                     <span
                       aria-hidden="true"
                       className="transition-transform group-hover:translate-y-0.5"
-                    >
-                      ↓
-                    </span>
+                    ><UiSymbol name="down" /></span>
                   </a>
                 </div>
               </div>
@@ -980,9 +979,7 @@ export default async function ProjectDeliveryPage() {
 
                 New project
 
-                <span className="transition-transform group-hover:translate-x-0.5">
-                  →
-                </span>
+                <span className="transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
               </Link>
             )}
           </div>
@@ -1205,9 +1202,7 @@ export default async function ProjectDeliveryPage() {
                             No tasks yet
                           </span>
 
-                          <span className="text-xs text-white/35 transition-transform group-hover:translate-x-1">
-                            →
-                          </span>
+                          <span className="text-xs text-white/35 transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
                         </div>
                       )}
 
@@ -1219,9 +1214,7 @@ export default async function ProjectDeliveryPage() {
                               : "Continue managing"}
                           </span>
 
-                          <span className="text-white/30 transition-transform group-hover:translate-x-1">
-                            →
-                          </span>
+                          <span className="text-white/30 transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
                         </div>
                       )}
                     </Link>
@@ -1352,9 +1345,7 @@ export default async function ProjectDeliveryPage() {
             >
               Contact support
 
-              <span className="transition-transform group-hover:translate-x-1">
-                →
-              </span>
+              <span className="transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
             </a>
           </div>
 

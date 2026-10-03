@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useRef, useState } from "react";
 
 type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -800,7 +801,7 @@ function TikTokSlide({
         )}
 
         <div className="mt-2 flex items-center gap-1.5 text-white/70">
-          <span className="text-xs">♫</span>
+          <span className="text-xs"><><UiSymbol name="music" /></></span>
 
           <p className="truncate text-[9px]">
             Original sound · {clientName}
@@ -1101,14 +1102,10 @@ export default function TikTokPreview({
 
                   {/* TikTok Studio */}
                   <div className="mt-5 rounded-2xl border border-white/[0.06] bg-white/[0.035] px-5 py-3 text-center">
-                    <p className="text-[22px] leading-none">
-                      ↗
-                    </p>
+                    <p className="text-[22px] leading-none"><UiSymbol name="upRight" /></p>
 
                     <p className="mt-2 flex items-center justify-center gap-1.5 text-[15px] font-semibold">
-                      <span className="text-[#FE2C55]">
-                        ♙
-                      </span>
+                      <span className="text-[#FE2C55]"><UiSymbol name="person" /></span>
 
                       TikTok Studio
                     </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -351,9 +352,7 @@ export default function CreatePortfolioForm() {
               ) : (
                 <>
                   Create my portfolio
-                  <span className="transition-transform group-hover:translate-x-0.5">
-                    →
-                  </span>
+                  <span className="transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
                 </>
               )}
             </button>

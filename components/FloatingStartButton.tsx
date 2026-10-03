@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,9 +34,7 @@ export default function FloatingStartButton() {
               aria-label="Dismiss"
               className="absolute -right-2 -top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white/50 shadow-md transition-colors hover:text-white"
               style={{ background: COLOR.black }}
-            >
-              ✕
-            </button>
+            ><UiSymbol name="close" /></button>
 
             {/* very soft ambient shadow beneath — a breathing presence,
                 not a hard pulsing ring */}

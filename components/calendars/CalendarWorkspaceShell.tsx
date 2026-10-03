@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import MobileDrawer from "@/components/navigation/MobileDrawer";
 import { useEffect, useMemo, useState } from "react";
@@ -197,6 +198,7 @@ export default function CalendarWorkspaceShell({
 }) {
   const [activeId, setActiveId] = useState<WorkspaceSectionId>("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [tourId, setTourId] = useState<WorkspaceSectionId | null>(null);
   const [mountedInsightViews, setMountedInsightViews] = useState<Set<WorkspaceSectionId>>(() => new Set());
 
   const rememberInsightView = (id: WorkspaceSectionId) => {
@@ -208,11 +210,12 @@ export default function CalendarWorkspaceShell({
   // coupling server-rendered page content to client routing state.
   useEffect(() => {
     const handleNavigate = (event: Event) => {
-      const detail = (event as CustomEvent<{ id?: WorkspaceSectionId }>).detail;
+      const detail = (event as CustomEvent<{ id?: WorkspaceSectionId; tour?: boolean }>).detail;
       if (detail?.id) {
         setActiveId(detail.id);
         rememberInsightView(detail.id);
-        setMobileOpen(false);
+        setMobileOpen(Boolean(detail.tour) && window.innerWidth < 1024);
+        setTourId(detail.tour ? detail.id : null);
         const url = new URL(window.location.href);
         url.searchParams.set("view", detail.id);
         window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
@@ -220,9 +223,22 @@ export default function CalendarWorkspaceShell({
       }
     };
 
+    const finishTour = () => { setTourId(null); setMobileOpen(false); };
     window.addEventListener("showwork-workspace-navigate", handleNavigate);
-    return () => window.removeEventListener("showwork-workspace-navigate", handleNavigate);
+    window.addEventListener("showwork-workspace-tour-finish", finishTour);
+    return () => {
+      window.removeEventListener("showwork-workspace-navigate", handleNavigate);
+      window.removeEventListener("showwork-workspace-tour-finish", finishTour);
+    };
   }, []);
+
+  useEffect(() => {
+    if (!tourId) return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    const resize = () => setMobileOpen(!media.matches);
+    media.addEventListener("change", resize);
+    return () => media.removeEventListener("change", resize);
+  }, [tourId]);
 
   const visibleSections = useMemo(() => sections.filter(Boolean), [sections]);
 
@@ -313,6 +329,7 @@ export default function CalendarWorkspaceShell({
   const aiTarget: WorkspaceSectionId = canGenerate ? "generate" : "knowledge";
 
   const select = (id: WorkspaceSectionId) => {
+    if (tourId) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss"));
     setActiveId(id);
     rememberInsightView(id);
     setMobileOpen(false);
@@ -345,9 +362,7 @@ export default function CalendarWorkspaceShell({
                   Content planner
                 </p>
               </div>
-              <span className="ml-auto text-[#A9B4C2] transition-transform group-hover:translate-x-0.5">
-                →
-              </span>
+              <span className="ml-auto text-[#A9B4C2] transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
             </button>
           </div>
 
@@ -385,12 +400,13 @@ export default function CalendarWorkspaceShell({
                     const generate = item.id === "generate";
 
                     return (
+                      <div key={item.id}>
                       <button
-                        key={item.id}
+                        data-tour-target={item.id}
                         type="button"
                         aria-current={selected ? "page" : undefined}
                         onClick={() => select(item.id)}
-                        className={`group relative flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-left transition-all ${
+                        className={`${tourId === item.id ? "ring-2 ring-[#1768E8] ring-offset-2" : ""} group relative flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-left transition-all ${
                           selected
                             ? generate
                               ? "bg-[#1768E8] text-white shadow-[0_9px_20px_rgba(23,104,232,0.24)]"
@@ -423,6 +439,8 @@ export default function CalendarWorkspaceShell({
                           </span>
                         )}
                       </button>
+                      <div data-tour-slot={item.id} />
+                      </div>
                     );
                   })}
                 </div>
@@ -530,9 +548,7 @@ export default function CalendarWorkspaceShell({
         >
           <SparkMark className="h-3.5 w-3.5" />
           AI Studio
-          <span className="text-white/45 transition-transform group-hover:translate-x-0.5">
-            →
-          </span>
+          <span className="text-white/45 transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
         </button>
 
         <a
@@ -593,7 +609,7 @@ export default function CalendarWorkspaceShell({
     </div>
   </div>
 
-  <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Workspace navigation" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
+  <MobileDrawer open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label="Workspace navigation" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
   <nav aria-label="Quick workspace navigation" className="flex gap-1 overflow-x-auto border-t border-white/15 bg-white px-3 py-2 text-[#667085] lg:hidden">
     {visibleSections.filter((section) => ["overview", "content", "generate", "inbox"].includes(section.id)).map((section) => (
       <button key={section.id} type="button" aria-current={active.id === section.id ? "page" : undefined}

@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -120,9 +121,7 @@ export default async function PortfolioEntryPage() {
                   href="/dashboard"
                   className="group inline-flex items-center gap-2 text-xs font-semibold text-[#747982] transition-colors hover:text-[#0A0A0A]"
                 >
-                  <span className="transition-transform duration-300 group-hover:-translate-x-0.5">
-                    ←
-                  </span>
+                  <span className="transition-transform duration-300 group-hover:-translate-x-0.5"><UiSymbol name="left" /></span>
                   All apps
                 </Link>
 
@@ -280,9 +279,7 @@ export default async function PortfolioEntryPage() {
               href="/dashboard"
               className="group inline-flex items-center gap-2 text-xs font-semibold text-[#747982] transition-colors hover:text-[#0A0A0A]"
             >
-              <span className="transition-transform duration-300 group-hover:-translate-x-0.5">
-                ←
-              </span>
+              <span className="transition-transform duration-300 group-hover:-translate-x-0.5"><UiSymbol name="left" /></span>
               All apps
             </Link>
 

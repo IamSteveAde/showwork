@@ -1,3 +1,4 @@
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -499,9 +500,7 @@ export default async function ProfilePage() {
               <Link
                 href="/dashboard"
                 className="inline-flex items-center gap-2 text-[12px] font-medium text-[#667085] transition hover:text-[#101828]"
-              >
-                ←
-                <span>Dashboard</span>
+              ><UiSymbol name="left" /><span>Dashboard</span>
               </Link>
 
               <div className="mt-5">

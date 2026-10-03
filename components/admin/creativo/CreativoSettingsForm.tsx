@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 
 const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
@@ -44,7 +45,7 @@ export default function CreativoSettingsForm({ initialLabel }: { initialLabel: s
           className="flex-shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
           style={{ background: COLOR.gold, color: COLOR.black }}
         >
-          {saving ? "Saving..." : saved ? "Saved ✓" : "Save"}
+          {saving ? "Saving..." : saved ? <>{"Saved "}<UiSymbol name="check" /></> : "Save"}
         </button>
       </div>
     </div>

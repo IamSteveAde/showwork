@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -324,15 +325,13 @@ export default function ImportCalendar({
             disabled={busy}
             aria-label="Close import"
             className="rounded-lg px-3 py-2 disabled:opacity-40"
-          >
-            ✕
-          </button>
+          ><UiSymbol name="close" /></button>
         </div>
         <div className="space-y-5 p-4 sm:p-5">
           <ol aria-label="Import progress" className="grid grid-cols-3 gap-2">
             {["Upload", "Review", "Confirm"].map((label, index) => {
               const current = result || (busy && preview) ? 2 : preview ? 1 : 0;
-              return <li key={label} aria-current={index === current ? "step" : undefined} className={`flex items-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold ${index === current ? "bg-[#2478FF]/10 text-[#2478FF]" : "opacity-60"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] ${index <= current ? "bg-[#2478FF] text-white" : "border border-current/30"}`}>{index < current ? "✓" : index + 1}</span>{label}</li>;
+              return <li key={label} aria-current={index === current ? "step" : undefined} className={`flex items-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold ${index === current ? "bg-[#2478FF]/10 text-[#2478FF]" : "opacity-60"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] ${index <= current ? "bg-[#2478FF] text-white" : "border border-current/30"}`}>{index < current ? <><UiSymbol name="check" /></> : index + 1}</span>{label}</li>;
             })}
           </ol>
           {error && (
@@ -757,7 +756,7 @@ export default function ImportCalendar({
                       warnings.
                     </label>
                     <p className="opacity-70">
-                      {selected.length} selected content items → {postCount} new
+                      {selected.length}<>{" selected content items "}<UiSymbol name="right" />{" "}</>{postCount} new
                       platform posts. Publishing starts off. Media files can be
                       attached through the existing post editor.
                     </p>

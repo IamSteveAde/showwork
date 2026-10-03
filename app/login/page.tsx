@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -265,9 +266,7 @@ function LoginForm() {
             href="/"
             className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[10px] font-semibold text-white/45 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
           >
-            <span className="transition-transform duration-300 group-hover:-translate-x-0.5">
-              ←
-            </span>
+            <span className="transition-transform duration-300 group-hover:-translate-x-0.5"><UiSymbol name="left" /></span>
             Back to Showwork
           </Link>
         </div>

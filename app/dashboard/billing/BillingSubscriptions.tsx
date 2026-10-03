@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 
 import { TIERS } from "@/lib/subscriptionTiers";
@@ -1508,9 +1509,7 @@ export default function BillingSubscriptions({
     <main className="min-h-screen bg-[#F5F7FA] text-[#101828]">
       <header className="border-b border-[#E7E9EE] bg-white">
         <div className="mx-auto max-w-[1180px] px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
-          <Link href="/dashboard" className="text-xs font-semibold text-[#667085] hover:text-[#101828]">
-            ← Dashboard
-          </Link>
+          <Link href="/dashboard" className="text-xs font-semibold text-[#667085] hover:text-[#101828]"><>{" "}<UiSymbol name="left" />{" Dashboard "}</></Link>
           <div className="mt-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">Account billing</p>

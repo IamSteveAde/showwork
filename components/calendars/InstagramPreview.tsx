@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -807,7 +808,7 @@ export default function InstagramPreview({
                   Professional dashboard
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/55">
-                  <span className="text-[17px] leading-none text-[#1ee56f]">↗</span>
+                  <span className="text-[17px] leading-none text-[#1ee56f]"><><UiSymbol name="upRight" /></></span>
                   Previewing your planned content
                 </p>
               </div>

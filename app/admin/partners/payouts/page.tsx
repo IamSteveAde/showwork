@@ -1,5 +1,6 @@
 "use client";
 
+import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -235,9 +236,7 @@ export default function AdminPartnerPayoutsPage() {
           <Link
             href="/admin/partners"
             className="text-xs font-medium text-[#667085] transition hover:text-[#2478FF]"
-          >
-            ← Back to Partner Program
-          </Link>
+          ><>{" "}<UiSymbol name="left" />{" Back to Partner Program "}</></Link>
 
           <p className="mt-6 text-[9px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
             Partner Program
