@@ -1,583 +1,274 @@
-import { syncContentWorkspaceRenewal } from "@/lib/syncContentWorkspaceRenewal";
-import Link from "next/link";
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  CreditCard,
+  Search,
+  Users,
+} from "lucide-react";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { syncContentWorkspaceRenewal } from "@/lib/syncContentWorkspaceRenewal";
 import CreateCalendarForm from "@/components/calendars/CreateCalendarForm";
-import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
-import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
-import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
-import AiAssistantBillingSettings from "@/components/calendars/AiAssistantBillingSettings";
 import CalendarCard from "@/components/calendars/CalendarCard";
-import WorkspaceOnboarding from "@/components/calendars/WorkspaceOnboarding";
-
-function ArrowLeftIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M19 12H5" />
-      <path d="M11 18l-6-6 6-6" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M5 12h14" />
-      <path d="M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function ArrowUpRightIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M7 17L17 7" />
-      <path d="M8 7h9v9" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-const COLOR = {
-  black: "#080808",
-  blue: "#2478FF",
-  charcoal: "#111111",
-};
+import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
+import WorkspaceOnboarding, {
+  DashboardTourButton,
+} from "@/components/calendars/WorkspaceOnboarding";
 
 const PAGE_SIZE = 9;
+const BILLING_HREF = "/dashboard/billing?product=content-workspace";
 
-function getPageNumber(value?: string) {
-  const parsed = Number(value);
-
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return 1;
-  }
-
-  return Math.floor(parsed);
-}
-
-function buildPageHref(page: number) {
-  return page <= 1
-    ? "/dashboard/calendars"
-    : `/dashboard/calendars?page=${page}`;
-}
-
-function Pagination({
-  currentPage,
-  totalPages,
-}: {
-  currentPage: number;
-  totalPages: number;
-}) {
-  if (totalPages <= 1) return null;
-
-  const pages: (number | "ellipsis")[] = [];
-
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(i);
-    }
-  } else {
-    pages.push(1);
-
-    if (currentPage > 3) {
-      pages.push("ellipsis");
-    }
-
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    if (currentPage < totalPages - 2) {
-      pages.push("ellipsis");
-    }
-
-    pages.push(totalPages);
-  }
-
-  return (
-    <nav
-      aria-label="Client workspace pagination"
-      className="mt-10 flex flex-col gap-4 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <p className="text-xs text-white/30">
-        Page{" "}
-        <span className="font-medium text-white/55">{currentPage}</span>{" "}
-        of{" "}
-        <span className="font-medium text-white/55">{totalPages}</span>
-      </p>
-
-      <div className="flex items-center gap-1.5">
-       <Link
-  href={buildPageHref(Math.max(1, currentPage - 1))}
-  aria-label="Previous page"
-  aria-disabled={currentPage === 1}
-  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 transition-all ${
-    currentPage === 1
-      ? "pointer-events-none border-white/[0.04] text-white/15"
-      : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
-  }`}
->
-  <ArrowLeftIcon className="h-3.5 w-3.5" />
-</Link>
-
-        {pages.map((page, index) =>
-          page === "ellipsis" ? (
-            <span
-              key={`ellipsis-${index}`}
-              className="flex h-9 w-7 items-center justify-center text-xs text-white/20"
-            >
-              …
-            </span>
-          ) : (
-            <Link
-              key={page}
-              href={buildPageHref(page)}
-              aria-current={page === currentPage ? "page" : undefined}
-              className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-xs font-medium transition-all ${
-                page === currentPage
-                  ? "border-[#2478FF]/40 bg-[#2478FF] text-white shadow-[0_6px_20px_rgba(36,120,255,0.20)]"
-                  : "border-white/[0.07] bg-white/[0.02] text-white/40 hover:border-white/[0.14] hover:bg-white/[0.05] hover:text-white"
-              }`}
-            >
-              {page}
-            </Link>
-          )
-        )}
-
-        <Link
-  href={buildPageHref(Math.min(totalPages, currentPage + 1))}
-  aria-label="Next page"
-  aria-disabled={currentPage === totalPages}
-  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 transition-all ${
-    currentPage === totalPages
-      ? "pointer-events-none border-white/[0.04] text-white/15"
-      : "border-white/[0.08] bg-white/[0.025] text-white/45 hover:border-white/[0.15] hover:bg-white/[0.06] hover:text-white"
-  }`}
->
-  <ArrowRightIcon className="h-3.5 w-3.5" />
-</Link>
-      </div>
-    </nav>
-  );
+function pageHref(page: number, query: string) {
+  const params = new URLSearchParams();
+  if (page > 1) params.set("page", String(page));
+  if (query) params.set("q", query);
+  return `/dashboard/calendars${params.size ? `?${params}` : ""}`;
 }
 
 export default async function CalendarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-  page?: string;
-  onboarding?: string;
-}>;
+  searchParams: Promise<{ page?: string; onboarding?: string; q?: string }>;
 }) {
   const creator = await getCurrentCreator();
-
-  if (!creator) {
-    redirect("/login");
-  }
-
-const calendarBilling = await db.creator.findUnique({
-  where: { id: creator.id },
- select: {
-  contentWorkspacePlan: true,
-  contentWorkspaceBillingStatus: true,
-  contentWorkspaceBillingCycle: true,
-  contentWorkspaceTrialEndsAt: true,
-  contentWorkspaceSubscriptionRenewsAt: true,
-  isComped: true,
-  compedUntil: true,
-},
-});
-
-  if (calendarBilling?.contentWorkspaceBillingStatus === "ACTIVE") {
-    calendarBilling.contentWorkspaceSubscriptionRenewsAt = await syncContentWorkspaceRenewal(creator.id);
-  }
-
- const params = await searchParams;
-const currentPage = getPageNumber(params?.page);
-
-const onboardingTestMode = params?.onboarding === "test";
-
-  const totalCalendars = await db.socialCalendar.count({
-    where: {
-      managerId: creator.id,
-    },
-  });
-
-  const totalPages = Math.max(1, Math.ceil(totalCalendars / PAGE_SIZE));
-
+  if (!creator) redirect("/login");
+  const params = await searchParams;
+  const query = params.q?.trim() ?? "";
+  const requestedPage = Number(params.page);
+  const currentPage =
+    Number.isFinite(requestedPage) && requestedPage >= 1
+      ? Math.floor(requestedPage)
+      : 1;
+  const where = {
+    managerId: creator.id,
+    ...(query
+      ? { clientName: { contains: query, mode: "insensitive" as const } }
+      : {}),
+  };
+  const [billing, totalCalendars, matchingCalendars, collaboratorMemberships] =
+    await Promise.all([
+      db.creator.findUnique({
+        where: { id: creator.id },
+        select: {
+          contentWorkspacePlan: true,
+          contentWorkspaceBillingStatus: true,
+          contentWorkspaceTrialEndsAt: true,
+          isComped: true,
+          compedUntil: true,
+        },
+      }),
+      db.socialCalendar.count({ where: { managerId: creator.id } }),
+      db.socialCalendar.count({ where }),
+      db.calendarCollaborator.findMany({
+        where: {
+          creatorId: creator.id,
+          ...(query
+            ? {
+                calendar: {
+                  clientName: { contains: query, mode: "insensitive" as const },
+                },
+              }
+            : {}),
+        },
+        orderBy: { addedAt: "desc" },
+        include: {
+          calendar: {
+            include: {
+              manager: { select: { name: true, email: true } },
+              _count: { select: { posts: true } },
+            },
+          },
+        },
+      }),
+    ]);
+  if (billing?.contentWorkspaceBillingStatus === "ACTIVE")
+    await syncContentWorkspaceRenewal(creator.id);
+  const totalPages = Math.max(1, Math.ceil(matchingCalendars / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const skip = (safePage - 1) * PAGE_SIZE;
-
   const calendars = await db.socialCalendar.findMany({
-    where: {
-      managerId: creator.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+    where,
+    orderBy: { createdAt: "desc" },
     skip,
     take: PAGE_SIZE,
-    include: {
-      _count: {
-        select: {
-          posts: true,
-          collaborators: true,
-        },
-      },
-    },
+    include: { _count: { select: { posts: true, collaborators: true } } },
   });
+  const trialEnd = billing?.contentWorkspaceTrialEndsAt;
+  const complimentary = Boolean(
+    billing?.isComped &&
+    (!billing.compedUntil || billing.compedUntil > new Date()),
+  );
+  const trialExpired =
+    billing?.contentWorkspaceBillingStatus === "TRIAL" &&
+    trialEnd &&
+    trialEnd <= new Date();
+  const needsBilling =
+    !complimentary &&
+    (billing?.contentWorkspaceBillingStatus === "OFFLINE" || trialExpired);
+  const trialDays = trialEnd
+    ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000))
+    : null;
 
-  // Calendars this person was invited to and accepted — not owned,
-  // but they should always be able to find their way back in from
-  // their own dashboard, not just from the original invite email.
-  const collaboratorMemberships = await db.calendarCollaborator.findMany({
-    where: { creatorId: creator.id },
-    orderBy: { addedAt: "desc" },
-    include: {
-      calendar: {
-        include: {
-          manager: { select: { name: true, email: true } },
-          _count: { select: { posts: true } },
-        },
-      },
-    },
-  });
+  const planName = billing?.contentWorkspacePlan
+    ? { CREATOR: "Creator", STUDIO: "Studio", UNLIMITED: "Unlimited" }[
+        billing.contentWorkspacePlan
+      ]
+    : "No plan";
+  const billingSummary = complimentary
+    ? "Complimentary"
+    : billing?.contentWorkspaceBillingStatus === "TRIAL"
+      ? trialExpired
+        ? "Trial ended"
+        : trialDays === null
+          ? "Free trial"
+          : `Trial · ${trialDays} ${trialDays === 1 ? "day" : "days"} left`
+      : billing?.contentWorkspaceBillingStatus === "OFFLINE"
+        ? "Access paused"
+        : billing?.contentWorkspaceBillingStatus === "ACTIVE"
+          ? "Active"
+          : null;
 
   return (
-    <main
-      className="min-h-screen overflow-hidden px-4 py-6 text-white sm:px-6 sm:py-10 lg:px-10 xl:px-16"
-      style={{ background: COLOR.black }}
-    >
-      {/* Ambient background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full opacity-[0.045] blur-[120px]"
-          style={{ background: COLOR.blue }}
-        />
-
-        <div className="absolute right-[-180px] top-[35%] h-[420px] w-[420px] rounded-full bg-white/[0.025] blur-[140px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-7xl">
-        {/* ─────────────────────────────────────────
-            TOP NAV
-        ───────────────────────────────────────── */}
-        <div className="mb-8 flex items-center justify-between sm:mb-12">
+    <main className="calendar-dashboard min-h-screen bg-[#F7F9FC] px-4 py-4 text-[#101828] sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <nav
+          aria-label="Dashboard navigation"
+          className="mb-6 flex items-center justify-between gap-3 border-b border-[#E4E7EC] pb-3"
+        >
           <Link
             href="/dashboard"
-            className="group inline-flex items-center gap-2 text-xs font-medium text-white/35 transition-colors hover:text-white"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-[#475467] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
           >
-           <span className="transition-transform duration-200 group-hover:-translate-x-0.5">
-  <ArrowLeftIcon className="h-3.5 w-3.5" />
-</span>
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             All apps
           </Link>
-
-          <div className="hidden items-center gap-2 sm:flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#4ADE80]" />
-            <span className="text-[10px] uppercase tracking-[0.16em] text-white/25">
-              Workspace
-            </span>
+          <div className="flex items-center gap-1">
+            <DashboardTourButton />
+            <Link
+              href={BILLING_HREF}
+              data-dashboard-tour="billing"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-[#475467] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+            >
+              <CreditCard
+                aria-hidden="true"
+                className="hidden h-4 w-4 shrink-0 sm:block"
+              />
+              <span className="block text-left">
+                <span className="flex items-center gap-1.5">
+                  Billing
+                  <span className="rounded-full bg-[#EEF5FF] px-2 py-0.5 text-[11px] font-medium text-[#175CD3]">
+                    {planName}
+                  </span>
+                </span>
+                {billingSummary && (
+                  <span
+                    className={`mt-0.5 block text-[11px] font-normal ${needsBilling ? "text-amber-700" : "text-[#667085]"}`}
+                  >
+                    {billingSummary}
+                  </span>
+                )}
+              </span>
+            </Link>
           </div>
-        </div>
-
-        {/* ─────────────────────────────────────────
-            HERO
-        ───────────────────────────────────────── */}
-        <header className="mb-10">
-          <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
-            <div className="max-w-2xl">
-              <div className="mb-4 flex items-center gap-2">
-                <span
-                  className="h-px w-7"
-                  style={{ background: COLOR.blue }}
-                />
-
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-[0.18em]"
-                  style={{ color: COLOR.blue }}
-                >
-                  Client workspaces
-                </p>
-              </div>
-
-              <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl lg:text-[46px] lg:leading-[1.05]">
-                Your client
-                <br className="hidden sm:block" /> workspaces.
-              </h1>
-
-              <p className="mt-4 max-w-xl text-sm leading-6 text-white/35 sm:text-[15px]">
-                Manage each client’s content, approvals, conversations, leads
-                and performance in a dedicated workspace.
-              </p>
-            </div>
-
-            {/* Summary */}
-            <div className="relative flex shrink-0 items-stretch overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.035] shadow-[0_18px_55px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-  {/* Ambient accent */}
-  <div
-    aria-hidden="true"
-    className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full blur-[55px]"
-    style={{ background: "rgba(36,120,255,0.16)" }}
-  />
-
-  {/* Total workspaces */}
-  <div className="relative min-w-[116px] px-5 py-4">
-    <div className="flex items-center gap-2">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]" />
-
-      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
-        Workspaces
-      </p>
-    </div>
-
-    <p className="mt-2 text-[27px] font-semibold leading-none tracking-[-0.045em] text-white">
-      {totalCalendars}
-    </p>
-
-    <p className="mt-1.5 text-[10px] text-white/25">
-      {totalCalendars === 1 ? "client space" : "client spaces"}
-    </p>
-  </div>
-
-  {/* Divider */}
-  {calendarBilling?.contentWorkspacePlan && (
-  <>
-    <div className="my-4 w-px bg-white/[0.08]" />
-
-    {/* Workspace plan */}
-    <div className="relative min-w-[126px] px-5 py-4">
-      <div className="flex items-center gap-2">
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            calendarBilling.contentWorkspacePlan === "STUDIO"
-              ? "bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,0.7)]"
-              : "bg-white/40"
-          }`}
-        />
-
-        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
-          Plan
-        </p>
-      </div>
-
-      <p className="mt-2 text-[17px] font-semibold leading-none tracking-[-0.025em] text-white">
-        {calendarBilling.contentWorkspacePlan === "UNLIMITED" ? "Unlimited" : calendarBilling.contentWorkspacePlan === "STUDIO"
-          ? "Studio"
-          : "Creator"}
-      </p>
-
-      <p
-        className="mt-1.5 text-[10px] font-medium"
-        style={{
-          color:
-            calendarBilling.contentWorkspacePlan === "STUDIO"
-              ? "#68A4FF"
-              : "rgba(255,255,255,0.30)",
-        }}
-      >
-        Workspace plan
-      </p>
-    </div>
-  </>
-)}
-
-  {/* Divider */}
-  <div className="my-4 w-px bg-white/[0.08]" />
-
-  {/* Showing */}
-  <div className="relative min-w-[104px] px-5 py-4">
-    <div className="flex items-center gap-2">
-      <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
-
-      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/35">
-        Showing
-      </p>
-    </div>
-
-    <p className="mt-2 text-[27px] font-semibold leading-none tracking-[-0.045em] text-white">
-      {calendars.length}
-    </p>
-
-    <p className="mt-1.5 text-[10px] text-white/25">
-      on this page
-    </p>
-  </div>
-</div></div>
+        </nav>
+        <div data-dashboard-tour-slot="billing" />
+        <header className="mb-5">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            Client workspaces
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[#667085]">
+            Open a client’s workspace, or add a new client.
+          </p>
         </header>
-
-      {calendarBilling?.contentWorkspacePlan &&
-  ((calendarBilling.contentWorkspaceBillingStatus === "TRIAL" &&
-    calendarBilling.contentWorkspaceTrialEndsAt) ||
-    calendarBilling.isComped) && (
-    <TrialCountdownBanner
-      billingStatus={calendarBilling.contentWorkspaceBillingStatus}
-      trialEndsAt={
-        calendarBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? ""
-      }
-      plan={calendarBilling.contentWorkspacePlan}
-      isComped={calendarBilling.isComped}
-      compedUntil={calendarBilling.compedUntil?.toISOString() ?? null}
-    />
-  )}
-
-        {/* Billing settings — only shows once an account type has
-            actually been chosen, i.e. once at least one calendar has
-            ever been created. */}
-   {calendarBilling?.contentWorkspacePlan && (
-  <CalendarBillingSettings
-    plan={calendarBilling.contentWorkspacePlan}
-    billingStatus={calendarBilling.contentWorkspaceBillingStatus}
-    billingCycle={calendarBilling.contentWorkspaceBillingCycle}
-    subscriptionRenewsAt={
-      calendarBilling.contentWorkspaceSubscriptionRenewsAt?.toISOString() ??
-      null
-    }
-    trialEndsAt={
-      calendarBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? null
-    }
-  />
-)}
-
-       {/* AI Studio — included with the Content Workspace subscription. */}
-       <AiAssistantBillingSettings
-  billingStatus={
-    calendarBilling?.contentWorkspaceBillingStatus ?? "PENDING_SETUP"
-  }
-  subscriptionRenewsAt={
-    calendarBilling?.contentWorkspaceSubscriptionRenewsAt?.toISOString() ??
-    null
-  }
-  plan={calendarBilling?.contentWorkspacePlan ?? null}
-/>
-
-        {/* Payment callback */}
+        {billing?.contentWorkspacePlan && needsBilling && (
+          <aside
+            aria-label="Workspace access"
+            className={`mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border px-4 py-3 text-sm ${needsBilling ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-100 bg-blue-50 text-[#175CD3]"}`}
+          >
+            <p>Subscribe to restore workspace access.</p>
+            <Link
+              href={BILLING_HREF}
+              className="inline-flex min-h-11 items-center gap-1 font-semibold underline underline-offset-4"
+            >
+              Restore access
+              <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+            </Link>
+          </aside>
+        )}
+        <section
+          data-onboarding="create-workspace"
+          className="mb-6"
+          aria-label="Create a client workspace"
+        >
+          <CreateCalendarForm
+            contentWorkspacePlan={billing?.contentWorkspacePlan ?? null}
+          />
+          <div data-dashboard-tour-slot="create" />
+        </section>
         <Suspense fallback={null}>
           <CalendarPaymentCallbackHandler />
         </Suspense>
-
-        {/* ─────────────────────────────────────────
-            CREATE CALENDAR
-        ───────────────────────────────────────── */}
-        <section
-  className="mb-12"
-  data-onboarding="create-workspace"
->
-          <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025]">
-            <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2478FF]/10 text-[#2478FF]">
-                  <PlusIcon className="h-4 w-4" />
+        <section id="your-workspaces" aria-labelledby="your-workspaces-title">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2
+              id="your-workspaces-title"
+              data-dashboard-tour="workspaces"
+              className="text-base font-semibold"
+            >
+              Your workspaces{" "}
+              <span className="ml-1 font-normal text-[#667085]">
+                ({totalCalendars})
+              </span>
+            </h2>
+            {(totalCalendars > 0 ||
+              collaboratorMemberships.length > 0 ||
+              query) && (
+              <form
+                action="/dashboard/calendars"
+                method="get"
+                role="search"
+                className="flex w-full items-center gap-2 sm:max-w-sm"
+              >
+                <div className="relative min-w-0 flex-1">
+                  <Search
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]"
+                  />
+                  <input
+                    aria-label="Search client workspaces"
+                    name="q"
+                    defaultValue={query}
+                    placeholder="Search clients"
+                    type="search"
+                    className="min-h-11 w-full rounded-lg border border-[#D0D5DD] bg-white pl-9 pr-3 text-base outline-none focus:border-[#1768E8] focus:ring-2 focus:ring-blue-100 sm:text-sm"
+                  />
                 </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Create a client workspace
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-white/30">
-                    Bring a client’s content, conversations, leads and reports together.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 sm:p-5">
-              <CreateCalendarForm
-  contentWorkspacePlan={calendarBilling?.contentWorkspacePlan ?? null}
-/>
-            </div>
-          </div>
-                </section>
-
-        <WorkspaceOnboarding
-          isFirstWorkspace={totalCalendars === 0}
-          hasExistingPlan={Boolean(
-            calendarBilling?.contentWorkspacePlan,
-          )}
-          testMode={onboardingTestMode}
-        />
-
-        {/* ─────────────────────────────────────────
-            CALENDAR LIST HEADER
-        ───────────────────────────────────────── */}
-        {totalCalendars > 0 && (
-          <div className="mb-5 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                All client workspaces
-              </p>
-
-              <p className="mt-1 text-xs text-white/25">
-                {totalCalendars}{" "}
-                {totalCalendars === 1 ? "client workspace" : "client workspaces"}
-              </p>
-            </div>
-
-            {totalPages > 1 && (
-              <p className="hidden text-[10px] uppercase tracking-[0.12em] text-white/20 sm:block">
-                Page {safePage} of {totalPages}
-              </p>
+                <button
+                  type="submit"
+                  className="min-h-11 rounded-lg border border-[#D0D5DD] bg-white px-3 text-sm font-medium text-[#344054] hover:bg-slate-50"
+                >
+                  Search
+                </button>
+              </form>
             )}
           </div>
-        )}
-
-        {/* ─────────────────────────────────────────
-            CALENDAR CARDS
-        ───────────────────────────────────────── */}
-        {calendars.length > 0 ? (
-          <>
+          <div data-dashboard-tour-slot="workspaces" />
+          {query && (
+            <p className="mb-4 text-sm text-[#667085]">
+              Results for “{query}”{" "}
+              <Link
+                href="/dashboard/calendars"
+                className="ml-2 inline-flex min-h-11 items-center font-medium text-[#1768E8] underline"
+              >
+                Clear search
+              </Link>
+            </p>
+          )}
+          {calendars.length ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {calendars.map((cal, index) => (
                 <CalendarCard
@@ -592,108 +283,98 @@ const onboardingTestMode = params?.onboarding === "test";
                 />
               ))}
             </div>
-
-            <Pagination
-              currentPage={safePage}
-              totalPages={totalPages}
-            />
-          </>
-        ) : (
-          /* ─────────────────────────────────────────
-              EMPTY STATE
-          ───────────────────────────────────────── */
-          <section className="relative overflow-hidden rounded-3xl border border-dashed border-white/[0.09] bg-white/[0.018] px-6 py-20 text-center sm:py-28">
-            <div className="pointer-events-none absolute left-1/2 top-0 h-40 w-72 -translate-x-1/2 rounded-full bg-[#2478FF]/[0.06] blur-[80px]" />
-
-            <div className="relative mx-auto max-w-md">
-              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.03] shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
-                <div className="relative h-7 w-7">
-                  <div className="absolute left-1 top-1 h-5 w-5 rounded-md border border-white/20" />
-                  <div className="absolute bottom-0 right-0 h-5 w-5 rounded-md border border-[#2478FF]/60 bg-[#2478FF]/10" />
-                </div>
-              </div>
-
-              <p className="text-lg font-semibold tracking-[-0.02em] text-white">
-                No client workspaces yet
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[#D0D5DD] bg-white px-5 py-10 text-center">
+              <CalendarDays
+                aria-hidden="true"
+                className="mx-auto mb-3 h-8 w-8 text-[#98A2B3]"
+              />
+              <h3 className="text-base font-semibold">
+                {query ? "No matching workspaces" : "Your clients start here"}
+              </h3>
+              <p className="mt-2 text-sm text-[#667085]">
+                {query
+                  ? "Try another client name or clear your search."
+                  : "Add your first client using the button above."}
               </p>
-
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/30">
-                Your client workspaces will appear here once you create
-                your first one.
-              </p>
-
-              <div className="mt-7 inline-flex items-center gap-2 rounded-xl border border-[#2478FF]/20 bg-[#2478FF]/[0.07] px-4 py-2.5 text-xs font-medium text-[#68B2FF]">
-  <PlusIcon className="h-3.5 w-3.5" />
-  Create your first client workspace above
-</div>
             </div>
-          </section>
-        )}
-
-        {/* ─────────────────────────────────────────
-            CALENDARS YOU COLLABORATE ON — invited by
-            someone else, not owned. Kept separate from the
-            paginated owned list above.
-        ───────────────────────────────────────── */}
+          )}
+          {totalPages > 1 && (
+            <nav
+              aria-label="Client workspace pagination"
+              className="mt-5 flex items-center justify-between gap-2 border-t border-[#E4E7EC] pt-4"
+            >
+              <Link
+                href={pageHref(Math.max(1, safePage - 1), query)}
+                aria-disabled={safePage === 1}
+                tabIndex={safePage === 1 ? -1 : undefined}
+                className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-[#D0D5DD] bg-white px-3 text-sm ${safePage === 1 ? "pointer-events-none text-[#98A2B3]" : "text-[#344054] hover:bg-slate-50"}`}
+              >
+                <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                Previous
+              </Link>
+              <span className="text-xs text-[#667085]">
+                {safePage} of {totalPages}
+              </span>
+              <Link
+                href={pageHref(Math.min(totalPages, safePage + 1), query)}
+                aria-disabled={safePage === totalPages}
+                tabIndex={safePage === totalPages ? -1 : undefined}
+                className={`inline-flex min-h-11 items-center gap-1 rounded-lg border border-[#D0D5DD] bg-white px-3 text-sm ${safePage === totalPages ? "pointer-events-none text-[#98A2B3]" : "text-[#344054] hover:bg-slate-50"}`}
+              >
+                Next
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+            </nav>
+          )}
+        </section>
         {collaboratorMemberships.length > 0 && (
-          <section className="mt-12">
-            <div className="mb-5">
-              <p className="text-sm font-semibold text-white">
-                Calendars you collaborate on
-              </p>
-              <p className="mt-1 text-xs text-white/25">
-                Client workspaces someone else invited you to.
-              </p>
-            </div>
-
+          <section
+            id="shared-workspaces"
+            aria-labelledby="shared-workspaces-title"
+            className="mt-8"
+          >
+            <h2
+              id="shared-workspaces-title"
+              className="mb-3 flex items-center gap-2 text-base font-semibold"
+            >
+              <Users aria-hidden="true" className="h-4 w-4 text-[#667085]" />
+              Shared with you
+            </h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {collaboratorMemberships.map((membership) => {
-                const cal = membership.calendar;
-                const roleLabel =
-                  membership.role === "EDIT_CALENDAR"
-                    ? "Edit calendar"
-                    : membership.role === "ADD_CONTENT"
-                    ? "Add content"
-                    : "View only";
-                const roleColor =
-                  membership.role === "EDIT_CALENDAR"
-                    ? "#F97316"
-                    : membership.role === "ADD_CONTENT"
-                    ? "#2478FF"
-                    : "#A1A1AA";
-
-                return (
-                  <Link
-                    key={cal.id}
-                    href={`/dashboard/calendars/${cal.id}`}
-                    className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.13] hover:bg-[#141414]"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                        style={{ background: `${roleColor}18`, color: roleColor }}
-                      >
-                        {roleLabel}
-                      </span>
-                      <ArrowUpRightIcon className="h-3.5 w-3.5 text-white/20 transition-all group-hover:text-[#68B2FF]" />
-                    </div>
-
-                    <h3 className="line-clamp-1 text-base font-semibold text-white">{cal.clientName}</h3>
-                    <p className="mt-1 text-xs text-white/30">
-                      Managed by {cal.manager.name || cal.manager.email}
-                    </p>
-                    <p className="mt-3 text-xs text-white/40">
-                      {cal._count.posts} {cal._count.posts === 1 ? "post" : "posts"}
-                    </p>
-                  </Link>
-                );
-              })}
+              {collaboratorMemberships.map(({ calendar: cal, role }) => (
+                <Link
+                  key={cal.id}
+                  href={`/dashboard/calendars/${cal.id}`}
+                  className="rounded-2xl border border-[#E4E7EC] bg-white p-4 transition hover:border-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+                >
+                  <h3 className="truncate font-semibold">{cal.clientName}</h3>
+                  <p className="mt-1 truncate text-xs text-[#667085]">
+                    Managed by {cal.manager.name || cal.manager.email}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[#667085]">
+                    <span>
+                      {role === "EDIT_CALENDAR"
+                        ? "Can edit"
+                        : role === "ADD_CONTENT"
+                          ? "Can add content"
+                          : "View only"}
+                    </span>
+                    <span className="inline-flex min-h-11 items-center gap-1 font-semibold text-[#1768E8]">
+                      Open workspace
+                      <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </section>
         )}
-
-        {/* Bottom breathing room */}
-        <div className="h-10 sm:h-16" />
+        <WorkspaceOnboarding
+          isFirstWorkspace={totalCalendars === 0}
+          hasExistingPlan={Boolean(billing?.contentWorkspacePlan)}
+          testMode={params.onboarding === "test"}
+        />
       </div>
     </main>
   );

@@ -135,7 +135,8 @@ export default function TrialCountdownBanner({
   const msLeft =
     expirationDate === null ? null : expirationDate - now;
 
-  const expired =
+  const offline = !complimentaryAccess && billingStatus === "OFFLINE";
+  const expired = offline ||
     expirationDate !== null && msLeft !== null && msLeft <= 0;
 
   const daysLeft =
@@ -258,7 +259,7 @@ export default function TrialCountdownBanner({
     }
   };
 
-  const headline = complimentaryAccess
+  const headline = offline ? "Restore workspace access" : complimentaryAccess
     ? expired
       ? "Your complimentary access has ended"
       : compedUntil === null
@@ -288,7 +289,7 @@ export default function TrialCountdownBanner({
   return (
     <section
       aria-label={
-        complimentaryAccess
+        offline ? "Workspace access status" : complimentaryAccess
           ? "Complimentary access status"
           : "Trial status"
       }
@@ -328,7 +329,7 @@ export default function TrialCountdownBanner({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="rounded-full border border-[#2478FF]/20 bg-[#2478FF]/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-[#78AEFF]">
-                  {complimentaryAccess
+                  {offline ? "Access paused" : complimentaryAccess
                     ? expired
                       ? "Complimentary ended"
                       : "Complimentary access"
@@ -373,7 +374,7 @@ export default function TrialCountdownBanner({
                 ) : (
                   <span className="inline-flex items-center gap-1.5">
                     <CheckIcon className="text-[#4ADE80]" />
-                    Trial ends {endDate}
+                    {offline ? "Manage your subscription in Billing" : <>Trial ends {endDate}</>}
                   </span>
                 )}
               </div>

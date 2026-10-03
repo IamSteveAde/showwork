@@ -6,6 +6,7 @@ import Link from "next/link";
 import { TIERS } from "@/lib/subscriptionTiers";
 import SubscribeButton from "@/components/SubscribeButton";
 import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
+import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
 import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
 
 import {
@@ -1221,6 +1222,17 @@ function ContentWorkspaceSubscription({
           </Link>
         </div>
       </div>
+
+      {workspaceBilling &&
+        (workspaceBilling.isComped || billingStatus === "TRIAL" || billingStatus === "OFFLINE") && (
+          <TrialCountdownBanner
+            plan={plan}
+            billingStatus={billingStatus}
+            trialEndsAt={workspaceBilling.contentWorkspaceTrialEndsAt?.toISOString() ?? ""}
+            isComped={workspaceBilling.isComped}
+            compedUntil={workspaceBilling.compedUntil?.toISOString() ?? null}
+          />
+        )}
 
       {/* Existing billing settings */}
       <div>

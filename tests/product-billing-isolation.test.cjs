@@ -22,6 +22,7 @@ const View = load('app/dashboard/billing/BillingSubscriptions.tsx', {
   '@/lib/subscriptionTiers': tiers,
   '@/components/SubscribeButton': { default: () => null, __esModule: true },
   '@/components/CancelSubscriptionButton': { default: () => null, __esModule: true },
+  '@/components/calendars/TrialCountdownBanner': load('components/calendars/TrialCountdownBanner.tsx', { '@/lib/contentWorkspaceEntitlements': plans }),
   '@/components/calendars/CalendarBillingSettings': { default: () => null, __esModule: true },
 }).default;
 for (const product of ['delivery', 'content-workspace']) {
@@ -123,4 +124,36 @@ test('delivery cancellation resets its tier without changing workspace complimen
   });
   assert.deepEqual(await cancel.POST(), { ok: true });
   assert.deepEqual(updated, { subscriptionActive: false, subscriptionTier: 'FREE' });
+});
+
+test('workspace trial and expired access keep their subscription checkout on Billing', () => {
+  for (const status of ['TRIAL', 'OFFLINE']) {
+    const html = renderToStaticMarkup(React.createElement(View, {
+      creator: { name: 'Test', email: 'test@example.com' },
+      usage: { tier: 'FREE', used: 0, limit: 3, remaining: 3, atCap: false },
+      selectedProduct: 'content-workspace', selectedTier: null, selectedCycle: 'MONTHLY',
+      workspaceBilling: {
+        contentWorkspacePlan: 'CREATOR', contentWorkspaceBillingStatus: status,
+        contentWorkspaceBillingCycle: 'MONTHLY', contentWorkspaceTrialUsedAt: new Date(),
+        contentWorkspaceTrialEndsAt: new Date(Date.now() + (status === 'TRIAL' ? 1 : -1) * 86400000),
+        contentWorkspaceSubscriptionRenewsAt: null, isComped: false, compedUntil: null,
+      },
+    }));
+    assert.match(html, status === 'TRIAL' ? /Subscribe now/ : /Subscribe &amp; restore access/);
+  }
+});
+
+ test('offline workspace billing without a trial date still offers restore checkout', () => {
+  const html = renderToStaticMarkup(React.createElement(View, {
+    creator: { name: 'Test', email: 'test@example.com' },
+    usage: { tier: 'FREE', used: 0, limit: 3, remaining: 3, atCap: false },
+    selectedProduct: 'content-workspace', selectedTier: null, selectedCycle: 'MONTHLY',
+    workspaceBilling: { contentWorkspacePlan: 'CREATOR', contentWorkspaceBillingStatus: 'OFFLINE',
+      contentWorkspaceBillingCycle: 'MONTHLY', contentWorkspaceTrialUsedAt: null,
+      contentWorkspaceTrialEndsAt: null, contentWorkspaceSubscriptionRenewsAt: null,
+      isComped: false, compedUntil: null },
+  }));
+  assert.match(html, /Restore workspace access/);
+  assert.match(html, /Subscribe &amp; restore access/);
+  assert.doesNotMatch(html, /Your trial ends today/);
 });

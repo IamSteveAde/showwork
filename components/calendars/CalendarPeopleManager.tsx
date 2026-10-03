@@ -158,10 +158,12 @@ export default function CalendarPeopleManager({
   calendarId,
   calendarName,
   totalMembers,
+  compact = false,
 }: {
   calendarId: string;
   calendarName: string;
   totalMembers: number;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -379,6 +381,17 @@ export default function CalendarPeopleManager({
       {/* Compact people control that lives directly on the workspace card.
           The whole card can still be opened normally; this control sits above
           the card navigation layer. */}
+      {compact ? (
+        <button
+          type="button"
+          onClick={openManager}
+          aria-label={`Manage people with access to ${calendarName}`}
+          className="relative z-30 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-[#667085] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+        >
+          <PeopleIcon className="h-4 w-4" />
+          {totalMembers} {totalMembers === 1 ? "person" : "people"}
+        </button>
+      ) : (
       <button
         type="button"
         onClick={openManager}
@@ -405,6 +418,7 @@ export default function CalendarPeopleManager({
           <span className="transition-transform group-hover/people:translate-x-0.5"><UiSymbol name="right" /></span>
         </span>
       </button>
+      )}
 
       {mounted && open
         ? createPortal(
