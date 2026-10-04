@@ -1,5 +1,6 @@
 "use client";
 
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import {
@@ -20,6 +21,7 @@ export default function ReplyDraftAssistant({
   currentDraft,
   latestInboundId,
   onUseDraft,
+  locked = false,
 }: {
   endpoint: string;
   conversationId: string;
@@ -27,6 +29,7 @@ export default function ReplyDraftAssistant({
   currentDraft: string;
   latestInboundId?: string;
   onUseDraft: (text: string) => void;
+  locked?: boolean;
 }) {
   const [tone, setTone] = useState(defaultTone);
   const [context, setContext] = useState("");
@@ -86,12 +89,13 @@ export default function ReplyDraftAssistant({
     suggestion.sourceMessageId !== latestInboundId;
   return (
     <div className="mb-3 max-h-[45dvh] space-y-2 overflow-y-auto overscroll-contain rounded-xl border border-[#E2E8F5] bg-[#F8FAFF] p-3">
+      {locked && <WorkspaceFeatureNotice compact feature="aiInboxReplies" />}
       <div className="flex flex-wrap items-end gap-2">
         <label className="min-w-0 flex-1 text-[10px] font-semibold text-[#475467]">
           Reply tone
           <select
             value={tone}
-            disabled={busy}
+            disabled={busy || locked}
             onChange={(event) => {
               setTone(event.target.value as ReplyTone);
               setSuggestion(null);
@@ -107,7 +111,7 @@ export default function ReplyDraftAssistant({
         </label>
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || locked}
           onClick={() => void generate()}
           className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-violet-200 bg-white px-3 text-xs font-semibold text-violet-700 disabled:opacity-60"
         >
@@ -131,7 +135,7 @@ export default function ReplyDraftAssistant({
               setContext(event.target.value);
               setSuggestion(null);
             }}
-            disabled={busy}
+            disabled={busy || locked}
             maxLength={2000}
             rows={2}
             placeholder="e.g. They asked about our studio package. Confirm that it includes 10 edited images; ask which date they prefer."
@@ -161,7 +165,7 @@ export default function ReplyDraftAssistant({
               </p>
               <button
                 type="button"
-                disabled={!!stale}
+                disabled={!!stale || locked}
                 onClick={() => {
                   onUseDraft(suggestion.replyText);
                   setSuggestion(null);

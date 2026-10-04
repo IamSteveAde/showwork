@@ -1,3 +1,4 @@
+import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 import { canAccessCalendarById } from "@/lib/calendarPermissions";
@@ -56,6 +57,7 @@ export function xMessageParticipant(event: XMessageEvent, accountId: string): st
 
 export async function syncXInbox(stored: SocialConnection, options: XInboxSyncOptions = {}): Promise<XInboxSyncResult> {
   if (!(await canAccessCalendarById(stored.calendarId))) throw new Error("This workspace is not active.");
+  if (!(await canUseCalendarFeature(stored.calendarId, "socialInbox"))) throw new Error("Upgrade to Studio to use Social Inbox. Your existing data is preserved.");
   const connection = await freshConnection(stored);
   requireScopes(connection, ["dm.read", "tweet.read", "users.read"]);
   const username = options.participantUsername?.trim().replace(/^@/, "");

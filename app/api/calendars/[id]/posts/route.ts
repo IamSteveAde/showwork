@@ -30,12 +30,7 @@ export async function GET(
   if (!(await hasCalendarPermission(creator.id, id, "VIEW_ONLY"))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (!isAdminEmail(creator.email) && !(await canAccessCalendarById(id))) {
-    return NextResponse.json(
-      { error: "This calendar isn't active" },
-      { status: 403 },
-    );
-  }
+  // Saved content remains readable when subscription access is locked.
 
   const posts = await db.calendarPost.findMany({
     where: { calendarId: id },

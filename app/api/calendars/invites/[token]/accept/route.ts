@@ -1,3 +1,6 @@
+import { canAddContentWorkspaceCollaborator, getContentWorkspacePlan, canAccessContentWorkspace, canUseContentWorkspaceFeature } from "@/lib/contentWorkspaceUsage";
+import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
+import { calendarFeatureGate, canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
@@ -103,6 +106,7 @@ export async function POST(
         id: true,
         clientName: true,
         managerId: true,
+        manager: { select: { id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true, contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true, isComped: true, compedUntil: true } },
       },
     });
 
@@ -170,12 +174,26 @@ export async function POST(
       ? (invite.role as Role)
       : "ADD_CONTENT";
 
+    if (!(await canAccessCalendarById(calendar.id))) return NextResponse.json({ error: "The workspace is read-only. Ask its owner to subscribe or upgrade." }, { status: 403 });
+    const entitlement = await canAddContentWorkspaceCollaborator(calendar.manager);
+    if (!entitlement.allowed) return NextResponse.json({ error: entitlement.reason }, { status: 403 });
+    if (role !== "ADD_CONTENT") {
+      const featureLock = await calendarFeatureGate(calendar.id, "advancedTeamPermissions");
+      if (featureLock) return featureLock;
+    }
+
     /*
      * Create the collaborator and mark the invite as accepted
      * atomically so we don't end up with a collaborator created
      * while the invite remains pending, or vice versa.
      */
-    await db.$transaction(async (tx) => {
+    const accepted = await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Creator" WHERE "id" = ${calendar.managerId} FOR UPDATE`;
+      const owner = await tx.creator.findUniqueOrThrow({ where: { id: calendar.managerId } });
+      const plan = getContentWorkspacePlan(owner);
+      const count = await tx.calendarCollaborator.count({ where: { calendar: { managerId: calendar.managerId } } });
+      if (!canAccessContentWorkspace(owner) || (role !== "ADD_CONTENT" && !canUseContentWorkspaceFeature(owner, "advancedTeamPermissions"))) return false;
+      if (!plan || count >= CONTENT_WORKSPACE_PLANS[plan].collaborators) return false;
       await tx.calendarCollaborator.create({
         data: {
           calendarId: calendar.id,
@@ -192,7 +210,9 @@ export async function POST(
           status: "ACCEPTED",
         },
       });
+      return true;
     });
+    if (!accepted) return NextResponse.json({ error: "The account collaborator allowance is full. Ask the workspace owner to upgrade." }, { status: 403 });
 
     return NextResponse.json({
       ok: true,

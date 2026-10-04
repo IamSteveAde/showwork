@@ -56,7 +56,7 @@ function reportingData(leadQueries = []) {
     calendarLead: { count: async args => { leadQueries.push(args); return 0; }, findMany: async args => { leadQueries.push(args); return []; } },
   };
   const mod = { exports: {} };
-  const mocks = { '@/lib/db': { db }, '@/lib/r2': { publicUrlFor: () => null }, '@/lib/reporting/adapters': { getSocialReportingAdapter: () => null }, '@/lib/reporting/comparison': moduleUnderTest.exports };
+  const mocks = { '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/r2': { publicUrlFor: () => null }, '@/lib/reporting/adapters': { getSocialReportingAdapter: () => null }, '@/lib/reporting/comparison': moduleUnderTest.exports };
   new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync('lib/reporting/data.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(name => { assert.ok(mocks[name], `Unexpected dependency ${name}`); return mocks[name]; }, mod, mod.exports);
   return mod.exports;
 }

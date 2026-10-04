@@ -185,3 +185,19 @@ Public verification reference:
 https://learn.microsoft.com/en-us/linkedin/shared/api-guide/webhook-validation
 The public specification does not establish the private Page Messaging wire
 format. Update verification if the approved product specifies a different scheme.
+
+## Instagram: “URL Blocked” during connection
+
+Instagram currently uses Facebook Login. Both the authorization request and code exchange use `${NEXT_PUBLIC_APP_URL}/api/calendars/instagram/callback`, with trailing slashes removed from the app URL. The callback has no workspace ID; the workspace travels in OAuth state.
+
+In the Meta developer dashboard, select the app matching `INSTAGRAM_APP_ID`. Open Facebook Login (or Facebook Login for Business) → Settings → Client OAuth Settings. Enable Client OAuth Login and Web OAuth Login, then add the **full callback URL** to Valid OAuth Redirect URIs and save. Adding an app domain alone does not register the callback.
+
+For `NEXT_PUBLIC_APP_URL=http://localhost:3000`, the exact callback is:
+
+```text
+http://localhost:3000/api/calendars/instagram/callback
+```
+
+For deployment, add `https://YOUR_APP_DOMAIN/api/calendars/instagram/callback` as a separate entry. Scheme, hostname, port and path must match the actual `redirect_uri`; do not append a slash or workspace ID. If Meta requires HTTPS for the development app, use an HTTPS development URL and set `NEXT_PUBLIC_APP_URL` to that same URL, register its callback, restart the development server and open Showwork through that URL before connecting. Opening Showwork through another hostname can prevent its session cookie from reaching the callback.
+
+The connect route's HTTP 307 is the expected redirect to Facebook. An inbox HTTP 200 is unrelated to OAuth completion. A successful connection requires Meta to redirect back to the callback and Showwork to store the connected account.

@@ -1,5 +1,10 @@
 "use client";
 
+import { useState } from "react";
+
+import { getContentWorkspaceFeatureList } from "@/lib/contentWorkspaceEntitlements";
+
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 
@@ -7,7 +12,7 @@ import { TIERS } from "@/lib/subscriptionTiers";
 import SubscribeButton from "@/components/SubscribeButton";
 import CancelSubscriptionButton from "@/components/CancelSubscriptionButton";
 import TrialCountdownBanner from "@/components/calendars/TrialCountdownBanner";
-import CalendarBillingSettings from "@/components/calendars/CalendarBillingSettings";
+import CalendarBillingSettings, { type WorkspacePlanSwitchRequest } from "@/components/calendars/CalendarBillingSettings";
 
 import {
   CONTENT_WORKSPACE_PLANS,
@@ -336,7 +341,7 @@ function getDeliveryPlanName(
     FREE: "Free",
     STARTER: "Starter",
     GROWTH: "Growth",
-    UNLIMITED: "Unlimited",
+    UNLIMITED: "Agency",
   } as const;
 
   return names[tier];
@@ -746,7 +751,7 @@ function DeliverySubscription({
       </div>
 
       {/* Plans */}
-      <div>
+      <div id="project-delivery-plans" className="scroll-mt-6">
         <div className="mb-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
             Project Delivery plans
@@ -916,6 +921,9 @@ function ContentWorkspaceSubscription({
 
   selectedCycle: BillingCycle;
 }) {
+  const [switchRequest, setSwitchRequest] = useState<WorkspacePlanSwitchRequest | null>(null);
+  const [switchBusy, setSwitchBusy] = useState(false);
+
   const plan =
     workspaceBilling?.contentWorkspacePlan;
 
@@ -1023,7 +1031,7 @@ function ContentWorkspaceSubscription({
                 </p>
 
                 <p className="mt-1 text-xs leading-5 text-[#667085]">
-                  You can start with a 7-day free trial.
+                  You can start with 7 days of full Agency feature access.
                   No payment is required to begin.
                 </p>
 
@@ -1049,6 +1057,8 @@ function ContentWorkspaceSubscription({
 
   const planDetails =
     CONTENT_WORKSPACE_PLANS[plan];
+  const agencyTrial = ["TRIAL", "ACTIVE"].includes(billingStatus) && !!workspaceBilling?.contentWorkspaceTrialEndsAt && new Date(workspaceBilling.contentWorkspaceTrialEndsAt).getTime() > Date.now();
+  const accessDetails = agencyTrial ? CONTENT_WORKSPACE_PLANS.UNLIMITED : planDetails;
 
   return (
     <section
@@ -1097,8 +1107,7 @@ function ContentWorkspaceSubscription({
                 </h2>
 
                 <p className="mt-1.5 max-w-lg text-sm leading-6 text-white/45">
-                  Your ongoing client workspace
-                  subscription.
+                  {agencyTrial && !(billingStatus === "ACTIVE" && plan === "UNLIMITED") ? billingStatus === "ACTIVE" ? `Your ${planDetails.name} subscription is active. Full Agency access remains available until your original trial ends, then your paid plan continues.` : "Agency trial access is active. Your selected plan applies after the trial." : "Your ongoing client workspace subscription."}
                 </p>
               </div>
             </div>
@@ -1130,20 +1139,20 @@ function ContentWorkspaceSubscription({
         <div className="grid gap-px bg-[#EAECF0] sm:grid-cols-4">
           <WorkspaceMetric
             label="Workspaces"
-            value={formatWorkspaceLimit(planDetails.activeWorkspaces)}
+            value={formatWorkspaceLimit(accessDetails.activeWorkspaces)}
             detail="Active client spaces"
           />
 
           <WorkspaceMetric
             label="Collaborators"
-            value={formatWorkspaceLimit(planDetails.collaborators)}
+            value={formatWorkspaceLimit(accessDetails.collaborators)}
             detail="Team members"
           />
 
           <WorkspaceMetric
             label="Storage"
             value={
-              `${planDetails.storageBytes / 1_000_000_000} GB`
+              `${accessDetails.storageBytes / 1_000_000_000} GB`
             }
             detail="Included storage"
           />
@@ -1151,7 +1160,7 @@ function ContentWorkspaceSubscription({
           <WorkspaceMetric
             label="AI Studio"
             value={String(
-              planDetails.aiGenerations
+              accessDetails.aiGenerations
             )}
             detail="Generations / month"
           />
@@ -1173,7 +1182,7 @@ function ContentWorkspaceSubscription({
     workspaceBilling?.contentWorkspaceTrialEndsAt ? (
     <>
       <p className="text-xs font-semibold text-[#175CD3]">
-        Your free trial is active
+        Your Agency trial is active
       </p>
 
       <p className="mt-1 text-[11px] text-[#667085]">
@@ -1238,6 +1247,8 @@ function ContentWorkspaceSubscription({
       <div>
         <CalendarBillingSettings
           plan={plan}
+          switchRequest={switchRequest}
+          onBusyChange={setSwitchBusy}
           billingStatus={billingStatus}
           billingCycle={billingCycle}
           subscriptionRenewsAt={
@@ -1256,6 +1267,8 @@ function ContentWorkspaceSubscription({
       <WorkspacePlanComparison
         selectedCycle={selectedCycle}
         currentPlan={plan}
+        switching={switchBusy}
+        onSelectPlan={(nextPlan) => setSwitchRequest({ plan: nextPlan, billingCycle: selectedCycle })}
       />
     </section>
   );
@@ -1298,14 +1311,18 @@ function WorkspaceMetric({
 function WorkspacePlanComparison({
   selectedCycle,
   currentPlan,
+  switching = false,
+  onSelectPlan,
 }: {
   selectedCycle: BillingCycle;
   currentPlan: ContentWorkspacePlan | null;
+  switching?: boolean;
+  onSelectPlan?: (plan: ContentWorkspacePlan) => void;
 }) {
   const plans = CONTENT_WORKSPACE_PLAN_ORDER;
 
   return (
-    <div>
+    <div id="content-workspace-plans" className="scroll-mt-6">
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
           Content Workspace plans
@@ -1404,13 +1421,7 @@ function WorkspacePlanComparison({
                 </p>
 
                 <div className="mt-3 space-y-2">
-                  {[
-                    "Client collaboration",
-                    "Content planning",
-                    "Asset uploads",
-                    "Client approvals",
-                    "AI Studio",
-                  ].map((feature) => (
+                  {getContentWorkspaceFeatureList(planKey).map((feature) => (
                     <div
                       key={feature}
                       className="flex items-center gap-2 text-[11px] text-[#667085]"
@@ -1427,18 +1438,23 @@ function WorkspacePlanComparison({
 
               <div className="mt-6">
                 {isCurrent ? (
-                  <span className="text-[11px] font-semibold text-[#067647]">
-                    Current plan
-                  </span>
+                  <span className="text-[11px] font-semibold text-[#067647]">Current plan</span>
+                ) : currentPlan ? (
+                  <button
+                    type="button"
+                    disabled={switching}
+                    onClick={() => onSelectPlan?.(planKey)}
+                    className="group inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2.5 text-xs font-semibold text-[#344054] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Switch to {plan.name}
+                    <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </button>
                 ) : (
                   <Link
                     href="/dashboard/calendars"
                     className="group inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2.5 text-xs font-semibold text-[#344054] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#F9FAFB]"
                   >
-                    {currentPlan
-                      ? `Switch to ${plan.name}`
-                      : `Start with ${plan.name}`}
-
+                    Start with {plan.name}
                     <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 )}

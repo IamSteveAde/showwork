@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator, Studio or Unlimited",
+          "Choose a Content Workspace plan first: Creator, Studio or Agency",
       },
       { status: 400 }
     );

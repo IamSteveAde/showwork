@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -32,6 +33,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "The generation request must contain valid JSON." }, { status: 400 });
+  }
+
+  if (body.usePerformanceRecommendations === true) {
+    const featureLock = await calendarFeatureGate(id, "performanceRecommendations");
+    if (featureLock) return featureLock;
   }
 
   const { startDate, endDate, platforms, postsPerWeek, customInstructions, contentStrategy, contentGroups, scheduleStrategy, platformSchedules } = body;
@@ -78,11 +84,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!owner) return NextResponse.json({ error: "Calendar owner not found" }, { status: 404 });
 
   const plan = getContentWorkspacePlan(owner);
-  if (!(await consumeAiGeneration(owner.id))) {
+  const consumed = await consumeAiGeneration(owner.id);
+  if (!consumed.allowed) {
     return NextResponse.json({
-      error: plan === "CREATOR"
-        ? "You've reached your 100 AI generations for this month. Your allowance resets at the start of your next billing cycle."
-        : "You've reached your 500 AI generations for this month. Your allowance resets at the start of your next billing cycle.",
+      error: `Your AI allowance of ${consumed.limit} generations is unavailable or used up. Upgrade your plan or wait for your next monthly allowance.`,
       code: "AI_GENERATION_LIMIT_REACHED", plan,
     }, { status: 403 });
   }

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 
-function route({ creator = { id: 'owner' }, owner = 'owner', confirmation = 'RESET', publishing = 0, fail = false } = {}) {
+function route({ creator = { id: 'owner' }, owner = 'owner', confirmation = 'RESET', publishing = 0, fail = false, active = true } = {}) {
   const calls = [];
   const tx = {
     calendarPost: { count: async () => publishing, deleteMany: async (args) => { calls.push(['posts', args]); return { count: 3 }; } },
@@ -12,6 +12,7 @@ function route({ creator = { id: 'owner' }, owner = 'owner', confirmation = 'RES
     socialCalendar: { update: async (args) => calls.push(['plan', args]) },
   };
   const mocks = {
+    '@/lib/calendarPermissions': { canAccessCalendarById: async () => active },
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status || 200 }) } },
     '@/lib/auth': { getCurrentCreator: async () => creator },
     '@/lib/db': { db: { socialCalendar: { findUnique: async () => owner ? { managerId: owner } : null }, $transaction: async (fn) => { const result = await fn(tx); if (fail) throw new Error('rollback'); calls.push(['commit']); return result; } } },
@@ -52,4 +53,10 @@ test('transaction failure never deletes attached files', async () => {
   const r = route({ fail: true });
   assert.equal((await r.run()).status, 500);
   assert.equal(r.calls.some(([kind]) => kind === 'file'), false);
+});
+
+test('expired workspace reset is blocked without deleting trial data', async () => {
+  const r = route({ active: false });
+  assert.equal((await r.run()).status, 403);
+  assert.deepEqual(r.calls, []);
 });

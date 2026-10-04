@@ -1,3 +1,4 @@
+import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
@@ -33,6 +34,7 @@ export async function getCalendarReportingData(
   searchParams: URLSearchParams,
   includeSyncErrors: boolean,
 ) {
+  const advancedAccess = await canUseCalendarFeature(calendarId, "advancedAnalytics");
   const { start, end } = reportingPeriod(searchParams);
   const previousEnd = new Date(start.getTime() - 1);
   const previousStart = new Date(start.getTime() - (end.getTime() - start.getTime() + 1));
@@ -234,13 +236,18 @@ export async function getCalendarReportingData(
         socialConversation: { select: { platform: true, participantName: true, participantUsername: true } } },
     }),
   ]) : [0, 0, 0, 0, 0, []] as const;
-  const performance = compareAccounts(connections, start, end, previousStart);
+  const compared = compareAccounts(connections, start, end, previousStart);
+  // Creator retains current totals; comparisons and historical detail require Studio.
+  const performance = advancedAccess ? compared : Object.fromEntries(Object.entries(compared).map(([key, metric]) => [key, {
+    ...metric, delta: null, percent: null, note: "Upgrade to Studio for period comparisons.",
+  }]));
 
   return {
+    advancedAccess,
     period: { start: start.toISOString(), end: end.toISOString() },
     comparisonPeriod: { start: previousStart.toISOString(), end: previousEnd.toISOString() },
     performance,
-    leads: includeSyncErrors ? { total: leadTotal, acquired: change(newLeads, previousLeads, "vs previous period"), hotCount, customers, hottest } : null,
+    leads: includeSyncErrors && advancedAccess ? { total: leadTotal, acquired: change(newLeads, previousLeads, "vs previous period"), hotCount, customers, hottest } : null,
     clientSharing: { enabled: true },
     connections: connections.map((connection) => ({
       id: connection.id,
@@ -254,7 +261,7 @@ export async function getCalendarReportingData(
       lastSyncAttemptAt: connection.lastSyncAttemptAt,
       lastSyncAt: connection.lastSyncAt,
       ...(includeSyncErrors ? { lastSyncError: "lastSyncError" in connection ? connection.lastSyncError : null } : {}),
-      accountMetricSnapshots: connection.accountMetricSnapshots.filter(snapshot => snapshot.snapshotDate >= start),
+      accountMetricSnapshots: connection.accountMetricSnapshots.filter(snapshot => snapshot.snapshotDate >= start).slice(0, advancedAccess ? undefined : 1),
     })),
     posts: posts.map((post) => ({
       id: post.id,
@@ -264,7 +271,7 @@ export async function getCalendarReportingData(
       status: post.status,
       publishedAt: post.publishedAt,
       platformPostType: post.platformPostType,
-      metricSnapshots: post.metricSnapshots,
+      metricSnapshots: post.metricSnapshots.slice(0, advancedAccess ? undefined : 1),
       connection: post.connection,
       calendarPost: {
         id: post.calendarPost.id,

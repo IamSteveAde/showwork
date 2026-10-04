@@ -1,5 +1,6 @@
 "use client";
 
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Plus, ShieldCheck, X } from "lucide-react";
 import {
@@ -21,6 +22,7 @@ export default function CreateCalendarForm({
   const [clientName, setClientName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingBlocked, setBillingBlocked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const hasExistingPlan = Boolean(contentWorkspacePlan);
@@ -49,6 +51,7 @@ export default function CreateCalendarForm({
     }
     setLoading(true);
     setError(null);
+    setBillingBlocked(false);
     try {
       const res = await fetch("/api/calendars", {
         method: "POST",
@@ -64,6 +67,7 @@ export default function CreateCalendarForm({
         window.location.href =
           data.authorizationUrl ?? `/dashboard/calendars/${data.calendarId}`;
       } else {
+        setBillingBlocked(res.status === 402 || (res.status === 403 && /subscription|allowance|limit|upgrade|trial/i.test(data.error || "")));
         setError(
           data.error ?? "Couldn’t create the workspace. Please try again.",
         );
@@ -109,7 +113,7 @@ export default function CreateCalendarForm({
           </h2>
           <p className="mt-1 text-sm text-[#667085]">
             {step === "choose-plan"
-              ? "Pick the space and tools you need. Start with a 7-day free trial."
+              ? "Pick the space and tools you need. Start with 7 days of full Agency feature access."
               : "Enter a client name to create their workspace."}
           </p>
         </div>
@@ -222,7 +226,7 @@ export default function CreateCalendarForm({
           <p className="mt-2 text-xs text-[#667085]">
             {hasExistingPlan
               ? `${PLAN_CONFIG[contentWorkspacePlan!].name} plan · covered by your existing subscription`
-              : `${PLAN_CONFIG[chosenPlan!].name} plan · your 7-day trial starts when you create this workspace`}
+              : `${PLAN_CONFIG[chosenPlan!].name} plan · your 7-day Agency trial starts when you create this workspace`}
           </p>
           {error && (
             <p
@@ -233,6 +237,7 @@ export default function CreateCalendarForm({
               {error}
             </p>
           )}
+          {billingBlocked && <WorkspaceFeatureNotice compact message="Your subscription or workspace allowance does not cover another workspace. Upgrade to add more; your existing work is preserved." />}
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button
               type="submit"

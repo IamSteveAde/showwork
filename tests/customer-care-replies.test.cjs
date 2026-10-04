@@ -85,16 +85,16 @@ test('empty or overlong replies fail instead of sending blank or cut-off text', 
   await assert.rejects(fakeModel({ shouldReply: true, replyText: '  ', handoffReason: null })(generationInput()), /empty/);
   await assert.rejects(fakeModel({ shouldReply: true, replyText: 'x'.repeat(1501), handoffReason: null })(generationInput()), /too long/);
 });
-function draftRoute({ signedIn = true, authorized = true, active = true, conversation: override } = {}) {
+function draftRoute({ signedIn = true, authorized = true, active = true, quotaAllowed = true, conversation: override } = {}) {
   const calls = [];
   const conversation = override === undefined ? { id: 'thread', providerConversationId: 'normal', platform: 'INSTAGRAM', participantName: 'Ada', calendar: { clientName: 'Studio', aiBusinessSummary: 'Summary' }, messages: [
     { id: 'latest', direction: 'INBOUND', text: 'How much?', platformCreatedAt: new Date('2026-10-02T11:00:00Z') },
     { id: 'earlier', direction: 'INBOUND', text: 'Friday in Lagos', platformCreatedAt: new Date('2026-10-02T10:00:00Z') },
   ] } : override;
   const db = { socialLeadConversation: { findFirst: async args => { calls.push({ db: args }); return conversation; } }, socialInboxSettings: { findUnique: async () => ({ aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis.' }) } };
-  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', {
+  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
     '@/lib/auth': { getCurrentCreator: async () => signedIn ? ({ id: 'creator' }) : null }, '@/lib/db': { db },
-    '@/lib/calendarPermissions': { hasCalendarPermission: async (...args) => { assert.equal(args[2], 'EDIT_CALENDAR'); return authorized; }, canAccessCalendarById: async () => active },
+    '@/lib/calendarPermissions': { calendarFeatureGate: async () => null, hasCalendarPermission: async (...args) => { assert.equal(args[2], 'EDIT_CALENDAR'); return authorized; }, canAccessCalendarById: async () => active },
     '@/lib/openai': { generateSocialInboxAutoReply: async args => { calls.push({ ai: args }); return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } },
   });
   return { ...mod, calls };
@@ -123,13 +123,13 @@ test('draft route rejects unknown tones and excessive context without model call
 test('settings validates profile, saves facts, and preserves profiles for legacy requests', async () => {
   let write;
   const db = { socialCalendar: { findUnique: async () => ({ managerId: 'owner' }) }, $transaction: async fn => fn({ socialInboxSettings: { upsert: async args => { write = args; return { ...args.create, aiAutoReplyEnabled: true }; } } }) };
-  const mod = load('app/api/calendars/[id]/inbox/settings/route.ts', { '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) }, '@/lib/db': { db } });
+  const mod = load('app/api/calendars/[id]/inbox/settings/route.ts', { '@/lib/calendarPermissions': { calendarFeatureGate: async () => null }, '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) }, '@/lib/db': { db } });
   const body = { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: '', aiReplyProfile: profile() };
   let res = await mod.POST(request(body), params()); assert.equal(res.status, 200); assert.deepEqual(write.update.aiReplyProfile, profile());
   res = await mod.POST(request({ ...body, aiReplyProfile: profile({ tone: 'invalid' }) }), params()); assert.equal(res.status, 400);
   delete body.aiReplyProfile; res = await mod.POST(request(body), params()); assert.equal(res.status, 200); assert.equal(Object.hasOwn(write.update, 'aiReplyProfile'), false);
 });
-function workerFixture({ superseded = false, answered = false } = {}) {
+function workerFixture({ superseded = false, answered = false, quotaAllowed = true } = {}) {
   let generated, sent = 0; const updates = []; const time = new Date('2026-10-02T11:00:00Z');
   const inbound = { id: 'inbound', conversationId: 'thread', platformCreatedAt: time, autoReplyAttemptCount: 0, text: 'How much?', conversation: {
     platform: 'INSTAGRAM', providerConversationId: 'external-thread', participantPlatformId: 'person', participantName: 'Ada', connection: {},
@@ -142,7 +142,7 @@ function workerFixture({ superseded = false, answered = false } = {}) {
     socialLeadMessage: { findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => updates.push(args.data) },
     $transaction: async fn => fn({ socialLeadMessage: { createMany: async () => ({count:1}), update: async args => updates.push(args.data) }, socialLeadConversation: { update: async () => {} } }),
   };
-  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
+  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
   return { ...api, updates, getGenerated: () => generated, getSent: () => sent };
 }
 test('automatic replies use saved tone and business facts with the customer identity', async () => {
@@ -153,4 +153,21 @@ test('older enquiries and already answered conversations are not sent another au
   for (const options of [{superseded:true},{answered:true}]) {
     const f=workerFixture(options); assert.equal((await f.processSocialInboxAutoReplies()).handedOff,1); assert.equal(f.getSent(),0); assert.equal(f.getGenerated(),undefined); assert.ok(f.updates[0].autoReplyHandoffReason);
   }
+});
+
+test('staff AI drafts stop at the included monthly generation limit', async () => {
+  const route = draftRoute({ quotaAllowed: false });
+  const response = await route.POST(request(), params());
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).code, 'AI_GENERATION_LIMIT_REACHED');
+  assert.ok(!route.calls.some(call => call.ai));
+});
+
+test('automatic reply quota exhaustion pauses pending messages without consuming retries', async () => {
+  const f = workerFixture({ quotaAllowed: false });
+  const result = await f.processSocialInboxAutoReplies();
+  assert.equal(result.sent, 0); assert.equal(f.getGenerated(), undefined);
+  assert.equal(f.updates[0].autoReplyClaimedAt, null);
+  assert.deepEqual(f.updates[0].autoReplyAttemptCount, { decrement: 1 });
+  assert.equal(Object.hasOwn(f.updates[0], 'autoReplyHandledAt'), false);
 });

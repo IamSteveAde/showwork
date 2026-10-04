@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getCurrentCreator } from "@/lib/auth";
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest, { params }: Context) {
   const denied = await owner(id);
   if (denied) return denied;
   if (!(await canAccessCalendarById(id))) return NextResponse.json({ error: "This workspace is not active." }, { status: 403 });
+  const featureLock = await calendarFeatureGate(id, "socialInbox");
+  if (featureLock) return featureLock;
   if (!whatsappConfigured()) return NextResponse.json({ error: "Configure the WhatsApp app and webhook on the server first." }, { status: 503 });
   const raw = await req.text();
   if (Buffer.byteLength(raw) > 8192) return NextResponse.json({ error: "Connection details are too large." }, { status: 413 });

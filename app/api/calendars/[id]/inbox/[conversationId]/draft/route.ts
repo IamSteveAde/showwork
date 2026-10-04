@@ -1,3 +1,5 @@
+import { consumeCalendarAiGeneration } from "@/lib/contentWorkspaceUsage";
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import {
@@ -45,6 +47,9 @@ export async function POST(
       },
       { status: 400 },
     );
+  const featureLock = await calendarFeatureGate(calendarId, "aiInboxReplies");
+  if (featureLock) return featureLock;
+
   const conversation = await db.socialLeadConversation.findFirst({
     where: { id: conversationId, calendarId },
     include: {
@@ -77,6 +82,8 @@ export async function POST(
     ...normalizeReplyProfile(settings?.aiReplyProfile),
     tone: body.tone,
   };
+  const quota = await consumeCalendarAiGeneration(calendarId);
+  if (!quota.allowed) return NextResponse.json({ error: `Your monthly AI allowance of ${quota.limit} is unavailable or used up. Upgrade your plan or wait for your next monthly allowance.`, code: "AI_GENERATION_LIMIT_REACHED" }, { status: 403 });
   try {
     const draft = await generateSocialInboxAutoReply({
       clientName: conversation.calendar.clientName,

@@ -14,9 +14,7 @@ export async function GET(
   if (!(await hasCalendarPermission(creator.id, id, "VIEW_ONLY"))) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
-  if (!(await canAccessCalendarById(id))) {
-    return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
-  }
+  // Saved reporting stays readable after expiry; premium actions are separately gated.
   try {
     return NextResponse.json(await getCalendarReportingData(id, req.nextUrl.searchParams, true));
   } catch (error) {

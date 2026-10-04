@@ -1,3 +1,4 @@
+import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const calendar = await db.socialCalendar.findUnique({ where: { id }, select: { managerId: true } });
   if (!calendar) return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
   if (calendar.managerId !== creator.id) return NextResponse.json({ error: "Only the workspace owner can reset this calendar." }, { status: 403 });
+  if (!(await canAccessCalendarById(id))) return NextResponse.json({ error: "This workspace is read-only. Subscribe or upgrade to resume editing." }, { status: 403 });
   const body = await req.json().catch(() => null);
   if (body?.confirmation !== "RESET") return NextResponse.json({ error: "Confirm the reset by typing RESET." }, { status: 400 });
 

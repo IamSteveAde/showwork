@@ -1,8 +1,12 @@
 import { db } from "@/lib/db";
 import {
   canAccessContentWorkspace,
+  canUseContentWorkspaceFeature,
+  getContentWorkspacePlan,
   type ContentWorkspaceAccount,
 } from "@/lib/contentWorkspaceUsage";
+import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_FEATURES, workspaceFeatureUpgradeMessage, type ContentWorkspaceFeature } from "@/lib/contentWorkspaceEntitlements";
+import { NextResponse } from "next/server";
 
 export type CalendarRole = "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
 
@@ -50,6 +54,7 @@ export async function hasCalendarPermission(
 
   if (!role) return false;
 
+  if (required !== "VIEW_ONLY" && !(await canAccessCalendarById(calendarId))) return false;
   return ROLE_RANK[role] >= ROLE_RANK[required];
 }
 
@@ -82,21 +87,49 @@ export async function canAccessCalendarById(
   const calendar = await db.socialCalendar.findUnique({
     where: { id: calendarId },
     select: {
-      manager: {
-  select: {
-    id: true,
-    contentWorkspacePlan: true,
-    contentWorkspaceBillingStatus: true,
-    contentWorkspaceBillingCycle: true,
-    contentWorkspaceTrialEndsAt: true,
-    isComped: true,
-    compedUntil: true,
-  },
-},
+      managerId: true,
+      manager: { select: {
+        id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true,
+        contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true,
+        isComped: true, compedUntil: true,
+      } },
     },
   });
 
   if (!calendar) return false;
 
-  return canAccessCalendar(calendar.manager);
+  if (!canAccessCalendar(calendar.manager)) return false;
+  const plan = getContentWorkspacePlan(calendar.manager);
+  if (!plan) return false;
+  const limit = CONTENT_WORKSPACE_PLANS[plan].activeWorkspaces;
+  if (limit === Number.MAX_SAFE_INTEGER) return true;
+  // Keep excess trial workspaces intact and readable; only covered workspaces can mutate.
+  const covered = await db.socialCalendar.findMany({
+    where: { managerId: calendar.managerId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: limit,
+    select: { id: true },
+  });
+  return covered.some(workspace => workspace.id === calendarId);
+}
+
+export async function canUseCalendarFeature(calendarId: string, feature: ContentWorkspaceFeature): Promise<boolean> {
+  const calendar = await db.socialCalendar.findUnique({
+    where: { id: calendarId },
+    select: { manager: { select: {
+      id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true,
+      contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true,
+      isComped: true, compedUntil: true,
+    } } },
+  });
+  return !!calendar && canUseContentWorkspaceFeature(calendar.manager, feature) && await canAccessCalendarById(calendarId);
+}
+
+/** Call only after authenticating and checking the user's workspace permission. */
+export async function calendarFeatureGate(calendarId: string, feature: ContentWorkspaceFeature) {
+  if (await canUseCalendarFeature(calendarId, feature)) return null;
+  return NextResponse.json({
+    error: workspaceFeatureUpgradeMessage(feature), code: "WORKSPACE_FEATURE_LOCKED",
+    feature, requiredPlan: CONTENT_WORKSPACE_FEATURES[feature].minimumPlan,
+    upgradeUrl: "/dashboard/billing?product=content-workspace#content-workspace-plans",
+  }, { status: 403 });
 }

@@ -35,7 +35,7 @@ const message = (extra = {}) => ({ id: 'wamid.inbound', from: '2348000000000', t
 const notification = (messages = [message()], extra = {}) => ({ object: 'whatsapp_business_account', entry: [{ id: '33333', changes: [{ field: 'messages',
   value: { metadata: { phone_number_id: '22222' }, contacts: [{ wa_id: '2348000000000', profile: { name: 'Ada' } }], messages, ...extra } }] }] });
 const whatsapp = (db = {}, extra = {}) => load('lib/socialMessaging/whatsapp.ts', {
-  '@/lib/db': { db }, '@/lib/calendarPermissions': { canAccessCalendarById: async () => true },
+  '@/lib/db': { db }, '@/lib/calendarPermissions': {canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null,  canAccessCalendarById: async () => true },
   './ingest': { ingestSocialMessage: async () => true }, './dispatchAutoReply': { dispatchSocialInboxAutoReply: async () => true }, ...extra,
 });
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status });
@@ -177,7 +177,7 @@ test('channel routes deny non-owners and public connection reads never return cr
     socialConnection: { findFirst: async ({ select }) => { assert.equal(select.accessToken, undefined); assert.equal(select.refreshToken, undefined); return { id: 'connection' }; } },
     $transaction: async () => writes++ };
   const api = load('app/api/calendars/[id]/channels/whatsapp/route.ts', { '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) },
-    '@/lib/db': { db }, '@/lib/calendarPermissions': { getCalendarRole: async () => 'VIEW_ONLY', canAccessCalendarById: async () => true },
+    '@/lib/db': { db }, '@/lib/calendarPermissions': {canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null,  getCalendarRole: async () => 'VIEW_ONLY', canAccessCalendarById: async () => true },
     '@/lib/socialMessaging/whatsapp': { whatsappConfigured: () => true } });
   const context = { params: Promise.resolve({ id: 'workspace' }) };
   assert.equal((await api.POST(new NextRequest('https://test/api', { method: 'POST', body: '{}' }), context)).status, 404);
@@ -199,7 +199,7 @@ test('owner connection saves validated credentials, preserves refresh cutoff and
       upsert: async args => { saved.push(args); assert.equal(args.select.accessToken, undefined); return { id: 'connection', status: 'CONNECTED' }; },
     } }) };
   const api = load('app/api/calendars/[id]/channels/whatsapp/route.ts', { '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) },
-    '@/lib/db': { db }, '@/lib/calendarPermissions': { canAccessCalendarById: async () => true }, '@/lib/socialMessaging/whatsapp': {
+    '@/lib/db': { db }, '@/lib/calendarPermissions': {canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null,  canAccessCalendarById: async () => true }, '@/lib/socialMessaging/whatsapp': {
       whatsappConfigured: () => true, validateWhatsAppConnection: async input => { assert.equal(input.phoneNumberId, '22222'); return { accountName: 'Haelo', username: '+2348000000000' }; },
       whatsappRequest: async (path, token, body) => { assert.equal(path, '33333/subscribed_apps'); assert.equal(token, 'fake-token'); subscription++; return { success: true }; },
     } });
@@ -214,7 +214,7 @@ test('owner disconnect clears credentials and retires queued WhatsApp AI without
   const db = { socialCalendar: { findUnique: async () => ({ managerId: 'owner' }) },
     $transaction: async callback => callback({ socialConnection: { updateMany: async args => changes.push(args) }, socialLeadMessage: { updateMany: async args => queue.push(args) } }) };
   const api = load('app/api/calendars/[id]/channels/whatsapp/route.ts', { '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) },
-    '@/lib/db': { db }, '@/lib/calendarPermissions': {}, '@/lib/socialMessaging/whatsapp': {} });
+    '@/lib/db': { db }, '@/lib/calendarPermissions': {canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, }, '@/lib/socialMessaging/whatsapp': {} });
   assert.equal((await api.DELETE(new NextRequest('https://test/api', { method: 'DELETE' }), { params: Promise.resolve({ id: 'workspace' }) })).status, 200);
   assert.equal(changes[0].data.accessToken, null); assert.equal(changes[0].data.status, 'DISCONNECTED');
   assert.deepEqual(queue[0].where.conversation, { calendarId: 'workspace', platform: 'WHATSAPP' });
@@ -227,7 +227,7 @@ test('shared AI worker skips superseded WhatsApp messages and rechecks before se
       connection: connection(), calendar: { clientName: 'Haelo', aiBusinessSummary: 'We sell design', instagramPageId: null }, messages: [] } };
   const db = { socialInboxSettings: { findMany: async () => [{ calendarId: 'workspace' }], findUnique: async () => ({ aiAutoReplyEnabled: true }) },
     socialLeadMessage: { findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => changes.push(args.data) } };
-  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async () => { generated++; return { shouldReply: true, replyText: 'Hello' }; } },
+  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: true, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async () => { generated++; return { shouldReply: true, replyText: 'Hello' }; } },
     '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => sent++ },
     '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => { checks++; return skipFirst || checks > 1 ? 'Already answered' : null; } } });
   const first = await api.processSocialInboxAutoReplies(); assert.equal(first.handedOff, 1); assert.equal(generated, 0); assert.equal(sent, 0);

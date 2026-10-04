@@ -1,5 +1,7 @@
 "use client";
 
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useState } from "react";
 
@@ -648,6 +650,7 @@ export default function AiDraftReviewModal({
             {error && (
               <div className="mx-5 mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700 lg:mx-8">
                 {error}
+                {/upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or allowance does not cover this action. View plans to restore access or increase your limits." />}
               </div>
             )}
 

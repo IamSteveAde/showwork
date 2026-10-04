@@ -9,9 +9,10 @@ import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import {
   getCalendarRole,
-  canAccessCalendar,
+  canAccessCalendarById,
 } from "@/lib/calendarPermissions";
-import { isComplimentaryAccessActive } from "@/lib/contentWorkspaceUsage";
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
+import { canUseContentWorkspaceFeature, isContentWorkspaceTrialActive } from "@/lib/contentWorkspaceUsage";
 import { isAdminEmail } from "@/lib/admin";
 
 import CalendarGrid from "@/components/calendars/CalendarGrid";
@@ -19,7 +20,6 @@ import CalendarPlanStatus from "@/components/calendars/CalendarPlanStatus";
 import InviteCollaboratorForm from "@/components/calendars/InviteCollaboratorForm";
 import CalendarSettingsMenu from "@/components/calendars/CalendarSettingsMenu";
 import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisplay";
-import RetryCalendarPaymentButton from "@/components/calendars/RetryCalendarPaymentButton";
 import InstagramConnectionCard from "@/components/calendars/InstagramConnectionCard";
 import TikTokConnectionCard from "@/components/calendars/TikTokConnectionCard";
 import AdditionalChannelCard from "@/components/calendars/AdditionalChannelCard";
@@ -381,59 +381,9 @@ compedUntil: true,
 const canEditWorkspace = userRole === "EDIT_CALENDAR";
 const totalMembers = 1 + calendar._count.collaborators;
 
-  if (!isAdmin && !canAccessCalendar(calendar.manager)) {
-   const trialExpired =
-  calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
-  !!calendar.manager.contentWorkspaceTrialEndsAt &&
-  calendar.manager.contentWorkspaceTrialEndsAt.getTime() <= Date.now();
-
-    return (
-      <main
-        className="flex min-h-screen items-center justify-center px-6"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 15%, rgba(36,120,255,0.10), transparent 32%), #08090B",
-        }}
-      >
-        <div className="mx-auto flex max-w-md flex-col items-center text-center">
-          <div
-            className="mb-7 flex h-16 w-16 items-center justify-center rounded-[22px]"
-            style={{
-              background: "rgba(239,68,68,0.09)",
-              border: "1px solid rgba(239,68,68,0.16)",
-            }}
-          >
-            <IconShield className="h-7 w-7 text-red-400" />
-          </div>
-
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#72A8FF]">
-            Workspace inactive
-          </p>
-          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white">
-            {trialExpired ? "Your free trial has ended" : "Payment required"}
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-white/45">
-            {isManager
-              ? trialExpired
-                ? "Your 7-day trial for this workspace is over. Subscribe to continue using it."
-                : "This workspace's first payment was not completed, so it isn't active yet."
-              : "This workspace isn't active right now. Check back once the manager completes payment."}
-          </p>
-
-          {isManager && (
-            <div className="mt-7">
-              <RetryCalendarPaymentButton calendarId={calendar.id} />
-            </div>
-          )}
-
-          <Link
-            href="/dashboard/calendars"
-            className="mt-8 text-xs font-medium text-white/35 transition-colors hover:text-white"
-          ><>{" "}<UiSymbol name="left" />{" Back to client workspaces "}</></Link>
-        </div>
-      </main>
-    );
-  }
+  const workspaceActive = await canAccessCalendarById(calendar.id);
+  const agencyTrial = isContentWorkspaceTrialActive(calendar.manager);
+  const featureAccess = (feature: Parameters<typeof canUseContentWorkspaceFeature>[1]) => workspaceActive && canUseContentWorkspaceFeature(calendar.manager, feature);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const clientUrl = `${appUrl}/social-calendar/${calendar.slug}`;
@@ -446,12 +396,7 @@ const totalMembers = 1 + calendar._count.collaborators;
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
   });
 
-const aiActive =
-  calendar.manager.contentWorkspaceBillingStatus === "ACTIVE" ||
-  (calendar.manager.contentWorkspaceBillingStatus === "TRIAL" &&
-    !!calendar.manager.contentWorkspaceTrialEndsAt &&
-    calendar.manager.contentWorkspaceTrialEndsAt.getTime() > Date.now()) ||
-  isComplimentaryAccessActive(calendar.manager);
+const aiActive = workspaceActive;
 
   const calendarPosts = calendar.posts.map((p) => ({
     id: p.id,
@@ -822,7 +767,7 @@ contentIdea: p.contentIdea,
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
         {/* MAIN PEOPLE EXPERIENCE */}
         <div className="min-w-0">
-          <InviteCollaboratorForm calendarId={calendar.id} />
+          <InviteCollaboratorForm calendarId={calendar.id} advancedPermissionsAccess={featureAccess("advancedTeamPermissions")} />
         </div>
 
         {/* ───────────────────────────────────────────────────────
@@ -1017,8 +962,10 @@ contentIdea: p.contentIdea,
           <CalendarReportingPanel
             calendarId={calendar.id}
             isManager={isManager}
-            canAnalyze={canEditWorkspace}
-            canApplyRecommendations={canEditWorkspace && aiActive}
+            canAnalyze={canEditWorkspace && featureAccess("performanceRecommendations")}
+            advancedAccess={featureAccess("advancedAnalytics")}
+            recommendationsAccess={featureAccess("performanceRecommendations")}
+            canApplyRecommendations={canEditWorkspace && aiActive && featureAccess("performanceRecommendations")}
           />
           <div className="grid gap-5 xl:grid-cols-2">
           <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)] sm:p-6">
@@ -1065,7 +1012,9 @@ contentIdea: p.contentIdea,
       description: "Manage social contacts and manually added leads, qualify interest, and keep contact details and follow-up status current.",
       group: "Leads & Messages",
       content: (
-        <CalendarLeadsPanel calendarId={calendar.id} canEdit={canEditWorkspace} />
+        <div>
+          <CalendarLeadsPanel calendarId={calendar.id} canEdit={canEditWorkspace} featureLocked={!featureAccess("leadManagement")} />
+        </div>
       ),
     },
     {
@@ -1076,11 +1025,15 @@ contentIdea: p.contentIdea,
       description: "Read connected social and WhatsApp conversations, reply where supported and prepare AI replies using business knowledge.",
       group: "Leads & Messages",
       content: (
+        <div>
         <SocialLeadInbox
           calendarId={calendar.id}
           isManager={isManager}
-          canReplyFromWorkspace={canEditWorkspace}
+          canReplyFromWorkspace={canEditWorkspace && featureAccess("socialInbox")}
+          inboxAccess={featureAccess("socialInbox")}
+          autoRepliesAccess={featureAccess("aiAutoReplies")}
         />
+        </div>
       ),
     },
     {
@@ -1221,30 +1174,27 @@ contentIdea: p.contentIdea,
               />
             ),
           },
-          ...(aiActive
-            ? [
-                {
-                  id: "generate" as const,
-                  label: "Generate",
-                  eyebrow: "AI Studio · create",
-                  title: "Turn context into the next content batch.",
-                  description:
-                    "Set the creative direction, choose the channels and generate drafts that stay grounded in this client's world.",
-                  group: "AI Studio" as const,
-                  content: (
-                    <div className="relative overflow-hidden rounded-[28px] border border-[#CFE0FF] bg-[linear-gradient(145deg,#F4F8FF,#FFFFFF_48%,#EEF5FF)] p-1 shadow-[0_18px_55px_rgba(23,104,232,0.08)]">
-                      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#1768E8]/10 blur-3xl" />
-                      <div className="relative">
-                        <AiContentGeneratorCard
-                          calendarId={calendar.id}
-                          hasBusinessSummary={!!calendar.aiBusinessSummary}
-                        />
-                      </div>
-                    </div>
-                  ),
-                },
-              ]
-            : []),
+          {
+            id: "generate" as const,
+            label: "Generate",
+            eyebrow: "AI Studio · create",
+            title: "Turn context into the next content batch.",
+            description:
+              "Set the creative direction, choose the channels and generate drafts that stay grounded in this client's world.",
+            group: "AI Studio" as const,
+            content: (
+              <div className="relative overflow-hidden rounded-[28px] border border-[#CFE0FF] bg-[linear-gradient(145deg,#F4F8FF,#FFFFFF_48%,#EEF5FF)] p-1 shadow-[0_18px_55px_rgba(23,104,232,0.08)]">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#1768E8]/10 blur-3xl" />
+                <div className="relative">
+                  <AiContentGeneratorCard
+                    calendarId={calendar.id}
+                    hasBusinessSummary={!!calendar.aiBusinessSummary}
+                    performanceRecommendationsAccess={featureAccess("performanceRecommendations")}
+                  />
+                </div>
+              </div>
+            ),
+          },
           {
             id: "publish" as const,
             label: "Publish",
@@ -1290,13 +1240,21 @@ contentIdea: p.contentIdea,
         />
       }
      publishAction={
-  canEditWorkspace ? (
+  canEditWorkspace && workspaceActive ? (
     <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
       Publish workspace <span aria-hidden><><UiSymbol name="right" /></></span>
     </PublishTrigger>
   ) : undefined
 }
-      sections={sections}
+      sections={sections.map(section => ({ ...section, content: (
+        <>
+          {agencyTrial && <WorkspaceFeatureNotice trial paidPlan={calendar.manager.contentWorkspaceBillingStatus === "ACTIVE" ? calendar.manager.contentWorkspacePlan : null} trialEndsAt={calendar.manager.contentWorkspaceTrialEndsAt} />}
+          {!workspaceActive && <WorkspaceFeatureNotice />}
+          {!workspaceActive && !["overview", "analytics", "inbox", "leads"].includes(section.id)
+            ? <fieldset disabled className="min-w-0">{section.content}</fieldset>
+            : section.content}
+        </>
+      ) }))}
     />
     </>
   );

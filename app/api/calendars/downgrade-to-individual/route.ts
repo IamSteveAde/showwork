@@ -81,31 +81,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Choose a lower plan to downgrade." }, { status: 400 });
   }
 
-  /*
-   * The target plan must support the existing active workspaces.
-   *
-   * Collaborators are allowed on Creator, so we deliberately
-   * do not block this downgrade based on collaborators or
-   * pending invites.
-   */
-  const activeWorkspaceCount =
-    await db.socialCalendar.count({
-      where: {
-        managerId: creator.id,
-      },
-    });
-
-  if (activeWorkspaceCount > limits.activeWorkspaces) {
-    return NextResponse.json(
-      {
-        error:
-          `${limits.name} supports ${limits.activeWorkspaces} active client workspace${limits.activeWorkspaces === 1 ? "" : "s"}. Remove your extra workspaces before switching to ${limits.name}.`,
-        activeWorkspaceCount,
-        allowedWorkspaceCount: limits.activeWorkspaces,
-      },
-      { status: 400 }
-    );
-  }
+  // Preserve excess trial workspaces when choosing a lower plan. They become
+  // read-only after activation and unlock again when the account upgrades.
 
   /*
    * IMPORTANT:

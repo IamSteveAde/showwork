@@ -1,4 +1,7 @@
 "use client";
+
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
+
 import { useRouter } from "next/navigation";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -153,8 +156,10 @@ function Spinner() {
 
 export default function InviteCollaboratorForm({
   calendarId,
+  advancedPermissionsAccess = true,
 }: {
   calendarId: string;
+  advancedPermissionsAccess?: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -235,7 +240,7 @@ export default function InviteCollaboratorForm({
         await loadPeople();
       } else {
         setError(data.error ?? "Failed to send invite");
-        setRequiresUpgrade(!!data.requiresUpgrade);
+        setRequiresUpgrade(!!(data.requiresUpgrade || data.capReached || data.code === "WORKSPACE_FEATURE_LOCKED"));
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -476,6 +481,7 @@ export default function InviteCollaboratorForm({
                 </span>
               </div>
 
+              {!advancedPermissionsAccess && <WorkspaceFeatureNotice compact feature="advancedTeamPermissions" />}
               <div className="space-y-2.5">
                 {ROLES.map((r) => {
                   const selected = role === r.value;
@@ -484,6 +490,7 @@ export default function InviteCollaboratorForm({
                     <button
                       key={r.value}
                       type="button"
+                      disabled={!advancedPermissionsAccess && r.value !== "ADD_CONTENT"}
                       onClick={() => {
                         setRole(r.value);
                         setSentRole(null);
@@ -575,26 +582,7 @@ export default function InviteCollaboratorForm({
             )}
 
             {requiresUpgrade ? (
-              <div className="rounded-2xl border border-[#C7D7FE] bg-[#F4F7FF] p-4.5">
-                <p className="text-sm font-semibold text-[#101828]">
-                  Unlock team collaboration
-                </p>
-                <p className="mt-1.5 text-xs leading-5 text-[#667085]">
-                  Your account is on Individual. Switch to Company
-                  (₦29,900/month) to invite up to 15 people with role-based
-                  permissions.
-                </p>
-                <button
-                  type="button"
-                  onClick={upgradeToCompany}
-                  disabled={upgrading}
-                  className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-[#2478FF] px-4 text-xs font-semibold text-white shadow-[0_8px_20px_rgba(36,120,255,0.2)] transition hover:bg-[#1769EA] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {upgrading ? <Spinner /> : null}
-                  {upgrading ? "Switching..." : "Switch to Company"}
-                  {!upgrading && <ArrowIcon />}
-                </button>
-              </div>
+              <WorkspaceFeatureNotice compact message={error ?? "Your collaborator allowance is full. Upgrade to invite more people."} />
             ) : (
               error && (
                 <div className="rounded-2xl border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3.5 text-xs leading-5 text-[#B42318]">

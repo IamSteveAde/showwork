@@ -1,3 +1,4 @@
+import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -16,6 +17,7 @@ async function authorized(req: NextRequest, context: Context, write = false) {
   // Only the workspace owner can unlock the connected identity's root keys.
   const calendar = await db.socialCalendar.findFirst({ where: { id, managerId: creator.id }, select: { id: true } });
   if (!calendar || !(await canAccessCalendarById(id))) throw new XChatError("Only the owner of an active workspace can open X Chat.", 403);
+  if (!(await canUseCalendarFeature(id, "socialInbox"))) throw new XChatError("Upgrade to Studio to use Social Inbox. Your existing data is preserved.", 403);
   const connectionId = req.nextUrl.searchParams.get("connectionId");
   if (!connectionId) throw new XChatError("Choose a connected X account.");
   const stored = await db.socialConnection.findFirst({ where: { id: connectionId, calendarId: id, platform: "X", status: "CONNECTED" } });

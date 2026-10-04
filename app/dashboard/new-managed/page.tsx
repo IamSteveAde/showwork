@@ -474,7 +474,7 @@ export default function NewManagedProjectPage() {
                   <p className="text-sm text-red-300">{error}</p>
                   {isCapError && (
                     <Link
-                      href="/dashboard/billing?product=delivery"
+                      href="/dashboard/billing?product=delivery#project-delivery-plans"
                       className="inline-flex w-fit flex-shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25"
                     >
                       Upgrade now

@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import type { CalendarLeadPipelineStatus, CalendarLeadTemperature } from "@prisma/client";
 import { getCurrentCreator } from "@/lib/auth";
@@ -7,7 +8,7 @@ import { cleanOptionalString, LEAD_PIPELINE_STATUSES, LEAD_TEMPERATURES, normali
 
 async function authorization(calendarId: string, creatorId: string, write = false) {
   if (!(await hasCalendarPermission(creatorId, calendarId, write ? "EDIT_CALENDAR" : "VIEW_ONLY"))) return 404;
-  return (await canAccessCalendarById(calendarId)) ? 200 : 403;
+  return 200; // Existing lead data remains readable after trial expiry or downgrade.
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -86,6 +87,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: calendarId } = await params;
   const access = await authorization(calendarId, creator.id, true);
   if (access !== 200) return NextResponse.json({ error: access === 404 ? "Not found." : "This workspace isn’t active." }, { status: access });
+  const featureLock = await calendarFeatureGate(calendarId, "leadManagement");
+  if (featureLock) return featureLock;
   if (!db.calendarLead) return NextResponse.json({ error: "The running server has an outdated Prisma Client. Run `npx prisma generate` and restart the app." }, { status: 503 });
   const body = await req.json().catch(() => null) as { leads?: unknown; source?: unknown } | null;
   if (!body || (body.leads !== undefined && !Array.isArray(body.leads))) return NextResponse.json({ error: "Provide a lead or a leads array." }, { status: 400 });

@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
@@ -10,6 +11,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) return NextResponse.json({ error: "You don't have permission to sync this inbox." }, { status: 403 });
   if (!(await canAccessCalendarById(id))) return NextResponse.json({ error: "This workspace isn't active." }, { status: 403 });
+  const featureLock = await calendarFeatureGate(id, "socialInbox");
+  if (featureLock) return featureLock;
   const participantUsername = new URL(req.url).searchParams.get("username")?.trim().replace(/^@/, "");
   if (participantUsername && !/^[A-Za-z0-9_]{1,15}$/.test(participantUsername)) return NextResponse.json({ error: "Enter a valid X sender username." }, { status: 400 });
   try {
