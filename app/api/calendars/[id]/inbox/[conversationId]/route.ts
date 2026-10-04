@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
@@ -9,6 +10,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId, conversationId } = await params;
   if (!(await hasCalendarPermission(creator.id, calendarId, "VIEW_ONLY"))) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  const featureLock = await calendarFeatureGate(calendarId, "socialInbox");
+  if (featureLock) return featureLock;
+
   const body = await req.json().catch(() => null) as { leadStatus?: unknown; markRead?: unknown } | null;
   if (body?.markRead === true) {
     const updated = await db.socialLeadConversation.updateMany({ where: { id: conversationId, calendarId }, data: { unreadCount: 0 } });

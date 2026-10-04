@@ -1,5 +1,7 @@
 "use client";
 
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, type FormEvent } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -515,7 +517,8 @@ if (presignContentType.includes("application/json")) {
             className="mt-5 flex items-start gap-3 rounded-2xl border border-[#FECACA] bg-[#FFF7F7] px-4 py-3.5 text-[11px] leading-5 text-[#B42318]"
           >
             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F04438]" />
-            <span>{error}</span>
+            <div>{error}
+                {/upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or allowance does not cover this action. View plans to restore access or increase your limits." />}</div>
           </div>
         )}
 

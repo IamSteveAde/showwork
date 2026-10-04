@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { consumeReportingRecommendation, REPORTING_RECOMMENDATION_EVENT } from "@/lib/reporting/recommendationHandoff";
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import AiDraftReviewModal from "@/components/calendars/AiDraftReviewModal";
 
 const PLATFORMS = [
@@ -42,9 +44,11 @@ function ArrowIcon() {
 export default function AiContentGeneratorCard({
   calendarId,
   hasBusinessSummary,
+  performanceRecommendationsAccess = true,
 }: {
   calendarId: string;
   hasBusinessSummary: boolean;
+  performanceRecommendationsAccess?: boolean;
 }) {
   const today = new Date();
   const defaultStart = today.toISOString().slice(0, 10);
@@ -85,22 +89,31 @@ const [platformSchedules, setPlatformSchedules] = useState<
   const [generating, setGenerating] = useState(false);
   const [hasBusinessSummaryState, setHasBusinessSummaryState] = useState(hasBusinessSummary);
   const [error, setError] = useState<string | null>(null);
+  const [billingBlocked, setBillingBlocked] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(`calendar:${calendarId}:has-business-summary`) === "true") {
-      setHasBusinessSummaryState(true);
-    }
+    try {
+      if (window.sessionStorage.getItem(`calendar:${calendarId}:has-business-summary`) === "true") setHasBusinessSummaryState(true);
+    } catch { /* The server-provided business summary remains authoritative. */ }
   }, [calendarId]);
 
   useEffect(() => {
-    const key = `calendar:${calendarId}:reporting-recommendation`;
-    const recommendation = window.sessionStorage.getItem(key);
-    if (!recommendation) return;
-    setCustomInstructions(recommendation);
-    setReportingRecommendationLoaded(true);
-    window.sessionStorage.removeItem(key);
-  }, [calendarId]);
+    if (!performanceRecommendationsAccess) return;
+    const applyPending = () => {
+      const recommendation = consumeReportingRecommendation(calendarId);
+      if (!recommendation) return;
+      setCustomInstructions(recommendation);
+      setReportingRecommendationLoaded(true);
+      setError(null);
+    };
+    const onRecommendation = (event: Event) => {
+      if ((event as CustomEvent<{ calendarId: string }>).detail?.calendarId === calendarId) applyPending();
+    };
+    window.addEventListener(REPORTING_RECOMMENDATION_EVENT, onRecommendation);
+    applyPending();
+    return () => window.removeEventListener(REPORTING_RECOMMENDATION_EVENT, onRecommendation);
+  }, [calendarId, performanceRecommendationsAccess]);
 
 const togglePlatform = (platform: string) => {
   setPlatforms((previous) => {
@@ -149,6 +162,7 @@ const togglePlatform = (platform: string) => {
 
     setGenerating(true);
     setError(null);
+    setBillingBlocked(false);
 
     try {
      const res = await fetch(
@@ -162,6 +176,7 @@ const togglePlatform = (platform: string) => {
   postsPerWeek,
   platforms,
   customInstructions,
+  usePerformanceRecommendations: reportingRecommendationLoaded,
   contentStrategy,
   contentGroups,
   scheduleStrategy,
@@ -172,6 +187,7 @@ const togglePlatform = (platform: string) => {
       const data = await res.json();
 
       if (!res.ok) {
+        setBillingBlocked(res.status === 402 || (res.status === 403 && !!(data.requiresUpgrade || data.code === "WORKSPACE_FEATURE_LOCKED" || /subscription|allowance|limit|upgrade|trial/i.test(data.error || ""))));
         throw new Error(data.error ?? "Failed to generate content");
       }
 
@@ -219,6 +235,12 @@ const togglePlatform = (platform: string) => {
               </span>
             </div>
           </div>
+
+          {reportingRecommendationLoaded && (
+            <p role="status" className="mt-4 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800">
+              <SparkIcon /> Reporting recommendations added to Creative direction. Review or edit them before generating.
+            </p>
+          )}
 
           {!hasBusinessSummaryState ? (
             <div className="relative mt-6 overflow-hidden rounded-[22px] border border-[#E4E7EC] bg-[#F8FAFC] p-5 sm:p-6">
@@ -949,12 +971,8 @@ const togglePlatform = (platform: string) => {
   </div>
 )}
 
+              {!performanceRecommendationsAccess && <WorkspaceFeatureNotice compact feature="performanceRecommendations" />}
               <label className="mt-5 block">
-                {reportingRecommendationLoaded && (
-                  <span className="mb-3 flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-medium leading-5 text-blue-800">
-                    <SparkIcon /> Reporting recommendation added as creative direction. Review or edit it before generating.
-                  </span>
-                )}
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <span className="block text-xs font-semibold text-[#101828]">
@@ -971,7 +989,7 @@ const togglePlatform = (platform: string) => {
 
                 <textarea
                   value={customInstructions}
-                  onChange={(event) => setCustomInstructions(event.target.value)}
+                  onChange={(event) => { setCustomInstructions(event.target.value); if (!event.target.value.trim()) setReportingRecommendationLoaded(false); }}
                   rows={4}
                   placeholder="e.g. Focus on our new product launch, keep the tone playful, avoid discussing pricing…"
                   className="mt-3 w-full resize-none rounded-2xl border border-[#D9E2EC] bg-white px-4 py-3.5 text-[11px] leading-6 text-[#344054] outline-none transition-all placeholder:text-[#98A2B3] hover:border-[#B9C7D8] focus:border-[#2478FF] focus:ring-4 focus:ring-[#2478FF]/10"
@@ -984,7 +1002,8 @@ const togglePlatform = (platform: string) => {
           )}
         </div>
 
-        {hasBusinessSummary && (
+        {billingBlocked && <div className="px-5 sm:px-7"><WorkspaceFeatureNotice compact message="Your current subscription or AI allowance does not cover this generation. Upgrade for more access, or wait for your monthly allowance to reset." /></div>}
+        {hasBusinessSummaryState && (
           <div className="relative border-t border-[#EEF0F3] bg-[#F8FAFC] p-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-7 sm:py-5">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-[#101828]">

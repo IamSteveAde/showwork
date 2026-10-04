@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID, createHash } from "crypto";
@@ -7,6 +8,8 @@ import { sendCalendarInviteEmail } from "@/lib/resend";
 import {
   canAddContentWorkspaceCollaborator,
   getContentWorkspacePlan,
+  canAccessContentWorkspace,
+  canUseContentWorkspaceFeature,
 } from "@/lib/contentWorkspaceUsage";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 
@@ -238,6 +241,11 @@ export async function POST(
     ? role
     : "ADD_CONTENT";
 
+  if (finalRole !== "ADD_CONTENT") {
+    const featureLock = await calendarFeatureGate(id, "advancedTeamPermissions");
+    if (featureLock) return featureLock;
+  }
+
   /*
    * Re-check the account-level collaborator count immediately before
    * creating the invite.
@@ -261,6 +269,7 @@ export async function POST(
             managerId: calendar.managerId,
           },
           status: "PENDING",
+          expiresAt: { gt: new Date() },
         },
       }),
     ]);
@@ -322,20 +331,23 @@ export async function POST(
   const token =
     randomUUID() + randomUUID();
 
-  const invite =
-    await db.calendarInvite.create({
-      data: {
-        calendarId: calendar.id,
-        invitedByCreatorId: creator.id,
-        email: normalizedEmail,
-        role: finalRole,
-        tokenHash: hashToken(token),
-        expiresAt: new Date(
-          Date.now() +
-            7 * 24 * 60 * 60 * 1000
-        ),
-      },
-    });
+  const invite = await db.$transaction(async tx => {
+    await tx.$queryRaw`SELECT "id" FROM "Creator" WHERE "id" = ${calendar.managerId} FOR UPDATE`;
+    const owner = await tx.creator.findUniqueOrThrow({ where: { id: calendar.managerId } });
+    const currentPlan = getContentWorkspacePlan(owner);
+    if (!currentPlan || !canAccessContentWorkspace(owner)) return null;
+    if (finalRole !== "ADD_CONTENT" && !canUseContentWorkspaceFeature(owner, "advancedTeamPermissions")) return null;
+    const [accepted, pending] = await Promise.all([
+      tx.calendarCollaborator.count({ where: { calendar: { managerId: calendar.managerId } } }),
+      tx.calendarInvite.count({ where: { calendar: { managerId: calendar.managerId }, status: "PENDING", expiresAt: { gt: new Date() } } }),
+    ]);
+    if (accepted + pending >= CONTENT_WORKSPACE_PLANS[currentPlan].collaborators) return null;
+    return tx.calendarInvite.create({ data: {
+      calendarId: calendar.id, invitedByCreatorId: creator.id, email: normalizedEmail,
+      role: finalRole, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 7 * 86400000),
+    } });
+  });
+  if (!invite) return NextResponse.json({ error: "Your collaborator allowance or role permissions require an upgrade. Existing collaborators are preserved." }, { status: 403 });
 
   try {
     await sendCalendarInviteEmail({

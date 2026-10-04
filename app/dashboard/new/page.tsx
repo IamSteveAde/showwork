@@ -863,7 +863,7 @@ export default function NewProjectPage() {
             </p>
           </div>
 
-          <Link href="/dashboard/billing?product=delivery"
+          <Link href="/dashboard/billing?product=delivery#project-delivery-plans"
             className="group hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5 backdrop-blur-xl transition hover:border-white/15 hover:bg-white/[0.055] lg:block">
             <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/25">Account</p>
             <p className="mt-2 text-sm font-semibold text-white/65">View your plan</p>
@@ -924,7 +924,7 @@ export default function NewProjectPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/billing?product=delivery"
+              href="/dashboard/billing?product=delivery#project-delivery-plans"
               className="flex w-fit items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold transition-all hover:scale-[1.03]"
               style={{ background: "linear-gradient(135deg, #2478FF 0%, #0F5FE8 100%)", color: "#FFFFFF", boxShadow: "0 14px 35px rgba(36,120,255,0.24)" }}
             >
@@ -1435,7 +1435,7 @@ export default function NewProjectPage() {
               <p className="text-xs text-red-400">{error}</p>
               {isCapError && (
                 <Link
-                  href="/dashboard/billing?product=delivery"
+                  href="/dashboard/billing?product=delivery#project-delivery-plans"
                   className="inline-flex w-fit flex-shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-4 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/25"
                 ><>{" Upgrade now "}<UiSymbol name="right" />{" "}</></Link>
               )}

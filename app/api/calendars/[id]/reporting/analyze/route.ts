@@ -1,3 +1,5 @@
+import { consumeCalendarAiGeneration } from "@/lib/contentWorkspaceUsage";
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { Prisma, type SocialPlatform } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -18,6 +20,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!(await canAccessCalendarById(calendarId))) {
     return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
   }
+
+  const featureLock = await calendarFeatureGate(calendarId, "performanceRecommendations");
+  if (featureLock) return featureLock;
 
   try {
     const body = await req.json().catch(() => null) as { from?: unknown; to?: unknown; platform?: unknown } | null;
@@ -105,6 +110,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "There isn’t enough synced social performance data for this period yet. Connect an account and wait for its first reporting sync." }, { status: 409 });
     }
 
+    const quota = await consumeCalendarAiGeneration(calendarId);
+    if (!quota.allowed) return NextResponse.json({ error: `Your monthly AI allowance of ${quota.limit} is unavailable or used up. Upgrade your plan or wait for your next monthly allowance.`, code: "AI_GENERATION_LIMIT_REACHED" }, { status: 403 });
     const generated = await generateReportingInsights({
       clientName: calendar.clientName,
       businessSummary: calendar.aiBusinessSummary,

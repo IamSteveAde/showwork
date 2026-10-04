@@ -1,7 +1,7 @@
 "use client";
 
 import { TIERS } from "@/lib/subscriptionTiers";
-import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
+import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit, getContentWorkspaceFeatureList } from "@/lib/contentWorkspaceEntitlements";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -92,8 +92,7 @@ const WORKSPACE_PLANS: PricingPlan[] = CONTENT_WORKSPACE_PLAN_ORDER.map((key) =>
       key === "UNLIMITED" ? "Unlimited collaborators" : `Up to ${plan.collaborators} collaborators`,
       `${plan.storageBytes / 1_000_000_000} GB storage`,
       `${plan.aiGenerations.toLocaleString("en-NG")} AI generations / month`,
-      "Lead management & inbox",
-      "Analytics & reporting",
+      ...getContentWorkspaceFeatureList(key),
     ],
     cta: "Start 7-day trial",
     href: `/signup?next=/dashboard/calendars&plan=${key}&cycle=MONTHLY`,
@@ -439,7 +438,7 @@ if (product === "delivery") {
   const workspacePlanMap: Record<string, string> = {
     Creator: "CREATOR",
     Studio: "STUDIO",
-    Unlimited: "UNLIMITED",
+    Agency: "UNLIMITED",
   };
 
   const workspacePlan = workspacePlanMap[plan.name];
@@ -630,7 +629,7 @@ if (product === "delivery") {
                         : "text-[#9CA2AB]"
                     }`}
                   >
-                    7-day free trial · no payment
+                    7-day Agency trial · no payment
                     required to start
                   </p>
                 )}

@@ -13,6 +13,9 @@ import {
 } from "@/lib/contentWorkspaceEntitlements";
 import {
   canCreateContentWorkspace,
+  canAccessContentWorkspace,
+  getContentWorkspacePlan,
+  isComplimentaryAccessActive,
   type ContentWorkspaceAccount,
 } from "@/lib/contentWorkspaceUsage";
 
@@ -221,7 +224,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator, Studio or Unlimited",
+          "Choose a Content Workspace plan first: Creator, Studio or Agency",
       },
       { status: 400 }
     );
@@ -247,8 +250,8 @@ export async function POST(req: NextRequest) {
    * Check the workspace entitlement BEFORE creating the database row.
    *
    * This enforces:
-   * Creator -> maximum 1 active workspace
-   * Studio  -> maximum 10 active workspaces
+   * Creator -> maximum 5 active workspace
+   * Studio  -> maximum 15 active workspaces
    */
   const creationCheck = await canCreateContentWorkspace(account);
 
@@ -294,15 +297,35 @@ export async function POST(req: NextRequest) {
    * There are deliberately no billing fields on SocialCalendar.
    * Billing belongs to the creator's Content Workspace subscription.
    */
-  const calendar = await db.socialCalendar.create({
-    data: {
-      slug,
-      clientName,
-      passwordHash,
-      accessCode,
-      managerId: creator.id,
-    },
+  const creation = await db.$transaction(async tx => {
+    // Serialize account-level limits and the first trial start across requests.
+    await tx.$queryRaw`SELECT "id" FROM "Creator" WHERE "id" = ${creator.id} FOR UPDATE`;
+    const owner = await tx.creator.findUniqueOrThrow({ where: { id: creator.id } });
+    const selectedPlan = owner.contentWorkspacePlan ?? plan!;
+    const startsTrial = !owner.contentWorkspaceTrialUsedAt && !isComplimentaryAccessActive(owner);
+    const effectivePlan = startsTrial ? "UNLIMITED" : getContentWorkspacePlan(owner);
+    if ((!startsTrial && !canAccessContentWorkspace(owner)) || !effectivePlan) return null;
+    const count = await tx.socialCalendar.count({ where: { managerId: creator.id } });
+    if (count >= CONTENT_WORKSPACE_PLANS[effectivePlan].activeWorkspaces) return null;
+    const trialEndsAt = startsTrial ? new Date(Date.now() + CONTENT_WORKSPACE_TRIAL_DAYS * 86400000) : owner.contentWorkspaceTrialEndsAt;
+    if (startsTrial) {
+      await tx.creator.update({ where: { id: creator.id }, data: {
+        contentWorkspaceTrialUsedAt: new Date(), contentWorkspaceTrialEndsAt: trialEndsAt,
+        ...(owner.contentWorkspaceBillingStatus === "ACTIVE" ? {} : {
+          contentWorkspaceBillingStatus: "TRIAL", contentWorkspaceBillingCycle: null,
+        }),
+        contentWorkspaceWentOfflineAt: null,
+      } });
+    }
+    const calendar = await tx.socialCalendar.create({ data: {
+      slug, clientName, passwordHash, accessCode, managerId: creator.id,
+    } });
+    return { calendar, startsTrial, trialEndsAt, owner, selectedPlan };
   });
+  if (!creation) return NextResponse.json({ error: "Your workspace allowance is full or your subscription is inactive. Upgrade to add a workspace. Existing data is preserved." }, { status: 403 });
+  const { calendar } = creation;
+  Object.assign(creator, creation.owner);
+  plan = creation.selectedPlan;
 
   /*
  * COMPLIMENTARY ACCESS:
@@ -333,33 +356,8 @@ if (
    * No payment is requested.
    * No Paystack subscription is created.
    */
-  if (!creator.contentWorkspaceTrialUsedAt) {
-    const trialEndsAt = new Date();
-
-    trialEndsAt.setDate(
-      trialEndsAt.getDate() + CONTENT_WORKSPACE_TRIAL_DAYS
-    );
-
-    await db.creator.update({
-      where: {
-        id: creator.id,
-      },
-      data: {
-        contentWorkspacePlan: plan,
-        contentWorkspaceBillingStatus: "TRIAL",
-        contentWorkspaceBillingCycle: null,
-        contentWorkspaceTrialUsedAt: new Date(),
-        contentWorkspaceTrialEndsAt: trialEndsAt,
-        contentWorkspaceWentOfflineAt: null,
-      },
-    });
-
-    return NextResponse.json({
-      calendarId: calendar.id,
-      trial: true,
-      plan,
-      trialEndsAt,
-    });
+  if (creation.startsTrial) {
+    return NextResponse.json({ calendarId: calendar.id, trial: true, plan, trialEndsAt: creation.trialEndsAt });
   }
 
   /*

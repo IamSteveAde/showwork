@@ -1,3 +1,4 @@
+import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyViewerToken } from "@/lib/auth";
@@ -18,6 +19,8 @@ export async function POST(
   const token = req.cookies.get(cookieNameFor(calendar.id))?.value;
   const viewer = token ? verifyViewerToken(token, calendar.id) : null;
   if (!viewer) return NextResponse.json({ error: "Please unlock this calendar first" }, { status: 401 });
+
+  if (!(await canAccessCalendarById(calendar.id))) return NextResponse.json({ error: "This workspace is read-only. Ask the owner to subscribe or upgrade to resume approvals and feedback." }, { status: 403 });
 
   const post = await db.calendarPost.findUnique({ where: { id: postId } });
   if (!post || post.calendarId !== calendar.id) {

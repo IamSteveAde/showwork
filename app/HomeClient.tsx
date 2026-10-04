@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/landing/SiteFooter";
 import PricingSection from "@/components/landing/PricingSection";
 import IntegrationsSection from "@/components/landing/IntegrationsSection";
+import FAQSection from "@/components/landing/FAQSection";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -1481,6 +1482,8 @@ export default function HomeClient({
 <ProductMoment onOpen={() => setShowVideo(true)} />
 
       <Philosophy />
+
+      <FAQSection />
 
       <FinalCTA isLoggedIn={isLoggedIn} />
 

@@ -1,5 +1,6 @@
 "use client";
 
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -2847,6 +2848,7 @@ function AddPostPanel({
               )}
             </section>
 
+            {error && /upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or storage allowance does not cover this action. View plans to restore access or increase your limits." />}
             {/* ERROR */}
             {error && (
               <div
@@ -4380,6 +4382,7 @@ caption: draftDetails.caption,
                 </div>
               )}
 
+              {error && /upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or storage allowance does not cover this action. View plans to restore access or increase your limits." />}
               {error && (
                 <div
                   className="

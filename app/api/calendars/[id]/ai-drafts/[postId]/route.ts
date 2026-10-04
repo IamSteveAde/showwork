@@ -176,8 +176,8 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
    *
    * AI regeneration is included in the Content Workspace subscription.
    *
-   * Creator: 30 regenerations/month
-   * Studio: 150 regenerations/month
+   * Creator: 100 shared AI generations/month
+   * Studio: 500 shared AI generations/month; Agency: 2,000
    */
   export async function POST(
     req: NextRequest,
@@ -269,13 +269,10 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
      */
     const consumed = await consumeAiRegeneration(owner.id);
 
-    if (!consumed) {
+    if (!consumed.allowed) {
       return NextResponse.json(
         {
-          error:
-            contentWorkspacePlan === "CREATOR"
-              ? "You've reached your 30 AI regenerations for this month. Your allowance resets at the start of your next billing cycle."
-              : "You've reached your 150 AI regenerations for this month. Your allowance resets at the start of your next billing cycle.",
+          error: `Your AI regeneration allowance of ${consumed.limit} is unavailable or used up. Upgrade your plan or wait for your next monthly allowance.`,
           code: "AI_REGENERATION_LIMIT_REACHED",
           plan: contentWorkspacePlan,
         },
@@ -290,12 +287,12 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       */
       await db.contentWorkspaceUsage.updateMany({
         where: {
-          creatorId: owner.id,
+          creatorId: owner.id, cycleStart: consumed.cycleStart,
+          aiRegenerationsUsed: { gt: 0 }, aiGenerationsUsed: { gt: 0 },
         },
         data: {
-          aiRegenerationsUsed: {
-            decrement: 1,
-          },
+          aiRegenerationsUsed: { decrement: 1 },
+          aiGenerationsUsed: { decrement: 1 },
         },
       });
 
@@ -381,12 +378,12 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       */
       await db.contentWorkspaceUsage.updateMany({
         where: {
-          creatorId: owner.id,
+          creatorId: owner.id, cycleStart: consumed.cycleStart,
+          aiRegenerationsUsed: { gt: 0 }, aiGenerationsUsed: { gt: 0 },
         },
         data: {
-          aiRegenerationsUsed: {
-            decrement: 1,
-          },
+          aiRegenerationsUsed: { decrement: 1 },
+          aiGenerationsUsed: { decrement: 1 },
         },
       });
 
@@ -408,12 +405,12 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     if (!isValidPlatform(generated.platform)) {
       await db.contentWorkspaceUsage.updateMany({
         where: {
-          creatorId: owner.id,
+          creatorId: owner.id, cycleStart: consumed.cycleStart,
+          aiRegenerationsUsed: { gt: 0 }, aiGenerationsUsed: { gt: 0 },
         },
         data: {
-          aiRegenerationsUsed: {
-            decrement: 1,
-          },
+          aiRegenerationsUsed: { decrement: 1 },
+          aiGenerationsUsed: { decrement: 1 },
         },
       });
 
@@ -429,12 +426,12 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     if (!isValidDate(generated.postDate)) {
       await db.contentWorkspaceUsage.updateMany({
         where: {
-          creatorId: owner.id,
+          creatorId: owner.id, cycleStart: consumed.cycleStart,
+          aiRegenerationsUsed: { gt: 0 }, aiGenerationsUsed: { gt: 0 },
         },
         data: {
-          aiRegenerationsUsed: {
-            decrement: 1,
-          },
+          aiRegenerationsUsed: { decrement: 1 },
+          aiGenerationsUsed: { decrement: 1 },
         },
       });
 

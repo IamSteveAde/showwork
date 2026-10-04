@@ -20,7 +20,7 @@ import WorkspaceOnboarding, {
 } from "@/components/calendars/WorkspaceOnboarding";
 
 const PAGE_SIZE = 9;
-const BILLING_HREF = "/dashboard/billing?product=content-workspace";
+const BILLING_HREF = "/dashboard/billing?product=content-workspace#content-workspace-plans";
 
 function pageHref(page: number, query: string) {
   const params = new URLSearchParams();
@@ -114,7 +114,7 @@ export default async function CalendarsPage({
     : null;
 
   const planName = billing?.contentWorkspacePlan
-    ? { CREATOR: "Creator", STUDIO: "Studio", UNLIMITED: "Unlimited" }[
+    ? { CREATOR: "Creator", STUDIO: "Studio", UNLIMITED: "Agency" }[
         billing.contentWorkspacePlan
       ]
     : "No plan";

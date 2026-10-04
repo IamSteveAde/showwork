@@ -1,4 +1,7 @@
 "use client";
+
+import { getContentWorkspaceFeatureList } from "@/lib/contentWorkspaceEntitlements";
+
 import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_PLAN_ORDER, formatWorkspaceLimit } from "@/lib/contentWorkspaceEntitlements";
 import { useRouter } from "next/navigation";
 
@@ -11,6 +14,11 @@ type BillingStatus =
   | "TRIAL"
   | "ACTIVE"
   | "OFFLINE";
+export type WorkspacePlanSwitchRequest = {
+  plan: ContentWorkspacePlan;
+  billingCycle: BillingCycle;
+};
+
 type PendingSwitch = "upgrade" | "downgrade" | null;
 
 function SettingsIcon({
@@ -191,12 +199,16 @@ export default function CalendarBillingSettings({
   billingCycle,
   subscriptionRenewsAt,
   trialEndsAt,
+  switchRequest,
+  onBusyChange,
 }: {
   plan: ContentWorkspacePlan;
   billingStatus: BillingStatus;
   billingCycle: BillingCycle | null;
   subscriptionRenewsAt: string | null;
   trialEndsAt: string | null;
+  switchRequest?: WorkspacePlanSwitchRequest | null;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -211,6 +223,9 @@ export default function CalendarBillingSettings({
   const [planBillingCycle, setPlanBillingCycle] = useState<BillingCycle>(billingCycle ?? "MONTHLY");
   const [switchBillingCycle, setSwitchBillingCycle] = useState<BillingCycle>("MONTHLY");
   const errorDialogRef = useRef<HTMLDialogElement>(null);
+  const handledSwitchRequest = useRef<WorkspacePlanSwitchRequest | null>(null);
+
+  useEffect(() => { onBusyChange?.(loading !== null); }, [loading, onBusyChange]);
 
   useEffect(() => {
     const dialog = errorDialogRef.current;
@@ -377,15 +392,15 @@ export default function CalendarBillingSettings({
     }
   };
 
-  const startSwitch = (nextPlan: ContentWorkspacePlan) => {
+  const startSwitch = (nextPlan: ContentWorkspacePlan, requestedCycle: BillingCycle = planBillingCycle) => {
     const kind = CONTENT_WORKSPACE_PLAN_ORDER.indexOf(nextPlan) > CONTENT_WORKSPACE_PLAN_ORDER.indexOf(plan) ? "upgrade" : "downgrade";
     setSelectedPlan(nextPlan);
-    setSwitchBillingCycle(planBillingCycle);
+    setSwitchBillingCycle(requestedCycle);
     if (isStillInTrial) {
       setPendingSwitch(kind);
       return;
     }
-    void runSwitch(kind, false, planBillingCycle, nextPlan);
+    void runSwitch(kind, false, requestedCycle, nextPlan);
   };
 
   const cancel = async () => {
@@ -420,6 +435,16 @@ export default function CalendarBillingSettings({
       setConfirmingCancel(false);
     }
   };
+
+  useEffect(() => {
+    if (!switchRequest || handledSwitchRequest.current === switchRequest || switchRequest.plan === plan) return;
+    handledSwitchRequest.current = switchRequest;
+    setOpen(true);
+    setPlanBillingCycle(switchRequest.billingCycle);
+    startSwitch(switchRequest.plan, switchRequest.billingCycle);
+    // Each comparison-card request is consumed once by the existing switch flow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [switchRequest, plan]);
 
   if (!open) {
     return (
@@ -734,7 +759,7 @@ export default function CalendarBillingSettings({
             </div>
 
             <p className="mb-4 text-sm leading-6 text-[#667085]">
-              Choose any plan below. During your trial, you can switch and keep your remaining trial time. Paid plan changes open checkout and take effect after payment. Lower plans must fit your active workspace count.
+              Choose any plan below. During your trial, every plan has full Agency feature access. You can switch your intended plan and keep your remaining trial time. Paid plan changes open checkout and take effect after payment. Existing workspaces beyond the new allowance stay available to review and unlock again when you upgrade.
             </p>
             <div className="grid gap-4 lg:grid-cols-3">
               {CONTENT_WORKSPACE_PLAN_ORDER.map((key) => {
@@ -749,7 +774,7 @@ export default function CalendarBillingSettings({
                     <h4 className="text-lg font-semibold text-[#101828]">{details.name}</h4>
                     <p className="mt-2 text-xl font-semibold text-[#101828]">{formatNaira(planBillingCycle === "ANNUAL" ? details.annualPrice : details.monthlyPrice)}<span className="text-xs font-normal text-[#667085]">/{planBillingCycle === "ANNUAL" ? "year" : "month"}</span></p>
                     <ul className="my-5 space-y-2 text-xs text-[#475467]">
-                      {[details.workspaces, details.collaborators, details.storage, details.ai].map(feature => <li key={feature} className="flex gap-2"><CheckIcon className="h-4 w-4 shrink-0 text-[#12B76A]" />{feature}</li>)}
+                      {[details.workspaces, details.collaborators, details.storage, details.ai, ...getContentWorkspaceFeatureList(key)].map(feature => <li key={feature} className="flex gap-2"><CheckIcon className="h-4 w-4 shrink-0 text-[#12B76A]" />{feature}</li>)}
                     </ul>
                     <button type="button" disabled={isCurrent || loading !== null} onClick={() => startSwitch(key)} className={`mt-auto min-h-11 rounded-xl px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${key === "UNLIMITED" ? "bg-[#2478FF] text-white" : "border border-[#D0D5DD] bg-white text-[#344054]"}`}>
                       {isCurrent ? "Current plan" : loading !== null && selectedPlan === key ? "Switching…" : `${isUpgrade ? "Upgrade" : "Downgrade"} to ${details.name}`}

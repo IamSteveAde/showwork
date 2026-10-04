@@ -1,6 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
   CONTENT_WORKSPACE_PLANS,
+  planIncludesWorkspaceFeature,
+  type ContentWorkspaceFeature,
   type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
@@ -54,7 +57,7 @@ export function isContentWorkspaceTrialActive(
   >
 ): boolean {
   return (
-    account.contentWorkspaceBillingStatus === "TRIAL" &&
+    ["TRIAL", "ACTIVE"].includes(account.contentWorkspaceBillingStatus) &&
     !!account.contentWorkspaceTrialEndsAt &&
     account.contentWorkspaceTrialEndsAt.getTime() > Date.now()
   );
@@ -105,14 +108,22 @@ export function getContentWorkspacePlan(
   account: Pick<
     ContentWorkspaceAccount,
     "contentWorkspacePlan" | "isComped" | "compedUntil"
+    | "contentWorkspaceBillingStatus" | "contentWorkspaceTrialEndsAt"
   >
 ): ContentWorkspacePlan | null {
+  if (isContentWorkspaceTrialActive(account)) return "UNLIMITED";
+
   if (isComplimentaryAccessActive(account)) {
-    return "STUDIO";
+    return account.contentWorkspacePlan === "UNLIMITED" && account.contentWorkspaceBillingStatus === "ACTIVE" ? "UNLIMITED" : "STUDIO";
   }
 
   return account.contentWorkspacePlan;
 }
+/** Feature access always uses the owner's live billing state, never the caller's plan. */
+export function canUseContentWorkspaceFeature(account: ContentWorkspaceAccount, feature: ContentWorkspaceFeature): boolean {
+  return canAccessContentWorkspace(account) && planIncludesWorkspaceFeature(getContentWorkspacePlan(account), feature);
+}
+
 /**
  * Counts the creator's currently owned Content Workspaces.
  */
@@ -141,11 +152,26 @@ export async function getCollaboratorCount(
   });
 }
 
+/** Monthly AI allowances also reset for annual subscriptions; storage never resets. */
+export function currentAiCycleStart(anchor: Date, now = new Date()): Date {
+  let months = (now.getUTCFullYear() - anchor.getUTCFullYear()) * 12 + now.getUTCMonth() - anchor.getUTCMonth();
+  const boundary = (offset: number) => {
+    const date = new Date(anchor);
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() + offset);
+    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(anchor.getUTCDate(), lastDay));
+    return date;
+  };
+  if (boundary(months) > now) months--;
+  return months > 0 ? boundary(months) : anchor;
+}
+
 /**
  * Ensures the creator has a usage row.
  */
 export async function getOrCreateContentWorkspaceUsage(creatorId: string) {
-  return db.contentWorkspaceUsage.upsert({
+  const usage = await db.contentWorkspaceUsage.upsert({
     where: {
       creatorId,
     },
@@ -159,6 +185,16 @@ export async function getOrCreateContentWorkspaceUsage(creatorId: string) {
     },
     update: {},
   });
+  const cycleStart = currentAiCycleStart(usage.cycleStart);
+  if (cycleStart.getTime() !== usage.cycleStart.getTime()) {
+    // Compare-and-swap avoids resetting a quota twice during concurrent requests.
+    await db.contentWorkspaceUsage.updateMany({
+      where: { creatorId, cycleStart: usage.cycleStart },
+      data: { cycleStart, aiGenerationsUsed: 0, aiRegenerationsUsed: 0 },
+    });
+    return db.contentWorkspaceUsage.findUniqueOrThrow({ where: { creatorId } });
+  }
+  return usage;
 }
 
 /**
@@ -241,7 +277,7 @@ export async function getContentWorkspaceUsage(
     aiRegenerationLimit: entitlements.aiRegenerations,
     aiRegenerationsRemaining: Math.max(
       0,
-      entitlements.aiRegenerations - usage.aiRegenerationsUsed
+      Math.min(entitlements.aiRegenerations - usage.aiRegenerationsUsed, entitlements.aiGenerations - usage.aiGenerationsUsed)
     ),
 
     cycleStart: usage.cycleStart,
@@ -281,7 +317,7 @@ export async function canCreateContentWorkspace(
   }
 
   if (
-    usage.activeWorkspaces >= usage.workspaceLimit
+    usage.activeWorkspaces >= usage.workspaceLimit && !hasUnusedTrial
   ) {
     return {
       allowed: false,
@@ -289,7 +325,7 @@ export async function canCreateContentWorkspace(
         usage.workspaceLimit
       } active Content Workspace${
         usage.workspaceLimit === 1 ? "" : "s"
-      }.`,
+      }. Upgrade to increase your allowance. Existing workspaces are preserved.`,
       usage,
     };
   }
@@ -322,7 +358,7 @@ export async function canAddContentWorkspaceCollaborator(
   if (usage.collaborators >= usage.collaboratorLimit) {
     return {
       allowed: false,
-      reason: `Your ${usage.plan} plan allows up to ${usage.collaboratorLimit} collaborators.`,
+      reason: `Your ${usage.plan} plan allows up to ${usage.collaboratorLimit} collaborators. Upgrade to increase your allowance.`,
       usage,
     };
   }
@@ -519,6 +555,7 @@ export async function reserveContentWorkspaceStorage(
     {
       maxWait: 15000,
       timeout: 15000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     }
   );
 
@@ -900,21 +937,23 @@ export async function consumeAiGeneration(
     };
   }
 
-  const updated = await db.contentWorkspaceUsage.update({
-    where: { creatorId },
-    data: {
-      aiGenerationsUsed: {
-        increment: 1,
-      },
-    },
+  const consumed = await db.contentWorkspaceUsage.updateMany({
+    where: { creatorId, cycleStart: usage.cycleStart, aiGenerationsUsed: { lt: limit } },
+    data: { aiGenerationsUsed: { increment: 1 } },
   });
-
+  const updated = await db.contentWorkspaceUsage.findUniqueOrThrow({ where: { creatorId } });
   return {
-    allowed: true,
-    used: updated.aiGenerationsUsed,
-    limit,
+    allowed: consumed.count === 1,
+    used: updated.aiGenerationsUsed, limit,
     remaining: Math.max(0, limit - updated.aiGenerationsUsed),
   };
+}
+
+/** Inbox drafting, automatic replies and performance analysis share the included AI allowance. */
+export async function consumeCalendarAiGeneration(calendarId: string) {
+  const calendar = await db.socialCalendar.findUnique({ where: { id: calendarId }, select: { managerId: true } });
+  if (!calendar) return { allowed: false, used: 0, limit: 0, remaining: 0 };
+  return consumeAiGeneration(calendar.managerId);
 }
 
 /**
@@ -927,6 +966,7 @@ export async function consumeAiRegeneration(
   used: number;
   limit: number;
   remaining: number;
+  cycleStart?: Date;
 }> {
   const creator = await db.creator.findUnique({
     where: { id: creatorId },
@@ -962,29 +1002,24 @@ export async function consumeAiRegeneration(
   const limit = CONTENT_WORKSPACE_PLANS[plan].aiRegenerations;
   const usage = await getOrCreateContentWorkspaceUsage(creatorId);
 
-  if (usage.aiRegenerationsUsed >= limit) {
+  if (usage.aiRegenerationsUsed >= limit || usage.aiGenerationsUsed >= limit) {
     return {
       allowed: false,
-      used: usage.aiRegenerationsUsed,
+      used: usage.aiGenerationsUsed,
       limit,
       remaining: 0,
     };
   }
 
-  const updated = await db.contentWorkspaceUsage.update({
-    where: { creatorId },
-    data: {
-      aiRegenerationsUsed: {
-        increment: 1,
-      },
-    },
+  const consumed = await db.contentWorkspaceUsage.updateMany({
+    where: { creatorId, cycleStart: usage.cycleStart, aiRegenerationsUsed: { lt: limit }, aiGenerationsUsed: { lt: limit } },
+    data: { aiRegenerationsUsed: { increment: 1 }, aiGenerationsUsed: { increment: 1 } },
   });
-
+  const updated = await db.contentWorkspaceUsage.findUniqueOrThrow({ where: { creatorId } });
   return {
-    allowed: true,
-    used: updated.aiRegenerationsUsed,
-    limit,
-    remaining: Math.max(0, limit - updated.aiRegenerationsUsed),
+    allowed: consumed.count === 1,
+    used: updated.aiGenerationsUsed, limit, cycleStart: usage.cycleStart,
+    remaining: Math.max(0, limit - updated.aiGenerationsUsed),
   };
 }
 /**

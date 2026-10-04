@@ -31,7 +31,7 @@ function resolveBillingCycle(
   return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — upgrades a Content Workspace account to Studio or Unlimited.
+// POST — upgrades a Content Workspace account to Studio or Agency.
 //
 // If the account is still inside its valid 7-day trial, the switch can
 // happen without immediate payment unless `payNow` is true.

@@ -1,3 +1,4 @@
+import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyViewerToken } from "@/lib/auth";
@@ -22,6 +23,8 @@ export async function POST(
   if (!viewer) {
     return NextResponse.json({ error: "Please unlock this calendar first" }, { status: 401 });
   }
+
+  if (!(await canAccessCalendarById(calendar.id))) return NextResponse.json({ error: "This workspace is read-only. Ask the owner to subscribe or upgrade to resume approvals and feedback." }, { status: 403 });
 
   if (calendar.planStatus !== "AWAITING_APPROVAL") {
     return NextResponse.json({ error: "This plan isn't currently awaiting a response" }, { status: 400 });

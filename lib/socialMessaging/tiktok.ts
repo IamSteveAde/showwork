@@ -1,3 +1,4 @@
+import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 import { canAccessCalendarById } from "@/lib/calendarPermissions";
@@ -81,6 +82,7 @@ export async function receiveTikTokMessage(payload: unknown) {
   return { imported };
 }
 export async function sendTikTokMessage(input: { connection: SocialConnection; conversationId?: string; recipientId: string; text: string }) {
+  if (!(await canUseCalendarFeature(input.connection.calendarId, "socialInbox"))) throw new Error("Upgrade to Studio to use Social Inbox. Your existing data is preserved.");
   if (!tikTokMessagingConfigured()) throw new Error("TikTok Business Messaging requires approval and app credentials.");
   if (!input.conversationId || !input.text.trim() || input.text.length > 2000) throw new Error("Select a TikTok conversation and enter a reply of 1–2,000 characters.");
   if (!(await canAccessCalendarById(input.connection.calendarId))) throw new Error("This workspace is not active.");
@@ -100,6 +102,7 @@ export async function sendTikTokMessage(input: { connection: SocialConnection; c
 /** Historical recovery is bounded by TikTok's 20-message API limit and never
  * enables AI replies. Live notifications deliver subsequent messages. */
 export async function syncTikTokInbox(input: SocialConnection) {
+  if (!(await canUseCalendarFeature(input.calendarId, "socialInbox"))) throw new Error("Upgrade to Studio to use Social Inbox. Your existing data is preserved.");
   if (!(await canAccessCalendarById(input.calendarId))) throw new Error("This workspace is not active.");
   const connection = await freshTikTokMessagingConnection(input);
   const started = Date.now();

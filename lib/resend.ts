@@ -1393,7 +1393,7 @@ export async function sendCalendarPaymentFailedEmail({
         </div>
       `,
       ctaLabel: "Open billing",
-      ctaUrl: `${APP_URL}/dashboard/billing?product=content-workspace`,
+      ctaUrl: `${APP_URL}/dashboard/billing?product=content-workspace#content-workspace-plans`,
       accent: "#F97316",
       footer: "Billing notice from Showwork Content Workspace.",
     }),

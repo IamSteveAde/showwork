@@ -38,9 +38,39 @@ export interface ContentWorkspaceEntitlements {
   aiGenerations: number;
 
   /**
-   * Maximum AI regenerations during one billing cycle.
+   * Maximum AI regenerations during one monthly cycle. Regenerations also count toward the shared generation allowance.
    */
   aiRegenerations: number;
+}
+
+export type ContentWorkspaceFeature =
+  | "advancedAnalytics" | "performanceRecommendations" | "socialInbox"
+  | "leadManagement" | "advancedTeamPermissions" | "aiInboxReplies"
+  | "aiAutoReplies" | "prioritySupport";
+
+export const CONTENT_WORKSPACE_FEATURES: Record<ContentWorkspaceFeature, { name: string; minimumPlan: ContentWorkspacePlan }> = {
+  advancedAnalytics: { name: "Advanced analytics", minimumPlan: "STUDIO" },
+  performanceRecommendations: { name: "AI performance recommendations / performance-informed planning", minimumPlan: "STUDIO" },
+  socialInbox: { name: "Social Inbox", minimumPlan: "STUDIO" },
+  leadManagement: { name: "Lead management", minimumPlan: "STUDIO" },
+  advancedTeamPermissions: { name: "Advanced team permissions", minimumPlan: "STUDIO" },
+  aiInboxReplies: { name: "AI inbox reply drafting", minimumPlan: "STUDIO" },
+  aiAutoReplies: { name: "AI automatic inbox replies (opt-in)", minimumPlan: "UNLIMITED" },
+  prioritySupport: { name: "Priority support", minimumPlan: "UNLIMITED" },
+};
+
+export function planIncludesWorkspaceFeature(plan: ContentWorkspacePlan | null, feature: ContentWorkspaceFeature): boolean {
+  return !!plan && CONTENT_WORKSPACE_PLAN_ORDER.indexOf(plan) >= CONTENT_WORKSPACE_PLAN_ORDER.indexOf(CONTENT_WORKSPACE_FEATURES[feature].minimumPlan);
+}
+
+export function workspaceFeatureUpgradeMessage(feature: ContentWorkspaceFeature): string {
+  const config = CONTENT_WORKSPACE_FEATURES[feature];
+  return `Upgrade to ${CONTENT_WORKSPACE_PLANS[config.minimumPlan].name} to use ${config.name}. Your existing data is preserved.`;
+}
+
+export function getContentWorkspaceFeatureList(plan: ContentWorkspacePlan): string[] {
+  return ["Content planning & calendar", "AI content generation", "Client approvals", "Social publishing", "Basic analytics",
+    ...Object.entries(CONTENT_WORKSPACE_FEATURES).filter(([feature]) => planIncludesWorkspaceFeature(plan, feature as ContentWorkspaceFeature)).map(([, config]) => config.name)];
 }
 
 export interface ContentWorkspacePlanConfig
@@ -82,11 +112,11 @@ export const CONTENT_WORKSPACE_PLANS: Record<
     priceNgnMonthly: 4_900,
     priceNgnAnnual: 55_860,
 
-    activeWorkspaces: 1,
+    activeWorkspaces: 5,
     collaborators: 3,
     storageBytes: STORAGE_GB.CREATOR * GB,
     aiGenerations: 100,
-    aiRegenerations: 30,
+    aiRegenerations: 100,
 
     planCodeEnv: {
       MONTHLY: "PAYSTACK_CONTENT_WORKSPACE_CREATOR_MONTHLY_PLAN_CODE",
@@ -100,11 +130,11 @@ export const CONTENT_WORKSPACE_PLANS: Record<
     priceNgnMonthly: 29_900,
     priceNgnAnnual: 340_860,
 
-    activeWorkspaces: 10,
+    activeWorkspaces: 15,
     collaborators: 15,
     storageBytes: STORAGE_GB.STUDIO * GB,
     aiGenerations: 500,
-    aiRegenerations: 150,
+    aiRegenerations: 500,
 
     planCodeEnv: {
       MONTHLY: "PAYSTACK_CONTENT_WORKSPACE_STUDIO_MONTHLY_PLAN_CODE",
@@ -112,7 +142,7 @@ export const CONTENT_WORKSPACE_PLANS: Record<
     },
   },
   UNLIMITED: {
-    name: "Unlimited",
+    name: "Agency",
     priceNgnMonthly: 59_900,
     priceNgnAnnual: 682_860,
     // Finite sentinel preserves numeric limits through JSON serialization.
@@ -120,7 +150,7 @@ export const CONTENT_WORKSPACE_PLANS: Record<
     collaborators: Number.MAX_SAFE_INTEGER,
     storageBytes: STORAGE_GB.UNLIMITED * GB,
     aiGenerations: 2_000,
-    aiRegenerations: 600,
+    aiRegenerations: 2_000,
     planCodeEnv: {
       MONTHLY: "PAYSTACK_CONTENT_WORKSPACE_UNLIMITED_MONTHLY_PLAN_CODE",
       ANNUAL: "PAYSTACK_CONTENT_WORKSPACE_UNLIMITED_ANNUAL_PLAN_CODE",
@@ -144,7 +174,7 @@ export const CONTENT_WORKSPACE_PLAN_DISPLAY_NAME: Record<
 > = {
   CREATOR: "Creator",
   STUDIO: "Studio",
-  UNLIMITED: "Unlimited",
+  UNLIMITED: "Agency",
 };
 
 /**
@@ -256,8 +286,8 @@ export function contentWorkspacePlanFromPaystackPlanCode(
 /**
  * Returns the next available paid plan.
  *
- * Creator → Studio → Unlimited
- * Unlimited → null
+ * Creator → Studio → Agency
+ * Agency → null
  */
 export function getNextContentWorkspacePlan(
   plan: ContentWorkspacePlan

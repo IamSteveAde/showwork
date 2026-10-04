@@ -23,7 +23,7 @@ export default function AiAssistantBillingSettings({
   const [open, setOpen] = useState(false);
 
   const planName =
-    plan === "UNLIMITED" ? "Unlimited" : plan === "STUDIO"
+    plan === "UNLIMITED" ? "Agency" : plan === "STUDIO"
       ? "Studio"
       : plan === "CREATOR"
         ? "Creator"

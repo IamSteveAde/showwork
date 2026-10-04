@@ -1,3 +1,5 @@
+import { consumeCalendarAiGeneration } from "@/lib/contentWorkspaceUsage";
+import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import { normalizeReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import { db } from "@/lib/db";
 import { generateSocialInboxAutoReply } from "@/lib/openai";
@@ -22,6 +24,8 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
   });
   const summary = { workspaces: settings.length, analyzed: 0, sent: 0, handedOff: 0, failed: 0 };
   for (const { calendarId } of settings) {
+    // Re-evaluate the owner at execution time; never discard queued trial data.
+    if (!(await canUseCalendarFeature(calendarId, "aiAutoReplies"))) continue;
     const queue = await db.socialLeadMessage.findMany({
       where: {
         direction: "INBOUND",
@@ -84,6 +88,14 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           createdAt: message.platformCreatedAt.toISOString(),
         }));
         const replySettings = await db.socialInboxSettings.findUnique({ where: { calendarId }, select: { aiAutoReplyInstructions: true, aiReplyProfile: true } });
+        const quota = await consumeCalendarAiGeneration(calendarId);
+        if (!quota.allowed) {
+          // Exhaustion pauses the queue without retiring messages or consuming retry attempts.
+          await db.socialLeadMessage.update({ where: { id: inbound.id }, data: {
+            autoReplyClaimedAt: null, autoReplyAttemptCount: { decrement: 1 },
+          } });
+          continue;
+        }
         const generated = await generateSocialInboxAutoReply({
           clientName: inbound.conversation.calendar.clientName,
           businessSummary: inbound.conversation.calendar.aiBusinessSummary,
@@ -100,6 +112,10 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           continue;
         }
         const latestSettings = await db.socialInboxSettings.findUnique({ where: { calendarId }, select: { aiAutoReplyEnabled: true } });
+        if (!(await canUseCalendarFeature(calendarId, "aiAutoReplies"))) {
+          await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyClaimedAt: null } });
+          continue;
+        }
         if (!latestSettings?.aiAutoReplyEnabled) {
           await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: "Automatic replies were disabled before the reply was sent." } });
           summary.handedOff++;

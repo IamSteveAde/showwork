@@ -1,3 +1,4 @@
+import { getContentWorkspacePlan } from "@/lib/contentWorkspaceUsage";
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -6,7 +7,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   CONTENT_WORKSPACE_PLANS,
-  STORAGE_GB,
+  formatWorkspaceLimit,
 } from "@/lib/contentWorkspaceEntitlements";
 
 import ProfileEditor from "./ProfileEditor";
@@ -377,6 +378,8 @@ export default async function ProfilePage() {
       contentWorkspaceBillingStatus: true,
       contentWorkspaceBillingCycle: true,
       contentWorkspaceTrialEndsAt: true,
+      isComped: true,
+      compedUntil: true,
       contentWorkspaceSubscriptionRenewsAt: true,
     },
   });
@@ -442,11 +445,8 @@ export default async function ProfilePage() {
     }),
   ]);
 
-  const workspacePlan = creator.contentWorkspacePlan
-    ? CONTENT_WORKSPACE_PLANS[
-        creator.contentWorkspacePlan
-      ]
-    : null;
+  const effectiveWorkspacePlan = getContentWorkspacePlan(creator);
+  const workspacePlan = effectiveWorkspacePlan ? CONTENT_WORKSPACE_PLANS[effectiveWorkspacePlan] : null;
 
   const storageUsedBytes = workspaceUsage
     ? Number(workspaceUsage.storageBytes) +
@@ -753,8 +753,7 @@ export default async function ProfilePage() {
 
                       <p className="mt-1 text-[9px] text-[#98A2B3]">
                         /{" "}
-                        {workspacePlan?.activeWorkspaces ??
-                          "—"}{" "}
+                        {workspacePlan ? formatWorkspaceLimit(workspacePlan.activeWorkspaces) : "—"}{" "}
                         allowed
                       </p>
                     </div>
@@ -766,7 +765,7 @@ export default async function ProfilePage() {
 
                       <p className="mt-1 text-[14px] font-semibold text-[#101828]">
                         {workspacePlan
-                          ? `${STORAGE_GB[creator.contentWorkspacePlan!]} GB`
+                          ? `${workspacePlan.storageBytes / 1_000_000_000} GB`
                           : "—"}
                       </p>
 
@@ -922,7 +921,7 @@ export default async function ProfilePage() {
                     </Link>
 
                     <Link
-                      href="/dashboard/billing?product=delivery"
+                      href="/dashboard/billing?product=delivery#project-delivery-plans"
                       className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/[0.08] bg-white px-3.5 text-[11px] font-semibold text-[#344054] transition hover:bg-[#F9FAFB]"
                     >
                       <CreditCardIcon className="h-3.5 w-3.5" />
@@ -991,7 +990,7 @@ export default async function ProfilePage() {
 
               <div className="mt-5 space-y-3">
                 <Link
-                  href="/dashboard/billing?product=delivery"
+                  href="/dashboard/billing?product=delivery#project-delivery-plans"
                   className="group flex items-center justify-between rounded-xl border border-[#EAECF0] p-3.5 transition hover:border-[#D0D5DD] hover:bg-[#FCFCFD]"
                 >
                   <div>
@@ -1155,7 +1154,7 @@ export default async function ProfilePage() {
                 </Link>
 
                 <Link
-                  href="/dashboard/billing?product=delivery"
+                  href="/dashboard/billing?product=delivery#project-delivery-plans"
                   className="flex items-center justify-between rounded-xl px-3 py-3 transition hover:bg-white/[0.06]"
                 >
                   <span className="text-[11px] font-medium text-white/75">
@@ -1184,7 +1183,7 @@ export default async function ProfilePage() {
               </Link>
 
               <Link
-                href="/dashboard/billing?product=delivery"
+                href="/dashboard/billing?product=delivery#project-delivery-plans"
                 className="hover:text-[#344054]"
               >
                 Billing

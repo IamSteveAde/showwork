@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { normalizeReplyProfile, validateReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -13,6 +14,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (typeof body?.clientAccessEnabled !== "boolean" || typeof body.aiAutoReplyEnabled !== "boolean" || typeof body.aiAutoReplyInstructions !== "string") {
     return NextResponse.json({ error: "Inbox settings are invalid." }, { status: 400 });
   }
+  const featureLock = await calendarFeatureGate(calendarId, body.aiAutoReplyEnabled ? "aiAutoReplies" : "socialInbox");
+  if (featureLock) return featureLock;
   if (body.aiAutoReplyInstructions.length > 1200) return NextResponse.json({ error: "AI reply guidance must be 1,200 characters or less." }, { status: 400 });
   if (body.aiReplyProfile !== undefined) {
     const validation = validateReplyProfile(body.aiReplyProfile);

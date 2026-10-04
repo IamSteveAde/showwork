@@ -55,7 +55,7 @@ test('expired trials link to billing while complimentary access avoids a false w
   const billing = { contentWorkspacePlan: 'CREATOR', contentWorkspaceBillingStatus: 'TRIAL', contentWorkspaceTrialEndsAt: new Date(0), isComped: false, compedUntil: null };
   let html = renderToStaticMarkup(await loadPage({ billing }).page({}));
   assert.match(html, /Subscribe to restore workspace access/);
-  assert.match(html, /href="\/dashboard\/billing\?product=content-workspace"/);
+  assert.match(html, /href="\/dashboard\/billing\?product=content-workspace#content-workspace-plans"/);
   html = renderToStaticMarkup(await loadPage({ billing: { ...billing, isComped: true } }).page({}));
   assert.doesNotMatch(html, /Subscribe to restore workspace access/);
 });
@@ -66,7 +66,7 @@ test('unsigned visitors cannot query workspace data', async () => {
 });
 
 test('Billing shows the workspace tier and remaining trial days together', async () => {
-  for (const [tier, name, days] of [['CREATOR', 'Creator', 3], ['STUDIO', 'Studio', 1], ['UNLIMITED', 'Unlimited', 7]]) {
+  for (const [tier, name, days] of [['CREATOR', 'Creator', 3], ['STUDIO', 'Studio', 1], ['UNLIMITED', 'Agency', 7]]) {
     const billing = { contentWorkspacePlan: tier, contentWorkspaceBillingStatus: 'TRIAL', contentWorkspaceTrialEndsAt: new Date(Date.now() + (days - 0.5) * 86400000), isComped: false, compedUntil: null };
     const html = renderToStaticMarkup(await loadPage({ billing }).page({}));
     const nav = html.match(/<nav[^>]*aria-label="Dashboard navigation"[\s\S]*?<\/nav>/)[0];

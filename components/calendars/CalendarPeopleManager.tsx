@@ -1,5 +1,6 @@
 "use client";
 import UiSymbol from "@/components/ui/UiSymbol";
+import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { useRouter } from "next/navigation";
 
 import { createPortal } from "react-dom";
@@ -278,7 +279,7 @@ export default function CalendarPeopleManager({
 
       if (!res.ok) {
         setError(data.error ?? "Failed to send invitation.");
-        setRequiresUpgrade(!!data.requiresUpgrade);
+        setRequiresUpgrade(!!(data.requiresUpgrade || data.capReached || data.code === "WORKSPACE_FEATURE_LOCKED"));
         return;
       }
 
@@ -494,17 +495,7 @@ export default function CalendarPeopleManager({
                     >
                       {error}
 
-                      {requiresUpgrade && (
-                        <button
-                          type="button"
-                          onClick={upgradeToCompany}
-                          disabled={upgrading}
-                          className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[#2478FF] px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1769EA] disabled:opacity-60"
-                        >
-                          {upgrading ? <Spinner /> : null}
-                          Upgrade to invite
-                        </button>
-                      )}
+                      {requiresUpgrade && <WorkspaceFeatureNotice compact message="Your collaborator allowance or permissions need a higher plan. Upgrade to invite this person." />}
                     </div>
                   )}
 

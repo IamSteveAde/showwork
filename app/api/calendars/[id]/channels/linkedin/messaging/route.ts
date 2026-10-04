@@ -1,3 +1,4 @@
+import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -15,6 +16,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   try {
     const stored = await db.socialConnection.findFirst({ where: { calendarId: id, platform: "LINKEDIN", status: "CONNECTED" } });
     if (!stored || !/^urn:li:organization:\d+$/.test(stored.platformAccountId)) return NextResponse.json({ error: "Connect a company Page first." }, { status: 409 });
+    const featureLock = await calendarFeatureGate(id, "socialInbox");
+    if (featureLock) return featureLock;
     const connection = await freshConnection(stored);
     requireScopes(connection, [...linkedInMessagingProvider!.requiredScopes]);
     const callbackUrl = `${appUrl()}/api/webhooks/linkedin/messaging`;

@@ -378,7 +378,7 @@ export default async function DashboardPage() {
               )}
 
               <Link
-                href="/dashboard/billing?product=delivery"
+                href="/dashboard/billing?product=delivery#project-delivery-plans"
                 className="rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:border-[#CBD1DA] hover:bg-[#F9FAFB] hover:text-[#101114]"
               >
                 Billing
@@ -499,7 +499,7 @@ export default async function DashboardPage() {
                     )}
 
                     <Link
-                      href="/dashboard/billing?product=delivery"
+                      href="/dashboard/billing?product=delivery#project-delivery-plans"
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
                     >
                       <span>Billing</span>
