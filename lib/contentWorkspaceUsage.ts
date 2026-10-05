@@ -12,6 +12,27 @@ import type {
   ContentWorkspaceStorageReservationStatus,
 } from "@prisma/client";
 
+/** Retry the entire transaction so every attempt reads fresh quota counters. */
+async function retryStorageTransaction<T>(operation: () => Promise<T>): Promise<T> {
+  const maxAttempts = 6;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2034" ||
+        attempt >= maxAttempts - 1
+      ) {
+        throw error;
+      }
+      // Backoff and jitter prevent simultaneous uploads retrying in lockstep.
+      const delayMs = Math.min(100 * 2 ** attempt, 1000) + Math.floor(Math.random() * 100);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 export interface ContentWorkspaceAccount {
   id: string;
   contentWorkspacePlan: ContentWorkspacePlan | null;
@@ -490,7 +511,7 @@ export async function reserveContentWorkspaceStorage(
 
   await getOrCreateContentWorkspaceUsage(creatorId);
 
-  const result = await db.$transaction(
+  const result = await retryStorageTransaction(() => db.$transaction(
     async (tx) => {
     const current = await tx.contentWorkspaceUsage.findUnique({
       where: { creatorId },
@@ -557,7 +578,7 @@ export async function reserveContentWorkspaceStorage(
       timeout: 15000,
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     }
-  );
+  ));
 
   if (!result.allowed) {
     return {
