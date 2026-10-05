@@ -89,6 +89,26 @@ export default function ImportCalendar({
     if (open && !dialog.current?.open) dialog.current?.showModal();
     if (!open && dialog.current?.open) dialog.current?.close();
   }, [open]);
+  useEffect(() => {
+    const element = dialog.current;
+    return () => {
+      // A modal dialog in a hidden workspace section can keep the page inert.
+      if (element?.open) element.close();
+    };
+  }, []);
+
+  function dismiss() {
+    // Release the browser's modal state before navigation can hide this section.
+    dialog.current?.close();
+    setOpen(false);
+    if (result) {
+      window.dispatchEvent(
+        new CustomEvent("showwork-workspace-navigate", { detail: { id: "content" } }),
+      );
+      router.refresh();
+    }
+  }
+
   function begin() {
     setPreview(null);
     setSearch("");
@@ -283,7 +303,6 @@ export default function ImportCalendar({
         );
       const data = await response.json();
       onImported(data.posts, saved!.firstDate);
-      router.refresh();
       setResult(
         `${saved!.postIds.length} ${saved!.postIds.length === 1 ? "post" : "posts"} imported${saved!.skipped.length ? `; ${saved!.skipped.length} duplicates skipped` : ""}.`,
       );
@@ -323,7 +342,10 @@ export default function ImportCalendar({
         ref={dialog}
         onCancel={(event) => {
           if (busy) event.preventDefault();
-          else setOpen(false);
+          else {
+            event.preventDefault();
+            dismiss();
+          }
         }}
         onClose={() => setOpen(false)}
         aria-labelledby="import-calendar-title"
@@ -340,7 +362,7 @@ export default function ImportCalendar({
           </div>
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={dismiss}
             disabled={busy}
             aria-label="Close import"
             className="rounded-lg px-3 py-2 disabled:opacity-40"
@@ -368,7 +390,7 @@ export default function ImportCalendar({
               <p className="mb-6 mt-3 text-sm opacity-70">{result}</p>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={dismiss}
                 className="min-h-11 rounded-full bg-[#2478FF] px-5 py-3 font-semibold text-white"
               >
                 View calendar
