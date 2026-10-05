@@ -64,6 +64,9 @@ export default function ImportCalendar({
   const [edits, setEdits] = useState<Record<string, ImportRow>>({});
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [kept, setKept] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "attention" | "ready" | "duplicates">("all");
+  const [bulkTime, setBulkTime] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmApprovals, setConfirmApprovals] = useState(false);
   const [reviewed, setReviewed] = useState(false);
@@ -88,6 +91,10 @@ export default function ImportCalendar({
   }, [open]);
   function begin() {
     setPreview(null);
+    setSearch("");
+    setFilter("all");
+    setBulkTime("");
+    setExpanded(null);
     setEdits({});
     setExcluded(new Set());
     setKept(new Set());
@@ -156,6 +163,18 @@ export default function ImportCalendar({
       };
     });
   }, [rows, options, preview, excluded]);
+  const needsAttention = (item: (typeof assessed)[number]) => !excluded.has(item.row.id) && !item.allExact && (!!item.issues.errors.length || (item.possible && !kept.has(item.row.id)));
+  const attentionCount = assessed.filter(needsAttention).length;
+  const visibleRows = assessed.filter((item) => {
+    const matches = [item.row.contentIdea, item.row.caption, item.row.platform, item.row.date, item.row.source].join(" ").toLowerCase().includes(search.toLowerCase());
+    return matches && (filter === "all" || (filter === "attention" && needsAttention(item)) || (filter === "duplicates" && (item.allExact || item.possible || item.exactCount > 0)) || (filter === "ready" && !needsAttention(item) && !item.allExact && !excluded.has(item.row.id)));
+  });
+  function applyTime() {
+    if (!bulkTime.trim()) return;
+    setEdits((current) => Object.fromEntries(rows.map((row) => [row.id, excluded.has(row.id) ? (current[row.id] ?? row) : { ...row, time: bulkTime.trim() }])));
+    setKept(new Set());
+    changed();
+  }
   const selected = assessed.filter(
     (item) => !excluded.has(item.row.id) && !item.allExact,
   );
@@ -282,7 +301,7 @@ export default function ImportCalendar({
     }
   }
   const inputClass =
-    "w-full rounded-lg border border-current/20 bg-transparent px-3 py-2 text-sm";
+    "w-full min-h-11 rounded-xl border border-current/15 bg-transparent px-3 py-2 text-sm transition focus:border-[#2478FF] focus:outline-none focus:ring-2 focus:ring-[#2478FF]/20";
   const toggle = (values: Set<string>, id: string) => {
     const next = new Set(values);
     if (next.has(id)) next.delete(id);
@@ -308,15 +327,15 @@ export default function ImportCalendar({
         }}
         onClose={() => setOpen(false)}
         aria-labelledby="import-calendar-title"
-        className={`fixed inset-0 m-auto max-h-[96dvh] w-[calc(100%_-_1rem)] sm:max-h-[92dvh] sm:w-[min(1100px,95vw)] overflow-y-auto rounded-2xl border p-0 shadow-2xl backdrop:bg-black/60 [&_option]:bg-white [&_option]:text-slate-900 ${theme === "dark" ? "border-white/20 bg-[#17191e] text-white" : "border-slate-200 bg-white text-slate-900"}`}
+        className={`fixed inset-0 m-auto max-h-[96dvh] w-[calc(100%_-_1rem)] sm:max-h-[92dvh] sm:w-[min(1100px,95vw)] overflow-y-auto rounded-[28px] border p-0 shadow-2xl backdrop:bg-slate-950/70 backdrop:backdrop-blur-sm [&_option]:bg-white [&_option]:text-slate-900 ${theme === "dark" ? "border-white/20 bg-[#101828] text-white" : "border-slate-200 bg-[#F5F7FB] text-[#101828]"}`}
       >
         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-current/15 bg-inherit p-5">
           <div>
-            <h2 id="import-calendar-title" className="text-xl font-semibold">
-              Import Calendar
+            <h2 id="import-calendar-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Bring your plan to life
             </h2>
-            <p className="mt-1 text-sm opacity-70">
-              Bring your content plan into Showwork.
+            <p className="mt-2 text-[10px] font-bold tracking-[0.18em] text-[#2478FF]">
+              SHOWWORK · CALENDAR IMPORT
             </p>
           </div>
           <button
@@ -329,8 +348,8 @@ export default function ImportCalendar({
         </div>
         <div className="space-y-5 p-4 sm:p-5">
           <ol aria-label="Import progress" className="grid grid-cols-3 gap-2">
-            {["Upload", "Review", "Confirm"].map((label, index) => {
-              const current = result || (busy && preview) ? 2 : preview ? 1 : 0;
+            {["Choose your file", "Make it yours", "Add to calendar"].map((label, index) => {
+              const current = result || reviewed || (busy && preview) ? 2 : preview ? 1 : 0;
               return <li key={label} aria-current={index === current ? "step" : undefined} className={`flex items-center gap-2 rounded-xl px-3 py-3 text-xs font-semibold ${index === current ? "bg-[#2478FF]/10 text-[#2478FF]" : "opacity-60"}`}><span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] ${index <= current ? "bg-[#2478FF] text-white" : "border border-current/30"}`}>{index < current ? <><UiSymbol name="check" /></> : index + 1}</span>{label}</li>;
             })}
           </ol>
@@ -343,8 +362,10 @@ export default function ImportCalendar({
             </p>
           )}
           {result ? (
-            <div role="status" className="space-y-4">
-              <p>{result}</p>
+            <div role="status" className="rounded-2xl border border-[#2478FF]/20 bg-[#2478FF]/5 p-8 text-center sm:p-12">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#2478FF] text-2xl text-white"><UiSymbol name="check" /></div>
+              <h3 className="text-2xl font-semibold tracking-tight">Your plan has a new home.</h3>
+              <p className="mb-6 mt-3 text-sm opacity-70">{result}</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -356,15 +377,15 @@ export default function ImportCalendar({
           ) : (
             <>
               {!preview && (
-                <div className="space-y-3 rounded-xl border border-dashed border-current/30 p-6">
+                <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (!busy) void upload(event.dataTransfer.files[0]); }} className="space-y-3 rounded-xl border border-dashed border-[#2478FF]/40 bg-[#2478FF]/5 p-8 text-center sm:p-12">
                   <label
                     className="block font-medium"
                     htmlFor="calendar-import-file"
                   >
-                    Choose an existing content calendar
+                    Your next great month starts here
                   </label>
                   <p className="text-sm opacity-70">
-                    PDF, CSV, XLS/XLSX, DOC/DOCX, or TXT. Up to 3 MB and 200
+                    Drop a file here or choose one below. PDF, CSV, Excel, Word, or TXT. Up to 3 MB and 200
                     content items. Review your dates and copy before importing. For scanned PDFs,
                     export a text-based version first.
                   </p>
@@ -388,12 +409,12 @@ export default function ImportCalendar({
               )}
               {preview && (
                 <>
-                  <p className="text-sm">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-current/10 bg-[#2478FF]/5 p-4"><p className="min-w-0 break-words text-sm">
                     <strong>{preview.filename}</strong> · {rows.length} detected
                     items
                     <br />
                     <span className="opacity-70">Review the items below, then confirm your import.</span>
-                  </p>
+                  </p><button type="button" disabled={readOnly} onClick={begin} className="min-h-11 shrink-0 rounded-xl border border-current/15 px-3 text-xs font-semibold disabled:opacity-40">Change file</button></div>
                   <fieldset
                     disabled={readOnly}
                     className="grid gap-3 rounded-xl border border-current/15 p-4 sm:grid-cols-2 lg:grid-cols-5"
@@ -451,11 +472,12 @@ export default function ImportCalendar({
                       />
                     </label>
                     <label className="space-y-1 text-xs">
-                      Default for missing times
+                      Fill missing times
                       <input
-                        aria-label="Default for missing times"
+                        aria-label="Fill missing times"
                         className={inputClass}
-                        type="time"
+                        type="text"
+                        placeholder="9 AM or 14:30"
                         value={options.defaultTime}
                         onChange={(event) => {
                           setOptions({
@@ -497,6 +519,20 @@ export default function ImportCalendar({
                       edits.
                     </p>
                   </fieldset>
+                  <fieldset disabled={readOnly} className="grid gap-4 rounded-2xl border border-[#2478FF]/20 bg-[#2478FF]/5 p-4 sm:grid-cols-2">
+                    <label className="space-y-2 text-sm font-medium">How are your times written?
+                      <select className={inputClass} value={options.timeFormat ?? "ASK"} onChange={(event) => { setOptions({ ...options, timeFormat: event.target.value as "ASK" | "24H" }); changed(); }}>
+                        <option value="ASK">Ask when AM / PM is unclear</option>
+                        <option value="24H">My calendar uses 24-hour times</option>
+                      </select>
+                      <span className="block text-xs font-normal opacity-70">Use 9 AM, 2:30 PM, or 14:30. We’ll ask before guessing an ambiguous time.</span>
+                    </label>
+                    <div className="space-y-2">
+                      <label htmlFor="import-bulk-time" className="text-sm font-medium">Replace times for all selected content</label>
+                      <div className="flex gap-2"><input id="import-bulk-time" className={inputClass} placeholder="e.g. 2:30 PM" value={bulkTime} onChange={(event) => setBulkTime(event.target.value)} /><button type="button" disabled={!bulkTime.trim()} onClick={applyTime} className="min-h-11 shrink-0 rounded-xl bg-[#2478FF] px-4 text-sm font-semibold text-white disabled:opacity-40">Apply time</button></div>
+                      <p className="text-xs opacity-70">Replaces existing and missing times. The review updates immediately.</p>
+                    </div>
+                  </fieldset>
                   <details className="rounded-xl border border-current/15 p-4">
                     <summary className="cursor-pointer text-sm font-semibold">
                       Review and correct field mappings
@@ -535,8 +571,13 @@ export default function ImportCalendar({
                       ))}
                     </fieldset>
                   </details>
+                  <div className="space-y-3 rounded-2xl border border-current/10 bg-inherit p-4 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold">Your content, at a glance</h3><p role="status" className="mt-1 text-xs opacity-70">{selected.length} selected · {postCount} posts · {attentionCount ? `${attentionCount} need attention` : "All selected items are ready"}</p></div><input aria-label="Search imported content" className={`${inputClass} sm:max-w-64`} placeholder="Search titles, dates, platforms…" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+                    <div aria-label="Filter imported content" className="flex flex-wrap gap-2">{(["all", "attention", "ready", "duplicates"] as const).map((value) => <button type="button" key={value} aria-pressed={filter === value} onClick={() => setFilter(value)} className={`min-h-10 rounded-full px-4 text-xs font-semibold transition ${filter === value ? "bg-[#2478FF] text-white" : "border border-current/15 hover:bg-[#2478FF]/10"}`}>{value === "all" ? `All items (${rows.length})` : value === "attention" ? `Needs attention (${attentionCount})` : value === "ready" ? "Ready to import" : "Duplicates"}</button>)}</div>
+                  </div>
                   <div className="space-y-3">
-                    {assessed.map(
+                    {!visibleRows.length && <p className="rounded-2xl border border-current/10 p-8 text-center text-sm opacity-70">No items match this view. Try another filter or search.</p>}
+                    {visibleRows.map(
                       ({ row, issues, allExact, exactCount, possible }) => {
                         const selectedRow = !excluded.has(row.id) && !allExact;
                         const edit = (
@@ -553,7 +594,7 @@ export default function ImportCalendar({
                         return (
                           <article
                             key={row.id}
-                            className={`rounded-xl border p-4 ${issues.errors.length ? "border-red-400/50" : possible || issues.warnings.length ? "border-amber-400/40" : "border-current/15"}`}
+                            className={`rounded-2xl border p-4 sm:p-5 ${!selectedRow ? "border-current/10 opacity-60" : issues.errors.length ? "border-red-400/50" : possible || issues.warnings.length ? "border-amber-400/40" : "border-current/15"}`}
                           >
                             <div className="flex items-start gap-3">
                               <input
@@ -584,15 +625,8 @@ export default function ImportCalendar({
                                   {row.postType || "Missing format"}
                                 </p>
                                 {row.caption && (
-                                  <p className="mt-2 whitespace-pre-wrap text-sm opacity-80">
+                                  <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm opacity-80">
                                     {row.caption}
-                                  </p>
-                                )}
-                                {issues.local && (
-                                  <p className="mt-2 text-xs opacity-60">
-                                    Import time:{" "}
-                                    {issues.local.replace("T", " ")} (
-                                    {options.timezone})
                                   </p>
                                 )}
                                 {!!exactCount && (
@@ -602,6 +636,7 @@ export default function ImportCalendar({
                                     skipped.
                                   </p>
                                 )}
+                                {selectedRow && issues.errors.some((message) => /time|AM|PM/i.test(message)) && <label className="mt-3 block max-w-xs space-y-1 text-xs font-medium">Set this item’s time<input className={inputClass} aria-label={`Time for ${row.contentIdea || row.id}`} placeholder="e.g. 9 AM or 14:30" value={row.time} disabled={readOnly} onChange={(event) => edit("time", event.target.value)} /></label>}
                                 {issues.errors.map((message, index) => (
                                   <p
                                     key={`e${index}`}
@@ -642,7 +677,8 @@ export default function ImportCalendar({
                                     expanded === row.id ? null : row.id,
                                   )
                                 }
-                                className="rounded-lg border border-current/20 px-3 py-2 text-xs"
+                                aria-expanded={expanded === row.id}
+                                className="min-h-11 rounded-xl border border-current/15 px-3 py-2 text-xs font-semibold"
                               >
                                 {expanded === row.id
                                   ? "Hide fields"

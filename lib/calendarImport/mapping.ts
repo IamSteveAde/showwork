@@ -38,6 +38,7 @@ export type ImportOptions = {
   year: string;
   defaultTime: string;
   defaultPlatform: string;
+  timeFormat?: "ASK" | "24H";
 };
 export type ImportMapping = Record<string, ImportField | "custom" | "ignore">;
 export type ImportRow = {
@@ -243,11 +244,9 @@ export function resolveDate(
       .toZonedDateTimeISO(options.timezone)
       .toPlainDateTime()
       .toString();
-    if (time)
-      throw new Error(
-        "Date includes a timezone and time; clear the separate time or edit the date.",
-      );
-    return { iso: instant.toString(), local, warnings };
+    if (!time) return { iso: instant.toString(), local, warnings };
+    // A user-entered replacement uses the import timezone and replaces the embedded time.
+    date = local.slice(0, 10);
   }
   const combined = date.match(
     /^(.*?)(?:T|\s+)(\d{1,2}:\d{2}(?::\d{2})?\s*(?:am|pm)?)$/i,
@@ -329,10 +328,15 @@ export function resolveDate(
     time = options.defaultTime;
     warnings.push(`Using default time ${time}.`);
   }
+  time = time.replace(/([ap])\.?m\.?$/i, "$1m").replace(/(\d)\.(\d{2})/, "$1:$2");
+  if (/^noon$/i.test(time)) time = "12 PM";
+  if (/^midnight$/i.test(time)) time = "12 AM";
   const match = time.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(am|pm)?$/i);
   if (!match)
     throw new Error("Invalid time. Use HH:mm or a time such as 2:30 PM.");
   let hours = Number(match[1]);
+  if (!match[4] && hours >= 1 && hours <= 12 && !/^0\d:/.test(time) && options.timeFormat !== "24H")
+    throw new Error("Specify AM or PM for this time, or choose 24-hour times if that is how your calendar is written.");
   if (match[4]) {
     if (hours < 1 || hours > 12) throw new Error("Invalid 12-hour time.");
     hours = (hours % 12) + (match[4].toLowerCase() === "pm" ? 12 : 0);

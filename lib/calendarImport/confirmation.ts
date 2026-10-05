@@ -50,6 +50,8 @@ export function validateConfirm(input: unknown): ConfirmInput {
   for (const field of ["year", "defaultTime", "defaultPlatform"] as const)
     if (typeof body.options[field] !== "string")
       throw new ImportError("Invalid import options.");
+  if (body.options.timeFormat !== undefined && !["ASK", "24H"].includes(body.options.timeFormat))
+    throw new ImportError("Choose a valid time format.");
   try {
     new Intl.DateTimeFormat("en", { timeZone: body.options.timezone });
   } catch {
