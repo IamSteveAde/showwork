@@ -67,3 +67,12 @@ npx prisma validate
 Tests exercise real CSV, XLS, XLSX, PDF, DOCX, and legacy DOC extraction, field mapping, Unicode/multiline text, date ambiguities, timezones/daylight saving, permissions, idempotency, duplicates, transactional rollback, and shared manual creation. AI calls and database operations use isolated test doubles; no real provider calls or database writes are made by the tests.
 
 The legacy DOC fixture is from https://github.com/morungos/node-word-extractor/blob/develop/__tests__/data/test01.doc; its MIT license is included in `tests/fixtures/calendar-import-legacy-LICENSE`.
+
+
+### Reviewing times
+
+The review follows your browser’s date and time display preferences. Import timezone controls how source times become scheduled instants. Explicit AM/PM, dotted forms such as `2.30 p.m.`, noon, midnight, and clear 24-hour times are supported. For ambiguous values such as `9` or `12:00`, specify AM/PM or explicitly select “My calendar uses 24-hour times.” Zero-padded morning values such as `09:30` are treated as 24-hour notation.
+
+“Fill missing times” supplies times only where none exist. “Replace times for all selected content” overwrites existing and missing times, including times embedded in date fields; excluded items remain unchanged. Individual time corrections also replace embedded times. Replacement times use the selected import timezone. Validation updates immediately; unrelated date, platform, or duplicate issues still need review.
+
+Use search and the All items, Needs attention, Ready to import, and Duplicates filters to navigate large imports. Change file starts a fresh review.

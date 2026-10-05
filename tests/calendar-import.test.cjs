@@ -184,7 +184,7 @@ test("ambiguous dates, absent years/times and invalid dates require correction",
   const resolved = mapping.resolveDate("31/10", "", {
     ...options,
     year: "2026",
-    defaultTime: "10:00",
+    defaultTime: "10:00 AM",
   });
   assert.equal(resolved.warnings.length, 2);
 });
@@ -756,7 +756,7 @@ test("similar posts require explicit keep decision, including a live conflict af
   const databaseMock = database();
   const service = confirmation(databaseMock.db);
   await service.confirmImport("calendar-1", "creator-1", request());
-  const second = request([row({ time: "10:00" })], {
+  const second = request([row({ time: "10:00 AM" })], {
     requestId: "22345678-1234-4234-8234-123456789abc",
   });
   await assert.rejects(
@@ -941,4 +941,27 @@ test("manual post creation uses shared validation, saves hooks/scripts and has n
   assert.equal(response.status, 200);
   assert.equal(databaseMock.posts().length, 2);
   assert.equal(databaseMock.posts()[0].script, "Script");
+});
+
+
+test("ambiguous imported times require intent; familiar formats and explicit 24-hour choice resolve", () => {
+  for (const time of ["9", "9:30", "12:00"]) {
+    assert.throws(() => mapping.resolveDate("2026-10-01", time, options), /Specify AM or PM/);
+  }
+  for (const time of ["2:30 PM", "2.30 p.m.", "14:30"]) {
+    assert.equal(mapping.resolveDate("2026-10-01", time, options).iso, "2026-10-01T13:30:00Z");
+  }
+  assert.equal(mapping.resolveDate("2026-10-01", "9:30", { ...options, timeFormat: "24H" }).iso, "2026-10-01T08:30:00Z");
+  assert.equal(mapping.resolveDate("2026-10-01", "noon", options).iso, "2026-10-01T11:00:00Z");
+  assert.equal(mapping.resolveDate("2026-10-01", "midnight", options).iso, "2026-09-30T23:00:00Z");
+});
+
+test("replacement time clears validation and replaces embedded dates and offsets", () => {
+  const ambiguous = row({ time: "9" });
+  assert.match(mapping.rowIssues(ambiguous, options).errors.join(" "), /AM or PM/);
+  const corrected = { ...ambiguous, time: "2:30 PM" };
+  assert.deepEqual(mapping.rowIssues(corrected, options).errors, []);
+  for (const date of ["2026-10-01 09:30", "2026-10-01T08:15:00+02:00"]) {
+    assert.equal(mapping.resolveDate(date, corrected.time, options).iso, "2026-10-01T13:30:00Z");
+  }
 });
