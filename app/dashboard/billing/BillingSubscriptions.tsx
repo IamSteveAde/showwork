@@ -31,13 +31,18 @@ type WorkspaceBillingStatus =
   | "ACTIVE"
   | "OFFLINE";
 
+type OfferPrices = Record<string, { title: string; percent: number; months: number; standardPriceNgn: number; priceNgn: number; remainingCycles: number }>;
+
 type BillingSubscriptionsProps = {
+  benefits?: React.ReactNode;
+  offerPrices?: OfferPrices;
   creator: {
     name: string | null;
     email: string;
   };
 
 usage: {
+  complimentary?: boolean;
   tier: "FREE" | "STARTER" | "GROWTH" | "UNLIMITED";
   used: number;
   limit: number;
@@ -51,6 +56,7 @@ usage: {
 };
 
   workspaceBilling: {
+  recurringPriceNgn?: number;
   contentWorkspacePlan: ContentWorkspacePlan | null;
   contentWorkspaceBillingStatus: WorkspaceBillingStatus;
   contentWorkspaceBillingCycle: BillingCycle | null;
@@ -494,15 +500,17 @@ function ProductTab({
 ============================================================ */
 
 function DeliverySubscription({
+  offerPrices = {},
   usage,
   selectedTier,
   selectedCycle,
 }: {
+  offerPrices?: OfferPrices;
   usage: BillingSubscriptionsProps["usage"];
   selectedTier: string | null;
   selectedCycle: BillingCycle;
 }) {
-  const status = getDeliveryStatus(usage.tier);
+  const status = { ...getDeliveryStatus(usage.tier), ...(usage.complimentary ? { label: "Complimentary access" } : {}) };
   const planName = getDeliveryPlanName(usage.tier);
 
   const tiers = [
@@ -651,7 +659,7 @@ function DeliverySubscription({
             </p>
 
             <p className="mt-1 text-xs text-[#667085]">
-              {usage.tier === "FREE"
+              {usage.complimentary ? "Complimentary access · no recurring charge" : usage.tier === "FREE"
                 ? "No recurring charge"
                 : selectedCycle === "ANNUAL"
                   ? "Annual billing"
@@ -771,10 +779,8 @@ function DeliverySubscription({
               selectedTier === plan.key &&
               !isCurrent;
 
-            const price =
-              selectedCycle === "ANNUAL"
-                ? plan.priceAnnual
-                : plan.priceMonthly;
+            const offer = offerPrices[`DELIVERY:${plan.key}:${selectedCycle}`];
+            const price = offer?.priceNgn ?? (selectedCycle === "ANNUAL" ? plan.priceAnnual : plan.priceMonthly);
 
             return (
               <div
@@ -803,6 +809,7 @@ function DeliverySubscription({
                   {plan.name}
                 </p>
 
+                {offer && <p className="mt-3 text-xs text-[#2478FF]"><span className="mr-2 text-[#98A2B3] line-through">{formatNaira(offer.standardPriceNgn)}</span>{offer.percent}% off for {offer.remainingCycles} payment(s)</p>}
                 <div className="mt-3 flex items-end gap-1">
                   <span className="text-[30px] font-semibold tracking-[-0.04em] text-[#101828]">
                     {price === 0
@@ -860,12 +867,13 @@ function DeliverySubscription({
                         You are currently on this plan.
                       </div>
 
-                      {usage.tier !== "FREE" && (
+                      {offer && plan.key !== "FREE" && <SubscribeButton tier={plan.key} cycle={selectedCycle} label="Activate this offer" />}
+                      {usage.tier !== "FREE" && !usage.complimentary && (
                         <CancelSubscriptionButton />
                       )}
                     </div>
                   ) : plan.key === "FREE" ? (
-                    <CancelSubscriptionButton label="Downgrade to Free" />
+                    usage.complimentary ? <span className="text-xs text-[#667085]">Complimentary access is active</span> : <CancelSubscriptionButton label="Downgrade to Free" />
                   ) : (
                     <SubscribeButton
                       tier={plan.key}
@@ -913,9 +921,11 @@ function DeliverySubscription({
 ============================================================ */
 
 function ContentWorkspaceSubscription({
+  offerPrices = {},
   workspaceBilling,
   selectedCycle,
 }: {
+  offerPrices?: OfferPrices;
   workspaceBilling:
     BillingSubscriptionsProps["workspaceBilling"];
 
@@ -1048,6 +1058,7 @@ function ContentWorkspaceSubscription({
         </div>
 
         <WorkspacePlanComparison
+          offerPrices={offerPrices}
           selectedCycle={selectedCycle}
           currentPlan={null}
         />
@@ -1120,10 +1131,10 @@ function ContentWorkspaceSubscription({
               <p className="mt-1 text-sm font-semibold text-white">
                 {billingCycle === "ANNUAL"
                   ? formatNaira(
-                      planDetails.priceNgnAnnual
+                      workspaceBilling?.recurringPriceNgn ?? planDetails.priceNgnAnnual
                     )
                   : formatNaira(
-                      planDetails.priceNgnMonthly
+                      workspaceBilling?.recurringPriceNgn ?? planDetails.priceNgnMonthly
                     )}
               </p>
 
@@ -1247,6 +1258,7 @@ function ContentWorkspaceSubscription({
       <div>
         <CalendarBillingSettings
           plan={plan}
+          recurringPriceNgn={workspaceBilling?.recurringPriceNgn}
           switchRequest={switchRequest}
           onBusyChange={setSwitchBusy}
           billingStatus={billingStatus}
@@ -1265,6 +1277,7 @@ function ContentWorkspaceSubscription({
       </div>
 
       <WorkspacePlanComparison
+          offerPrices={offerPrices}
         selectedCycle={selectedCycle}
         currentPlan={plan}
         switching={switchBusy}
@@ -1309,11 +1322,13 @@ function WorkspaceMetric({
 ============================================================ */
 
 function WorkspacePlanComparison({
+  offerPrices = {},
   selectedCycle,
   currentPlan,
   switching = false,
   onSelectPlan,
 }: {
+  offerPrices?: OfferPrices;
   selectedCycle: BillingCycle;
   currentPlan: ContentWorkspacePlan | null;
   switching?: boolean;
@@ -1341,10 +1356,8 @@ function WorkspacePlanComparison({
           const isCurrent =
             currentPlan === planKey;
 
-          const price =
-            selectedCycle === "ANNUAL"
-              ? plan.priceNgnAnnual
-              : plan.priceNgnMonthly;
+          const offer = offerPrices[`CONTENT_WORKSPACE:${planKey}:${selectedCycle}`];
+          const price = offer?.priceNgn ?? (selectedCycle === "ANNUAL" ? plan.priceNgnAnnual : plan.priceNgnMonthly);
 
           return (
             <div
@@ -1371,6 +1384,7 @@ function WorkspacePlanComparison({
                 {plan.name}
               </p>
 
+              {offer && <p className="mt-3 text-xs text-[#2478FF]"><span className="mr-2 text-[#98A2B3] line-through">{formatNaira(offer.standardPriceNgn)}</span>{offer.percent}% off for {offer.remainingCycles} payment(s)</p>}
               <div className="mt-3 flex items-end gap-1">
                 <span className="text-[31px] font-semibold tracking-[-0.045em] text-[#101828]">
                   {formatNaira(price)}
@@ -1492,6 +1506,8 @@ function WorkspaceMiniStat({
 ============================================================ */
 
 export default function BillingSubscriptions({
+  benefits,
+  offerPrices,
   creator,
   usage,
   workspaceBilling,
@@ -1509,7 +1525,7 @@ export default function BillingSubscriptions({
       title: "Project Delivery",
       icon: <DeliveryIcon />,
       plan: getDeliveryPlanName(usage.tier),
-      status: getDeliveryStatus(usage.tier).label,
+      status: usage.complimentary ? "Complimentary access" : getDeliveryStatus(usage.tier).label,
       href: `/dashboard/billing?product=delivery&cycle=${selectedCycle}#subscription-details`,
       action: "Manage Project Delivery",
     },
@@ -1555,6 +1571,7 @@ export default function BillingSubscriptions({
       </header>
 
       <div className="mx-auto max-w-[1180px] px-5 py-7 sm:px-7 sm:py-9 lg:px-8">
+        {benefits}
         <section aria-label="Your products" className="grid gap-4 md:grid-cols-3">
           {products.map((product) => (
             <article key={product.key} className={`rounded-[24px] border bg-white p-6 ${selectedProduct === product.key ? "border-[#2478FF]" : "border-[#E7E9EE]"}`}>
@@ -1574,9 +1591,9 @@ export default function BillingSubscriptions({
 
         <section id="subscription-details" aria-label="Manage subscription" className="mt-8 scroll-mt-6">
           {selectedProduct === "delivery" ? (
-            <DeliverySubscription usage={usage} selectedTier={selectedTier} selectedCycle={selectedCycle} />
+            <DeliverySubscription offerPrices={offerPrices} usage={usage} selectedTier={selectedTier} selectedCycle={selectedCycle} />
           ) : (
-            <ContentWorkspaceSubscription workspaceBilling={workspaceBilling} selectedCycle={selectedCycle} />
+            <ContentWorkspaceSubscription offerPrices={offerPrices} workspaceBilling={workspaceBilling} selectedCycle={selectedCycle} />
           )}
         </section>
         <p className="mt-10 pb-8 text-center text-[10px] text-[#98A2B3]">

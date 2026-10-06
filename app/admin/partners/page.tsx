@@ -212,6 +212,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#667085]">
               Manage partners, referrals, commissions and payout requests.
             </p>
+              <Link href="/admin/billing-offers?recipients=PARTNERS" className="mt-3 inline-flex rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold text-violet-700">Manage partner discounts & access</Link>
           </div>
         </div>
 

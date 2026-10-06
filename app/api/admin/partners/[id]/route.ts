@@ -1,3 +1,4 @@
+import { queuePartnerWelcomeBenefit, scheduleBenefitEmailDelivery } from "@/lib/billingBenefitNotifications";
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
@@ -193,6 +194,8 @@ export async function PATCH(
         },
       });
 
+      await queuePartnerWelcomeBenefit(tx, partner.creator, compedUntil);
+
       return {
         action: "approve" as const,
         partner: updatedPartner,
@@ -221,6 +224,7 @@ export async function PATCH(
       });
     }
 
+    scheduleBenefitEmailDelivery();
     try {
       await sendPartnerWelcomeEmail({
         to: result.creator.email,

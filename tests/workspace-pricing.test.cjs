@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
 function load(file, deps = {}) {
+  deps = require("./helpers/billing-fixtures.cjs").withBillingDependencies(deps);
   const mod = { exports: {} };
   new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(name => {
     if (name in deps) return deps[name];

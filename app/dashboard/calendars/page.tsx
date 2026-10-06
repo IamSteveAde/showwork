@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -57,7 +58,7 @@ export default async function CalendarsPage({
           contentWorkspacePlan: true,
           contentWorkspaceBillingStatus: true,
           contentWorkspaceTrialEndsAt: true,
-          isComped: true,
+          ...complimentaryAccessSelect, isComped: true,
           compedUntil: true,
         },
       }),
@@ -99,8 +100,7 @@ export default async function CalendarsPage({
   });
   const trialEnd = billing?.contentWorkspaceTrialEndsAt;
   const complimentary = Boolean(
-    billing?.isComped &&
-    (!billing.compedUntil || billing.compedUntil > new Date()),
+    billing && workspaceComplimentaryPlan(billing),
   );
   const trialExpired =
     billing?.contentWorkspaceBillingStatus === "TRIAL" &&

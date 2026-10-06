@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -36,7 +37,7 @@ export async function POST(
     include: {
       project: {
         include: {
-          creator: { select: { id: true, subscriptionActive: true, isComped: true } },
+          creator: { select: { id: true, subscriptionActive: true, ...complimentaryAccessSelect, isComped: true } },
         },
       },
     },
@@ -65,8 +66,7 @@ export async function POST(
 
   if (
     media.project.replaceCount >= MAX_REPLACEMENTS_PER_PROJECT &&
-    !media.project.creator.subscriptionActive &&
-    !media.project.creator.isComped
+    !hasDeliveryPaidAccess(media.project.creator)
   ) {
     return NextResponse.json(
       { error: "This project has reached its revision limit. Please create a new project for further work." },

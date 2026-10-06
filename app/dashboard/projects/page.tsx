@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import ProjectDashboardTheme, { ProjectThemeToggle } from "@/components/projects/ProjectDashboardTheme";
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import type { CSSProperties } from "react";
@@ -286,6 +288,7 @@ function initials(name: string | null, email: string) {
 ───────────────────────────────────────────── */
 
 export default async function ProjectDeliveryPage() {
+  const initialTheme = (await cookies()).get("showwork-projects-theme")?.value === "dark" ? "dark" : "light";
   const creator = await getCurrentCreator();
 
   if (!creator) {
@@ -519,29 +522,26 @@ export default async function ProjectDeliveryPage() {
         );
 
   return (
-    <main
-      className="min-h-screen overflow-x-hidden bg-[#08090B] text-white"
-    >
+    <ProjectDashboardTheme initialTheme={initialTheme}>
       {/* ═══════════════════════════════════════
           HERO
       ═══════════════════════════════════════ */}
 
-      <section className="relative isolate overflow-hidden bg-[#05070A]">
+      <section className="relative isolate overflow-hidden bg-[var(--pd-page)]">
         {/* Hero image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/hero1.png"
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          className="projects-hero-image absolute inset-0 h-full w-full object-cover"
           style={{
             objectPosition: "center 42%",
           }}
         />
 
         {/* Image treatment */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,5,8,.97)_0%,rgba(3,5,8,.84)_28%,rgba(3,5,8,.42)_64%,rgba(3,5,8,.72)_100%)]" />
+        <div className="projects-hero-shade absolute inset-0" />
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,5,8,.9)_0%,rgba(3,5,8,.18)_35%,rgba(3,5,8,.3)_62%,#08090B_100%)]" />
 
         <div className="pointer-events-none absolute -left-48 top-1/3 h-[520px] w-[520px] rounded-full bg-[#2478FF]/15 blur-[140px]" />
 
@@ -562,7 +562,7 @@ export default async function ProjectDeliveryPage() {
         />
 
         {/* Hero frame */}
-        <div className="pointer-events-none absolute inset-x-3 top-3 bottom-3 rounded-[28px] border border-white/[0.07] sm:inset-x-5 sm:top-5 sm:bottom-5 md:inset-x-8 md:top-8 md:bottom-8" />
+        <div className="pointer-events-none absolute inset-x-3 top-3 bottom-3 rounded-[28px] border border-[var(--pd-border)] sm:inset-x-5 sm:top-5 sm:bottom-5 md:inset-x-8 md:top-8 md:bottom-8" />
 
         {/* ═══════════════════════════════════════
             SIMPLE FLOATING NAV
@@ -572,7 +572,7 @@ export default async function ProjectDeliveryPage() {
           <div className="mx-auto max-w-[1400px]">
             <Link
               href="/dashboard"
-              className="group mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="group mb-3 inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[var(--pd-muted)] transition hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2478FF]"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4 transition-transform group-hover:-translate-x-0.5">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -580,25 +580,14 @@ export default async function ProjectDeliveryPage() {
               Go to apps
             </Link>
             <header className="sticky top-4">
-              <div className="flex items-center justify-between gap-3 rounded-[20px] border border-white/[0.10] bg-[#080A0E]/70 p-2 shadow-[0_24px_70px_rgba(0,0,0,.24)] backdrop-blur-2xl">
+              <div className="flex items-center justify-between gap-3 rounded-[20px] border border-[var(--pd-border)] bg-[var(--pd-nav)] p-2 shadow-[var(--pd-shadow)] backdrop-blur-2xl">
                 {/* Brand */}
                 <Link
                   href="/dashboard"
                   aria-label="Showwork"
-                  className="group flex shrink-0 items-center gap-2.5 rounded-[14px] px-2.5 py-2 transition hover:bg-white/[0.05] sm:px-3"
+                  className="group flex shrink-0 items-center gap-2.5 rounded-[14px] px-2.5 py-2 transition hover:bg-[var(--pd-soft)] sm:px-3"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-white text-[11px] font-black text-[#08090B] shadow-sm sm:h-9 sm:w-9">
-                    S
-                  </span>
-
-                  <span className="hidden text-[15px] font-bold tracking-[-0.045em] sm:block">
-                    <span className="text-white">
-                      Show
-                    </span>
-                    <span className="bg-gradient-to-r from-[#2478FF] via-[#4C91FF] to-[#78B0FF] bg-clip-text text-transparent">
-                      work
-                    </span>
-                  </span>
+                  <span className="projects-logo block" role="img" aria-label="Showwork" />
                 </Link>
 
                 {/* Primary page navigation */}
@@ -608,7 +597,7 @@ export default async function ProjectDeliveryPage() {
                 >
                   <a
                     href="#projects"
-                    className="rounded-xl bg-white/[0.09] px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-white/[0.13]"
+                    className="rounded-xl bg-[var(--pd-soft)] px-4 py-2.5 text-xs font-semibold text-[var(--pd-text)] shadow-sm transition hover:bg-[var(--pd-soft)]"
                   >
                     Projects
                   </a>
@@ -616,7 +605,7 @@ export default async function ProjectDeliveryPage() {
                   {managedProjects.length > 0 && (
                     <a
                       href="#managed"
-                      className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+                      className="rounded-xl px-4 py-2.5 text-xs font-semibold text-[var(--pd-muted)] transition hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)]"
                     >
                       Managed
                     </a>
@@ -624,7 +613,7 @@ export default async function ProjectDeliveryPage() {
 
                   <a
                     href="#guide"
-                    className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white/45 transition hover:bg-white/[0.06] hover:text-white"
+                    className="rounded-xl px-4 py-2.5 text-xs font-semibold text-[var(--pd-muted)] transition hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)]"
                   >
                     Guide
                   </a>
@@ -632,10 +621,11 @@ export default async function ProjectDeliveryPage() {
 
                 {/* Right side */}
                 <div className="flex items-center gap-1.5 sm:gap-2">
+                  <ProjectThemeToggle />
                   {/* Plan */}
                   <Link
                     href="/dashboard/billing?product=delivery#project-delivery-plans"
-                    className="hidden items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.045] px-3.5 py-2.5 text-[10px] font-semibold text-white/65 transition hover:border-white/[0.15] hover:bg-white/[0.08] hover:text-white lg:flex"
+                    className="hidden items-center gap-2 rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] px-3.5 py-2.5 text-[10px] font-semibold text-[var(--pd-muted)] transition hover:border-[var(--pd-border)] hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)] lg:flex"
                   >
                     <span
                       className="h-1.5 w-1.5 rounded-full"
@@ -648,11 +638,11 @@ export default async function ProjectDeliveryPage() {
 
                     <span>{planName}</span>
 
-                    <span className="text-white/20">
+                    <span className="text-[var(--pd-faint)]">
                       ·
                     </span>
 
-                    <span className="text-white/35">
+                    <span className="text-[var(--pd-subtle)]">
                       {usage.limit === Infinity
                         ? "Unlimited"
                         : `${usage.used}/${usage.limit}`}
@@ -682,9 +672,9 @@ export default async function ProjectDeliveryPage() {
                   <Link
                     href="/dashboard/profile"
                     aria-label="View profile"
-                    className="group flex items-center rounded-xl p-1 transition hover:bg-white/[0.06]"
+                    className="group flex items-center rounded-xl p-1 transition hover:bg-[var(--pd-soft)]"
                   >
-                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 text-[10px] font-bold text-white backdrop-blur-xl transition group-hover:border-white/25 group-hover:scale-[1.03]">
+                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] text-[10px] font-bold text-[var(--pd-text)] backdrop-blur-xl transition group-hover:border-[var(--pd-border)] group-hover:scale-[1.03]">
                       {creator.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -707,7 +697,7 @@ export default async function ProjectDeliveryPage() {
                   </div>
 
                   {/* Mobile menu visual */}
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-white/50 md:hidden">
+                  <div className="hidden h-9 w-9 items-center justify-center rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] text-[var(--pd-muted)] min-[420px]:flex md:hidden">
                     <IconMenu className="h-4 w-4" />
                   </div>
                 </div>
@@ -728,13 +718,13 @@ export default async function ProjectDeliveryPage() {
                 <div className="mb-6 flex items-center gap-3 md:mb-8">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_18px_rgba(36,120,255,.95)]" />
 
-                  <span className="text-[9px] font-bold uppercase tracking-[.22em] text-white/55 sm:text-[10px]">
+                  <span className="text-[9px] font-bold uppercase tracking-[.22em] text-[var(--pd-muted)] sm:text-[10px]">
                     Project Delivery
                   </span>
                 </div>
 
                 <h1
-                  className="font-semibold tracking-[-.065em] text-white"
+                  className="font-semibold tracking-[-.065em] text-[var(--pd-text)]"
                   style={{
                     fontSize:
                       "clamp(2.15rem,5vw,5.25rem)",
@@ -743,7 +733,7 @@ export default async function ProjectDeliveryPage() {
                 >
                   Deliver the work.
                   <br />
-                  <span className="text-white/40">
+                  <span className="text-[var(--pd-subtle)]">
                     Without the chaos.
                   </span>
                 </h1>
@@ -767,7 +757,7 @@ export default async function ProjectDeliveryPage() {
 
                   <a
                     href="#projects"
-                    className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/[.04] px-5 py-3.5 text-xs font-semibold text-white/45 backdrop-blur-xl transition hover:border-white/20 hover:bg-white/[.07] hover:text-white sm:inline-flex"
+                    className="hidden items-center gap-2 rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] px-5 py-3.5 text-xs font-semibold text-[var(--pd-muted)] backdrop-blur-xl transition hover:border-[var(--pd-border)] hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)] sm:inline-flex"
                   >
                     View projects
 
@@ -784,16 +774,16 @@ export default async function ProjectDeliveryPage() {
                 <div className="relative">
                   <div className="pointer-events-none absolute -inset-10 rounded-[40px] bg-[#2478FF]/10 blur-[70px]" />
 
-                  <div className="relative overflow-hidden rounded-[26px] border border-white/15 bg-[#090C11]/80 p-5 shadow-2xl backdrop-blur-2xl md:p-6">
+                  <div className="relative overflow-hidden rounded-[26px] border border-[var(--pd-border)] bg-[var(--pd-surface)] p-5 projects-overview backdrop-blur-2xl md:p-6">
                     <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-[#2478FF]/10 blur-3xl" />
 
                     <div className="relative flex items-start justify-between">
                       <div>
-                        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-white/35">
+                        <p className="text-[9px] font-bold uppercase tracking-[.18em] text-[var(--pd-subtle)]">
                           Overview
                         </p>
 
-                        <p className="mt-2 text-sm font-medium text-white/65">
+                        <p className="mt-2 text-sm font-medium text-[var(--pd-muted)]">
                           Your delivery activity
                         </p>
                       </div>
@@ -802,23 +792,23 @@ export default async function ProjectDeliveryPage() {
                         <IconGrid
                           className="h-4 w-4"
                           style={{
-                            color: COLOR.blueBright,
+                            color: "var(--pd-brand)",
                           }}
                         />
                       </div>
                     </div>
 
                     <div className="relative mt-7">
-                      <p className="text-[10px] font-medium text-white/30">
+                      <p className="text-[10px] font-medium text-[var(--pd-subtle)]">
                         Projects
                       </p>
 
                       <div className="mt-1 flex items-end justify-between gap-4">
-                        <p className="text-4xl font-semibold tracking-[-.055em] text-white sm:text-5xl">
+                        <p className="text-4xl font-semibold tracking-[-.055em] text-[var(--pd-text)] sm:text-5xl">
                           {totalCount}
                         </p>
 
-                        <span className="mb-1.5 flex items-center gap-1.5 text-right text-[9px] font-semibold text-white/35 sm:text-[10px]">
+                        <span className="mb-1.5 flex items-center gap-1.5 text-right text-[9px] font-semibold text-[var(--pd-subtle)] sm:text-[10px]">
                           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2478FF] shadow-[0_0_10px_rgba(36,120,255,.75)]" />
 
                           Active workspace
@@ -827,48 +817,48 @@ export default async function ProjectDeliveryPage() {
                     </div>
 
                     <div className="mt-6 grid grid-cols-2 gap-2.5">
-                      <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
+                      <div className="rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] p-3.5 sm:p-4">
                         <div className="flex items-center gap-2">
-                          <IconEye className="h-3.5 w-3.5 text-white/35" />
+                          <IconEye className="h-3.5 w-3.5 text-[var(--pd-subtle)]" />
 
-                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">
+                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-[var(--pd-subtle)]">
                             Views
                           </span>
                         </div>
 
-                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-[var(--pd-text)] sm:text-2xl">
                           {totalViews}
                         </p>
                       </div>
 
-                      <div className="rounded-xl border border-white/[.07] bg-white/[.035] p-3.5 sm:p-4">
+                      <div className="rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] p-3.5 sm:p-4">
                         <div className="flex items-center gap-2">
-                          <IconUsers className="h-3.5 w-3.5 text-white/35" />
+                          <IconUsers className="h-3.5 w-3.5 text-[var(--pd-subtle)]" />
 
-                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-white/30">
+                          <span className="text-[9px] font-bold uppercase tracking-[.12em] text-[var(--pd-subtle)]">
                             Contacts
                           </span>
                         </div>
 
-                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                        <p className="mt-2.5 text-xl font-semibold tracking-tight text-[var(--pd-text)] sm:text-2xl">
                           {totalEmails}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 rounded-xl border border-white/[.07] bg-white/[.025] p-3.5 sm:p-4">
+                    <div className="mt-2.5 rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] p-3.5 sm:p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-[9px] font-bold uppercase tracking-[.12em] text-white/25">
+                          <p className="text-[9px] font-bold uppercase tracking-[.12em] text-[var(--pd-faint)]">
                             {planName}
                           </p>
 
-                          <p className="mt-1 text-xs text-white/45">
+                          <p className="mt-1 text-xs text-[var(--pd-muted)]">
                             Project usage
                           </p>
                         </div>
 
-                        <p className="text-xs font-semibold text-white/55">
+                        <p className="text-xs font-semibold text-[var(--pd-muted)]">
                           {usage.limit === Infinity
                             ? "Unlimited"
                             : `${usage.used} / ${usage.limit}`}
@@ -876,7 +866,7 @@ export default async function ProjectDeliveryPage() {
                       </div>
 
                       {usage.limit !== Infinity && (
-                        <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
+                        <div className="mt-3 h-1 overflow-hidden rounded-full bg-[var(--pd-soft)]">
                           <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
@@ -892,7 +882,7 @@ export default async function ProjectDeliveryPage() {
 
                     <Link
                       href="/dashboard/billing?product=delivery#project-delivery-plans"
-                      className="mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold text-white/30 transition hover:text-white/70"
+                      className="mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-[10px] font-semibold text-[var(--pd-subtle)] transition hover:text-[var(--pd-muted)]"
                     >
                       <span>
                         Manage plan
@@ -905,12 +895,12 @@ export default async function ProjectDeliveryPage() {
               </div>
             </div>
 
-            <div className="mt-10 flex items-center justify-between border-t border-white/10 pt-5">
-              <span className="text-[8px] font-semibold uppercase tracking-[.18em] text-white/25 sm:text-[9px]">
+            <div className="mt-10 flex items-center justify-between border-t border-[var(--pd-border)] pt-5">
+              <span className="text-[8px] font-semibold uppercase tracking-[.18em] text-[var(--pd-faint)] sm:text-[9px]">
                 Showwork · Project Delivery
               </span>
 
-              <span className="text-[8px] font-medium text-white/20 sm:text-[9px]">
+              <span className="text-[8px] font-medium text-[var(--pd-faint)] sm:text-[9px]">
                 {firstName
                   ? `Welcome back, ${firstName}`
                   : "Your workspace"}
@@ -919,7 +909,7 @@ export default async function ProjectDeliveryPage() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(to_top,#08090B_0%,rgba(8,9,11,.72)_32%,transparent_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 projects-hero-fade" />
       </section>
 
       {/* ═══════════════════════════════════════
@@ -961,11 +951,11 @@ export default async function ProjectDeliveryPage() {
                 </p>
               </div>
 
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white md:text-4xl">
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[var(--pd-text)] md:text-4xl">
                 Projects
               </h2>
 
-              <p className="mt-2 text-sm leading-6 text-white/35">
+              <p className="mt-2 text-sm leading-6 text-[var(--pd-subtle)]">
                 Your client deliveries, all in one place.
               </p>
             </div>
@@ -973,7 +963,7 @@ export default async function ProjectDeliveryPage() {
             {totalCount > 0 && (
               <Link
                 href="/dashboard/start"
-                className="group flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2.5 text-xs font-semibold text-white/55 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                className="group flex w-fit items-center gap-2 rounded-full border border-[var(--pd-border)] bg-[var(--pd-soft)] px-4 py-2.5 text-xs font-semibold text-[var(--pd-muted)] transition hover:border-[var(--pd-border)] hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)]"
               >
                 <IconPlus className="h-3.5 w-3.5" />
 
@@ -1047,11 +1037,11 @@ export default async function ProjectDeliveryPage() {
                   </p>
                 </div>
 
-                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white md:text-4xl">
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[var(--pd-text)] md:text-4xl">
                   Managed projects
                 </h2>
 
-                <p className="mt-2 max-w-xl text-sm leading-6 text-white/35">
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--pd-subtle)]">
                   Briefs, tasks, and internal review —
                   separate from your client deliveries above.
                 </p>
@@ -1089,7 +1079,7 @@ export default async function ProjectDeliveryPage() {
                     <Link
                       key={mp.id}
                       href={href}
-                      className="group relative flex min-h-[250px] flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111316] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/15 hover:bg-[#15181C]"
+                      className="group relative flex min-h-[250px] flex-col overflow-hidden rounded-2xl border border-[var(--pd-border)] bg-[var(--pd-surface)] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[var(--pd-border)] hover:bg-[var(--pd-hover)]"
                     >
                       <div
                         className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
@@ -1108,7 +1098,7 @@ export default async function ProjectDeliveryPage() {
                                   background:
                                     "rgba(34,197,94,0.10)",
                                   color:
-                                    "#4ADE80",
+                                    "var(--pd-success)",
                                   border:
                                     "1px solid rgba(34,197,94,0.15)",
                                 }
@@ -1116,7 +1106,7 @@ export default async function ProjectDeliveryPage() {
                                   background:
                                     "rgba(36,120,255,0.10)",
                                   color:
-                                    COLOR.blueBright,
+                                    "var(--pd-brand)",
                                   border:
                                     "1px solid rgba(36,120,255,0.15)",
                                 }
@@ -1135,7 +1125,7 @@ export default async function ProjectDeliveryPage() {
                               background:
                                 "rgba(255,204,0,0.08)",
                               color:
-                                COLOR.accent,
+                                "var(--pd-accent)",
                               border:
                                 "1px solid rgba(255,204,0,0.12)",
                             }}
@@ -1146,14 +1136,14 @@ export default async function ProjectDeliveryPage() {
                       </div>
 
                       <div className="relative mt-8">
-                        <p className="text-xl font-semibold tracking-[-0.025em] text-white">
+                        <p className="text-xl font-semibold tracking-[-0.025em] text-[var(--pd-text)]">
                           {mp.name}
                         </p>
 
                         {mp.ownerLabel && (
-                          <p className="mt-2 text-xs text-white/35">
+                          <p className="mt-2 text-xs text-[var(--pd-subtle)]">
                             Owned by{" "}
-                            <span className="text-white/50">
+                            <span className="text-[var(--pd-muted)]">
                               {mp.ownerLabel}
                             </span>
                           </p>
@@ -1163,16 +1153,16 @@ export default async function ProjectDeliveryPage() {
                       {taskCount > 0 && (
                         <div className="relative mt-auto pt-8">
                           <div className="mb-2.5 flex items-center justify-between">
-                            <span className="text-[10px] font-medium uppercase tracking-[0.10em] text-white/30">
+                            <span className="text-[10px] font-medium uppercase tracking-[0.10em] text-[var(--pd-subtle)]">
                               Progress
                             </span>
 
-                            <span className="text-[10px] font-semibold text-white/45">
+                            <span className="text-[10px] font-semibold text-[var(--pd-muted)]">
                               {doneCount}/{taskCount}
                             </span>
                           </div>
 
-                          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--pd-soft)]">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{
@@ -1184,12 +1174,12 @@ export default async function ProjectDeliveryPage() {
                           </div>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <p className="text-[10px] text-white/30">
+                            <p className="text-[10px] text-[var(--pd-subtle)]">
                               {doneCount} of{" "}
                               {taskCount} tasks done
                             </p>
 
-                            <span className="text-[10px] font-semibold text-white/35">
+                            <span className="text-[10px] font-semibold text-[var(--pd-subtle)]">
                               {progress}%
                             </span>
                           </div>
@@ -1197,24 +1187,24 @@ export default async function ProjectDeliveryPage() {
                       )}
 
                       {taskCount === 0 && (
-                        <div className="relative mt-auto flex items-center justify-between border-t border-white/[0.06] pt-5">
-                          <span className="text-[10px] uppercase tracking-[0.1em] text-white/25">
+                        <div className="relative mt-auto flex items-center justify-between border-t border-[var(--pd-border)] pt-5">
+                          <span className="text-[10px] uppercase tracking-[0.1em] text-[var(--pd-faint)]">
                             No tasks yet
                           </span>
 
-                          <span className="text-xs text-white/35 transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
+                          <span className="text-xs text-[var(--pd-subtle)] transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
                         </div>
                       )}
 
                       {taskCount > 0 && (
-                        <div className="relative mt-5 flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.025] px-4 py-3 text-xs font-semibold">
-                          <span className="text-white/45 transition-colors group-hover:text-white">
+                        <div className="relative mt-5 flex items-center justify-between rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] px-4 py-3 text-xs font-semibold">
+                          <span className="text-[var(--pd-muted)] transition-colors group-hover:text-[var(--pd-text)]">
                             {isPublished
                               ? "View delivery"
                               : "Continue managing"}
                           </span>
 
-                          <span className="text-white/30 transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
+                          <span className="text-[var(--pd-subtle)] transition-transform group-hover:translate-x-1"><UiSymbol name="right" /></span>
                         </div>
                       )}
                     </Link>
@@ -1230,7 +1220,7 @@ export default async function ProjectDeliveryPage() {
 
           <div
             id="guide"
-            className="relative mt-24 scroll-mt-28 overflow-hidden rounded-[28px] border border-white/[0.07] bg-[#111316]"
+            className="relative mt-24 scroll-mt-28 overflow-hidden rounded-[28px] border border-[var(--pd-border)] bg-[var(--pd-surface)]"
           >
             <div
               className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full blur-[100px]"
@@ -1261,11 +1251,11 @@ export default async function ProjectDeliveryPage() {
                   </p>
                 </div>
 
-                <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] text-white md:text-4xl">
+                <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight tracking-[-0.035em] text-[var(--pd-text)] md:text-4xl">
                   A better way to deliver creative work.
                 </h2>
 
-                <p className="mt-5 max-w-lg text-sm leading-7 text-white/40">
+                <p className="mt-5 max-w-lg text-sm leading-7 text-[var(--pd-subtle)]">
                   Give every client a dedicated place to
                   view their work, respond with feedback,
                   and stay aligned from first delivery to
@@ -1285,8 +1275,8 @@ export default async function ProjectDeliveryPage() {
                 </Link>
               </div>
 
-              <div className="border-t border-white/[0.07] p-7 md:border-l md:border-t-0 md:p-10 lg:p-12">
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/25">
+              <div className="border-t border-[var(--pd-border)] p-7 md:border-l md:border-t-0 md:p-10 lg:p-12">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--pd-faint)]">
                   What you can do
                 </p>
 
@@ -1308,13 +1298,13 @@ export default async function ProjectDeliveryPage() {
                           background:
                             "rgba(36,120,255,0.10)",
                           color:
-                            COLOR.blueBright,
+                            "var(--pd-brand)",
                         }}
                       >
                         <IconCheck className="h-3.5 w-3.5" />
                       </span>
 
-                      <span className="pt-0.5 text-sm leading-5 text-white/55">
+                      <span className="pt-0.5 text-sm leading-5 text-[var(--pd-muted)]">
                         {item}
                       </span>
                     </div>
@@ -1328,20 +1318,20 @@ export default async function ProjectDeliveryPage() {
               SUPPORT
           ═════════════════════════════════════ */}
 
-          <div className="mt-5 flex flex-col gap-5 rounded-2xl border border-white/[0.06] bg-[#111316] p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-5 rounded-2xl border border-[var(--pd-border)] bg-[var(--pd-surface)] p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-white">
+              <p className="text-sm font-semibold text-[var(--pd-text)]">
                 Need a hand with something?
               </p>
 
-              <p className="mt-1 text-xs text-white/30">
+              <p className="mt-1 text-xs text-[var(--pd-subtle)]">
                 We reply within 5 hours.
               </p>
             </div>
 
             <a
               href="mailto:hello@useshowwork.com?subject=Showwork%20support"
-              className="group flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/60 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+              className="group flex w-fit items-center gap-2 rounded-xl border border-[var(--pd-border)] bg-[var(--pd-soft)] px-5 py-3 text-sm font-semibold text-[var(--pd-muted)] transition hover:border-[var(--pd-border)] hover:bg-[var(--pd-soft)] hover:text-[var(--pd-text)]"
             >
               Contact support
 
@@ -1353,6 +1343,6 @@ export default async function ProjectDeliveryPage() {
           <div className="h-10" />
         </div>
       </section>
-    </main>
+    </ProjectDashboardTheme>
   );
 }

@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const ts = require('typescript');
 const React = require('react');
 function load(file, deps = {}, extra = '') {
+  deps = require("./helpers/billing-fixtures.cjs").withBillingDependencies(deps);
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
@@ -97,15 +98,20 @@ test('comparison requests use existing upgrade/downgrade checkout endpoints and 
     for (const [current, target, endpoint] of [['CREATOR', 'STUDIO', 'upgrade-to-company'], ['STUDIO', 'UNLIMITED', 'upgrade-to-company'], ['UNLIMITED', 'STUDIO', 'downgrade-to-individual'], ['STUDIO', 'CREATOR', 'downgrade-to-individual']]) {
       const h = controllerHarness();
       global.window = { location: { href: '' } };
-      global.fetch = async (url, options) => { h.calls.push({ url, body: JSON.parse(options.body) }); return { ok: true, json: async () => ({ authorizationUrl: 'https://checkout.paystack.com/test' }) }; };
+      global.fetch = async (url, options) => { if (url.startsWith('/api/billing/quote')) { h.calls.push({ url }); return { ok: true, json: async () => ({ amountNgn: 10000, standardPriceNgn: 10000, offer: null }) }; } h.calls.push({ url, body: JSON.parse(options.body) }); return { ok: true, json: async () => ({ authorizationUrl: 'https://checkout.paystack.com/test' }) }; };
       const props = { plan: current, billingStatus: 'ACTIVE', billingCycle: 'MONTHLY', subscriptionRenewsAt: null, trialEndsAt: null, switchRequest: null };
       h.render(h.component, props); h.flush();
       const request = { plan: target, billingCycle: 'ANNUAL' };
       h.render(h.component, { ...props, switchRequest: request }); h.flush(); await settle();
-      assert.deepEqual(h.calls[0], { url: `/api/calendars/${endpoint}`, body: { payNow: false, plan: target, billingCycle: 'ANNUAL' } });
+      assert.equal(h.calls.length, 0, 'show confirmation before requesting checkout');
+      let tree = h.render(h.component, { ...props, switchRequest: request }); h.flush(); await settle();
+      tree = h.render(h.component, { ...props, switchRequest: request });
+      const pay = find(tree, node => node.type === 'button' && text(node).startsWith('Pay '))[0];
+      assert.ok(pay); assert.equal(pay.props.disabled, false); pay.props.onClick(); await settle();
+      assert.deepEqual(h.calls[1], { url: `/api/calendars/${endpoint}`, body: { payNow: true, expectedQuote: { amountNgn: 10000, offerId: null }, plan: target, billingCycle: 'ANNUAL' } });
       assert.equal(global.window.location.href, 'https://checkout.paystack.com/test');
       h.render(h.component, { ...props, switchRequest: request }); h.flush();
-      assert.equal(h.calls.length, 1, 'rerenders must not create duplicate checkouts');
+      assert.equal(h.calls.filter(call => call.body).length, 1, 'rerenders must not create duplicate checkouts');
     }
   } finally { global.fetch = originalFetch; if (originalWindow === undefined) delete global.window; else global.window = originalWindow; }
 });
@@ -132,8 +138,11 @@ test('failed switches display the backend error and keep the user on billing', a
     global.fetch = async () => ({ ok: false, json: async () => ({ error: 'Billing is not configured yet.' }) });
     const props = { plan: 'CREATOR', billingStatus: 'ACTIVE', billingCycle: 'MONTHLY', subscriptionRenewsAt: null, trialEndsAt: null, switchRequest: { plan: 'STUDIO', billingCycle: 'MONTHLY' } };
     h.render(h.component, props); h.flush(); await settle();
+    h.render(h.component, props); h.flush(); await settle();
     const tree = h.render(h.component, props);
     assert.ok(text(tree).includes('Billing is not configured yet.'));
+    const pay = find(tree, node => node.type === 'button' && text(node).startsWith('Pay '))[0];
+    assert.equal(pay.props.disabled, true);
     assert.equal(global.window.location.href, '');
   } finally { global.fetch = originalFetch; if (originalWindow === undefined) delete global.window; else global.window = originalWindow; }
 });

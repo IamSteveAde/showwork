@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -21,7 +22,7 @@ export async function POST(
   // irrelevant here; they're working under the owner's allowance.
   const project = await db.project.findUnique({
     where: { id },
-    include: { creator: { select: { id: true, subscriptionActive: true, isComped: true } } },
+    include: { creator: { select: { id: true, subscriptionActive: true, ...complimentaryAccessSelect, isComped: true } } },
   });
   if (!project) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -38,7 +39,7 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (project.creator.subscriptionActive || project.creator.isComped) {
+  if (hasDeliveryPaidAccess(project.creator)) {
     // Unlimited for active subscribers *and* comped (admin-granted
     // free) accounts — the cap only exists to stop the old
     // one-time-payment model being stretched into free ongoing use,

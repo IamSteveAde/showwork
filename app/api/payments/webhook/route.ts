@@ -1,3 +1,4 @@
+import { resolveDeliveryPlan, resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
@@ -5,9 +6,7 @@ import {
   verifyTransaction,
   cancelSubscription,
 } from "@/lib/paystack";
-import { tierFromPlanCode } from "@/lib/subscriptionTiers";
 import {
-  contentWorkspacePlanFromPaystackPlanCode,
   type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
 } from "@/lib/contentWorkspaceEntitlements";
@@ -78,17 +77,17 @@ function normalizeEmail(
   return email.trim().toLowerCase();
 }
 
-function getContentWorkspacePlanFromData(
+async function getContentWorkspacePlanFromData(
   data: any
-): {
+): Promise<{
   plan: ContentWorkspacePlan;
   cycle: ContentWorkspaceBillingCycle;
-} | null {
+} | null> {
   const planCode = extractPlanCode(data);
 
   if (!planCode) return null;
 
-  return contentWorkspacePlanFromPaystackPlanCode(
+  return resolveWorkspacePlan(
     planCode
   );
 }
@@ -312,6 +311,14 @@ export async function POST(
     }
   }
 
+
+  if (event.event === "subscription.create") {
+    const privateCode = extractPlanCode(event.data);
+    if (privateCode && typeof event.data?.subscription_code === "string") {
+      await db.billingOfferSubscription.updateMany({ where: { paystackPlanCode: privateCode }, data: { subscriptionCode: event.data.subscription_code } });
+    }
+  }
+
   // ===========================================================================
   // SUBSCRIPTION CREATED
   // ===========================================================================
@@ -331,7 +338,7 @@ export async function POST(
     // CONTENT WORKSPACE
     // -------------------------------------------------------------------------
     const contentWorkspacePlan =
-      getContentWorkspacePlanFromData(data);
+      await getContentWorkspacePlanFromData(data);
 
     if (contentWorkspacePlan) {
       const creatorId =
@@ -416,6 +423,7 @@ export async function POST(
               id: creator.id,
             },
             data: {
+              workspaceOfferSubscriptionId: planCode ? await offerSubscriptionId(planCode, creator.id) : null,
               contentWorkspacePlan: plan,
               contentWorkspaceBillingStatus:
                 "ACTIVE",
@@ -468,6 +476,7 @@ export async function POST(
       });
 
     if (existingPaymentRecord) {
+      await processReferralCommission(existingPaymentRecord);
       console.log(
         `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
       );
@@ -779,7 +788,7 @@ await sendPartnerCommissionEmailForPayment(
     // -------------------------------------------------------------------------
     else {
       const match = planCode
-        ? tierFromPlanCode(planCode)
+        ? await resolveDeliveryPlan(planCode)
         : null;
 
       if (!customerEmail) {
@@ -842,6 +851,7 @@ await sendPartnerCommissionEmailForPayment(
                 id: existing.id,
               },
               data: {
+                deliveryOfferSubscriptionId: planCode ? await offerSubscriptionId(planCode, existing.id) : null,
                 subscriptionActive: true,
                 subscriptionTier: tier,
                 subscriptionCycle: cycle,
@@ -884,6 +894,7 @@ await sendPartnerCommissionEmailForPayment(
       });
 
     if (existingPaymentRecord) {
+      await processReferralCommission(existingPaymentRecord);
       console.log(
         `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
       );
@@ -926,12 +937,13 @@ await sendPartnerCommissionEmailForPayment(
     const planCode =
       extractPlanCode(event.data);
 
+    const offerCheckout = planCode ? await db.billingOfferSubscription.findUnique({ where: { paystackPlanCode: planCode } }) : null;
     // -------------------------------------------------------------------------
     // CONTENT WORKSPACE
     // -------------------------------------------------------------------------
     const contentWorkspacePlan =
       planCode
-        ? contentWorkspacePlanFromPaystackPlanCode(
+        ? await resolveWorkspacePlan(
             planCode
           )
         : null;
@@ -949,6 +961,8 @@ await sendPartnerCommissionEmailForPayment(
                 subscriptionCode,
             },
           })
+        : offerCheckout
+        ? await db.creator.findUnique({ where: { id: offerCheckout.creatorId } })
         : null;
 
       if (!creator) {
@@ -990,6 +1004,7 @@ await sendPartnerCommissionEmailForPayment(
       });
 
     if (existingPaymentRecord) {
+      await processReferralCommission(existingPaymentRecord);
       console.log(
         `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
       );
@@ -1226,7 +1241,7 @@ await sendPartnerCommissionEmailForPayment(
         );
 
       const match = planCode
-        ? tierFromPlanCode(planCode)
+        ? await resolveDeliveryPlan(planCode)
         : null;
 
       if (!customerEmail) {
@@ -1296,6 +1311,7 @@ await sendPartnerCommissionEmailForPayment(
       });
 
     if (existingPaymentRecord) {
+      await processReferralCommission(existingPaymentRecord);
       console.log(
         `Paystack webhook: PaymentRecord already exists for reference ${reference}, skipping duplicate`
       );
@@ -1350,7 +1366,7 @@ await sendPartnerCommissionEmailForPayment(
     // -------------------------------------------------------------------------
     const contentWorkspacePlan =
       planCode
-        ? contentWorkspacePlanFromPaystackPlanCode(
+        ? await resolveWorkspacePlan(
             planCode
           )
         : null;
@@ -1718,6 +1734,15 @@ await sendPartnerCommissionEmailForPayment(
           },
         });
       }
+    }
+  }
+
+  if (event.event === "charge.success" && typeof event.data?.reference === "string") {
+    try {
+      await recordOfferPayment(event.data.reference);
+    } catch (error) {
+      console.error("Offer payment reconciliation failed", error);
+      return NextResponse.json({ error: "Offer reconciliation requires retry" }, { status: 500 });
     }
   }
 

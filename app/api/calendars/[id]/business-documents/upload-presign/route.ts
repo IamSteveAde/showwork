@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -72,7 +73,7 @@ export async function POST(
   contentWorkspaceBillingStatus: true,
   contentWorkspaceBillingCycle: true,
   contentWorkspaceTrialEndsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
   });

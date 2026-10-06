@@ -66,6 +66,9 @@ export async function runScheduledAiBusinessResearch() {
           {
             isComped: true,
           },
+          {
+            workspaceCompedUntil: { gt: new Date() },
+          },
         ],
       },
     },
@@ -83,6 +86,7 @@ export async function runScheduledAiBusinessResearch() {
     contentWorkspaceTrialEndsAt: true,
     isComped: true,
     compedUntil: true,
+    billingComplimentaryGrants: true, workspaceCompedPlan: true, workspaceCompedUntil: true,
   },
 },
     },

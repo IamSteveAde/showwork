@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import { getCurrentCreator } from "@/lib/auth";
@@ -269,7 +270,7 @@ export async function GET(
   contentWorkspaceBillingStatus: true,
   contentWorkspaceBillingCycle: true,
   contentWorkspaceTrialEndsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
 },

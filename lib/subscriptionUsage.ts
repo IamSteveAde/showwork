@@ -1,7 +1,8 @@
+import { deliveryComplimentaryTier, deliveryComplimentaryCycleStart, type ComplimentaryAccount } from "@/lib/complimentaryAccess";
 import { db } from "@/lib/db";
 import { tierLimit, Tier } from "@/lib/subscriptionTiers";
 
-interface CreatorForUsage {
+interface CreatorForUsage extends ComplimentaryAccount {
   id: string;
   subscriptionActive: boolean;
   subscriptionTier: Tier;
@@ -11,6 +12,7 @@ interface CreatorForUsage {
 }
 
 export interface UsageInfo {
+  complimentary: boolean;
   tier: Tier;
   limit: number;
   used: number;
@@ -31,9 +33,10 @@ export interface UsageInfo {
  * only applies while they're actually on Free.
  */
 export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageInfo> {
-  const effectiveTier: Tier = creator.subscriptionActive
-    ? creator.subscriptionTier
-    : "FREE";
+  const paidTier: Tier = creator.subscriptionActive ? creator.subscriptionTier : "FREE";
+  const complimentary = deliveryComplimentaryTier(creator);
+  const order: Tier[] = ["FREE", "STARTER", "GROWTH", "UNLIMITED"];
+  const effectiveTier: Tier = complimentary && order.indexOf(complimentary) > order.indexOf(paidTier) ? complimentary : paidTier;
 
   const limit =
     effectiveTier === "FREE" && creator.freeTierLimitOverride !== null
@@ -45,7 +48,7 @@ export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageIn
   const cycleStart =
     effectiveTier === "FREE"
       ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-      : creator.currentCycleStart;
+      : complimentary && !creator.subscriptionActive ? deliveryComplimentaryCycleStart(creator) : creator.currentCycleStart;
 
   // Deliberately does NOT filter on deletedAt — this is the one place
   // in the app where that's intentional, not an oversight. Usage is
@@ -60,6 +63,7 @@ export async function getCreatorUsage(creator: CreatorForUsage): Promise<UsageIn
   });
 
   return {
+    complimentary: !!complimentary && !creator.subscriptionActive,
     tier: effectiveTier,
     limit,
     used,

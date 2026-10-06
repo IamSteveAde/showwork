@@ -1,10 +1,13 @@
+import BillingBenefits from "@/components/billing/BillingBenefits";
+import { billingPriceQuotes } from "@/lib/billingOffers";
+import { workspaceComplimentaryPlan, workspaceComplimentaryEndsAt, complimentaryAccessSelect } from "@/lib/complimentaryAccess";
+import { resolveDeliveryPlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
 import { syncContentWorkspaceRenewal } from "@/lib/syncContentWorkspaceRenewal";
 import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getCreatorUsage } from "@/lib/subscriptionUsage";
 import {
-  tierFromPlanCode,
   type BillingCycle,
 } from "@/lib/subscriptionTiers";
 import {
@@ -130,7 +133,7 @@ export default async function BillingPage({
           : verification?.data?.plan?.plan_code;
 
       const match = planCode
-        ? tierFromPlanCode(planCode)
+        ? await resolveDeliveryPlan(planCode, creator.id)
         : null;
         console.log("Showwork subscription callback verification:", {
   reference: ref,
@@ -152,6 +155,7 @@ export default async function BillingPage({
       }
 
       if (isSuccessful && match && customerCode && !alreadyProcessed) {
+        await recordOfferPayment(ref, verification);
         const { tier, cycle } = match;
 
         const subs =
@@ -195,6 +199,7 @@ export default async function BillingPage({
           },
 
           data: {
+            deliveryOfferSubscriptionId: planCode ? await offerSubscriptionId(planCode, creator.id) : null,
             subscriptionActive: true,
             subscriptionTier: tier,
             subscriptionCycle: cycle,
@@ -242,6 +247,7 @@ export default async function BillingPage({
   const [
     usage,
     workspaceBilling,
+    offerPrices,
   ] = await Promise.all([
     getCreatorUsage(creator),
 
@@ -257,11 +263,12 @@ export default async function BillingPage({
   contentWorkspaceTrialUsedAt: true,
   contentWorkspaceTrialEndsAt: true,
   contentWorkspaceSubscriptionRenewsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
     }),
 
+    billingPriceQuotes(creator.id),
   ]);
 
   if (workspaceBilling?.contentWorkspaceBillingStatus === "ACTIVE") {
@@ -274,14 +281,27 @@ export default async function BillingPage({
    * ------------------------------------------------------------
    */
 
+  const currentWorkspaceOffer = creator.workspaceOfferSubscriptionId
+    ? await db.billingOfferSubscription.findUnique({ where: { id: creator.workspaceOfferSubscriptionId } }) : null;
   return (
     <BillingSubscriptions
       creator={{
         name: creator.name,
         email: creator.email,
       }}
+      benefits={<BillingBenefits creator={creator} />}
+      offerPrices={offerPrices}
       usage={usage}
-      workspaceBilling={workspaceBilling}
+      workspaceBilling={workspaceBilling ? {
+        ...workspaceBilling,
+        recurringPriceNgn: currentWorkspaceOffer && workspaceBilling.contentWorkspaceBillingStatus === "ACTIVE" ? (currentWorkspaceOffer.restoredAt ? currentWorkspaceOffer.standardPriceNgn : currentWorkspaceOffer.discountedPriceNgn) : undefined,
+        isComped: !!workspaceComplimentaryPlan(workspaceBilling),
+        compedUntil: workspaceComplimentaryEndsAt(workspaceBilling),
+        contentWorkspacePlan: workspaceComplimentaryPlan(workspaceBilling) &&
+          (workspaceBilling.contentWorkspaceBillingStatus !== "ACTIVE" || !workspaceBilling.contentWorkspacePlan ||
+           ["CREATOR", "STUDIO", "UNLIMITED"].indexOf(workspaceComplimentaryPlan(workspaceBilling)!) > ["CREATOR", "STUDIO", "UNLIMITED"].indexOf(workspaceBilling.contentWorkspacePlan))
+          ? workspaceComplimentaryPlan(workspaceBilling) : workspaceBilling.contentWorkspacePlan,
+      } : null}
       selectedProduct={selectedProduct}
       selectedTier={selectedTierParam ?? null}
       selectedCycle={selectedCycle}

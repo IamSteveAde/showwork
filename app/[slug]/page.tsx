@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
@@ -73,7 +74,7 @@ export default async function SlugPage({
         orderBy: { displayOrder: "asc" },
         include: { reviews: { orderBy: { createdAt: "asc" } } },
       },
-      creator: { select: { subscriptionActive: true, isComped: true } },
+      creator: { select: { subscriptionActive: true, ...complimentaryAccessSelect, isComped: true } },
       sections: {
         orderBy: { displayOrder: "asc" },
         include: {
@@ -221,7 +222,7 @@ export default async function SlugPage({
     <DeliveryPage
       projectId={project.id}
       clientName={project.clientName}
-      badgeVisible={project.badgeVisible && !project.creator.subscriptionActive && !project.creator.isComped}
+      badgeVisible={project.badgeVisible && !hasDeliveryPaidAccess(project.creator)}
       primaryColor={project.primaryColor ?? "#C9A84C"}
       bgColor={project.bgColor ?? "#080808"}
       logoUrl={project.logoUrl}

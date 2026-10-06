@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useProjectDashboardTheme } from "@/components/projects/ProjectDashboardTheme";
+import projectThemeStyles from "@/components/projects/ProjectDashboardTheme.module.css";
 import { useRouter } from "next/navigation";
 
 /**
@@ -19,6 +21,7 @@ export default function DeleteProjectButton({
   clientName: string;
 }) {
   const router = useRouter();
+  const projectTheme = useProjectDashboardTheme();
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +59,13 @@ export default function DeleteProjectButton({
   const modal = (
     <div
       onClick={closeModal}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-6"
+      data-project-theme={projectTheme?.theme}
+      className={`${projectTheme ? projectThemeStyles.theme : ""} fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-6`}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-2xl p-6"
-        style={{ background: "#1A1A1A" }}
+        style={{ background: projectTheme ? "var(--pd-surface)" : "#1A1A1A" }}
       >
         <div
           className="mb-4 flex h-12 w-12 items-center justify-center rounded-full"
@@ -77,8 +81,8 @@ export default function DeleteProjectButton({
             />
           </svg>
         </div>
-        <h3 className="mb-1.5 text-lg font-bold text-white">Delete &ldquo;{clientName}&rdquo;?</h3>
-        <p className="mb-5 text-sm text-white/50">
+        <h3 className="mb-1.5 text-lg font-bold" style={{ color: "var(--pd-text, white)" }}>Delete &ldquo;{clientName}&rdquo;?</h3>
+        <p className="mb-5 text-sm" style={{ color: "var(--pd-subtle, rgba(255,255,255,.5))" }}>
           This permanently deletes this project, every file in it, and all client feedback. This can&apos;t be undone.
         </p>
         {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
@@ -92,7 +96,7 @@ export default function DeleteProjectButton({
           </button>
           <button
             onClick={closeModal}
-            className="rounded-lg px-4 py-2.5 text-sm text-white/50 transition-colors hover:text-white"
+            className="rounded-lg px-4 py-2.5 text-sm transition-colors" style={{ color: "var(--pd-muted, rgba(255,255,255,.5))" }}
           >
             Cancel
           </button>
@@ -106,7 +110,7 @@ export default function DeleteProjectButton({
       <button
         onClick={openModal}
         aria-label={`Delete ${clientName}`}
-        className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-white/50 transition-colors hover:bg-red-500/20 hover:text-red-400"
+        className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-[var(--pd-subtle,rgba(255,255,255,.5))] transition-colors hover:bg-red-500/20 hover:text-red-400"
         style={{ background: "rgba(0,0,0,0.4)" }}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { canAddContentWorkspaceCollaborator, getContentWorkspacePlan, canAccessContentWorkspace, canUseContentWorkspaceFeature } from "@/lib/contentWorkspaceUsage";
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { calendarFeatureGate, canAccessCalendarById } from "@/lib/calendarPermissions";
@@ -106,7 +107,7 @@ export async function POST(
         id: true,
         clientName: true,
         managerId: true,
-        manager: { select: { id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true, contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true, isComped: true, compedUntil: true } },
+        manager: { select: { id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true, contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true, ...complimentaryAccessSelect, isComped: true, compedUntil: true } },
       },
     });
 

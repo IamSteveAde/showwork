@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 
 const PARTNER_COMMISSION_PERCENT = 10;
-
 const QUALIFYING_PAYMENT_TYPES = new Set([
   "SUBSCRIPTION_INITIAL",
   "SUBSCRIPTION_RENEWAL",
@@ -11,7 +10,10 @@ const QUALIFYING_PAYMENT_TYPES = new Set([
 
 function addTwelveMonths(date: Date): Date {
   const result = new Date(date);
-  result.setMonth(result.getMonth() + 12);
+  // Clamp leap-day anniversaries to February's last day, in UTC.
+  const month = result.getUTCMonth();
+  result.setUTCFullYear(result.getUTCFullYear() + 1);
+  if (result.getUTCMonth() !== month) result.setUTCDate(0);
   return result;
 }
 
@@ -27,140 +29,55 @@ type PaymentForCommission = {
 export async function processReferralCommission(
   payment: PaymentForCommission
 ): Promise<void> {
-  if (payment.revenueStatus !== "LIVE") return;
+  if (payment.revenueStatus !== "LIVE" ||
+      !QUALIFYING_PAYMENT_TYPES.has(payment.type) ||
+      !Number.isSafeInteger(payment.amountNgn) || payment.amountNgn <= 0) return;
 
-  // Only qualifying Showwork and Content Workspace
-  // subscription payments can generate partner commissions.
-  if (!QUALIFYING_PAYMENT_TYPES.has(payment.type)) {
-    return;
-  }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await db.$transaction(async (tx) => {
+        const referral = await tx.referral.findUnique({
+          where: { referredCreatorId: payment.creatorId },
+          select: { id: true, status: true, startedAt: true, commissionEndsAt: true },
+        });
+        if (!referral || !["PENDING", "ACTIVE"].includes(referral.status)) return;
 
-  // Never create a commission for a zero or negative payment.
-  if (payment.amountNgn <= 0) {
-    return;
-  }
+        const existing = await tx.referralCommission.findUnique({
+          where: { paymentRecordId: payment.id }, select: { id: true },
+        });
+        if (existing) return;
 
-  const referral = await db.referral.findUnique({
-    where: {
-      referredCreatorId: payment.creatorId,
-    },
-    select: {
-      id: true,
-      status: true,
-      startedAt: true,
-      commissionEndsAt: true,
-    },
-  });
+        if (referral.status === "PENDING") {
+          await tx.referral.update({
+            where: { id: referral.id },
+            data: {
+              status: "ACTIVE", startedAt: payment.createdAt,
+              commissionEndsAt: addTwelveMonths(payment.createdAt),
+            },
+          });
+        } else if (!referral.startedAt || !referral.commissionEndsAt ||
+                   payment.createdAt < referral.startedAt ||
+                   payment.createdAt >= referral.commissionEndsAt) {
+          return;
+        }
 
-  // This creator was not referred by a partner.
-  if (!referral) {
-    return;
-  }
-
-  const paymentDate = payment.createdAt;
-
-  // ---------------------------------------------------------------------------
-  // FIRST QUALIFYING PAYMENT
-  // ---------------------------------------------------------------------------
-  //
-  // The first successful qualifying payment activates the referral and starts
-  // the 12-month commission window.
-  //
-  if (referral.status === "PENDING") {
-    const commissionEndsAt = addTwelveMonths(paymentDate);
-
-    await db.$transaction(async (tx) => {
-      // Prevent the same PaymentRecord from creating another commission.
-      const existingCommission =
-        await tx.referralCommission.findUnique({
-          where: {
-            paymentRecordId: payment.id,
-          },
-          select: {
-            id: true,
+        // Stopping new referrals does not cancel existing customers' eligibility.
+        await tx.referralCommission.create({
+          data: {
+            referralId: referral.id, paymentRecordId: payment.id,
+            paymentAmountNgn: payment.amountNgn,
+            commissionPercent: PARTNER_COMMISSION_PERCENT,
+            commissionAmountNgn: Math.floor(payment.amountNgn * PARTNER_COMMISSION_PERCENT / 100),
+            status: "PENDING", earnedAt: payment.createdAt,
           },
         });
-
-      if (existingCommission) {
-        return;
-      }
-
-      await tx.referral.update({
-        where: {
-          id: referral.id,
-        },
-        data: {
-          status: "ACTIVE",
-          startedAt: paymentDate,
-          commissionEndsAt,
-        },
-      });
-
-      await tx.referralCommission.create({
-        data: {
-          referralId: referral.id,
-          paymentRecordId: payment.id,
-          paymentAmountNgn: payment.amountNgn,
-          commissionPercent: PARTNER_COMMISSION_PERCENT,
-          commissionAmountNgn: Math.floor(
-            (payment.amountNgn * PARTNER_COMMISSION_PERCENT) / 100
-          ),
-          status: "PENDING",
-          earnedAt: paymentDate,
-        },
-      });
-    });
-
-    return;
+      }, { isolationLevel: "Serializable" });
+      return;
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      // Concurrent payments must re-read the window; duplicate deliveries are harmless.
+      if ((code === "P2034" || code === "P2002") && attempt < 2) continue;
+      throw error;
+    }
   }
-
-  // Only ACTIVE referrals can continue earning commissions.
-  //
-  // IMPORTANT:
-  // We deliberately do NOT check PartnerProfile.isActive here.
-  //
-  // This implements the policy we just agreed on:
-  // deactivating a partner stops new referrals, but existing referred
-  // customers continue generating commissions during their valid
-  // 12-month commission window.
-  if (referral.status !== "ACTIVE") {
-    return;
-  }
-
-  // Once the 12-month window has ended, no further commission is earned.
-  if (
-    !referral.commissionEndsAt ||
-    paymentDate > referral.commissionEndsAt
-  ) {
-    return;
-  }
-
-  // Prevent duplicate commission creation for the same payment.
-  const existingCommission =
-    await db.referralCommission.findUnique({
-      where: {
-        paymentRecordId: payment.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-  if (existingCommission) {
-    return;
-  }
-
-  await db.referralCommission.create({
-    data: {
-      referralId: referral.id,
-      paymentRecordId: payment.id,
-      paymentAmountNgn: payment.amountNgn,
-      commissionPercent: PARTNER_COMMISSION_PERCENT,
-      commissionAmountNgn: Math.floor(
-        (payment.amountNgn * PARTNER_COMMISSION_PERCENT) / 100
-      ),
-      status: "PENDING",
-      earnedAt: paymentDate,
-    },
-  });
 }

@@ -3,8 +3,25 @@ import { db } from "@/lib/db";
 import { verifyPassword, createSessionToken, setSessionCookie } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
-  const creator = await db.creator.findUnique({ where: { email } });
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const { email, password } = body ?? {};
+  if (typeof email !== "string" || !email.trim() || typeof password !== "string" || !password) {
+    return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+  }
+  let creator;
+  try {
+    creator = await db.creator.findUnique({ where: { email } });
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    console.error("Login database lookup failed", { code });
+    if (["P1001", "P1002", "P1008", "P1017", "P2024"].includes(code ?? "")) {
+      return NextResponse.json({ error: "Login is temporarily unavailable. Please try again shortly." }, { status: 503, headers: { "Retry-After": "10" } });
+    }
+    return NextResponse.json({ error: "Unable to sign in right now. Please try again." }, { status: 500 });
+  }
   if (!creator) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }

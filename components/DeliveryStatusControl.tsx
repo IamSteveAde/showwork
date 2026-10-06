@@ -124,9 +124,11 @@ function Spinner({
 export default function DeliveryStatusControl({
   projectId,
   currentStatus,
+  compact = false,
 }: {
   projectId: string;
   currentStatus: DeliveryStatus;
+  compact?: boolean;
 }) {
   const router = useRouter();
 
@@ -190,6 +192,28 @@ export default function DeliveryStatusControl({
 
     applyStatus(status);
   };
+
+  if (compact) {
+    const paid = currentStatus === "PAID";
+    return <div className={`mb-5 rounded-2xl border px-4 py-3 ${paid ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-red-200 bg-red-50 text-red-900"}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          {paid ? <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> : <LockIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />}
+          <p className="text-xs leading-5"><span className="font-bold">Client downloads:</span> {paid ? "unlocked because payment is confirmed." : "locked until you confirm the project has been paid."}</p>
+        </div>
+        {!paid && !confirmingPaid && <button type="button" onClick={() => handleStageClick("PAID")} disabled={loading}
+          className="shrink-0 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50">Mark as paid & enable downloads</button>}
+      </div>
+      {confirmingPaid && !paid && <div className="mt-4 border-t border-red-200 pt-4">
+        <p className="text-xs leading-5">Confirm that you have received payment. This immediately enables client downloads for all delivered files.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" disabled={loading} onClick={() => applyStatus("PAID")} className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50">{loading ? <><Spinner />Confirming…</> : "Confirm payment received"}</button>
+          <button type="button" disabled={loading} onClick={() => setConfirmingPaid(false)} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50">Cancel</button>
+        </div>
+      </div>}
+      {error && <p role="alert" className="mt-3 text-xs font-medium text-red-700">{error}</p>}
+    </div>;
+  }
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-blue-100 bg-white shadow-[0_24px_70px_-42px_rgba(37,99,235,0.45)]">

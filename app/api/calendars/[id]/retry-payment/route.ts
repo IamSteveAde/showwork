@@ -1,8 +1,10 @@
+import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
+import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { initializeSubscription } from "@/lib/paystack";
+
 import { appUrl } from "@/lib/url";
 import {
   CONTENT_WORKSPACE_PLANS,
@@ -98,7 +100,7 @@ export async function POST(
         contentWorkspaceBillingCycle: true,
         contentWorkspacePendingSubscriptionRef: true,
 
-        isComped: true,
+        ...complimentaryAccessSelect, isComped: true, compedUntil: true,
 
         // Temporary migration fallback for legacy accounts.
         calendarAccountType: true,
@@ -112,7 +114,7 @@ export async function POST(
     );
   }
 
-  if (creator.isComped) {
+  if (workspaceComplimentaryPlan(creator)) {
     return NextResponse.json(
       {
         error:
@@ -215,7 +217,7 @@ export async function POST(
 
   try {
     const result =
-      await initializeSubscription({
+      await initializeOfferSubscription({
         email: creator.email,
         reference,
 

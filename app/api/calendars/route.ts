@@ -1,8 +1,10 @@
+import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
+import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator, hashPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { initializeSubscription } from "@/lib/paystack";
+
 import { appUrl } from "@/lib/url";
 import {
   CONTENT_WORKSPACE_PLANS,
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
       contentWorkspaceTrialEndsAt: true,
       contentWorkspacePendingSubscriptionRef: true,
 
-      isComped: true,
+      ...complimentaryAccessSelect, isComped: true,
       compedUntil: true,
 
       // Kept temporarily because older accounts may still have this
@@ -199,7 +201,7 @@ export async function POST(req: NextRequest) {
    * as the source of truth.
    */
   let plan: ContentWorkspacePlan | null =
-    creator.contentWorkspacePlan;
+    creator.contentWorkspacePlan ?? workspaceComplimentaryPlan(creator);
 
   if (!plan) {
     if (
@@ -235,6 +237,9 @@ export async function POST(req: NextRequest) {
    * Content Workspace entitlement service.
    */
   const account: ContentWorkspaceAccount = {
+  billingComplimentaryGrants: creator.billingComplimentaryGrants,
+  workspaceCompedPlan: creator.workspaceCompedPlan,
+  workspaceCompedUntil: creator.workspaceCompedUntil,
   id: creator.id,
   contentWorkspacePlan: plan,
   contentWorkspaceBillingStatus: creator.contentWorkspaceBillingStatus,
@@ -337,9 +342,7 @@ export async function POST(req: NextRequest) {
  * Do not initialize Paystack.
  */
 if (
-  creator.isComped &&
-  (!creator.compedUntil ||
-    creator.compedUntil.getTime() > Date.now())
+  !!workspaceComplimentaryPlan(creator)
 ) {
   return NextResponse.json({
     calendarId: calendar.id,
@@ -437,7 +440,7 @@ if (
     `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
 
   try {
-    const result = await initializeSubscription({
+    const result = await initializeOfferSubscription({
       email: creator.email,
       reference,
       callbackUrl:

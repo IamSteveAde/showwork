@@ -13,14 +13,20 @@ export async function POST(req: NextRequest) {
   }
 
   const { globalDiscountPercent } = await req.json();
+  if (globalDiscountPercent !== 0) return NextResponse.json({ error: "Create a global offer in Billing Benefits to specify its products, plans and duration.", manageUrl: "/admin/billing-offers" }, { status: 409 });
   if (typeof globalDiscountPercent !== "number" || globalDiscountPercent < 0 || globalDiscountPercent > 100) {
     return NextResponse.json({ error: "Discount must be between 0 and 100" }, { status: 400 });
   }
 
-  await db.platformSettings.upsert({
-    where: { id: "singleton" },
-    update: { globalDiscountPercent },
-    create: { id: "singleton", globalDiscountPercent },
+  await db.$transaction(async tx => {
+    await tx.platformSettings.upsert({
+      where: { id: "singleton" }, update: { globalDiscountPercent },
+      create: { id: "singleton", globalDiscountPercent },
+    });
+    await tx.billingOffer.updateMany({
+      where: { id: "legacy-global-delivery", revokedAt: null },
+      data: { revokedAt: new Date(), revokedBy: admin.email },
+    });
   });
 
   return NextResponse.json({ ok: true });

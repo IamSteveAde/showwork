@@ -1,11 +1,9 @@
+import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import {
-  initializeSubscription,
-} from "@/lib/paystack";
 import {
   getContentWorkspacePlanCode,
   CONTENT_WORKSPACE_PLANS,
@@ -134,6 +132,7 @@ export async function POST(req: NextRequest) {
       billingCycle
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
       "Content Workspace Creator Paystack plan code is not configured:",
       error
@@ -159,7 +158,8 @@ export async function POST(req: NextRequest) {
       : limits.priceNgnMonthly;
 
   try {
-    const result = await initializeSubscription({
+    const result = await initializeOfferSubscription({
+      expectedQuote: body.expectedQuote,
       email: creator.email,
       reference,
 
@@ -196,6 +196,7 @@ export async function POST(req: NextRequest) {
       billingCycle,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
       "Content Workspace Creator downgrade checkout initialize error:",
       error

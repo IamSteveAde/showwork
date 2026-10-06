@@ -1,3 +1,4 @@
+import PartnerTag from "@/components/admin/PartnerTag";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -462,6 +463,7 @@ export default async function AdminPage({
       isComped: true,
       discountPercent: true,
       freeTierLimitOverride: true,
+      partnerProfile: { select: { status: true, isActive: true } },
 
       _count: {
         select: {
@@ -858,8 +860,8 @@ export default async function AdminPage({
             </AdminToolCard>
 
             <AdminToolCard
-              title="Global Discount"
-              description="Set the default discount applied to new subscriptions."
+              title="Discounts & complimentary access"
+              description="Set product, subscription, duration and audience for every benefit."
             >
               <div
                 className="
@@ -1173,6 +1175,7 @@ export default async function AdminPage({
                                   )}
                                 </span>
 
+                                <PartnerTag profile={creator.partnerProfile} />
                                 {creator.isDeactivated && (
                                   <span className="rounded-full border border-[#FECDCA] bg-[#FEF3F2] px-2 py-0.5 text-[9px] font-semibold text-[#B42318]">
                                     Deactivated
