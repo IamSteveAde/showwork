@@ -74,6 +74,10 @@ export type FacebookPageActivity = {
   followers: number | null;
   posts: FacebookPagePost[];
   notices: string[];
+  latestMetrics?: {
+    asOf: string; reach: number | null; views: number | null;
+    engagement: number | null; mediaViews: number | null;
+  } | null;
 };
 
 export interface SocialPlatformAdapter {

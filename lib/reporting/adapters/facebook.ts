@@ -10,8 +10,9 @@ import type {
 const GRAPH_VERSION = process.env.META_GRAPH_API_VERSION || "v26.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;
 const PAGE_POST_LIMIT = 5;
+const LIKE_INSIGHT_LIMIT = 20;
 
-type GraphError = { error?: { message?: string; code?: number; error_subcode?: number } };
+type GraphError = { error?: { message?: string; code?: number; error_subcode?: number; fbtrace_id?: string } };
 type GraphCount = { summary?: { total_count?: number }; count?: number };
 type InsightValue = { name?: string; values?: Array<{ value?: unknown }>; total_value?: { value?: unknown } };
 
@@ -36,13 +37,15 @@ async function graphGet<T>(path: string, token: string, params: Record<string, s
   const data = await response.json().catch(() => ({})) as T & GraphError;
   const apiError = data.error;
   if (!response.ok || apiError) {
-    const detail = apiError?.message || `Facebook Graph API request failed (${response.status}).`;
+    const detail = (apiError?.message || `Facebook Graph API request failed (${response.status}).`)
+      .split(token).join("[redacted]")
+      .replace(/([?&](?:access_token|input_token|appsecret_proof)=)[^&\s]+/gi, "$1[redacted]");
     if (apiError?.code === 190) throw new Error(`Facebook Page connection needs renewal: ${detail}`);
     if (apiError?.code === 4 || apiError?.code === 17 || apiError?.code === 32 || apiError?.code === 613 || response.status === 429) {
       throw new Error("Facebook temporarily rate-limited reporting. Wait a few minutes, then refresh.");
     }
     if (apiError?.code === 10 || apiError?.code === 200) {
-      throw new Error("Facebook reporting permission is missing. Reconnect this Page after granting the required Meta permissions.");
+      throw new Error(`Meta denied access to Facebook GET ${path} (error ${apiError.code}${apiError.error_subcode ? `/${apiError.error_subcode}` : ""}). ${detail}${apiError.fbtrace_id ? ` Meta trace: ${apiError.fbtrace_id}.` : ""}`);
     }
     throw new Error(detail);
   }
@@ -135,11 +138,72 @@ type PagePostRecord = {
   shares?: { count?: number };
 };
 
-async function fetchPostMetricValues(postId: string, token: string, includeInsights: boolean) {
+/** Page-owned content is required; engagement expansions have independent access rules.
+ * Fetch optional fields in separate, bounded Page-edge requests so one denial cannot
+ * discard authorized posts. Match results to the core feed by ID, never by position.
+ */
+async function fetchPagePosts(connection: SocialConnection, token: string, params: Record<string, string>) {
+  const path = `/${encodeURIComponent(connection.platformAccountId)}/posts`;
+  const core = await graphGet<{ data?: PagePostRecord[] }>(path, token, {
+    ...params, fields: "id,message,created_time,permalink_url,full_picture",
+  });
+  const posts: PagePostRecord[] = (core.data ?? []).map(post => ({
+    id: post.id, message: post.message, created_time: post.created_time,
+    permalink_url: post.permalink_url, full_picture: post.full_picture,
+  }));
+  const notices: string[] = [];
+  if (!posts.length) return { posts, notices };
+
+  // Aggregate Post Insights can be authorized even when the public likes edge
+  // is restricted. This is the specific Like-reaction metric, not all reactions.
+  if (scopesFor(connection).has("read_insights")) {
+    const eligible = posts.slice(0, LIKE_INSIGHT_LIMIT);
+    for (let offset = 0; offset < eligible.length; offset += 2) {
+      await Promise.all(eligible.slice(offset, offset + 2).map(async post => {
+        const likes = await optionalInsight(post.id, token, "post_reactions_like_total", "lifetime");
+        if (likes !== null) post.likes = { summary: { total_count: likes } };
+      }));
+    }
+  }
+  const fields: Array<{ key: "likes" | "comments" | "shares"; field: string; label: string }> = [
+    ...(posts.some(post => asCount(post.likes?.summary?.total_count) === null)
+      ? [{ key: "likes" as const, field: "likes.limit(0).summary(true)", label: "Like counts" }] : []),
+    { key: "shares", field: "shares", label: "Share counts" },
+  ];
+  if (scopesFor(connection).has("pages_read_user_content")) {
+    fields.push({ key: "comments", field: "comments.limit(0).summary(true)", label: "Comment counts" });
+  } else {
+    notices.push("Page content loaded. Comment counts need the additional pages_read_user_content permission and are unavailable on this connection.");
+  }
+  const results = await Promise.all(fields.map(async field => {
+    try {
+      const result = await graphGet<{ data?: PagePostRecord[] }>(path, token, { ...params, fields: `id,${field.field}` });
+      return { ...field, records: result.data ?? [], error: null };
+    } catch (error) {
+      return { ...field, records: [] as PagePostRecord[], error: error instanceof Error ? error.message : "Meta did not return this metric." };
+    }
+  }));
+  for (const result of results) {
+    if (result.error) {
+      notices.push(`${result.label} unavailable; the Page content remains accessible. ${result.error}`);
+      continue;
+    }
+    const values = new Map(result.records.map(post => [post.id, post]));
+    for (const post of posts) {
+      const value = values.get(post.id);
+      if (value && !(result.key === "likes" && asCount(post.likes?.summary?.total_count) !== null)) Object.assign(post, { [result.key]: value[result.key] });
+    }
+  }
+  return { posts, notices };
+}
+
+async function fetchPostMetricValues(postId: string, token: string, includeInsights: boolean, includeComments: boolean) {
   const encodedId = encodeURIComponent(postId);
   const [likes, comments, shares] = await Promise.all([
-    optionalCount(`/${encodedId}/likes`, token, { summary: "true", limit: "0" }),
-    optionalCount(`/${encodedId}/comments`, token, { summary: "true", limit: "0" }),
+    includeInsights
+      ? optionalInsight(postId, token, "post_reactions_like_total", "lifetime").then(value => value ?? optionalCount(`/${encodedId}/likes`, token, { summary: "true", limit: "0" }))
+      : optionalCount(`/${encodedId}/likes`, token, { summary: "true", limit: "0" }),
+    includeComments ? optionalCount(`/${encodedId}/comments`, token, { summary: "true", limit: "0" }) : Promise.resolve(null),
     optionalCount(`/${encodedId}`, token, { fields: "shares" }),
   ]);
   const [reach, impressions] = includeInsights
@@ -157,7 +221,7 @@ async function fetchPageIdentity(connection: SocialConnection, token: string) {
     return await graphGet<{ id?: string; name?: string }>(`/${id}`, token, { fields: "id,name" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Facebook Page is no longer accessible.";
-    throw new Error(message.includes("permission") ? message : `Could not read the selected Facebook Page. Confirm it is still accessible, then reconnect it. ${message}`);
+    throw new Error(message.toLowerCase().includes("permission") ? message : `Could not read the selected Facebook Page. Confirm it is still accessible, then reconnect it. ${message}`);
   }
 }
 
@@ -198,18 +262,20 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       },
     };
 
+    const postWarnings: string[] = [];
+
     // Fetch the Page's own recent posts independently of Showwork's
-    // PublishedSocialPost table. Keep this to one bounded edge request.
+    // PublishedSocialPost table. Optional engagement reads are separately bounded.
     try {
       const until = new Date();
       const since = new Date(until.getTime() - 366 * 24 * 60 * 60 * 1000);
-      const nativePosts = await graphGet<{ data?: PagePostRecord[] }>(`/${encodeURIComponent(page.id ?? connection.platformAccountId)}/posts`, token, {
-        fields: "id,message,created_time,permalink_url,likes.limit(0).summary(true),comments.limit(0).summary(true),shares",
+      const nativePosts = await fetchPagePosts(connection, token, {
         limit: "100",
         since: String(Math.floor(since.getTime() / 1000)),
         until: String(Math.floor(until.getTime() / 1000)),
       });
-      metrics.accountPosts = (nativePosts.data ?? []).flatMap((post) => {
+      postWarnings.push(...nativePosts.notices);
+      metrics.accountPosts = nativePosts.posts.flatMap((post) => {
         if (!post.created_time) return [];
         const publishedAt = new Date(post.created_time);
         if (!Number.isFinite(publishedAt.getTime())) return [];
@@ -234,10 +300,10 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     }
 
     if (!scopesFor(connection).has("read_insights")) {
-      metrics.reportingWarnings = ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."];
-    } else if (pageLikes !== null && pageLikes < 100) {
-      metrics.reportingWarnings = [`Meta only provides Page Insights for Pages with at least 100 likes. This Page currently has ${pageLikes}; follower count is a separate measure.`];
+      metrics.reportingWarnings = [...postWarnings, "Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."];
     } else {
+      // Eligibility varies by metric. Let Meta authorize the real requests;
+      // fan_count alone must not block metrics that Meta actually provides.
       const { values, warnings } = await fetchPageInsights(connection.platformAccountId, token);
       // Meta's current media-view metrics replace deprecated impression and
       // unique-impression fields. `page_video_views` remains video-only;
@@ -248,7 +314,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       metrics.engagement = values.page_post_engagements;
       metrics.engagementRate = metrics.engagement !== null && metrics.reach ? metrics.engagement / metrics.reach : null;
       metrics.engagementRateBasis = metrics.engagementRate !== null ? "reach" : null;
-      metrics.reportingWarnings = warnings;
+      metrics.reportingWarnings = [...postWarnings, ...warnings];
     }
     return metrics;
   },
@@ -261,7 +327,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       const postId = post.platformPostId || post.providerReference;
       if (!postId) continue;
       const [counts, engagement] = await Promise.all([
-        fetchPostMetricValues(postId, token, includeInsights),
+        fetchPostMetricValues(postId, token, includeInsights, scopesFor(connection).has("pages_read_user_content")),
         includeInsights ? optionalInsight(postId, token, "post_engaged_users", "lifetime") : Promise.resolve(null),
       ]);
       results.set(post.id, {
@@ -282,8 +348,7 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
     const followers = await graphGet<{ followers_count?: number }>(`/${encodeURIComponent(pageId)}`, token, { fields: "followers_count" })
       .then((result) => asCount(result.followers_count)).catch(() => null);
 
-    const result = await graphGet<{ data?: PagePostRecord[] }>(`/${encodeURIComponent(pageId)}/posts`, token, {
-      fields: "id,message,created_time,permalink_url,full_picture,likes.limit(0).summary(true),comments.limit(0).summary(true),shares",
+    const result = await fetchPagePosts(connection, token, {
       limit: String(PAGE_POST_LIMIT),
       since: String(Math.floor(period.start.getTime() / 1000)),
       until: String(Math.floor(period.end.getTime() / 1000)),
@@ -291,10 +356,9 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
 
     const includeInsights = scopesFor(connection).has("read_insights");
     const pagePosts: FacebookPagePost[] = [];
-    const records = result.data ?? [];
-    // Counts are included in the feed request; only Insights need a follow-up
-    // per post. This keeps the live Page panel bounded to one feed request and
-    // at most two Insight requests per displayed post.
+    const records = result.posts;
+    // The core feed plus up to three optional Page-edge reads remain bounded.
+    // Insights need at most two follow-up requests per displayed post.
     for (let offset = 0; offset < records.length; offset += 2) {
       const batch = await Promise.all(records.slice(offset, offset + 2).map(async (post): Promise<FacebookPagePost> => {
         const [reach, impressions] = includeInsights
@@ -319,14 +383,26 @@ export const facebookReportingAdapter: SocialReportingAdapter = {
       pagePosts.push(...batch);
     }
 
+    let latestMetrics: FacebookPageActivity["latestMetrics"] = null;
+    if (includeInsights) {
+      const insights = await fetchPageInsights(pageId, token);
+      latestMetrics = {
+        asOf: new Date().toISOString(), reach: insights.values.page_total_media_view_unique,
+        views: insights.values.page_video_views, engagement: insights.values.page_post_engagements,
+        mediaViews: insights.values.page_media_view,
+      };
+    }
+
     return {
       pageId,
       pageName: page.name || connection.accountName || "Facebook Page",
+      latestMetrics,
       followers,
       posts: pagePosts,
-      notices: includeInsights
-        ? []
-        : ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."],
+      notices: [
+        ...result.notices,
+        ...(!includeInsights ? ["Facebook Insights permission is missing. Reconnect this Page with read_insights granted to load Page performance metrics."] : []),
+      ],
     };
   },
 };

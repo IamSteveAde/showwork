@@ -3,7 +3,7 @@ import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { getSocialReportingAdapter } from "@/lib/reporting/adapters";
-import { change, compareAccounts } from "@/lib/reporting/comparison";
+import { change, compareAccounts, applyLiveFacebookOverview } from "@/lib/reporting/comparison";
 import type { FacebookPageActivity } from "@/lib/reporting/types";
 
 export const REPORTING_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"];
@@ -236,7 +236,29 @@ export async function getCalendarReportingData(
         socialConversation: { select: { platform: true, participantName: true, participantUsername: true } } },
     }),
   ]) : [0, 0, 0, 0, 0, []] as const;
-  const compared = compareAccounts(connections, start, end, previousStart);
+  // The lower panel and overview must compare the same enriched post data.
+  // Keep earlier saved posts for comparisons; replace current records by ID.
+  const comparisonAccounts = connections.map(connection => {
+    const merged = new Map(connection.accountPosts.map(post => [post.platformPostId, post]));
+    for (const post of accountPosts.filter(post => post.connectionId === connection.id)) {
+      merged.set(post.platformPostId, { ...merged.get(post.platformPostId), ...post, publishedAt: new Date(post.publishedAt), metricsUpdatedAt: post.metricsUpdatedAt ? new Date(post.metricsUpdatedAt) : null });
+    }
+    return { ...connection, accountPosts: [...merged.values()] };
+  });
+  let compared = compareAccounts(comparisonAccounts, start, end, previousStart);
+  const activeAccounts = connections.filter(connection => connection.status === "CONNECTED");
+  if (!facebookPageActivityError && facebookPageActivity && activeAccounts.length === 1 && activeAccounts[0].id === facebookConnection?.id) {
+    compared = applyLiveFacebookOverview(compared, facebookPageActivity, start, end);
+  }
+  // Post media views are distinct from video views and unique Page reach.
+  const activeIds = new Set(activeAccounts.map(connection => connection.id));
+  const facebookPosts = accountPosts.filter(post => post.platform === "FACEBOOK" && activeIds.has(post.connectionId));
+  const mediaCounts = facebookPosts.filter(post => post.impressions !== null);
+  if (mediaCounts.length) compared.postMediaViews = {
+    value: mediaCounts.reduce((total, post) => total + post.impressions!, 0), delta: null, percent: null,
+    basis: `Lifetime media views of ${mediaCounts.length} available Facebook posts`,
+    note: "Available post counters; not a complete historical Page total or video-only views.",
+  };
   // Creator retains current totals; comparisons and historical detail require Studio.
   const performance = advancedAccess ? compared : Object.fromEntries(Object.entries(compared).map(([key, metric]) => [key, {
     ...metric, delta: null, percent: null, note: "Upgrade to Studio for period comparisons.",
