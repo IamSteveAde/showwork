@@ -71,3 +71,31 @@ export function compareAccounts(accounts: Account[], start: Date, end: Date, pre
   }
   return result;
 }
+
+
+/** Live Page observations are explicitly current, never manufactured historical snapshots. */
+export function applyLiveFacebookOverview(
+  compared: Record<string, Change>,
+  live: { followers: number | null; latestMetrics?: { asOf: string; reach: number | null; views: number | null; engagement: number | null } | null },
+  start: Date, end: Date,
+) {
+  const result = { ...compared };
+  if (result.followers?.value == null && live.followers !== null) result.followers = {
+    value: live.followers, delta: null, percent: null, basis: "Current Facebook follower count from Meta",
+    note: "Live count; no saved follower history for a period comparison.",
+  };
+  const latest = live.latestMetrics;
+  if (latest && new Date(latest.asOf) >= start && new Date(latest.asOf) <= end) {
+    for (const key of ["reach", "views", "engagement"] as const) {
+      if (latest[key] === null) continue;
+      // Preserve actual recorded daily totals. A post-lifetime fallback is not
+      // an account daily total and must not take priority over real Page data.
+      if (result[key]?.value != null && !result[key].basis.includes("lifetime totals")) continue;
+      result[key] = { value: latest[key], delta: null, percent: null,
+        basis: "Latest available Facebook daily metric from Meta",
+        note: "Live daily value, not the total for the entire selected period. Sync records history for comparisons.",
+      };
+    }
+  }
+  return result;
+}

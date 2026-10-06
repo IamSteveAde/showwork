@@ -119,3 +119,34 @@ test('follower gains use the earlier recorded count rather than the total audien
   assert.equal(result.followers.delta, 5);
   assert.match(result.followers.note, /50 → 55/);
 });
+
+test('live Facebook follower and daily values show without fabricated history or deltas', () => {
+  const { applyLiveFacebookOverview } = moduleUnderTest.exports;
+  const empty=compareAccounts([account([])],start,end,previousStart);
+  const result=applyLiveFacebookOverview(empty,{followers:15,latestMetrics:{asOf:'2026-10-02T12:00:00Z',reach:0,views:0,engagement:0}},start,end);
+  assert.equal(result.followers.value,15);assert.equal(result.followers.delta,null);assert.match(result.followers.basis,/Current Facebook/);
+  assert.equal(result.reach.value,0);assert.equal(result.views.value,0);assert.equal(result.engagement.value,0);
+  assert.equal(result.reach.delta,null);assert.match(result.reach.basis,/Latest available/);
+});
+test('current live daily values do not become historical period totals or overwrite saved daily history',()=>{
+  const { applyLiveFacebookOverview }=moduleUnderTest.exports;
+  const real=compareAccounts([account([snapshot('2026-10-01',50)])],start,end,previousStart);
+  const live={followers:15,latestMetrics:{asOf:'2026-10-06T12:00:00Z',reach:0,views:0,engagement:0}};
+  const result=applyLiveFacebookOverview(real,live,start,end);assert.equal(result.reach.value,50);assert.equal(result.views.value,null);
+  const inPeriod=applyLiveFacebookOverview(real,{...live,latestMetrics:{...live.latestMetrics,asOf:'2026-10-02T12:00:00Z'}},start,end);
+  assert.equal(inPeriod.reach.value,50);
+});
+test('overview uses the same live Facebook content as the lower panel when saved snapshots are absent',async()=>{
+  const db={
+    socialConnection:{findMany:async()=>[{id:'fb',platform:'FACEBOOK',platformAccountId:'page',accountName:'Page',username:null,status:'CONNECTED',accountMetricSnapshots:[],accountPosts:[],connectedAt:new Date(),disconnectedAt:null,lastSyncAttemptAt:null,lastSyncAt:null}],findFirst:async()=>({id:'fb',platformAccountId:'page',accountName:'Page',accessToken:'token',tokenScopes:'pages_read_engagement,read_insights'})},
+    publishedSocialPost:{findMany:async()=>[]},reportingInsight:{findMany:async()=>[]},calendarLead:{count:async()=>0,findMany:async()=>[]},
+  };
+  const live={pageId:'page',pageName:'Page',followers:15,notices:[],latestMetrics:{asOf:'2026-10-06T12:00:00Z',reach:0,views:0,engagement:0,mediaViews:0},posts:[{id:'post',message:'Real content fixture',createdAt:'2026-08-09T12:00:00Z',permalink:null,imageUrl:null,likes:4,comments:null,shares:null,reach:269,impressions:283}]};
+  const deps={'@/lib/calendarPermissions':{canUseCalendarFeature:async()=>true},'@/lib/db':{db},'@/lib/r2':{publicUrlFor:()=>null},'@/lib/reporting/adapters':{getSocialReportingAdapter:()=>({fetchPageActivity:async()=>live})},'@/lib/reporting/comparison':moduleUnderTest.exports};
+  const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('lib/reporting/data.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(name=>deps[name],mod,mod.exports);
+  const result=await mod.exports.getCalendarReportingData('workspace',new URLSearchParams({from:'2026-01-01',to:'2026-10-06',platform:'FACEBOOK'}),true);
+  assert.equal(result.performance.followers.value,15);assert.equal(result.performance.reach.value,0);assert.equal(result.performance.views.value,0);assert.equal(result.performance.engagement.value,0);
+  assert.equal(result.performance.likes.value,4);assert.equal(result.performance.postMediaViews.value,283);assert.equal(result.performance.followers.delta,null);
+  assert.match(result.performance.postMediaViews.basis,/Lifetime/);assert.equal(result.accountPosts[0].likes,4);
+  assert.deepEqual(result.connections[0].accountMetricSnapshots,[],'live reads must not fabricate saved snapshots');
+});
