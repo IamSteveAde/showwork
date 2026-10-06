@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { db } from "@/lib/db";
 import {
   canAccessContentWorkspace,
@@ -91,7 +92,7 @@ export async function canAccessCalendarById(
       manager: { select: {
         id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true,
         contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true,
-        isComped: true, compedUntil: true,
+        ...complimentaryAccessSelect, isComped: true, compedUntil: true,
       } },
     },
   });
@@ -118,7 +119,7 @@ export async function canUseCalendarFeature(calendarId: string, feature: Content
     select: { manager: { select: {
       id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true,
       contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true,
-      isComped: true, compedUntil: true,
+      ...complimentaryAccessSelect, isComped: true, compedUntil: true,
     } } },
   });
   return !!calendar && canUseContentWorkspaceFeature(calendar.manager, feature) && await canAccessCalendarById(calendarId);

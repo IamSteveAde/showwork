@@ -7,9 +7,9 @@ import DeleteProjectButton from "@/components/DeleteProjectButton";
 
 const COLOR = {
   blue: "#2478FF",
-  accent: "#FFCC00",
-  charcoal: "#1A1A1A",
-  midGray: "#888786",
+  accent: "var(--pd-accent, #FFCC00)",
+  charcoal: "var(--pd-surface, #1A1A1A)",
+  midGray: "var(--pd-subtle, #888786)",
 };
 
 interface OwnedProject {
@@ -116,15 +116,15 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
       <div className="relative mb-8 max-w-md">
         <IconSearch
           className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-          style={{ color: "rgba(248,247,244,0.3)" }}
+          style={{ color: "var(--pd-subtle)" }}
         />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search your projects by client name"
-          className="w-full rounded-lg py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/25"
-          style={{ background: COLOR.charcoal, border: "1px solid rgba(255,255,255,0.1)" }}
+          className="w-full rounded-lg py-2.5 pl-10 pr-4 text-sm text-[var(--pd-text)] outline-none transition-colors placeholder:text-[var(--pd-faint)] focus:border-[#2478FF]"
+          style={{ background: COLOR.charcoal, border: "1px solid var(--pd-border)" }}
         />
       </div>
 
@@ -139,8 +139,8 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
             </svg>
           </div>
           <div>
-            <p className="text-lg font-semibold text-white">No projects yet</p>
-            <p className="mt-1 max-w-xs text-sm font-normal text-white/45">
+            <p className="text-lg font-semibold text-[var(--pd-text)]">No projects yet</p>
+            <p className="mt-1 max-w-xs text-sm font-normal text-[var(--pd-muted)]">
               Every client delivery you create will show up here, ready to send.
             </p>
           </div>
@@ -153,7 +153,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
           </Link>
         </div>
       ) : totalCount === 0 && sharedProjects.length === 0 && query ? (
-        <div className="rounded-xl p-10 text-center text-sm text-white/40" style={{ background: COLOR.charcoal }}>
+        <div className="rounded-xl p-10 text-center text-sm text-[var(--pd-subtle)]" style={{ background: COLOR.charcoal }}>
           No projects match &ldquo;{query}&rdquo;.
         </div>
       ) : (
@@ -163,9 +163,9 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
               <div className="mb-8 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <div className="h-[3px] w-10" style={{ background: COLOR.accent }} aria-hidden />
-                  <h2 className="text-xl font-semibold text-white">Your projects</h2>
+                  <h2 className="text-xl font-semibold text-[var(--pd-text)]">Your projects</h2>
                 </div>
-                <p className="text-sm text-white/40">
+                <p className="text-sm text-[var(--pd-subtle)]">
                   Click any project below to manage its files, publish it, or see what your client approved.
                 </p>
               </div>
@@ -176,7 +176,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                     key={project.id}
                     href={`/dashboard/${project.id}`}
                     className="group relative flex flex-col gap-4 rounded-xl p-6 transition-all duration-300 hover:-translate-y-0.5"
-                    style={{ background: COLOR.charcoal, boxShadow: "0 0 0 1px rgba(248,247,244,0.04)" }}
+                    style={{ background: COLOR.charcoal, boxShadow: "0 0 0 1px var(--pd-border)" }}
                   >
                     <DeleteProjectButton projectId={project.id} clientName={project.clientName} />
 
@@ -190,7 +190,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                     </div>
 
                     <div>
-                      <p className="text-lg font-semibold text-white">{project.clientName}</p>
+                      <p className="text-lg font-semibold text-[var(--pd-text)]">{project.clientName}</p>
                       <p className="mt-0.5 text-xs font-normal" style={{ color: COLOR.midGray }}>
                         /{project.slug}
                       </p>
@@ -198,7 +198,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
 
                     <div
                       className="flex items-center justify-between pt-3 text-xs font-normal"
-                      style={{ borderTop: "1px solid rgba(248,247,244,0.06)", color: COLOR.midGray }}
+                      style={{ borderTop: "1px solid var(--pd-border)", color: COLOR.midGray }}
                     >
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1">
@@ -238,12 +238,12 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                     className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
                     style={
                       currentPage <= 1
-                        ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)" }
-                        : { background: COLOR.charcoal, color: "white" }
+                        ? { background: "var(--pd-soft)", color: "var(--pd-faint)" }
+                        : { background: COLOR.charcoal, color: "var(--pd-text)" }
                     }
                   ><>{" "}<UiSymbol name="left" />{" Previous "}</></button>
 
-                  <span className="text-sm text-white/40">
+                  <span className="text-sm text-[var(--pd-subtle)]">
                     Page {currentPage} of {totalPages}
                   </span>
 
@@ -253,8 +253,8 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                     className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
                     style={
                       currentPage >= totalPages
-                        ? { background: "rgba(248,247,244,0.04)", color: "rgba(248,247,244,0.25)" }
-                        : { background: COLOR.charcoal, color: "white" }
+                        ? { background: "var(--pd-soft)", color: "var(--pd-faint)" }
+                        : { background: COLOR.charcoal, color: "var(--pd-text)" }
                     }
                   ><>{" Next "}<UiSymbol name="right" />{" "}</></button>
                 </div>
@@ -267,9 +267,9 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
               <div className="mb-8 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <div className="h-[3px] w-10" style={{ background: COLOR.blue }} aria-hidden />
-                  <h2 className="text-xl font-semibold text-white">Shared with you</h2>
+                  <h2 className="text-xl font-semibold text-[var(--pd-text)]">Shared with you</h2>
                 </div>
-                <p className="text-sm text-white/40">
+                <p className="text-sm text-[var(--pd-subtle)]">
                   Projects other creators have invited you to collaborate on.
                 </p>
               </div>
@@ -292,7 +292,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
                     </div>
 
                     <div>
-                      <p className="text-lg font-semibold text-white">{project.clientName}</p>
+                      <p className="text-lg font-semibold text-[var(--pd-text)]">{project.clientName}</p>
                       <p className="mt-0.5 text-xs font-normal" style={{ color: COLOR.midGray }}>
                         Owned by {project.creator.name || project.creator.email}
                       </p>
@@ -300,7 +300,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
 
                     <div
                       className="flex items-center justify-between pt-3 text-xs font-normal"
-                      style={{ borderTop: "1px solid rgba(248,247,244,0.06)", color: COLOR.midGray }}
+                      style={{ borderTop: "1px solid var(--pd-border)", color: COLOR.midGray }}
                     >
                       <span className="flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -324,7 +324,7 @@ export default function DashboardProjectList({ initialData }: { initialData: Das
               </div>
 
               {hasMoreShared && (
-                <p className="mt-4 text-xs text-white/30">
+                <p className="mt-4 text-xs text-[var(--pd-subtle)]">
                   Showing the most recent — you&apos;re on more than that.
                 </p>
               )}

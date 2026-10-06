@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect, workspaceComplimentaryPlan, type ComplimentaryAccount } from "@/lib/complimentaryAccess";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import {
@@ -33,7 +34,7 @@ async function retryStorageTransaction<T>(operation: () => Promise<T>): Promise<
   }
 }
 
-export interface ContentWorkspaceAccount {
+export interface ContentWorkspaceAccount extends ComplimentaryAccount {
   id: string;
   contentWorkspacePlan: ContentWorkspacePlan | null;
   contentWorkspaceBillingStatus: CalendarBillingStatus;
@@ -85,13 +86,9 @@ export function isContentWorkspaceTrialActive(
 }
 
 export function isComplimentaryAccessActive(
-  account: Pick<ContentWorkspaceAccount, "isComped" | "compedUntil">
+  account: Pick<ContentWorkspaceAccount, "isComped" | "compedUntil"> & ComplimentaryAccount
 ): boolean {
-  if (!account.isComped) return false;
-
-  if (!account.compedUntil) return true;
-
-  return account.compedUntil.getTime() > Date.now();
+  return !!workspaceComplimentaryPlan(account);
 }
 
 
@@ -103,7 +100,7 @@ export function canAccessContentWorkspace(
     | "contentWorkspacePlan"
     | "isComped"
     | "compedUntil"
-  >
+  > & ComplimentaryAccount
 ): boolean {
   if (isComplimentaryAccessActive(account)) {
     return true;
@@ -130,12 +127,16 @@ export function getContentWorkspacePlan(
     ContentWorkspaceAccount,
     "contentWorkspacePlan" | "isComped" | "compedUntil"
     | "contentWorkspaceBillingStatus" | "contentWorkspaceTrialEndsAt"
-  >
+  > & ComplimentaryAccount
 ): ContentWorkspacePlan | null {
   if (isContentWorkspaceTrialActive(account)) return "UNLIMITED";
 
-  if (isComplimentaryAccessActive(account)) {
-    return account.contentWorkspacePlan === "UNLIMITED" && account.contentWorkspaceBillingStatus === "ACTIVE" ? "UNLIMITED" : "STUDIO";
+  const complimentary = workspaceComplimentaryPlan(account);
+  if (complimentary) {
+    const order = ["CREATOR", "STUDIO", "UNLIMITED"];
+    return account.contentWorkspaceBillingStatus === "ACTIVE" && account.contentWorkspacePlan &&
+      order.indexOf(account.contentWorkspacePlan) > order.indexOf(complimentary)
+      ? account.contentWorkspacePlan : complimentary;
   }
 
   return account.contentWorkspacePlan;
@@ -455,7 +456,7 @@ export async function reserveContentWorkspaceStorage(
   contentWorkspacePlan: true,
   contentWorkspaceBillingStatus: true,
   contentWorkspaceTrialEndsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
   });
@@ -921,7 +922,7 @@ export async function consumeAiGeneration(
   contentWorkspacePlan: true,
   contentWorkspaceBillingStatus: true,
   contentWorkspaceTrialEndsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
   });
@@ -995,7 +996,7 @@ export async function consumeAiRegeneration(
   contentWorkspacePlan: true,
   contentWorkspaceBillingStatus: true,
   contentWorkspaceTrialEndsAt: true,
-  isComped: true,
+  ...complimentaryAccessSelect, isComped: true,
   compedUntil: true,
 },
   });

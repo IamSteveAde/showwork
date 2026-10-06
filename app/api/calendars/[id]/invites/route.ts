@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { NextRequest, NextResponse } from "next/server";
@@ -54,7 +55,7 @@ export async function GET(
           contentWorkspaceBillingCycle: true,
           contentWorkspaceTrialUsedAt: true,
           contentWorkspaceTrialEndsAt: true,
-          isComped: true,
+          ...complimentaryAccessSelect, isComped: true,
           compedUntil: true,
         },
       },
@@ -167,7 +168,7 @@ export async function POST(
           contentWorkspaceBillingCycle: true,
           contentWorkspaceTrialUsedAt: true,
           contentWorkspaceTrialEndsAt: true,
-          isComped: true,
+          ...complimentaryAccessSelect, isComped: true,
           compedUntil: true,
         },
       },

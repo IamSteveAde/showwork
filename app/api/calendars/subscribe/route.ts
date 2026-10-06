@@ -1,9 +1,11 @@
+import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
+import { initializeOfferSubscription, offerQuote } from "@/lib/billingOffers";
 import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { initializeSubscription } from "@/lib/paystack";
+
 import { appUrl } from "@/lib/url";
 import {
   CONTENT_WORKSPACE_PLANS,
@@ -53,6 +55,8 @@ export async function POST(req: NextRequest) {
 
   let body: {
     plan?: unknown;
+    activateOffer?: boolean;
+    expectedQuote?: { amountNgn: number; offerId: string | null };
     billingCycle?: unknown;
   } = {};
 
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest) {
       contentWorkspaceTrialEndsAt: true,
       contentWorkspacePendingSubscriptionRef: true,
 
-      isComped: true,
+      ...complimentaryAccessSelect, isComped: true, compedUntil: true,
 
       // Temporary backwards compatibility for accounts created
       // under the previous Individual/Company Calendar billing.
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (creator.isComped) {
+  if (workspaceComplimentaryPlan(creator) && body.activateOffer !== true) {
     return NextResponse.json(
       {
         error:
@@ -103,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (
-    creator.contentWorkspaceBillingStatus === "ACTIVE"
+    creator.contentWorkspaceBillingStatus === "ACTIVE" && body.activateOffer !== true
   ) {
     return NextResponse.json(
       {
@@ -157,6 +161,12 @@ export async function POST(req: NextRequest) {
       creator.contentWorkspaceBillingCycle
   );
 
+  if (body.activateOffer === true) {
+    const quote = await offerQuote(creator.id, "CONTENT_WORKSPACE", plan, billingCycle);
+    if (!quote.offer) return NextResponse.json({ error: "This offer is no longer available. Refresh billing to see your current options." }, { status: 409 });
+    if (creator.contentWorkspaceBillingStatus === "ACTIVE" && creator.contentWorkspacePlan !== plan) return NextResponse.json({ error: "Switch to the selected plan from billing to activate this offer." }, { status: 409 });
+  }
+
   const planConfig =
     CONTENT_WORKSPACE_PLANS[plan];
 
@@ -168,6 +178,7 @@ export async function POST(req: NextRequest) {
       billingCycle
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
       "Content Workspace Paystack plan configuration error:",
       error
@@ -191,7 +202,8 @@ export async function POST(req: NextRequest) {
     `showwork_content_workspace_sub_${creator.id}_${randomUUID()}`;
 
   try {
-    const result = await initializeSubscription({
+    const result = await initializeOfferSubscription({
+      expectedQuote: body.expectedQuote,
       email: creator.email,
       reference,
 
@@ -228,6 +240,7 @@ export async function POST(req: NextRequest) {
       billingCycle,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
       "Content Workspace subscribe initialize error:",
       error

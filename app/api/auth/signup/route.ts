@@ -80,10 +80,11 @@ export async function POST(req: NextRequest) {
       select: {
         referralCode: true,
         isActive: true,
+          status: true,
       },
     });
 
-    if (partner?.isActive) {
+    if (partner?.isActive && partner.status === "ACTIVE") {
       validReferralCode = partner.referralCode;
     }
   }

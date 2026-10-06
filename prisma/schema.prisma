@@ -104,14 +104,22 @@ model Creator {
   // there's no billing event to anchor a free cycle to.
   currentCycleStart DateTime @default(now())
 
-  // Admin controls. isComped grants full Unlimited-tier access without
-  // any real Paystack subscription — checked ahead of subscriptionActive
-  // everywhere access is gated. discountPercent (0-100) is applied the
-  // next time this creator starts or switches a subscription — it
-  // doesn't retroactively change an already-active one.
+  // Legacy complimentary Studio Workspace access, including partner grants.
+  // New admin benefits are scoped to a product and plan, with an expiry.
   isComped              Boolean   @default(false)
   compedUntil           DateTime?
-  discountPercent       Int       @default(0)
+  discountPercent       Int       @default(0) // Legacy; imported to explicit BillingOffer records.
+  deliveryOfferSubscriptionId String?
+  workspaceOfferSubscriptionId String?
+  billingComplimentaryGrants Json @default("[]")
+  deliveryCompedTier SubscriptionTier?
+  deliveryCompedUntil DateTime?
+  workspaceCompedPlan ContentWorkspacePlan?
+  workspaceCompedUntil DateTime?
+  billingOfferRecipients BillingOfferRecipient[]
+  billingOfferSubscriptions BillingOfferSubscription[]
+  billingOfferRedemptions BillingOfferRedemption[]
+  billingBenefitNotifications BillingBenefitNotification[]
   // Overrides the standard Free-tier limit (normally 1/month) for this
   // specific creator, without granting them a paid tier or full comped
   // access — they stay on Free, just with a raised allowance. Null
@@ -2504,4 +2512,119 @@ model CalendarImport {
 
   @@unique([calendarId, requestId])
   @@index([calendarId])
+}
+
+
+// Auditable, non-stacking offers. Product: DELIVERY / CONTENT_WORKSPACE / BOTH.
+// Audience: ALL / SELECTED. 100% grants complimentary access to selected accounts.
+model BillingOffer {
+  id             String                     @id @default(uuid())
+  title          String
+  product        String
+  deliveryTier   SubscriptionTier?
+  workspacePlan  ContentWorkspacePlan?
+  billingCycle   BillingCycle?
+  percent        Int
+  durationMonths Int
+  audience       String
+  availableUntil DateTime?
+  createdBy      String
+  createdAt      DateTime                   @default(now())
+  requestHash    String?
+  revokedBy      String?
+  revokedAt      DateTime?
+  recipients     BillingOfferRecipient[]
+  subscriptions  BillingOfferSubscription[]
+  redemptions    BillingOfferRedemption[]
+
+  @@index([revokedAt, availableUntil])
+}
+
+model BillingOfferRecipient {
+  offerId   String
+  creatorId String
+  offer     BillingOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  creator   Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@id([offerId, creatorId])
+  @@index([creatorId])
+  revokedAt DateTime?
+  revokedBy String?
+}
+
+// Immutable price/eligibility snapshots; each checkout owns its Paystack plan.
+model BillingOfferSubscription {
+  id                 String               @id @default(uuid())
+  offerId            String?
+  creatorId          String
+  offer              BillingOffer?        @relation(fields: [offerId], references: [id], onDelete: SetNull)
+  creator            Creator              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  product            String
+  plan               String
+  billingCycle       BillingCycle
+  title              String
+  percent            Int
+  durationMonths     Int
+  standardPriceNgn   Int
+  discountedPriceNgn Int
+  paystackPlanCode   String?              @unique
+  checkoutReference  String?              @unique
+  subscriptionCode   String?
+  status             String               @default("CHECKOUT")
+  paidCycles         Int                  @default(0)
+  activatedAt        DateTime?
+  discountEndsAt     DateTime?
+  restoredAt         DateTime?
+  lastError          String?
+  createdAt          DateTime             @default(now())
+  charges            BillingOfferCharge[]
+
+  @@index([creatorId, product, status])
+  @@index([status, discountEndsAt])
+}
+
+model BillingOfferCharge {
+  id             String                   @id @default(uuid())
+  subscriptionId String
+  subscription   BillingOfferSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  reference      String                   @unique
+  paidAt         DateTime
+  amountNgn      Int
+}
+
+model BillingOfferRedemption {
+  id             String       @id @default(uuid())
+  offerId        String
+  creatorId      String
+  product        String
+  billingCycle   BillingCycle
+  activatedAt    DateTime
+  discountEndsAt DateTime
+  paidCycles     Int          @default(0)
+  maxCycles      Int
+  offer          BillingOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  creator        Creator      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, creatorId, product])
+}
+
+
+// Durable transactional email outbox. Logical event IDs deduplicate requests.
+model BillingBenefitNotification {
+  id String @id
+  creatorId String
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  offerId String?
+  event String
+  payload Json
+  status String @default("PENDING")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  claimedAt DateTime?
+  sentAt DateTime?
+  providerId String?
+  lastError String?
+  createdAt DateTime @default(now())
+  @@index([status, nextAttemptAt])
+  @@index([offerId])
 }

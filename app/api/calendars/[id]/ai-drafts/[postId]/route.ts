@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { requirePostPlatform } from "@/lib/calendarPosts";
   import { NextRequest, NextResponse } from "next/server";
 
@@ -245,7 +246,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     contentWorkspaceBillingStatus: true,
     contentWorkspaceBillingCycle: true,
     contentWorkspaceTrialEndsAt: true,
-    isComped: true,
+    ...complimentaryAccessSelect, isComped: true,
     compedUntil: true,
   },
     });

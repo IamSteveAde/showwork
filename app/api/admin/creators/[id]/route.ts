@@ -2,93 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
-import { sendFreeAccessGrantedEmail, sendDiscountGrantedEmail } from "@/lib/resend";
 async function requireAdmin() {
   const creator = await getCurrentCreator();
-  if (!creator || !isAdminEmail(creator.email)) return null;
-  return creator;
+  return creator && isAdminEmail(creator.email) ? creator : null;
 }
 
-// PATCH — comp status, discount, free-tier override, and/or a full
-// billing state reset for one creator.
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// New financial benefits require scoped terms in the Billing Benefits API.
+// This compatibility endpoint only removes legacy flags or changes Free quotas.
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { id } = await params;
-  const { isComped, discountPercent, freeTierLimitOverride, resetBilling } = await req.json();
-
-  // A full reset back to a clean Free-tier slate — for accounts that
-  // ended up in an inconsistent state (e.g. leftover subscriptionActive/
-  // subscriptionTier from before being comped, with no real Paystack
-  // subscription actually behind it anymore). This wipes every billing-
-  // related field, not just isComped, so the account can genuinely
-  // start fresh rather than being stuck showing a "current plan" that
-  // can't actually be cancelled or switched.
-  if (resetBilling === true) {
-    const updated = await db.creator.update({
-      where: { id },
-      data: {
-        isComped: false,
-        subscriptionActive: false,
-        subscriptionTier: "FREE",
-        discountPercent: 0,
-        paystackCustomerCode: null,
-        paystackSubscriptionCode: null,
-        paystackEmailToken: null,
-        subscriptionRenewsAt: null,
-        currentCycleStart: new Date(),
-      },
-    });
-    return NextResponse.json({ creator: updated });
+  let body;
+  try { body = await req.json(); if (!body || typeof body !== "object") throw new Error(); }
+  catch { return NextResponse.json({ error: "Invalid request body" }, { status: 400 }); }
+  const { isComped, discountPercent, freeTierLimitOverride, resetBilling } = body;
+  if (isComped === true || (typeof discountPercent === "number" && discountPercent > 0)) {
+    return NextResponse.json({ error: "Create a product-specific benefit with a duration in Billing Benefits.", manageUrl: "/admin/billing-offers" }, { status: 409 });
   }
-
-   const data: { isComped?: boolean; discountPercent?: number; freeTierLimitOverride?: number | null } = {};
-  if (typeof isComped === "boolean") data.isComped = isComped;
-  if (typeof discountPercent === "number") {
-    if (discountPercent < 0 || discountPercent > 100) {
-      return NextResponse.json({ error: "Discount must be between 0 and 100" }, { status: 400 });
-    }
-    data.discountPercent = discountPercent;
+  if ((isComped !== undefined && typeof isComped !== "boolean") ||
+      (discountPercent !== undefined && discountPercent !== 0) ||
+      (freeTierLimitOverride !== undefined && freeTierLimitOverride !== null && (!Number.isSafeInteger(freeTierLimitOverride) || freeTierLimitOverride < 0 || freeTierLimitOverride > 2147483647))) {
+    return NextResponse.json({ error: "Invalid account controls. Free project limits must be non-negative whole numbers." }, { status: 400 });
   }
-  if (freeTierLimitOverride === null) {
-    data.freeTierLimitOverride = null;
-  } else if (typeof freeTierLimitOverride === "number") {
-    if (freeTierLimitOverride < 0) {
-      return NextResponse.json({ error: "Free tier limit can't be negative" }, { status: 400 });
-    }
-    data.freeTierLimitOverride = freeTierLimitOverride;
-  }
-
-  // Fetched before the update specifically to compare old vs. new —
-  // this is what lets the emails below fire only when something is
-  // genuinely being granted (turned on, or raised), never when it's
-  // being turned off or left unchanged.
-  const before = await db.creator.findUnique({ where: { id }, select: { isComped: true, discountPercent: true, email: true } });
-
-  const updated = await db.creator.update({ where: { id }, data });
-
-  if (before) {
-    if (data.isComped === true && before.isComped === false) {
-      try {
-        await sendFreeAccessGrantedEmail({ to: before.email });
-      } catch (err) {
-        console.error(`Failed to send free-access email to ${before.email}:`, err);
-      }
-    }
-    if (typeof data.discountPercent === "number" && data.discountPercent > before.discountPercent) {
-      try {
-        await sendDiscountGrantedEmail({ to: before.email, discountPercent: data.discountPercent });
-      } catch (err) {
-        console.error(`Failed to send discount email to ${before.email}:`, err);
-      }
-    }
-  }
-
-  return NextResponse.json({ creator: updated });
+  const account = await db.creator.findUnique({ where: { id }, select: { id: true, paystackSubscriptionCode: true } });
+  if (!account) return NextResponse.json({ error: "Creator not found" }, { status: 404 });
+  if (resetBilling === true && account.paystackSubscriptionCode) return NextResponse.json({ error: "Cancel the Delivery subscription before resetting billing. A reset must not leave provider charges running." }, { status: 409 });
+  if (isComped === undefined && discountPercent === undefined && freeTierLimitOverride === undefined && resetBilling !== true) return NextResponse.json({ error: "No supported account changes supplied" }, { status: 400 });
+  const creator = await db.$transaction(async tx => {
+    if (discountPercent === 0 || resetBilling === true) await tx.billingOffer.updateMany({ where: { id: `legacy-delivery-${id}`, revokedAt: null }, data: { revokedAt: new Date(), revokedBy: admin.email } });
+    return tx.creator.update({ where: { id }, data: {
+      ...(isComped === false ? { isComped: false, compedUntil: null } : {}),
+      ...(discountPercent === 0 ? { discountPercent: 0 } : {}),
+      ...(freeTierLimitOverride !== undefined ? { freeTierLimitOverride } : {}),
+      ...(resetBilling === true ? { subscriptionActive: false, subscriptionTier: "FREE", subscriptionCycle: null,
+        discountPercent: 0, paystackCustomerCode: null, paystackSubscriptionCode: null, paystackEmailToken: null,
+        subscriptionRenewsAt: null, deliveryOfferSubscriptionId: null, currentCycleStart: new Date() } : {}),
+    } });
+  });
+  return NextResponse.json({ creator });
 }
 
 // DELETE — removes the creator and, via cascade, every project/media/

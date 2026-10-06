@@ -671,7 +671,11 @@ loadPayoutAccount();
 
                   <p className="mt-5 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
                     Share Showwork with people in your network and earn
-                    commissions when your referrals make qualifying payments.
+                    10% of verified Delivery and Content Workspace subscription payments
+                    made by customers who sign up through your referral link, for
+                    12 months from their first qualifying payment. Commissions are
+                    based on the amount paid, including any annual discount.
+                    Approved earnings can be withdrawn from ₦5,000.
                   </p>
 
                   <button
@@ -836,7 +840,7 @@ loadPayoutAccount();
             <StatCard
               label="Total earned"
               value={formatNgn(commissions.totalEarnedNgn)}
-              detail="All recorded commissions"
+              detail="Earnings excluding voided commissions"
               icon={WalletCards}
             />
 

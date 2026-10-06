@@ -19,6 +19,8 @@ export type WorkspacePlanSwitchRequest = {
   billingCycle: BillingCycle;
 };
 
+type BillingQuote = { amountNgn: number; standardPriceNgn: number; offer: { id: string; title: string; percent: number; durationMonths: number; remainingCycles: number } | null };
+
 type PendingSwitch = "upgrade" | "downgrade" | null;
 
 function SettingsIcon({
@@ -200,6 +202,7 @@ export default function CalendarBillingSettings({
   subscriptionRenewsAt,
   trialEndsAt,
   switchRequest,
+  recurringPriceNgn,
   onBusyChange,
 }: {
   plan: ContentWorkspacePlan;
@@ -207,6 +210,7 @@ export default function CalendarBillingSettings({
   billingCycle: BillingCycle | null;
   subscriptionRenewsAt: string | null;
   trialEndsAt: string | null;
+  recurringPriceNgn?: number;
   switchRequest?: WorkspacePlanSwitchRequest | null;
   onBusyChange?: (busy: boolean) => void;
 }) {
@@ -218,6 +222,10 @@ export default function CalendarBillingSettings({
   const [error, setError] = useState<string | null>(null);
   const [pendingSwitch, setPendingSwitch] =
     useState<PendingSwitch>(null);
+
+  const [offerQuote, setOfferQuote] = useState<BillingQuote | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState<ContentWorkspacePlan>(plan);
   const [planBillingCycle, setPlanBillingCycle] = useState<BillingCycle>(billingCycle ?? "MONTHLY");
@@ -243,10 +251,7 @@ export default function CalendarBillingSettings({
 
   const cycle = billingCycle ?? "MONTHLY";
 
-  const currentPrice =
-    cycle === "ANNUAL"
-      ? currentPlan.annualPrice
-      : currentPlan.monthlyPrice;
+  const currentPrice = recurringPriceNgn ?? (cycle === "ANNUAL" ? currentPlan.annualPrice : currentPlan.monthlyPrice);
 
   const currentPriceLabel =
     cycle === "ANNUAL"
@@ -322,10 +327,7 @@ export default function CalendarBillingSettings({
 
   const targetPlanDetails = PLAN_DETAILS[targetPlan];
 
-  const targetPrice =
-    switchBillingCycle === "ANNUAL"
-      ? targetPlanDetails.annualPrice
-      : targetPlanDetails.monthlyPrice;
+  const targetPrice = offerQuote?.amountNgn ?? (switchBillingCycle === "ANNUAL" ? targetPlanDetails.annualPrice : targetPlanDetails.monthlyPrice);
 
   const targetPriceLabel =
     switchBillingCycle === "ANNUAL"
@@ -362,6 +364,7 @@ export default function CalendarBillingSettings({
         },
         body: JSON.stringify({
           payNow,
+          expectedQuote: payNow && offerQuote ? { amountNgn: offerQuote.amountNgn, offerId: offerQuote.offer?.id ?? null } : undefined,
           plan: nextPlan,
           billingCycle: selectedBillingCycle,
         }),
@@ -396,12 +399,19 @@ export default function CalendarBillingSettings({
     const kind = CONTENT_WORKSPACE_PLAN_ORDER.indexOf(nextPlan) > CONTENT_WORKSPACE_PLAN_ORDER.indexOf(plan) ? "upgrade" : "downgrade";
     setSelectedPlan(nextPlan);
     setSwitchBillingCycle(requestedCycle);
-    if (isStillInTrial) {
-      setPendingSwitch(kind);
-      return;
-    }
-    void runSwitch(kind, false, requestedCycle, nextPlan);
+    setPendingSwitch(kind);
   };
+
+  useEffect(() => {
+    if (!pendingSwitch) return;
+    const controller = new AbortController();
+    setOfferQuote(null); setQuoteError(null); setQuoteLoading(true);
+    fetch(`/api/billing/quote?product=CONTENT_WORKSPACE&plan=${selectedPlan}&cycle=${switchBillingCycle}`, { cache: "no-store", signal: controller.signal })
+      .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not confirm your price"); return result; })
+      .then(setOfferQuote).catch(e => { if (e.name !== "AbortError") setQuoteError(e.message); })
+      .finally(() => { if (!controller.signal.aborted) setQuoteLoading(false); });
+    return () => controller.abort();
+  }, [pendingSwitch, selectedPlan, switchBillingCycle]);
 
   const cancel = async () => {
     setLoading("cancel");
@@ -1038,6 +1048,9 @@ export default function CalendarBillingSettings({
                 </div>
               </div>
 
+              {quoteLoading && <p className="mt-4 text-sm text-white/60">Confirming your price…</p>}
+              {quoteError && <p role="alert" className="mt-4 text-sm text-red-300">{quoteError}</p>}
+              {offerQuote?.offer && <div className="mt-4 rounded-xl border border-blue-400/20 bg-blue-500/10 p-4 text-sm leading-6 text-blue-100"><strong>{offerQuote.offer.title} · {offerQuote.offer.percent}% off</strong><p>{offerQuote.offer.remainingCycles} discounted payment(s), then automatically renews at {formatNaira(offerQuote.standardPriceNgn)} per {switchBillingCycle === "ANNUAL" ? "year" : "month"}. The benefit starts with the first successful payment; switching plans does not restart it.</p></div>}
               <div className="mt-5 grid gap-3">
                 <button
                   type="button"
@@ -1048,7 +1061,7 @@ export default function CalendarBillingSettings({
                       switchBillingCycle
                     )
                   }
-                  disabled={loading !== null}
+                  disabled={loading !== null || quoteLoading || !offerQuote}
                   className="group inline-flex min-h-12 items-center justify-between rounded-xl bg-[#2478FF] px-4 py-3 text-left text-sm font-semibold text-white transition-all hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span>
@@ -1060,7 +1073,7 @@ export default function CalendarBillingSettings({
                   <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </button>
 
-                <button
+                {isStillInTrial && <button
                   type="button"
                   onClick={() =>
                     void runSwitch(
@@ -1073,7 +1086,7 @@ export default function CalendarBillingSettings({
                   className="min-h-12 rounded-xl border border-white/[0.09] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/65 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Switch plan and keep my trial
-                </button>
+                </button>}
               </div>
 
               <p className="mt-4 text-center text-[10px] leading-4 text-white/25">

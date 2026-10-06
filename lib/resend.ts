@@ -22,8 +22,8 @@ type EmailPayload = Parameters<typeof resend.emails.send>[0];
  * Keep email delivery independent of the local filesystem and inline attachments.
  * Brand images are referenced through absolute HTTPS URLs from the public site.
  */
-async function sendEmail(input: EmailPayload) {
-  const { data, error } = await resend.emails.send(input);
+async function sendEmail(input: EmailPayload, idempotencyKey?: string) {
+  const { data, error } = await resend.emails.send(input, idempotencyKey ? { idempotencyKey } : undefined);
 
   if (error) {
     console.error("[Showwork email] Resend send failed", {
@@ -1962,7 +1962,7 @@ export async function sendPartnerWelcomeEmail({
           </p>
 
           <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
-            <strong>1 month complimentary Showwork access</strong> has been added to your account.
+            <strong>1 month complimentary Content Workspace Studio access</strong> has been added to your account.
           </p>
 
           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
@@ -2005,4 +2005,36 @@ export async function sendPartnerWelcomeEmail({
   },
 ],
   });
+}
+
+
+export type BillingBenefitEmail = {
+  to: string; name: string | null; title: string; event: "GRANTED" | "STOPPED";
+  product: string; deliveryTier: string | null; workspacePlan: string | null;
+  percent: number; durationMonths: number; billingCycle: string | null;
+  availableUntil: string | null; endsAt: string | null;
+};
+export async function sendBillingBenefitEmail(input: BillingBenefitEmail, idempotencyKey: string) {
+  const stopped = input.event === "STOPPED";
+  const free = input.percent === 100;
+  const deliveryNames: Record<string,string> = { STARTER: "Starter", GROWTH: "Growth", UNLIMITED: "Unlimited" };
+  const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" });
+  const products = [
+    ...(input.product !== "CONTENT_WORKSPACE" ? [`Project Delivery · ${input.deliveryTier ? deliveryNames[input.deliveryTier] : "all eligible paid plans"}`] : []),
+    ...(input.product !== "DELIVERY" ? [`Content Workspace · ${input.workspacePlan ? CONTENT_WORKSPACE_PLANS[input.workspacePlan as keyof typeof CONTENT_WORKSPACE_PLANS].name : "all eligible paid plans"}`] : []),
+  ];
+  const terms = stopped
+    ? (free ? "This complimentary grant has ended. Any other active benefits and paid subscriptions remain available according to their terms." : "This offer is no longer available for new activation. Discounts already activated keep their agreed terms.")
+    : free ? `Your complimentary access is active now${input.endsAt ? ` until ${date(input.endsAt)}` : ""}. Existing paid subscriptions continue to renew unless you cancel them separately in billing.`
+    : `You have ${input.percent}% off eligible subscriptions for ${input.durationMonths} billing months. Activate through checkout; the benefit starts with your first successful payment. Your current subscription price stays the same until activation. After the discounted payments, renewal returns to the standard price shown at checkout. Offers do not stack, and switching plans does not restart an activated offer.`;
+  const result = await sendEmail({ from: FROM, to: input.to,
+    subject: stopped ? `Your Showwork ${free ? "complimentary access" : "discount offer"} has ended` : free ? "Complimentary Showwork access has been added to your account" : `You have a ${input.percent}% Showwork discount offer`,
+    html: emailShell({ eyebrow: "Your billing benefits", headline: stopped ? "Your benefit has been updated." : free ? "Your complimentary access is ready." : `${input.percent}% off, available to you.`,
+      body: `Hi ${escapeHtml(firstNameOf(input.name) ?? "there")},<br /><br />${escapeHtml(terms)}`,
+      detailsHtml: `${infoBox("Offer", input.title)}${products.map(p => infoBox("Included product / plan", p)).join("")}${!stopped ? infoBox("Duration", `${input.durationMonths} month(s)${!free ? ` · ${input.billingCycle === "ANNUAL" ? "Annual billing" : input.billingCycle === "MONTHLY" ? "Monthly billing" : "Eligible monthly / annual billing"}` : ""}`) : ""}${!stopped && !free && input.availableUntil ? infoBox("Activate by", date(input.availableUntil)) : ""}`,
+      ctaLabel: "View your billing benefits", ctaUrl: `${APP_URL}/dashboard/billing`, accent: "#2478FF",
+      footer: "Your dashboard shows your current benefits and renewal terms. Reply if you need help.",
+    }),
+  }, idempotencyKey);
+  return result?.id ?? null;
 }

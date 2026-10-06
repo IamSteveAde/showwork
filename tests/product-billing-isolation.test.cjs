@@ -5,6 +5,7 @@ const ts = require('typescript');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 function load(file, dependencies = {}) {
+  dependencies = require("./helpers/billing-fixtures.cjs").withBillingDependencies(dependencies);
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },

@@ -140,7 +140,9 @@ export async function initializeSubscription({
     throw new Error(`Paystack subscription initialize failed: ${errText}`);
   }
 
-  return res.json();
+  const result = await res.json();
+  if (!result?.status || !result.data?.authorization_url) throw new Error("Paystack did not create a subscription checkout");
+  return result;
 }
 
 /**
@@ -264,5 +266,19 @@ export async function verifyTransaction(reference: string) {
   if (!res.ok && result?.code !== "transaction_not_found") {
     throw new Error(`Paystack verify failed (${res.status})`);
   }
+  return result;
+}
+
+/** Updates a private offer plan; never call this with a shared catalogue plan. */
+export async function updatePrivatePlanPrice(planCode: string, amountNgn: number) {
+  if (!Number.isSafeInteger(amountNgn) || amountNgn <= 0) throw new Error("Invalid recurring price");
+  const response = await fetch(`${PAYSTACK_BASE_URL}/plan/${encodeURIComponent(planCode)}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${paystackSecretKey()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ amount: amountNgn * 100, update_existing_subscriptions: true }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json();
+  if (!response.ok || !result?.status) throw new Error("Could not restore the standard subscription price");
   return result;
 }

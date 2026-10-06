@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { getContentWorkspacePlan } from "@/lib/contentWorkspaceUsage";
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
@@ -378,7 +379,7 @@ export default async function ProfilePage() {
       contentWorkspaceBillingStatus: true,
       contentWorkspaceBillingCycle: true,
       contentWorkspaceTrialEndsAt: true,
-      isComped: true,
+      ...complimentaryAccessSelect, isComped: true,
       compedUntil: true,
       contentWorkspaceSubscriptionRenewsAt: true,
     },

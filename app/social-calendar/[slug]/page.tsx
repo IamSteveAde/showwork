@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { requirePostPlatform } from "@/lib/calendarPosts";
 import { notFound } from "next/navigation";
 import type { ComponentProps } from "react";
@@ -237,7 +238,7 @@ export default async function SocialCalendarPage({
     contentWorkspaceBillingStatus: true,
     contentWorkspaceBillingCycle: true,
     contentWorkspaceTrialEndsAt: true,
-    isComped: true,
+    ...complimentaryAccessSelect, isComped: true,
     compedUntil: true,
   },
 },

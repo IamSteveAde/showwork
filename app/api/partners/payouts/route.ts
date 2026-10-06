@@ -69,6 +69,11 @@ export async function POST() {
        * Prevent another payout request from being created while
        * an existing payout is still being processed.
        */
+      const payoutAccount = await tx.partnerPayoutAccount.findUnique({
+        where: { partnerId: partner.id }, select: { id: true },
+      });
+      if (!payoutAccount) throw new Error("PAYOUT_ACCOUNT_REQUIRED");
+
       const activePayout = await tx.partnerPayout.findFirst({
         where: {
           partnerId: partner.id,
@@ -160,7 +165,7 @@ export async function POST() {
       });
 
       return createdPayout;
-    });
+    }, { isolationLevel: "Serializable" });
 
     return NextResponse.json({
       ok: true,
@@ -174,6 +179,12 @@ export async function POST() {
       },
     });
   } catch (error) {
+    if (["P2034", "P2002"].includes((error as { code?: string }).code ?? "")) {
+      return NextResponse.json({ error: "Your payout balance changed. Refresh and try again." }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === "PAYOUT_ACCOUNT_REQUIRED") {
+      return NextResponse.json({ error: "Please add your payout account before requesting a payout." }, { status: 400 });
+    }
     if (
       error instanceof Error &&
       error.message === "ACTIVE_PAYOUT_EXISTS"

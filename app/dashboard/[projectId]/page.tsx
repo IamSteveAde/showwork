@@ -1,3 +1,4 @@
+import { hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -602,7 +603,7 @@ export default async function ProjectDetailPage({
   const ungroupedMedia = project.media.filter((m) => !m.sectionId);
 
   const uploadSessionsRemaining =
-    creator.subscriptionActive || creator.isComped
+    hasDeliveryPaidAccess(creator)
       ? Infinity
       : MAX_ADDITIONAL_UPLOAD_BATCHES - project.additionalUploadCount;
 
@@ -1449,10 +1450,7 @@ export default async function ProjectDetailPage({
                   icon={<IconGlobe className="h-5 w-5" />}
                 />
 
-                <div className="mb-5 flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-blue-900 shadow-[0_12px_35px_-28px_rgba(37,99,235,.4)]">
-                  <IconLock className="h-4 w-4 shrink-0 text-blue-600" />
-                  <p className="text-xs leading-5"><span className="font-bold">Client downloads:</span> {isPaid ? "unlocked because payment is confirmed." : "locked until you confirm the project has been paid."}</p>
-                </div>
+                <DeliveryStatusControl projectId={project.id} currentStatus={project.deliveryStatus} compact />
 
                 <div className="showwork-lift overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_22px_65px_-42px_rgba(15,23,42,.34)]">
                   <div className="border-b border-slate-200 p-6 sm:p-8">
@@ -1479,7 +1477,7 @@ export default async function ProjectDetailPage({
                           >
                             {liveUrl}
                           </a>
-                          <CopyLinkButton url={liveUrl} />
+                          <CopyLinkButton url={liveUrl} appearance="light" label="Copy client portal link" />
                         </div>
                       </div>
 
@@ -1518,7 +1516,7 @@ export default async function ProjectDetailPage({
                               inputClassName="rounded-xl px-4 py-2.5 font-mono text-sm font-semibold text-slate-900"
                               monospace
                             />
-                            <CopyLinkButton url={project.accessCode} />
+                            <CopyLinkButton url={project.accessCode} appearance="light" label="Copy client access code" />
                           </div>
                         ) : (
                           <div className="flex flex-wrap items-center gap-3">

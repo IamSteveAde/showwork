@@ -1,10 +1,10 @@
+import { resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
 import { NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { processReferralCommission } from "@/lib/partnerCommissions";
 import { db } from "@/lib/db";
 import { verifyTransaction, fetchCustomerSubscriptions, cancelSubscription } from "@/lib/paystack";
 import {
-  contentWorkspacePlanFromPaystackPlanCode,
   getContentWorkspacePlanCode,
   type ContentWorkspacePlan,
   type ContentWorkspaceBillingCycle,
@@ -113,10 +113,12 @@ export async function POST() {
         ? verification.data.plan
         : verification?.data?.plan?.plan_code ?? null;
 
+    await recordOfferPayment(pendingReference, verification);
+
     const planFromPaystack =
       transactionPlanCode
-        ? contentWorkspacePlanFromPaystackPlanCode(
-            transactionPlanCode
+        ? await resolveWorkspacePlan(
+            transactionPlanCode, creator.id
           )
         : null;
 
@@ -195,6 +197,7 @@ export async function POST() {
         id: creator.id,
       },
       data: {
+        workspaceOfferSubscriptionId: transactionPlanCode ? await offerSubscriptionId(transactionPlanCode, creator.id) : null,
         contentWorkspacePlan: plan,
         contentWorkspaceBillingStatus: "ACTIVE",
         contentWorkspaceBillingCycle: cycle,

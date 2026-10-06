@@ -1,5 +1,6 @@
 "use client";
 
+import SubscriptionCheckoutButton from "@/components/billing/SubscriptionCheckoutButton";
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { useEffect, useMemo, useState } from "react";
 
@@ -108,8 +109,6 @@ export default function TrialCountdownBanner({
   const [now, setNow] = useState(() => Date.now());
   const [billingCycle, setBillingCycle] =
     useState<BillingCycle>("MONTHLY");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const pricing = PLAN_PRICING[plan];
 
@@ -216,48 +215,6 @@ export default function TrialCountdownBanner({
     daysLeft,
   ]);
 
-  const subscribe = async () => {
-    if (subscribed) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(
-        "/api/calendars/subscribe",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            plan,
-            billingCycle,
-          }),
-        }
-      );
-
-      const data = await res
-        .json()
-        .catch(() => ({}));
-
-      if (res.ok && data.authorizationUrl) {
-        window.location.href =
-          data.authorizationUrl;
-        return;
-      }
-
-      setError(
-        data.error ??
-          "We couldn't start checkout. Please try again."
-      );
-      setLoading(false);
-    } catch {
-      setError(
-        "Something went wrong. Please try again."
-      );
-      setLoading(false);
-    }
-  };
 
   const headline = offline ? "Restore workspace access" : complimentaryAccess
     ? expired
@@ -387,14 +344,7 @@ export default function TrialCountdownBanner({
                 )}
               </div>
 
-              {error && (
-                <div
-                  role="alert"
-                  className="mt-4 rounded-xl border border-red-400/15 bg-red-400/[0.06] px-3.5 py-3 text-xs leading-5 text-red-200"
-                >
-                  {error}
-                </div>
-              )}
+
             </div>
           </div>
         </div>
@@ -419,9 +369,7 @@ export default function TrialCountdownBanner({
                     type="button"
                     onClick={() => {
                       setBillingCycle("MONTHLY");
-                      setError(null);
                     }}
-                    disabled={loading}
                     className={`rounded-lg px-3 py-2.5 text-[11px] font-semibold transition-all ${
                       billingCycle === "MONTHLY"
                         ? "bg-white/[0.10] text-white shadow-sm"
@@ -435,9 +383,7 @@ export default function TrialCountdownBanner({
                     type="button"
                     onClick={() => {
                       setBillingCycle("ANNUAL");
-                      setError(null);
                     }}
-                    disabled={loading}
                     className={`relative rounded-lg px-3 py-2.5 text-[11px] font-semibold transition-all ${
                       billingCycle === "ANNUAL"
                         ? "bg-[#2478FF] text-white shadow-[0_6px_18px_rgba(36,120,255,0.22)]"
@@ -510,31 +456,11 @@ export default function TrialCountdownBanner({
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <button
-                type="button"
-                onClick={subscribe}
-                disabled={loading || subscribed}
-                className="group inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white shadow-[0_12px_30px_rgba(36,120,255,0.22)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] hover:shadow-[0_16px_36px_rgba(36,120,255,0.28)] focus:outline-none focus:ring-2 focus:ring-[#2478FF]/40 focus:ring-offset-2 focus:ring-offset-[#101318] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {subscribed ? (
-                  <>
-                    <CheckIcon />
-                    Subscribed
-                  </>
-                ) : loading ? (
-                  <>
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Starting checkout...
-                  </>
-                ) : (
-                  <>
-                    {expired
-                      ? "Subscribe & restore access"
-                      : "Subscribe now"}
-                    <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </>
-                )}
-              </button>
+              {subscribed ? <button disabled className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white opacity-60"><CheckIcon />Subscribed</button> :
+                <SubscriptionCheckoutButton product="CONTENT_WORKSPACE" plan={plan} cycle={billingCycle}
+                  label={expired ? "Subscribe & restore access" : "Subscribe now"}
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white transition hover:bg-[#1768E8] disabled:opacity-60" />}
+
             </div>
           </div>
         </div>

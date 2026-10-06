@@ -1,3 +1,4 @@
+import { queueGlobalBenefitsForNewUser, scheduleBenefitEmailDelivery } from "@/lib/billingBenefitNotifications";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
           id: true,
           creatorId: true,
           isActive: true,
+          status: true,
           creator: {
             select: {
               email: true,
@@ -114,6 +116,7 @@ export async function POST(req: NextRequest) {
       if (
         partner &&
         partner.isActive &&
+        partner.status === "ACTIVE" &&
         partner.creatorId !== creator.id
       ) {
         await tx.referral.create({
@@ -131,6 +134,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    await queueGlobalBenefitsForNewUser(tx, creator);
+
     await tx.pendingSignup.delete({
       where: { email: pending.email },
     });
@@ -140,6 +145,8 @@ export async function POST(req: NextRequest) {
       partnerForEmail,
     };
   });
+
+  scheduleBenefitEmailDelivery();
 
   // Welcome email — best effort.
   try {

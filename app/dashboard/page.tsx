@@ -1,3 +1,4 @@
+import BillingBenefits from "@/components/billing/BillingBenefits";
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -526,6 +527,7 @@ export default async function DashboardPage() {
       {/* ------------------------------------------------------------------ */}
 
       <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
+        <BillingBenefits creator={creator} />
         {/* Compact orientation header + tutorial */}
         <section className="pt-10 sm:pt-14 lg:pt-16">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">

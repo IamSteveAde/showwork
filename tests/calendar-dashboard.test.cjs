@@ -8,6 +8,7 @@ function loadPage({ total = 12, matches = total, billing = null, signedIn = true
   const calls = [];
   const stub = { default: () => null, __esModule: true };
   const mocks = {
+    "@/lib/complimentaryAccess": require("./helpers/billing-fixtures.cjs").withBillingDependencies({})["@/lib/complimentaryAccess"],
     'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children), __esModule: true },
     'next/navigation': { redirect: href => { throw new Error(`redirect:${href}`); } },
     '@/lib/auth': { getCurrentCreator: async () => signedIn ? { id: 'owner' } : null },

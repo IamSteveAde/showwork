@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-export default function CopyLinkButton({ url }: { url: string }) {
+export default function CopyLinkButton({ url, appearance = "dark", label = "Copy link" }: {
+  url: string;
+  appearance?: "light" | "dark";
+  label?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -19,9 +23,10 @@ export default function CopyLinkButton({ url }: { url: string }) {
       document.body.appendChild(el);
       el.select();
       try {
-        document.execCommand("copy");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (document.execCommand("copy")) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }
       } catch {
         // give up silently — the link is still visible and selectable
       }
@@ -31,20 +36,23 @@ export default function CopyLinkButton({ url }: { url: string }) {
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
-      aria-label="Copy link"
-      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md transition-colors"
+      aria-label={copied ? "Copied!" : label}
+      title={copied ? "Copied!" : label}
+      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border transition-colors hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2478FF]"
       style={{
-        background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.08)",
-        color: copied ? "#22C55E" : "rgba(255,255,255,0.6)",
+        background: copied ? "rgba(34,197,94,0.15)" : appearance === "light" ? "#EFF6FF" : "rgba(255,255,255,0.08)",
+        color: copied ? (appearance === "light" ? "#047857" : "#22C55E") : appearance === "light" ? "#1D4ED8" : "rgba(255,255,255,0.6)",
+        borderColor: appearance === "light" ? (copied ? "#A7F3D0" : "#BFDBFE") : "rgba(255,255,255,0.12)",
       }}
     >
       {copied ? (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none">
           <path d="M2.5 7.5L5.5 10.5L11.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ) : (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 14 14" fill="none">
           <rect x="5" y="5" width="7.5" height="7.5" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
           <path d="M3.5 9V2.7A1.2 1.2 0 0 1 4.7 1.5H9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>

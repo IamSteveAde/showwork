@@ -125,7 +125,7 @@ export async function GET() {
       (referral) => referral.commissions
     );
 
-    const totalEarnedNgn = commissions.reduce(
+    const totalEarnedNgn = commissions.filter((commission) => commission.status !== "VOIDED").reduce(
       (total, commission) =>
         total + commission.commissionAmountNgn,
       0

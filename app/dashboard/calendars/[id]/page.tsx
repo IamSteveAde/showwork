@@ -1,3 +1,4 @@
+import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import UiSymbol from "@/components/ui/UiSymbol";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
 import { requirePostPlatform } from "@/lib/calendarPosts";
@@ -332,7 +333,7 @@ export default async function CalendarDetailPage({
           contentWorkspaceBillingStatus: true,
           contentWorkspaceBillingCycle: true,
           contentWorkspaceTrialEndsAt: true,
-          isComped: true,
+          ...complimentaryAccessSelect, isComped: true,
 compedUntil: true,
           
         },

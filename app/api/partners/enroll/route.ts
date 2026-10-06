@@ -78,7 +78,7 @@ export async function POST() {
       return NextResponse.json(
         {
           error: "Your Partner Program access has been suspended",
-          status: "403",
+          status: "SUSPENDED",
         },
         { status: 403 }
       );
@@ -100,7 +100,7 @@ export async function POST() {
 },
       });
 
-      await Promise.all([
+      await Promise.allSettled([
         sendPartnerApplicationReceivedEmail({
           to: creator.email,
           name: creator.name,
@@ -140,7 +140,7 @@ export async function POST() {
     },
   });
 
-  await Promise.all([
+  await Promise.allSettled([
     sendPartnerApplicationReceivedEmail({
       to: creator.email,
       name: creator.name,

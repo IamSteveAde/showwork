@@ -1,3 +1,4 @@
+import PartnerTag from "@/components/admin/PartnerTag";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -241,6 +242,7 @@ export default async function CreatorDetailPage({
   const creator = await db.creator.findUnique({
     where: { id },
     include: {
+      partnerProfile: { select: { status: true, isActive: true } },
       projects: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -424,6 +426,7 @@ export default async function CreatorDetailPage({
 
               <div className="mt-3 flex flex-col gap-1 text-sm">
                 <p style={{ color: COLOR.muted }}>{creator.email}</p>
+                <PartnerTag profile={creator.partnerProfile} />
 
                 {creator.phone && (
                   <p style={{ color: COLOR.subtle }}>{creator.phone}</p>

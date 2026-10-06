@@ -5,6 +5,7 @@ const ts = require('typescript');
 const { Prisma } = require('@prisma/client');
 
 function load(file, deps = {}) {
+  deps = require("./helpers/billing-fixtures.cjs").withBillingDependencies(deps);
   const module = { exports: {} };
   const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
