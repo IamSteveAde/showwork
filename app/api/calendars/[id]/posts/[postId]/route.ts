@@ -104,6 +104,7 @@ export async function PATCH(
   const updated = await db.calendarPost.update({
     where: { id: postId },
     data: {
+      tikTokConsentAt: null, tikTokConsentHash: null, tikTokConsentBy: null, tikTokConsentAccountId: null, tikTokConsentVersion: null,
       ...(tikTokPrivacyLevel !== undefined ? { tikTokPrivacyLevel } : {}),
       ...(postDate
         ? { postDate: new Date(postDate) }

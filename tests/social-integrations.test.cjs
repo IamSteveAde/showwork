@@ -114,7 +114,7 @@ test('provider API errors never count as successful publishing', async () => {
 });
 test('TikTok photo description preserves full caption and obeys title length', async () => {
   global.fetch=async(url,init)=>{const body=JSON.parse(init.body); assert.equal(body.post_info.description,'a'.repeat(150));assert.equal(body.post_info.title.length,90);assert.equal(body.post_info.disable_comment,true);return response({error:{code:'ok'},data:{publish_id:'p1'}});};
-  const tiktok=load('lib/tiktok.ts'); await tiktok.initTikTokPhotoPublish({accessToken:'fake',photoUrls:['https://storage.test/a'],caption:'a'.repeat(150),privacyLevel:'SELF_ONLY',disableComment:true});
+  const tiktok=load('lib/tiktok.ts'); await tiktok.initTikTokPhotoPublish({accessToken:'fake',photoUrls:['https://storage.test/a'],caption:'a'.repeat(150),photoTitle:'Chosen title'.padEnd(90,'!'),privacyLevel:'SELF_ONLY',disableComment:true});
 });
 test('X reporting keeps unavailable counters null, rather than inventing zeros',()=>{
   const {xMetrics}=load('lib/reporting/adapters/x.ts',{'@/lib/socialTokens':{},'@/lib/publishing/http':{}});

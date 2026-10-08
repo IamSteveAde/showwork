@@ -1,6 +1,6 @@
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
-import { refreshTikTokAccessToken } from "@/lib/tiktok";
+import { freshTikTokConnection } from "@/lib/tiktokConnection";
 import type { NormalizedSocialMetrics, PublishedPostRef, SocialAccountPostRecord, SocialReportingAdapter } from "@/lib/reporting/types";
 
 const API_BASE = "https://open.tiktokapis.com/v2";
@@ -56,26 +56,7 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
   platform: "TIKTOK",
 
   async refreshConnection(connection) {
-    if (!connection.refreshToken) throw new Error("TikTok connection needs to be renewed.");
-    const refreshed = await refreshTikTokAccessToken(connection.refreshToken);
-    const accessTokenExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000);
-    const updated = await db.socialConnection.update({
-      where: { id: connection.id },
-      data: {
-        accessToken: refreshed.access_token,
-        accessTokenExpiresAt,
-        refreshToken: refreshed.refresh_token,
-      },
-    });
-    await db.socialCalendar.update({
-      where: { id: connection.calendarId },
-      data: {
-        tikTokAccessToken: refreshed.access_token,
-        tikTokAccessTokenExpiresAt: accessTokenExpiresAt,
-        tikTokRefreshToken: refreshed.refresh_token,
-      },
-    });
-    return updated;
+    return freshTikTokConnection(connection);
   },
 
   async fetchAccountMetrics(connection): Promise<NormalizedSocialMetrics> {

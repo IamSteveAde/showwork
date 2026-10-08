@@ -19,7 +19,7 @@ export async function runPublishJob(postId: string, platform: SocialPlatform, di
     validatePublishContent(platform, post.assets, buildCaption(post), post.postType);
     if (!(await canAccessCalendarById(post.calendarId))) throw new Error("This workspace is no longer active. Renew access before publishing.");
     if (platform === "INSTAGRAM") await publishPostToInstagram(postId);
-    else if (platform === "TIKTOK") await publishPostToTikTok(postId);
+    else if (platform === "TIKTOK") { await publishPostToTikTok(postId); return; }
     else {
       const stored = await db.socialConnection.findFirst({ where: { calendarId: post.calendarId, platform, status: "CONNECTED" } });
       if (!stored) throw new Error("Connect this channel before publishing.");

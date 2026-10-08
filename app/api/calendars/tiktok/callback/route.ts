@@ -1,3 +1,5 @@
+import { verifyChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
+import { readTikTokVerifier, TIKTOK_PKCE_COOKIE } from "@/lib/tiktokOAuthPkce";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -6,16 +8,20 @@ import { appUrl } from "@/lib/url";
 import { upsertSocialConnection } from "@/lib/socialReporting";
 
 // GET — TikTok redirects here after the manager approves (or denies)
-// access on its authorization page. `state` carries the calendar id
-// the connection should attach to; the real identity check is the
-// session cookie, not the state value — state only ever says which
-// calendar, never who's allowed.
+// access on its authorization page. Signed state and a browser nonce
+// bind the request to its calendar; session ownership is checked too.
 export async function GET(req: NextRequest) {
-  const calendarId = req.nextUrl.searchParams.get("state");
+  const calendarId = verifyChannelOAuthState("tiktok", req.nextUrl.searchParams.get("state"), req.cookies.get("showwork_tiktok_oauth_state")?.value);
   const code = req.nextUrl.searchParams.get("code");
   const oauthError = req.nextUrl.searchParams.get("error");
+  const verifier = readTikTokVerifier(req.cookies.get(TIKTOK_PKCE_COOKIE)?.value, req.cookies.get("showwork_tiktok_oauth_state")?.value);
 
-  const redirectTo = (path: string) => NextResponse.redirect(`${appUrl()}${path}`);
+  const redirectTo = (path: string) => {
+    const response = NextResponse.redirect(`${appUrl()}${path}`);
+    response.cookies.set("showwork_tiktok_oauth_state", "", channelOAuthCookieOptions("tiktok", 0));
+    response.cookies.set(TIKTOK_PKCE_COOKIE, "", channelOAuthCookieOptions("tiktok", 0));
+    return response;
+  };
 
   if (!calendarId) return redirectTo("/dashboard/calendars?tiktokError=missing_state");
 
@@ -24,6 +30,7 @@ export async function GET(req: NextRequest) {
   if (oauthError || !code) {
     return redirectTo(`${settingsPath}&tiktokError=denied`);
   }
+  if (!verifier) return redirectTo(`${settingsPath}&tiktokError=missing_state`);
 
   const creator = await getCurrentCreator();
   if (!creator) return redirectTo("/login");
@@ -36,7 +43,8 @@ export async function GET(req: NextRequest) {
   const redirectUri = `${appUrl()}/api/calendars/tiktok/callback`;
 
   try {
-    const tokens = await exchangeCodeForTikTokTokens(code, redirectUri);
+    const tokens = await exchangeCodeForTikTokTokens(code, redirectUri, verifier);
+    if (!tokens.scope?.split(/[\s,]+/).includes("video.publish")) throw new Error("TikTok publishing permission was not granted.");
     const displayName = await getTikTokDisplayName(tokens.access_token);
 
     const accessTokenExpiresAt = new Date();
@@ -67,9 +75,13 @@ export async function GET(req: NextRequest) {
       tokenScopes: tokens.scope,
     });
 
+    await db.calendarPost.updateMany({ where: { calendarId, platform: "TIKTOK", tikTokPublishStatus: "SCHEDULED", tikTokConsentAccountId: { not: tokens.open_id } }, data: {
+      tikTokPublishStatus: "NOT_SCHEDULED", tikTokConsentAt: null, tikTokConsentBy: null, tikTokConsentHash: null,
+      tikTokConsentAccountId: null, tikTokConsentVersion: null, tikTokPublishError: "The connected account changed. Review TikTok settings and authorize again.",
+    } });
     return redirectTo(`${settingsPath}&tiktokConnected=true`);
   } catch (err) {
-    console.error("TikTok OAuth callback failed:", err);
+    console.error("TikTok OAuth callback failed.");
     return redirectTo(`${settingsPath}&tiktokError=connection_failed`);
   }
 }

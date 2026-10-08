@@ -1,8 +1,9 @@
 "use client";
+import TikTokPublishing from "./TikTokPublishing";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Post = { id: string; platform: string; approvalStatus: string; publishStatus?: string; publishError?: string | null; publishPermalink?: string | null; instagramPublishStatus: string; tikTokPublishStatus: string };
+type Post = { tikTokPrivacyLevel?: string | null; tikTokSettings?: unknown; tikTokConsentAt?: string | null; tikTokPublishId?: string | null; tikTokInitStartedAt?: string | null; tikTokPublishError?: string | null; caption?: string | null; cta?: string | null; hashtags?: string | null; taggedAccounts?: string | null; linkUrl?: string | null; assets?: { id: string; mediaType: string; contentUrl: string }[]; id: string; platform: string; approvalStatus: string; publishStatus?: string; publishError?: string | null; publishPermalink?: string | null; instagramPublishStatus: string; tikTokPublishStatus: string };
 export default function SocialPostPublishing({ calendarId, post }: { calendarId: string; post: Post }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -10,6 +11,7 @@ export default function SocialPostPublishing({ calendarId, post }: { calendarId:
   const [confirmed, setConfirmed] = useState(false);
   const [newStatus, setNewStatus] = useState<string | null>(null);
   const status = newStatus ?? (post.platform === "INSTAGRAM" ? post.instagramPublishStatus : post.platform === "TIKTOK" ? post.tikTokPublishStatus : post.publishStatus || "NOT_SCHEDULED");
+  if (post.platform === "TIKTOK") return <TikTokPublishing calendarId={calendarId} post={post} />;
   if (!["FACEBOOK", "INSTAGRAM", "TIKTOK", "LINKEDIN", "X"].includes(post.platform) || post.approvalStatus !== "APPROVED") return null;
   async function act(action: string) {
     setBusy(true); setError("");

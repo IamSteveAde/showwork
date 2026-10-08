@@ -2268,6 +2268,13 @@ model CalendarPost {
   // Null until a manager actually sets one, which only ever happens
   // for a TikTok post.
   tikTokPrivacyLevel  TikTokPrivacyLevel?
+  tikTokSettings Json?
+  tikTokConsentAt DateTime?
+  tikTokConsentBy String?
+  tikTokConsentAccountId String?
+  tikTokConsentHash String?
+  tikTokConsentVersion String?
+  tikTokInitStartedAt DateTime?
   tikTokPublishedAt   DateTime?
   // TikTok's publish_id, filled in once actually published. TikTok's
   // Direct Post API doesn't return a public permalink the way
@@ -2673,4 +2680,12 @@ model PaymentRevenueReceipt {
   @@index([paidAt])
   @@index([tool, paidAt])
   @@index([creatorId])
+}
+
+// Account-wide pacing and refresh locks also apply across calendars.
+model TikTokAccountRuntime {
+  accountId String @id
+  creatorNextAt DateTime?
+  initNextAt DateTime?
+  statusNextAt DateTime?
 }

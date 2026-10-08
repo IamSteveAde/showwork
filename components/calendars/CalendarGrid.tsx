@@ -68,6 +68,10 @@ contentIdea: string | null;
   instagramPublishError: string | null;
   tikTokPublishStatus: TikTokPublishStatus;
   tikTokPrivacyLevel: TikTokPrivacyLevel | null;
+  tikTokSettings?: unknown;
+  tikTokConsentAt?: string | null;
+  tikTokPublishId?: string | null;
+  tikTokInitStartedAt?: string | null;
   tikTokPublishError: string | null;
   assets: CalendarPostAssetData[];
   videoComments: CalendarVideoCommentData[];
@@ -3791,17 +3795,6 @@ caption: draftDetails.caption,
               </section>
             )}
 
-            {userRole === "EDIT_CALENDAR" && post.platform === "TIKTOK" && !isApproved && (
-              <TikTokPrivacySelect calendarId={calendarId} value={post.tikTokPrivacyLevel} onChange={async value => {
-                try {
-                  const response = await fetch(`/api/calendars/${calendarId}/posts/${post.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tikTokPrivacyLevel: value }) });
-                  const result = await response.json();
-                  if (!response.ok) throw new Error(result.error || "Could not save TikTok privacy.");
-                  onUpdated(result.post);
-                } catch (error) { setError(error instanceof Error ? error.message : "Could not save privacy."); }
-              }} />
-            )}
-
             {userRole === "EDIT_CALENDAR" && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
 
             {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
@@ -3925,13 +3918,13 @@ caption: draftDetails.caption,
 
                     {post.tikTokPublishStatus === "SCHEDULED" && (
                       <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        This will publish to TikTok at its scheduled time using your chosen privacy setting. Public visibility requires TikTok approval for this app.
+                        This will publish to your authorized TikTok account at its scheduled time using the settings you reviewed.
                       </p>
                     )}
 
                     {post.tikTokPublishStatus === "PUBLISHED" && (
                       <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        Published to TikTok. TikTok doesn&apos;t provide a direct link back to the post, and it&apos;s currently private-only pending this app&apos;s content audit — check the TikTok app directly to view it.
+                        TikTok confirmed publishing. Open the connected TikTok account to view the post.
                       </p>
                     )}
 

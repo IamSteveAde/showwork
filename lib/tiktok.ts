@@ -29,7 +29,7 @@ function requireAppCredentials() {
 export const TIKTOK_OAUTH_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish";
 
 /** Builds the TikTok authorization page URL the manager is redirected to. */
-export function buildTikTokAuthUrl({ redirectUri, state }: { redirectUri: string; state: string }): string {
+export function buildTikTokAuthUrl({ redirectUri, state, codeChallenge }: { redirectUri: string; state: string; codeChallenge: string }): string {
   const { CLIENT_KEY } = requireAppCredentials();
   const params = new URLSearchParams({
     client_key: CLIENT_KEY,
@@ -37,6 +37,8 @@ export function buildTikTokAuthUrl({ redirectUri, state }: { redirectUri: string
     response_type: "code",
     redirect_uri: redirectUri,
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
   });
   return `https://www.tiktok.com/v2/auth/authorize/?${params.toString()}`;
 }
@@ -58,22 +60,40 @@ async function tokenRequest(body: Record<string, string>): Promise<TikTokTokenRe
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_key: CLIENT_KEY, client_secret: CLIENT_SECRET, ...body }).toString(),
+    signal: AbortSignal.timeout(30_000), cache: "no-store",
   });
   const data = (await res.json()) as TikTokTokenResponse;
   if (!res.ok || data.error) {
     throw new Error(data.error_description ?? data.error ?? `TikTok token request failed (${res.status})`);
   }
+  if (!data.access_token || !data.refresh_token || !data.open_id || !Number.isFinite(data.expires_in) || !Number.isFinite(data.refresh_expires_in)) throw new Error("TikTok returned an incomplete connection. Reconnect the account.");
   return data;
 }
 
 /** Exchanges the OAuth `code` for the account's access + refresh tokens. */
-export function exchangeCodeForTikTokTokens(code: string, redirectUri: string) {
-  return tokenRequest({ code, grant_type: "authorization_code", redirect_uri: redirectUri });
+export function exchangeCodeForTikTokTokens(code: string, redirectUri: string, codeVerifier: string) {
+  return tokenRequest({ code, grant_type: "authorization_code", redirect_uri: redirectUri, code_verifier: codeVerifier });
 }
 
 /** Mints a fresh access token from a still-valid refresh token — no user interaction needed. */
 export function refreshTikTokAccessToken(refreshToken: string) {
   return tokenRequest({ grant_type: "refresh_token", refresh_token: refreshToken });
+}
+
+export class TikTokApiError extends Error {
+  constructor(public code: string, public status: number, detail?: string) {
+    const messages: Record<string, string> = {
+      spam_risk_too_many_posts: "TikTok's daily posting limit has been reached. Try again later.",
+      spam_risk_user_banned_from_posting: "TikTok currently prevents this account from posting. Check the account in TikTok.",
+      reached_active_user_cap: "This app's TikTok creator limit has been reached. Try again later.",
+      rate_limit_exceeded: "TikTok is receiving too many requests. Try again shortly.",
+      scope_not_authorized: "TikTok publishing permission is missing. Reconnect and grant publishing access.",
+      access_token_invalid: "TikTok's connection expired. Reconnect the account.",
+      url_ownership_unverified: "The media domain has not been verified for this TikTok app. Contact support.",
+      unaudited_client_can_only_post_to_private_accounts: "Until TikTok approves this app, use a private TikTok account and select Only me.",
+    };
+    super(messages[code] || `TikTok could not complete the request (${code}). Try again or contact support.`);
+  }
 }
 
 async function apiPost<T>(path: string, accessToken: string, body: Record<string, unknown>): Promise<T> {
@@ -84,6 +104,7 @@ async function apiPost<T>(path: string, accessToken: string, body: Record<string
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(30_000), cache: "no-store",
   });
   const data = await res.json();
   if (!res.ok || data.error?.code !== "ok") {
@@ -95,7 +116,7 @@ async function apiPost<T>(path: string, accessToken: string, body: Record<string
     // here even though it makes the message slightly less clean.
     const code = data.error?.code;
     const message = data.error?.message ?? `TikTok API request failed (${res.status})`;
-    throw new Error(code ? `[${code}] ${message}` : message);
+    throw new TikTokApiError(code || "request_failed", res.status, message);
   }
   return data.data as T;
 }
@@ -112,7 +133,7 @@ export async function getTikTokDisplayName(accessToken: string): Promise<string>
   return data.data.user.display_name;
 }
 
-interface CreatorInfo {
+export interface CreatorInfo {
   creator_avatar_url: string;
   creator_username: string;
   creator_nickname: string;
@@ -130,8 +151,12 @@ interface CreatorInfo {
  * account and can change at any time. Never cache this between
  * publishes.
  */
-export function queryTikTokCreatorInfo(accessToken: string): Promise<CreatorInfo> {
-  return apiPost<CreatorInfo>("/post/publish/creator_info/query/", accessToken, {});
+export async function queryTikTokCreatorInfo(accessToken: string): Promise<CreatorInfo> {
+  const info = await apiPost<CreatorInfo>("/post/publish/creator_info/query/", accessToken, {});
+  if (!info || !info.creator_nickname || !info.creator_username || !Array.isArray(info.privacy_level_options) || !info.privacy_level_options.length ||
+    [info.comment_disabled, info.duet_disabled, info.stitch_disabled].some(value => typeof value !== "boolean") ||
+    !Number.isFinite(info.max_video_post_duration_sec) || info.max_video_post_duration_sec <= 0) throw new Error("TikTok did not return complete creator permissions. Refresh account settings before publishing.");
+  return info;
 }
 
 interface PublishInitResponse {
@@ -157,18 +182,23 @@ export function initTikTokVideoPublish({
   caption,
   privacyLevel,
   disableComment,
+  postInfo,
 }: {
   accessToken: string;
   videoUrl: string;
   caption: string;
   privacyLevel: string;
   disableComment: boolean;
+  postInfo?: Record<string, unknown>;
 }): Promise<PublishInitResponse> {
   return apiPost<PublishInitResponse>("/post/publish/video/init/", accessToken, {
     post_info: {
       title: caption,
       privacy_level: privacyLevel,
       disable_comment: disableComment,
+      disable_duet: true, disable_stitch: true,
+      brand_content_toggle: false, brand_organic_toggle: false,
+      ...postInfo,
     },
     source_info: {
       source: "PULL_FROM_URL",
@@ -188,22 +218,31 @@ export function initTikTokPhotoPublish({
   photoUrls,
   caption,
   privacyLevel,
-  disableComment = false,
+  disableComment = true,
+  postInfo,
+  photoTitle = "",
+  isAigc = false,
 }: {
   accessToken: string;
   photoUrls: string[];
   caption: string;
   privacyLevel: string;
   disableComment?: boolean;
+  postInfo?: Record<string, unknown>;
+  photoTitle?: string;
+  isAigc?: boolean;
 }): Promise<PublishInitResponse> {
   return apiPost<PublishInitResponse>("/post/publish/content/init/", accessToken, {
     media_type: "PHOTO",
+    is_aigc: isAigc,
     post_mode: "DIRECT_POST",
     post_info: {
-      title: caption.slice(0, 90),
+      title: photoTitle,
       description: caption,
       disable_comment: disableComment,
       privacy_level: privacyLevel,
+      brand_content_toggle: false, brand_organic_toggle: false,
+      ...postInfo,
     },
     source_info: {
       source: "PULL_FROM_URL",
@@ -213,13 +252,13 @@ export function initTikTokPhotoPublish({
   });
 }
 
-interface PublishStatus {
+export interface PublishStatus {
   status: "PROCESSING_DOWNLOAD" | "PROCESSING_UPLOAD" | "PUBLISH_COMPLETE" | "FAILED" | "SEND_TO_USER_INBOX";
   fail_reason?: string;
   publicaly_available_post_id?: (string | number)[];
 }
 
-function checkTikTokPublishStatus(accessToken: string, publishId: string): Promise<PublishStatus> {
+export function checkTikTokPublishStatus(accessToken: string, publishId: string): Promise<PublishStatus> {
   return apiPost<PublishStatus>("/post/publish/status/fetch/", accessToken, { publish_id: publishId });
 }
 
