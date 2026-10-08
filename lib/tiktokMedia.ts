@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { join } from "node:path";
+import { resolveTikTokProbe, tikTokProbeError } from "@/lib/tiktokProbe";
 import { publicUrlFor } from "@/lib/r2";
 import type { TikTokCreator } from "@/lib/tiktokSettings";
 
@@ -29,7 +29,7 @@ export function validateTikTokMediaProbe(probe: MediaProbe, size: number, type: 
 export async function validateTikTokMedia(assets: { fileKey: string; mediaType: string }[], creator: TikTokCreator) {
   // Resolve only this runtime's executable. Importing ffprobe-static makes
   // bundlers trace its dynamically selected binaries for every OS/architecture.
-  const binary = join(process.cwd(), "node_modules", "ffprobe-static", "bin", process.platform, process.arch, process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
+  const binary = await resolveTikTokProbe();
   async function inspect(asset: { fileKey: string; mediaType: string }) {
     const url = publicUrlFor(asset.fileKey);
     const parsed = new URL(url);
@@ -40,9 +40,14 @@ export async function validateTikTokMedia(assets: { fileKey: string; mediaType: 
     if (size > (asset.mediaType === "VIDEO" ? 4 * 1024 ** 3 : 20 * 1024 ** 2)) throw new Error("This media file exceeds TikTok's size limit.");
     let probe: MediaProbe;
     try {
-      const { stdout } = await run(binary, ["-v", "error", "-rw_timeout", "10000000", "-protocol_whitelist", "https,tls,tcp", "-format_whitelist", "mov,matroska,webm,jpeg_pipe,webp_pipe,image2", "-show_streams", "-show_format", "-of", "json", url], { timeout: 30_000, maxBuffer: 1024 * 1024 });
+      const { stdout } = await run(binary, ["-v", "error", "-rw_timeout", "10000000", "-protocol_whitelist", "https,http,tls,tcp", "-format_whitelist", "mov,matroska,webm,jpeg_pipe,webp_pipe,image2", "-show_streams", "-show_format", "-of", "json", url], { timeout: 30_000, maxBuffer: 1024 * 1024 });
       probe = JSON.parse(stdout);
-    } catch { throw new Error("Could not inspect this media file. Use a supported JPEG/WebP photo or MP4/MOV/WebM video and try again."); }
+    } catch (error) {
+      const failure = error as { code?: string | number; killed?: boolean; stderr?: string };
+      console.error("TikTok media inspection failed", { code: failure.code, killed: !!failure.killed,
+        detail: (failure.stderr || "").replace(/https?:\/\/\S+/g, "[media URL]").slice(-600) });
+      throw tikTokProbeError(error);
+    }
     validateTikTokMediaProbe(probe, size, asset.mediaType, creator.max_video_post_duration_sec);
   }
   for (let index = 0; index < assets.length; index += 4) await Promise.all(assets.slice(index, index + 4).map(inspect));
