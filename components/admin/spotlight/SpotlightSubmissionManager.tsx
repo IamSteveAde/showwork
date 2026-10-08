@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 
-const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
+const COLOR = { gold: "#2563EB", black: "#F6F8FB", charcoal: "#FFFFFF" };
 const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 
 interface Submission {
@@ -73,28 +73,28 @@ export default function SpotlightSubmissionManager({
 
   if (!cycleLabel) {
     return (
-      <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
-        <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>Submissions</h2>
-        <p className="mt-3 text-sm text-white/30">No active cycle right now — activate one above to start receiving submissions.</p>
+      <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
+        <h2 className="text-sm font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>Submissions</h2>
+        <p className="mt-3 text-sm text-slate-500">No active cycle right now — activate one above to start receiving submissions.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <h2 className="text-sm font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Submissions — {cycleLabel}
           </h2>
-          <p className="mt-1 text-xs text-white/30">
+          <p className="mt-1 text-xs text-slate-500">
             {submissions.length} total · setting a rank below adds that submission straight to the public Creativo leaderboard
           </p>
         </div>
         <a
           href="/api/admin/spotlight/submissions/export"
           className="rounded-lg px-3.5 py-1.5 text-xs font-semibold"
-          style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+          style={{ background: "#EFF6FF", color: COLOR.gold }}
         >
           Export CSV
         </a>
@@ -104,7 +104,7 @@ export default function SpotlightSubmissionManager({
         <button
           onClick={() => setFilterCategory("All")}
           className="rounded-full px-3.5 py-1.5 text-xs font-semibold"
-          style={{ background: filterCategory === "All" ? COLOR.gold : "rgba(255,255,255,0.06)", color: filterCategory === "All" ? COLOR.black : "rgba(255,255,255,0.6)" }}
+          style={{ background: filterCategory === "All" ? COLOR.gold : "#F1F5F9", color: filterCategory === "All" ? "#FFFFFF" : "#F1F5F9" }}
         >
           All
         </button>
@@ -113,7 +113,7 @@ export default function SpotlightSubmissionManager({
             key={cat}
             onClick={() => setFilterCategory(cat)}
             className="rounded-full px-3.5 py-1.5 text-xs font-semibold"
-            style={{ background: filterCategory === cat ? COLOR.gold : "rgba(255,255,255,0.06)", color: filterCategory === cat ? COLOR.black : "rgba(255,255,255,0.6)" }}
+            style={{ background: filterCategory === cat ? COLOR.gold : "#F1F5F9", color: filterCategory === cat ? "#FFFFFF" : "#F1F5F9" }}
           >
             {cat}
           </button>
@@ -121,30 +121,30 @@ export default function SpotlightSubmissionManager({
       </div>
 
       <div className="flex flex-col gap-2">
-        {filtered.length === 0 && <p className="text-sm text-white/30">No submissions in this category yet.</p>}
+        {filtered.length === 0 && <p className="text-sm text-slate-500">No submissions in this category yet.</p>}
         {filtered.map((s) => (
-          <div key={s.id} className="rounded-lg p-4" style={{ background: "rgba(255,255,255,0.03)" }}>
+          <div key={s.id} className="rounded-lg p-4" style={{ background: "#F8FAFC" }}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-semibold text-white">{s.name}</p>
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white/50" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <p className="text-sm font-semibold text-slate-900">{s.name}</p>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-slate-500" style={{ background: "#F8FAFC" }}>
                     {s.category}
                   </span>
                   {s.rank && (
-                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}>
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "#EFF6FF", color: COLOR.gold }}>
                       {s.rank === 1 ? "1st place" : s.rank === 2 ? "2nd place" : "3rd place"}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-white/50">{s.description}</p>
-                <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-white/30">
-                  <a href={s.projectLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">View project</a>
+                <p className="mt-1 text-xs text-slate-500">{s.description}</p>
+                <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-slate-500">
+                  <a href={s.projectLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-700">View project</a>
                   <span>{s.email}</span>
-                  {s.phone && <a href={`tel:${s.phone.replace(/[^+\d]/g, "")}`} className="underline hover:text-white/60">Phone: {s.phone}</a>}
-                  {s.whatsappNumber && <a href={`https://wa.me/${s.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">WhatsApp: {s.whatsappNumber}</a>}
+                  {s.phone && <a href={`tel:${s.phone.replace(/[^+\d]/g, "")}`} className="underline hover:text-slate-700">Phone: {s.phone}</a>}
+                  {s.whatsappNumber && <a href={`https://wa.me/${s.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-700">WhatsApp: {s.whatsappNumber}</a>}
                 </div>
-                {s.note && <p className="mt-1.5 text-xs italic text-white/30">&ldquo;{s.note}&rdquo;</p>}
+                {s.note && <p className="mt-1.5 text-xs italic text-slate-500">&ldquo;{s.note}&rdquo;</p>}
               </div>
 
               <div className="flex flex-shrink-0 flex-col items-end gap-2">
@@ -153,8 +153,8 @@ export default function SpotlightSubmissionManager({
                   disabled={updatingId === s.id}
                   className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
                   style={{
-                    background: s.isShortlisted ? "rgba(36,120,255,0.15)" : "rgba(255,255,255,0.06)",
-                    color: s.isShortlisted ? "#68B2FF" : "rgba(255,255,255,0.5)",
+                    background: s.isShortlisted ? "rgba(36,120,255,0.15)" : "#F1F5F9",
+                    color: s.isShortlisted ? "#2563EB" : "#64748B",
                   }}
                 >
                   {s.isShortlisted ? "Shortlisted" : "Shortlist"}
@@ -164,7 +164,7 @@ export default function SpotlightSubmissionManager({
                   value={s.rank ?? ""}
                   onChange={(e) => setRank(s.id, e.target.value ? Number(e.target.value) : null)}
                   disabled={updatingId === s.id}
-                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white outline-none disabled:opacity-50"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-900 outline-none disabled:opacity-50"
                 >
                   <option value="" style={{ background: COLOR.black }}>No rank</option>
                   <option value="1" style={{ background: COLOR.black }}>1st place</option>

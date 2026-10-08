@@ -1,3 +1,5 @@
+import { getAdminPaymentHistory } from "@/lib/adminPaymentHistory";
+import { paymentCategory as categoryFromPaymentType, paymentAction, paymentProductDescription } from "@/lib/adminPaymentLabels";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -180,62 +182,6 @@ function getInitials(name: string, email: string): string {
   }
 
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-}
-
-function categoryFromPaymentType(type: string): ActivityCategory {
-  if (
-    type === "CALENDAR_SUBSCRIPTION_INITIAL" ||
-    type === "CALENDAR_SUBSCRIPTION_RENEWAL"
-  ) {
-    return "CONTENT_WORKSPACE";
-  }
-
-  if (
-    type === "PORTFOLIO_SUBSCRIPTION_INITIAL" ||
-    type === "PORTFOLIO_SUBSCRIPTION_RENEWAL"
-  ) {
-    return "PORTFOLIO";
-  }
-
-  if (type === "PROJECT_ONE_TIME") {
-    return "PROJECT_DELIVERY";
-  }
-
-  return "BILLING";
-}
-
-function paymentAction(type: string): string {
-  switch (type) {
-    case "PROJECT_ONE_TIME":
-      return "Project payment received";
-
-    case "SUBSCRIPTION_INITIAL":
-      return "Project Delivery subscription started";
-
-    case "SUBSCRIPTION_RENEWAL":
-      return "Project Delivery subscription renewed";
-
-    case "PORTFOLIO_SUBSCRIPTION_INITIAL":
-      return "Portfolio subscription started";
-
-    case "PORTFOLIO_SUBSCRIPTION_RENEWAL":
-      return "Portfolio subscription renewed";
-
-    case "CALENDAR_SUBSCRIPTION_INITIAL":
-      return "Content Workspace subscription started";
-
-    case "CALENDAR_SUBSCRIPTION_RENEWAL":
-      return "Content Workspace subscription renewed";
-
-    case "AI_ASSISTANT_SUBSCRIPTION_INITIAL":
-      return "AI subscription started";
-
-    case "AI_ASSISTANT_SUBSCRIPTION_RENEWAL":
-      return "AI subscription renewed";
-
-    default:
-      return "Payment received";
-  }
 }
 
 function categoryLabel(category: ActivityCategory) {
@@ -603,25 +549,7 @@ const media = await db.media.findMany({
   // PAYMENTS
   // ------------------------------------------------------------
 
-  const payments = await db.paymentRecord.findMany({
-    where: { revenueStatus: "LIVE" },
-    select: {
-      id: true,
-      creatorId: true,
-      amountNgn: true,
-      type: true,
-      tier: true,
-      cycle: true,
-      portfolioId: true,
-      calendarId: true,
-      paystackReference: true,
-      createdAt: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 500,
-  });
+  const payments = await getAdminPaymentHistory({limit:500});
 
   // ------------------------------------------------------------
   // BUILD LOOKUP MAPS
@@ -1151,7 +1079,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
 
     let description = `${account.name} made a payment`;
 
-    if (payment.type.includes("CALENDAR")) {
+    if (payment.type.startsWith("CALENDAR_") || payment.type.startsWith("CONTENT_WORKSPACE_")) {
       const calendar = payment.calendarId
         ? calendarMap.get(payment.calendarId)
         : undefined;
@@ -1168,7 +1096,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
         ? `${account.name} paid for "${portfolio.companyName}"`
         : `${account.name} paid for a portfolio`;
     } else {
-      description = `${account.name} completed a Project Delivery payment`;
+      description = `${account.name} paid for ${paymentProductDescription(payment.type)}`;
     }
 
     activities.push({

@@ -1,3 +1,4 @@
+import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -529,7 +530,7 @@ export default async function ProjectDetailPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; payment?: string; reference?: string; trxref?: string }>;
 }) {
   const creator = await getCurrentCreator();
 
@@ -538,14 +539,14 @@ export default async function ProjectDetailPage({
   }
 
   const { projectId } = await params;
-  const { view } = await searchParams;
+  const { view, payment, reference, trxref } = await searchParams;
 
   const allowedViews: WorkspaceView[] = ["overview", "work", "access", "team", "activity"];
   const activeView: WorkspaceView = allowedViews.includes(view as WorkspaceView)
     ? (view as WorkspaceView)
     : "overview";
 
-  const project = await db.project.findUnique({
+  let project = await db.project.findUnique({
     where: { id: projectId },
     include: {
       media: {
@@ -585,6 +586,14 @@ export default async function ProjectDetailPage({
 
   if (!project || project.creatorId !== creator.id) {
     notFound();
+  }
+
+  const callbackReference=reference??trxref;
+  if(payment==="callback"&&callbackReference?.startsWith(`spotlite_${project.id}_`)) {
+    const {payment:receipt}=await syncVerifiedPayment(callbackReference,undefined,{expectedCreatorId:creator.id});
+    if(receipt.type!=="PROJECT_ONE_TIME")throw new Error("Payment does not belong to this delivery");
+    await db.project.update({where:{id:project.id},data:{paid:true,paidAt:receipt.createdAt,badgeVisible:false}});
+    redirect(`/dashboard/${project.id}`);
   }
 
   const viewerEmails = await db.viewerEmail.findMany({

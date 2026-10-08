@@ -32,6 +32,8 @@ export function classifyPaymentRevenue(
       revenueReason: "Provider verification unavailable",
     };
   const charge = verification.data;
+  // Work in integer kobo; decimal NGN can otherwise round differently in JavaScript.
+  const expectedAmountKobo = Math.round(payment.amountNgn * 100);
   if (charge.domain === "test")
     return {
       revenueStatus: "EXCLUDED",
@@ -41,7 +43,9 @@ export function classifyPaymentRevenue(
     charge.reference !== payment.paystackReference ||
     charge.status !== "success" ||
     charge.currency !== "NGN" ||
-    charge.amount !== payment.amountNgn * 100 ||
+    !Number.isSafeInteger(expectedAmountKobo) ||
+    Math.abs(payment.amountNgn * 100 - expectedAmountKobo) > 0.000001 ||
+    charge.amount !== expectedAmountKobo ||
     payment.amountNgn <= 0
   ) {
     return {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const COLOR = { charcoal: "#1A1A1A", gold: "#F5C842" };
+const COLOR = { charcoal: "#FFFFFF", gold: "#2563EB" };
 
 interface BlogPostSummary {
   id: string;
@@ -62,20 +62,20 @@ export default function BlogPostList({ initialPosts }: { initialPosts: BlogPostS
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3 rounded-2xl p-5" style={{ background: COLOR.charcoal }}>
+      <div className="flex items-center gap-3 rounded-2xl p-5" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
         <input
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="New post title"
           style={{ fontSize: "16px" }}
-          className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/25"
+          className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-200"
         />
         <button
           onClick={handleCreate}
           disabled={creating}
           className="flex-shrink-0 rounded-lg px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
-          style={{ background: COLOR.gold, color: "#0A0A0A" }}
+          style={{ background: COLOR.gold, color: "#FFFFFF" }}
         >
           {creating ? "Creating..." : "New post"}
         </button>
@@ -85,17 +85,17 @@ export default function BlogPostList({ initialPosts }: { initialPosts: BlogPostS
 
       <div className="flex flex-col gap-3">
         {posts.map((post) => (
-          <div key={post.id} className="flex items-center justify-between gap-4 rounded-xl p-5" style={{ background: COLOR.charcoal }}>
+          <div key={post.id} className="flex items-center justify-between gap-4 rounded-xl p-5" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
             <Link href={`/admin/blog/${post.id}`} className="flex-1 hover:opacity-90">
-              <p className="text-base font-semibold text-white">{post.title || "Untitled"}</p>
+              <p className="text-base font-semibold text-slate-900">{post.title || "Untitled"}</p>
               <div className="mt-1 flex items-center gap-2 text-xs">
-                <span style={{ color: post.published ? "#4ADE80" : "#F5C842" }}>
+                <span style={{ color: post.published ? "#15803D" : "#B45309" }}>
                   {post.published ? "Published" : "Draft"}
                 </span>
-                {post.category && <span className="text-white/30">· {post.category}</span>}
+                {post.category && <span className="text-slate-500">· {post.category}</span>}
               </div>
               {post.published && (
-                <div className="mt-2 flex items-center gap-4 text-xs text-white/40">
+                <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
                   <span>{post.viewCount.toLocaleString()} view{post.viewCount === 1 ? "" : "s"}</span>
                   <span>{(post.deliverCtaClicks + post.portfolioCtaClicks).toLocaleString()} CTA click{post.deliverCtaClicks + post.portfolioCtaClicks === 1 ? "" : "s"}</span>
                 </div>
@@ -111,7 +111,7 @@ export default function BlogPostList({ initialPosts }: { initialPosts: BlogPostS
           </div>
         ))}
         {posts.length === 0 && (
-          <p className="rounded-xl p-8 text-center text-sm text-white/30" style={{ background: COLOR.charcoal }}>
+          <p className="rounded-xl p-8 text-center text-sm text-slate-500" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
             No posts yet.
           </p>
         )}

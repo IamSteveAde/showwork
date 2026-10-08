@@ -8,7 +8,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { useCallback, useState } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
-const COLOR = { gold: "#F5C842" };
+const COLOR = { gold: "#2563EB" };
 
 // Tiptap has no official video node — this is a small custom one,
 // following the same pattern as its built-in nodes, rendering a real
@@ -48,8 +48,8 @@ function ToolbarButton({
       title={label}
       className="flex h-8 min-w-[2rem] items-center justify-center rounded-md px-2 text-sm font-semibold transition-colors"
       style={{
-        background: active ? COLOR.gold : "rgba(255,255,255,0.06)",
-        color: active ? "#0A0A0A" : "rgba(255,255,255,0.7)",
+        background: active ? COLOR.gold : "#F1F5F9",
+        color: active ? "#FFFFFF" : "#475569",
       }}
     >
       {children}
@@ -151,16 +151,16 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
       {uploadPercent !== null && (
-        <div className="border-b border-white/10 px-3 py-2 text-xs text-white/60" role="status">
+        <div className="border-b border-slate-200 px-3 py-2 text-xs text-slate-700" role="status">
           Uploading media: {uploadPercent}%
-          <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-[#F5C842] transition-[width]" style={{ width: `${uploadPercent}%` }} />
+          <div className="mt-1 h-1 overflow-hidden rounded-full bg-slate-50">
+            <div className="h-full bg-blue-600 transition-[width]" style={{ width: `${uploadPercent}%` }} />
           </div>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-white/10 p-2">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 p-2">
         <ToolbarButton label="Bold" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>B</ToolbarButton>
         <ToolbarButton label="Italic" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()}><span className="italic">I</span></ToolbarButton>
         <ToolbarButton label="Heading 2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>H2</ToolbarButton>
@@ -172,7 +172,7 @@ export default function RichTextEditor({
         <ToolbarButton label="Insert image" onClick={addImage}>Image</ToolbarButton>
         <ToolbarButton label="Insert video" onClick={addVideo}>Video</ToolbarButton>
       </div>
-      <EditorContent editor={editor} className="text-white" />
+      <EditorContent editor={editor} className="text-slate-900" />
 
       {/* Explicit styling for every tag the editor can actually
           produce — deliberately not relying on Tailwind's "prose"
@@ -183,15 +183,15 @@ export default function RichTextEditor({
           every tag renders visually identical to plain text — which
           is exactly the "nothing is working" symptom this replaces. */}
       <style jsx global>{`
-        .rt-content h2 { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 1.25rem 0 0.5rem; }
-        .rt-content h3 { font-size: 1.25rem; font-weight: 700; color: #fff; margin: 1rem 0 0.5rem; }
-        .rt-content p { margin: 0.5rem 0; line-height: 1.7; color: rgba(255,255,255,0.85); }
-        .rt-content strong { font-weight: 700; color: #fff; }
+        .rt-content h2 { font-size: 1.5rem; font-weight: 700; color: #475569; margin: 1.25rem 0 0.5rem; }
+        .rt-content h3 { font-size: 1.25rem; font-weight: 700; color: #475569; margin: 1rem 0 0.5rem; }
+        .rt-content p { margin: 0.5rem 0; line-height: 1.7; color: #475569; }
+        .rt-content strong { font-weight: 700; color: #475569; }
         .rt-content em { font-style: italic; }
         .rt-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
         .rt-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
-        .rt-content li { margin: 0.25rem 0; color: rgba(255,255,255,0.85); }
-        .rt-content blockquote { border-left: 3px solid ${COLOR.gold}; padding-left: 1rem; margin: 1rem 0; color: rgba(255,255,255,0.6); font-style: italic; }
+        .rt-content li { margin: 0.25rem 0; color: #475569; }
+        .rt-content blockquote { border-left: 3px solid ${COLOR.gold}; padding-left: 1rem; margin: 1rem 0; color: #475569; font-style: italic; }
         .rt-content a { color: ${COLOR.gold}; text-decoration: underline; }
         .rt-content img { border-radius: 0.5rem; max-width: 100%; margin: 1rem 0; }
         .rt-content video { border-radius: 0.5rem; max-width: 100%; margin: 1rem 0; }

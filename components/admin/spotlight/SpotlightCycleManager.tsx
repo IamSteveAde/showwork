@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
-const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
+const COLOR = { gold: "#2563EB", black: "#F6F8FB", charcoal: "#FFFFFF" };
 
 interface Cycle {
   id: string;
@@ -148,29 +148,29 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
     setCycles((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/25";
-  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
+  const inputClass = "w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-200";
+  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-slate-500";
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <h2 className="text-sm font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Spotlight cycles
           </h2>
-          <p className="mt-1 text-xs text-white/30">
+          <p className="mt-1 text-xs text-slate-500">
             Only one cycle can be active at a time — activating one automatically deactivates whichever was active before.
           </p>
         </div>
         {!adding && (
-          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: COLOR.black }}>
+          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
             + New cycle
           </button>
         )}
       </div>
 
       {adding && (
-        <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "rgba(255,255,255,0.04)" }}>
+        <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "#F8FAFC" }}>
           <div>
             <label className={labelClass}>Month label</label>
             <input type="text" placeholder="e.g. August 2026" value={form.monthLabel} onChange={(e) => setForm({ ...form, monthLabel: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
@@ -188,23 +188,23 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
           </div>
 
           <div>
-            <label className={labelClass}>Hero headline <span className="normal-case text-white/25">(optional — leave blank to keep the default)</span></label>
+            <label className={labelClass}>Hero headline <span className="normal-case text-slate-500">(optional — leave blank to keep the default)</span></label>
             <input type="text" value={form.heroHeadline} onChange={(e) => setForm({ ...form, heroHeadline: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
           </div>
 
           <div>
-            <label className={labelClass}>Hero description <span className="normal-case text-white/25">(optional)</span></label>
+            <label className={labelClass}>Hero description <span className="normal-case text-slate-500">(optional)</span></label>
             <textarea rows={2} value={form.heroDescription} onChange={(e) => setForm({ ...form, heroDescription: e.target.value })} style={{ fontSize: "16px" }} className={`${inputClass} resize-none`} />
           </div>
 
           <div>
-            <label className={labelClass}>Hero background image <span className="normal-case text-white/25">(optional)</span></label>
+            <label className={labelClass}>Hero background image <span className="normal-case text-slate-500">(optional)</span></label>
             <div className="flex items-center gap-3">
               {form.heroImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.heroImageUrl} alt="" className="h-14 w-24 flex-shrink-0 rounded-md object-cover" />
               )}
-              <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+              <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-200">
                 {uploading ? `Uploading ${uploadPercent}%` : form.heroImageUrl ? "Change image" : "Upload image"}
                 <input
                   type="file"
@@ -224,37 +224,37 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <div className="flex items-center gap-3">
-            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: COLOR.black }}>
+            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
               {saving ? "Saving..." : editingId ? "Save changes" : "Create cycle"}
             </button>
-            <button onClick={cancel} className="text-xs text-white/40 hover:text-white">Cancel</button>
+            <button onClick={cancel} className="text-xs text-slate-500 hover:text-slate-900">Cancel</button>
           </div>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        {cycles.length === 0 && <p className="text-sm text-white/30">No cycles yet.</p>}
+        {cycles.length === 0 && <p className="text-sm text-slate-500">No cycles yet.</p>}
         {cycles.map((cycle) => (
-          <div key={cycle.id} className="flex items-center justify-between gap-3 rounded-lg p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+          <div key={cycle.id} className="flex items-center justify-between gap-3 rounded-lg p-3" style={{ background: "#F8FAFC" }}>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-medium text-white">{cycle.monthLabel}</p>
+                <p className="truncate text-sm font-medium text-slate-900">{cycle.monthLabel}</p>
                 {cycle.isActive && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#15803D" }}>
                     Active
                   </span>
                 )}
               </div>
-              <p className="truncate text-xs text-white/40">
+              <p className="truncate text-xs text-slate-500">
                 {cycle._count.submissions} submission{cycle._count.submissions === 1 ? "" : "s"} · closes {new Date(cycle.submissionDeadline).toLocaleString()}
               </p>
             </div>
             <div className="flex flex-shrink-0 items-center gap-3">
-              <button onClick={() => toggleActive(cycle)} className="text-xs font-semibold" style={{ color: cycle.isActive ? "#F87171" : "#4ADE80" }}>
+              <button onClick={() => toggleActive(cycle)} className="text-xs font-semibold" style={{ color: cycle.isActive ? "#F87171" : "#15803D" }}>
                 {cycle.isActive ? "Deactivate" : "Activate"}
               </button>
               <button onClick={() => startEdit(cycle)} className="text-xs font-semibold" style={{ color: COLOR.gold }}>Edit</button>
-              <button onClick={() => remove(cycle.id)} className="text-xs text-white/30 hover:text-red-400">Delete</button>
+              <button onClick={() => remove(cycle.id)} className="text-xs text-slate-500 hover:text-red-400">Delete</button>
             </div>
           </div>
         ))}

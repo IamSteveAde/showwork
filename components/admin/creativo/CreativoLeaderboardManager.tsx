@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
-const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
+const COLOR = { gold: "#2563EB", black: "#F6F8FB", charcoal: "#FFFFFF" };
 const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
 const NEW_CREATOR_VALUE = "__new__";
 
@@ -193,32 +193,32 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
-  const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/25";
-  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
+  const inputClass = "w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-200";
+  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-slate-500";
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <h2 className="text-sm font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Leaderboard
           </h2>
-          <p className="mt-1 text-xs text-white/30">
+          <p className="mt-1 text-xs text-slate-500">
             A category with no entry for a given month just shows as empty on the public page — nothing needs to be filled in to keep it honest.
           </p>
         </div>
         {!adding && (
-          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: COLOR.black }}>
+          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
             + Add entry
           </button>
         )}
       </div>
 
       {adding && (
-               <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "rgba(255,255,255,0.04)" }}>
+               <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "#F8FAFC" }}>
           {pastCreators.length > 0 && (
             <div>
-              <label className={labelClass}>Select an existing creator <span className="normal-case text-white/25">(or fill in a new one below)</span></label>
+              <label className={labelClass}>Select an existing creator <span className="normal-case text-slate-500">(or fill in a new one below)</span></label>
               <select
                 value={selectedCreatorKey}
                 onChange={(e) => selectExistingCreator(e.target.value)}
@@ -263,11 +263,11 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
               <input type="text" placeholder="Email, phone, or handle" value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Portfolio link <span className="normal-case text-white/25">(shown on the public page)</span></label>
+              <label className={labelClass}>Portfolio link <span className="normal-case text-slate-500">(shown on the public page)</span></label>
               <input type="url" placeholder="https://" value={form.portfolioUrl} onChange={(e) => setForm({ ...form, portfolioUrl: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>WhatsApp number <span className="normal-case text-white/25">(for the "work with them" button)</span></label>
+              <label className={labelClass}>WhatsApp number <span className="normal-case text-slate-500">(for the "work with them" button)</span></label>
               <input type="text" placeholder="e.g. 2348012345678" value={form.whatsappNumber} onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
@@ -281,7 +281,7 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={form.profileImageUrl} alt="" className="h-10 w-10 flex-shrink-0 rounded-full object-cover" />
                 )}
-                <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+                <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-200">
                   {uploading ? `Uploading ${uploadPercent}%` : form.profileImageUrl ? "Change photo" : "Upload photo"}
                   <input
                     type="file"
@@ -301,35 +301,35 @@ export default function CreativoLeaderboardManager({ initialEntries }: { initial
           </div>
           {saveError && <p className="text-xs text-red-400">{saveError}</p>}
           <div className="flex items-center gap-3">
-            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: COLOR.black }}>
+            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
               {saving ? "Saving..." : editingId ? "Save changes" : "Add entry"}
             </button>
-            <button onClick={cancel} className="text-xs text-white/40 hover:text-white">Cancel</button>
+            <button onClick={cancel} className="text-xs text-slate-500 hover:text-slate-900">Cancel</button>
           </div>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        {entries.length === 0 && <p className="text-sm text-white/30">No entries yet.</p>}
+        {entries.length === 0 && <p className="text-sm text-slate-500">No entries yet.</p>}
         {entries.map((entry) => (
-          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg p-3" style={{ background: "#F8FAFC" }}>
             <div className="flex min-w-0 items-center gap-3">
               {entry.profileImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={entry.profileImageUrl} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" />
               ) : (
-                <div className="h-9 w-9 flex-shrink-0 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }} />
+                <div className="h-9 w-9 flex-shrink-0 rounded-full" style={{ background: "#F8FAFC" }} />
               )}
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">{entry.name}</p>
-                <p className="truncate text-xs text-white/40">
+                <p className="truncate text-sm font-medium text-slate-900">{entry.name}</p>
+                <p className="truncate text-xs text-slate-500">
                   {entry.category} · {entry.wonFor} · {entry.points} pts · {monthInputValue(entry.periodDate)}
                 </p>
               </div>
             </div>
             <div className="flex flex-shrink-0 items-center gap-3">
               <button onClick={() => startEdit(entry)} className="text-xs font-semibold" style={{ color: COLOR.gold }}>Edit</button>
-              <button onClick={() => remove(entry.id)} className="text-xs text-white/30 hover:text-red-400">Remove</button>
+              <button onClick={() => remove(entry.id)} className="text-xs text-slate-500 hover:text-red-400">Remove</button>
             </div>
           </div>
         ))}
