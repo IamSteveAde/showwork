@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { join } from "node:path";
 import { publicUrlFor } from "@/lib/r2";
 import type { TikTokCreator } from "@/lib/tiktokSettings";
 
@@ -26,8 +27,9 @@ export function validateTikTokMediaProbe(probe: MediaProbe, size: number, type: 
 
 // Inspect the stored bytes, never browser-submitted duration or file extensions.
 export async function validateTikTokMedia(assets: { fileKey: string; mediaType: string }[], creator: TikTokCreator) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const binary = (require("ffprobe-static") as { path: string }).path;
+  // Resolve only this runtime's executable. Importing ffprobe-static makes
+  // bundlers trace its dynamically selected binaries for every OS/architecture.
+  const binary = join(process.cwd(), "node_modules", "ffprobe-static", "bin", process.platform, process.arch, process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
   async function inspect(asset: { fileKey: string; mediaType: string }) {
     const url = publicUrlFor(asset.fileKey);
     const parsed = new URL(url);

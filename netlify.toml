@@ -1,3 +1,5 @@
-[functions]
-  external_node_modules = ["ffprobe-static"]
+[functions."___netlify-server-handler"]
+  included_files = ["node_modules/ffprobe-static/bin/linux/x64/ffprobe"]
+
+[functions."publish-post-background"]
   included_files = ["node_modules/ffprobe-static/bin/linux/x64/ffprobe"]
