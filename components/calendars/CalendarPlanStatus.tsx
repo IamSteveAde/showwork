@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -74,7 +76,7 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
   filename: file.name,
-  contentType: file.type,
+  contentType: getFileContentType(file),
   fileSize: file.size,
   variant,
 }),
@@ -83,7 +85,7 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
       await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: file.type,
+        contentType: getFileContentType(file),
         onProgress: ({ percent }) => setProgress(percent),
       });
 
@@ -201,7 +203,7 @@ if (variant === "desktop") {
                 )}
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={IMAGE_FILE_ACCEPT}
                   className="hidden"
                   disabled={uploadingDesktop}
                   onChange={(e) => {
@@ -228,7 +230,7 @@ if (variant === "desktop") {
                 )}
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={IMAGE_FILE_ACCEPT}
                   className="hidden"
                   disabled={uploadingMobile}
                   onChange={(e) => {

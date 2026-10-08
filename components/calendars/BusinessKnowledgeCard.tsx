@@ -1,5 +1,7 @@
 "use client";
 
+import { getFileContentType } from "@/lib/mediaFileTypes";
+
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -180,7 +182,7 @@ export default function BusinessKnowledgeCard({
         },
         body: JSON.stringify({
           filename: file.name,
-          contentType: file.type,
+          contentType: getFileContentType(file),
           fileSize: file.size,
         }),
       }
@@ -234,7 +236,7 @@ if (presignContentType.includes("application/json")) {
      * Upload the file directly to R2.
      */
     await putFileWithProgress(presignData.uploadUrl, file, {
-      contentType: file.type,
+      contentType: getFileContentType(file),
       onProgress: ({ percent }) => setUploadPercent(percent),
     });
 
@@ -255,7 +257,7 @@ if (presignContentType.includes("application/json")) {
         body: JSON.stringify({
           fileKey: presignData.fileKey,
           originalName: file.name,
-          contentType: file.type,
+          contentType: getFileContentType(file),
           fileSize: file.size,
           reservationId: presignData.reservationId,
         }),

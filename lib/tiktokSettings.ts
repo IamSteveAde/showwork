@@ -1,4 +1,4 @@
-export const TIKTOK_CONSENT_VERSION = "2026-10-08-v1";
+export const TIKTOK_CONSENT_VERSION = "2026-10-08-v2-conversion";
 export type TikTokSettings = {
   privacyLevel: string | null;
   allowComment: boolean;

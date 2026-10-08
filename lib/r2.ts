@@ -8,6 +8,8 @@ import {
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
   ListPartsCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -30,28 +32,13 @@ const r2 = new S3Client({
 
 const BUCKET = process.env.R2_BUCKET_NAME!;
 
-// Allowed upload types — keeps randoms from uploading arbitrary files
-// to your bucket via a stolen/guessed presigned URL. Covers all four
-// upload categories the product supports: images, videos, PDFs, and
-// Word documents.
-const ALLOWED_TYPES = [
-  // Images
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml",
-  "image/avif",
-  // Videos
-  "video/mp4",
-  "video/quicktime", // .mov
-  "video/webm",
-  // Documents
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-];
-
+// Accept every image/video MIME subtype, plus supported document categories.
 export function isAllowedContentType(contentType: string) {
-  return ALLOWED_TYPES.includes(contentType);
+  if (typeof contentType !== "string") return false;
+  const type = contentType.split(";")[0].trim().toLowerCase();
+  return /^(image|video)\/[a-z0-9][a-z0-9!#$&^_.+\-]*$/.test(type) ||
+    type === "application/pdf" ||
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 }
 
 /**
@@ -203,6 +190,36 @@ export async function abortMultipartUpload(key: string, uploadId: string): Promi
  */
 export function publicUrlFor(key: string) {
   return `${process.env.R2_PUBLIC_URL}/${key}`;
+}
+
+// TikTok-ready copies are temporary publishing artifacts; originals are kept.
+export async function putTikTokPreparedFile(key: string, body: Buffer | import("node:stream").Readable, contentType: string, size: number) {
+  if (!isTikTokPreparedKey(key)) throw new Error("Invalid prepared media key.");
+  await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: contentType, ContentLength: size }));
+}
+
+export function isTikTokPreparedKey(key: string) {
+  return /(?:^|\/)tiktok-prepared-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|mp4)$/.test(key) || /^tiktok-prepared\/[0-9a-f-]{36}\.(jpg|mp4)$/.test(key);
+}
+
+export async function cleanupTikTokPreparedFiles() {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  let deleted = 0;
+  // New copies stay alongside originals to retain verified URL prefixes.
+  for (const prefix of ["calendars/", "tiktok-prepared/"]) {
+    let cursor: string | undefined;
+    do {
+      const page = await r2.send(new ListObjectsV2Command({ Bucket: BUCKET, Prefix: prefix, ContinuationToken: cursor, MaxKeys: 1000 }));
+      const expired = (page.Contents || []).filter(item => item.Key?.startsWith(prefix) && isTikTokPreparedKey(item.Key) && item.LastModified && item.LastModified.getTime() < cutoff).map(item => ({ Key: item.Key! }));
+      if (expired.length) {
+        const result = await r2.send(new DeleteObjectsCommand({ Bucket: BUCKET, Delete: { Objects: expired } }));
+        if (result.Errors?.length) throw new Error("Some temporary TikTok files could not be removed.");
+        deleted += expired.length;
+      }
+      cursor = page.IsTruncated ? page.NextContinuationToken : undefined;
+    } while (cursor);
+  }
+  return { deleted };
 }
 
 /**

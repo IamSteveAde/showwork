@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -47,7 +49,7 @@ export default function ProfileForm({
       const presignRes = await fetch("/api/account/avatar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       if (!presignRes.ok) {
         const data = await presignRes.json();
@@ -56,7 +58,7 @@ export default function ProfileForm({
       const { uploadUrl, publicUrl } = await presignRes.json();
 
       await putFileWithProgress(uploadUrl, file, {
-        contentType: file.type,
+        contentType: getFileContentType(file),
         onProgress: ({ percent }) => setAvatarProgress(percent),
       });
 
@@ -120,7 +122,7 @@ export default function ProfileForm({
             style={{ background: COLOR.gold, color: COLOR.black }}
             aria-label="Change avatar"
           ><UiSymbol name="edit" /></button>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
+          <input ref={fileInputRef} type="file" accept={IMAGE_FILE_ACCEPT} onChange={handleAvatarSelect} className="hidden" />
         </div>
         <p className="text-xs text-white/40">{uploadingAvatar ? `Uploading ${avatarProgress}%` : "Click the pencil to upload a photo"}</p>
       </div>

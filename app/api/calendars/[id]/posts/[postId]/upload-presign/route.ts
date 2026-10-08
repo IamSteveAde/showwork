@@ -1,3 +1,4 @@
+import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -78,7 +79,11 @@ export async function POST(
     );
   }
 
-  const { filename, contentType, fileSize } = body;
+  const { filename, contentType: suppliedContentType, fileSize } = body;
+  const contentType = resolveFileContentType(
+    typeof filename === "string" ? filename : "",
+    typeof suppliedContentType === "string" ? suppliedContentType : ""
+  );
 
   if (
     typeof filename !== "string" ||

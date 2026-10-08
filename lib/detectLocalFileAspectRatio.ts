@@ -1,3 +1,4 @@
+import { getFileContentType } from "@/lib/mediaFileTypes";
 /**
  * Computes width ÷ height for a local file the user just selected —
  * reading it straight from their own device via an object URL, never
@@ -14,7 +15,7 @@ export function detectLocalFileAspectRatio(file: File): Promise<number | null> {
     const objectUrl = URL.createObjectURL(file);
     const cleanup = () => URL.revokeObjectURL(objectUrl);
 
-    if (file.type.startsWith("video/")) {
+    if (getFileContentType(file).startsWith("video/")) {
       const vid = document.createElement("video");
       vid.preload = "metadata";
       vid.onloadedmetadata = () => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
@@ -11,7 +13,7 @@ function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded:
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("Content-Type", getFileContentType(file) || "application/octet-stream");
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
     xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`)));
     xhr.onerror = () => reject(new Error("Network error during upload"));
@@ -109,8 +111,8 @@ const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function acceptFor(mediaType: MediaType): string {
-  if (mediaType === "VIDEO") return "video/mp4,video/quicktime,video/webm";
-  if (mediaType === "PHOTO") return "image/jpeg,image/png,image/webp,image/svg+xml,image/avif";
+  if (mediaType === "VIDEO") return VIDEO_FILE_ACCEPT;
+  if (mediaType === "PHOTO") return IMAGE_FILE_ACCEPT;
   if (mediaType === "PDF") return "application/pdf";
   return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 }
@@ -192,7 +194,7 @@ export default function AddSubSection({
         const presignRes = await fetch("/api/upload/presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+          body: JSON.stringify({ projectId, filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
         });
                 const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "presign failed");
@@ -233,7 +235,7 @@ export default function AddSubSection({
       const startRes = await fetch("/api/upload/multipart/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ projectId, filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const startData = await startRes.json();
       if (!startRes.ok) return { ok: false, error: startData.error ?? "Failed to start large-file upload" };

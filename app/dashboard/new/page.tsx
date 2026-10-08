@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -52,7 +54,7 @@ function uploadWithProgress(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("Content-Type", getFileContentType(file));
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(e.loaded, e.total);
     };
@@ -157,7 +159,7 @@ async function uploadLargeFileMultipart(
       body: JSON.stringify({
         projectId,
         filename: file.name,
-        contentType: file.type,
+        contentType: getFileContentType(file),
         fileSizeMb: file.size / (1024 * 1024),
       }),
     });
@@ -622,7 +624,7 @@ export default function NewProjectPage() {
               body: JSON.stringify({
                 projectId: project.id,
                 filename: file.name,
-                contentType: file.type,
+                contentType: getFileContentType(file),
                 fileSizeMb: file.size / (1024 * 1024),
               }),
             });
@@ -1019,8 +1021,8 @@ export default function NewProjectPage() {
               multiple
               accept={
                 addingToSection?.mediaType === "VIDEO"
-                  ? "video/mp4,video/quicktime"
-                  : "image/jpeg,image/png,image/webp"
+                  ? VIDEO_FILE_ACCEPT
+                  : IMAGE_FILE_ACCEPT
               }
               onChange={handleAddMoreFilesToSection}
               className="hidden"
@@ -1326,9 +1328,9 @@ export default function NewProjectPage() {
                   multiple
                   accept={
                     builderType === "VIDEO"
-                      ? "video/mp4,video/quicktime,video/webm"
+                      ? VIDEO_FILE_ACCEPT
                       : builderType === "PHOTO"
-                        ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+                        ? IMAGE_FILE_ACCEPT
                         : builderType === "PDF"
                           ? "application/pdf"
                           : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

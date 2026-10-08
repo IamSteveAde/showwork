@@ -1,5 +1,4 @@
 import { db } from "@/lib/db";
-import { publicUrlFor } from "@/lib/r2";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
 import { freshTikTokConnection, reserveTikTokRequest, TikTokRequestBusyError } from "@/lib/tiktokConnection";
 import { requireScopes } from "@/lib/socialTokens";
@@ -30,7 +29,7 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       const video = post.assets.some(a => a.mediaType === "VIDEO");
       validateTikTokSettings(settings, creator, video);
       validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType);
-      await validateTikTokMedia(post.assets, creator);
+      const preparedAssets = await validateTikTokMedia(post.assets, creator, { publish: true });
       await reserveTikTokRequest(connection.platformAccountId, "init");
       // Recheck both the connection and the post immediately before transfer.
       const current = await db.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
@@ -42,8 +41,8 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       let result;
       try {
         result = video
-          ? await initTikTokVideoPublish({ accessToken, videoUrl: publicUrlFor(post.assets[0].fileKey), caption: buildCaption(post), privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info })
-          : await initTikTokPhotoPublish({ accessToken, photoUrls: post.assets.map(a => publicUrlFor(a.fileKey)), caption: buildCaption(post), photoTitle: settings.photoTitle, privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info, isAigc: settings.isAigc });
+          ? await initTikTokVideoPublish({ accessToken, videoUrl: preparedAssets[0].url, caption: buildCaption(post), privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info })
+          : await initTikTokPhotoPublish({ accessToken, photoUrls: preparedAssets.map(a => a.url), caption: buildCaption(post), photoTitle: settings.photoTitle, privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info, isAigc: settings.isAigc });
       } catch (error) {
         // A definite API rejection is safe to retry. Network/5xx ambiguity is not.
         if (error instanceof TikTokApiError && error.status < 500) {

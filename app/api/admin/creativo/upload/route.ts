@@ -1,3 +1,4 @@
+import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
@@ -14,7 +15,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { filename, contentType } = await req.json();
+  const { filename, contentType: suppliedContentType } = await req.json();
+  const contentType = resolveFileContentType(
+    typeof filename === "string" ? filename : "",
+    typeof suppliedContentType === "string" ? suppliedContentType : ""
+  );
   if (!filename || !contentType) {
     return NextResponse.json({ error: "filename and contentType are required" }, { status: 400 });
   }

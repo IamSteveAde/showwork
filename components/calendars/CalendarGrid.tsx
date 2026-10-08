@@ -1,5 +1,7 @@
 "use client";
 
+import { MEDIA_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -1129,7 +1131,7 @@ function AddPostPanel({
           },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type,
+            contentType: getFileContentType(file),
             fileSize: file.size,
           }),
         }
@@ -1144,7 +1146,7 @@ function AddPostPanel({
       }
 
       await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: file.type,
+        contentType: getFileContentType(file),
         onProgress: ({ loaded }) => {
           uploadedBytesByFile[index] = loaded;
           updateOverallProgress();
@@ -1153,7 +1155,7 @@ function AddPostPanel({
       uploadedBytesByFile[index] = file.size;
       updateOverallProgress();
 
-      const mediaType = file.type.startsWith("video/")
+      const mediaType = getFileContentType(file).startsWith("video/")
         ? "VIDEO"
         : "PHOTO";
 
@@ -2505,7 +2507,7 @@ function AddPostPanel({
               {pendingFiles.length > 0 && (
                 <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {pendingFiles.map(({ file, previewUrl }, i) => {
-                    const isVideo = file.type.startsWith("video/");
+                    const isVideo = getFileContentType(file).startsWith("video/");
                     return (
                       <div
                         key={i}
@@ -2630,7 +2632,7 @@ function AddPostPanel({
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                  accept={MEDIA_FILE_ACCEPT}
                   className="hidden"
                   onChange={(e) => {
                     if (
@@ -3300,7 +3302,7 @@ caption: draftDetails.caption,
         },
         body: JSON.stringify({
           filename: file.name,
-          contentType: file.type,
+          contentType: getFileContentType(file),
           fileSize: file.size,
         }),
       }
@@ -3317,12 +3319,12 @@ caption: draftDetails.caption,
     }
 
     await putFileWithProgress(presignData.uploadUrl, file, {
-      contentType: file.type,
+      contentType: getFileContentType(file),
       onProgress: ({ percent }) => setUploadPercent(percent),
     });
 
     const mediaType =
-      file.type.startsWith("video/")
+      getFileContentType(file).startsWith("video/")
         ? "VIDEO"
         : "PHOTO";
 
@@ -4339,7 +4341,7 @@ caption: draftDetails.caption,
                       post.postType ===
                       "Carousel"
                     }
-                    accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                    accept={MEDIA_FILE_ACCEPT}
                     className="hidden"
                     disabled={uploading}
                     onChange={(e) => {

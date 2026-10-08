@@ -1,3 +1,4 @@
+import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -19,7 +20,11 @@ export async function POST(
   if (!managedProject) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (managedProject.creatorId !== creator.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { filename, contentType, fileSizeMb } = await req.json();
+  const { filename, contentType: suppliedContentType, fileSizeMb } = await req.json();
+  const contentType = resolveFileContentType(
+    typeof filename === "string" ? filename : "",
+    typeof suppliedContentType === "string" ? suppliedContentType : ""
+  );
   if (!filename || !contentType) {
     return NextResponse.json({ error: "filename and contentType are required" }, { status: 400 });
   }

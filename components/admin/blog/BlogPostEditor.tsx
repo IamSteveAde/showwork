@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState } from "react";
 import Link from "next/link";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -45,12 +47,12 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
       const presignRes = await fetch("/api/admin/blog/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
-      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setCoverUploadPercent(percent) });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: getFileContentType(file), onProgress: ({ percent }) => setCoverUploadPercent(percent) });
 
       setCoverImageUrl(presignData.publicUrl);
     } catch (err) {
@@ -211,7 +213,7 @@ export default function BlogPostEditor({ post, existingCategories }: { post: Blo
               {uploadingCover ? `Uploading ${coverUploadPercent}%` : coverImageUrl ? "Change cover image" : "Upload cover image"}
               <input
                 type="file"
-                accept="image/*"
+                accept={IMAGE_FILE_ACCEPT}
                 className="hidden"
                 disabled={uploadingCover}
                 onChange={(e) => {

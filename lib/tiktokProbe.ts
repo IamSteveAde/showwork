@@ -4,13 +4,22 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 let binaryPromise: Promise<string> | undefined;
+let converterPromise: Promise<string> | undefined;
 export function resolveTikTokProbe(): Promise<string> {
-  if (!binaryPromise) binaryPromise = locateTikTokProbe().catch(error => { binaryPromise = undefined; throw error; });
+  if (!binaryPromise) binaryPromise = locateTikTokBinary("probe").catch(error => { binaryPromise = undefined; throw error; });
   return binaryPromise;
 }
 
-async function locateTikTokProbe() {
-  const relative = join("node_modules", "ffprobe-static", "bin", process.platform, process.arch, process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
+export function resolveTikTokConverter(): Promise<string> {
+  if (!converterPromise) converterPromise = locateTikTokBinary("converter").catch(error => { converterPromise = undefined; throw error; });
+  return converterPromise;
+}
+
+async function locateTikTokBinary(kind: "probe" | "converter") {
+  const name = kind === "probe" ? "ffprobe" : "ffmpeg";
+  const relative = kind === "probe"
+    ? join("node_modules", "ffprobe-static", "bin", process.platform, process.arch, process.platform === "win32" ? "ffprobe.exe" : "ffprobe")
+    : join("node_modules", "ffmpeg-static", process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg");
   const roots = new Set([process.env.LAMBDA_TASK_ROOT, process.cwd()].filter((root): root is string => !!root));
   // Next.js can run with a working directory below the Lambda bundle root.
   let parent = process.cwd();
@@ -23,12 +32,12 @@ async function locateTikTokProbe() {
       // Some packagers lose executable permissions. The deployment filesystem
       // is read-only, so repair a private temporary copy instead.
       const directory = await mkdtemp(join(tmpdir(), "showwork-probe-"));
-      const executable = join(directory, "ffprobe");
+      const executable = join(directory, name);
       await copyFile(binary, executable); await chmod(executable, 0o700);
       return executable;
     }
   }
-  throw new Error("Media inspection is unavailable on the server (probe missing). Redeploy with the TikTok media binary included.");
+  throw new Error(`Media preparation is unavailable on the server (${kind} missing). Redeploy with the TikTok media binary included.`);
 }
 
 export function tikTokProbeError(error: unknown) {
