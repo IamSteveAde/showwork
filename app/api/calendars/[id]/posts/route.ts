@@ -68,6 +68,10 @@ export async function GET(
         instagramPublishError: post.instagramPublishError,
         tikTokPublishStatus: post.tikTokPublishStatus,
         tikTokPrivacyLevel: post.tikTokPrivacyLevel,
+        tikTokSettings: post.tikTokSettings,
+        tikTokConsentAt: post.tikTokConsentAt?.toISOString() ?? null,
+        tikTokInitStartedAt: post.tikTokInitStartedAt?.toISOString() ?? null,
+        tikTokPublishId: post.tikTokPublishId,
         tikTokPublishError: post.tikTokPublishError,
         assets: post.assets.map((asset) => ({
           id: asset.id,

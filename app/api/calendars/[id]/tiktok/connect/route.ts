@@ -1,3 +1,5 @@
+import { createChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
+import { createTikTokPkce, TIKTOK_PKCE_COOKIE } from "@/lib/tiktokOAuthPkce";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -8,8 +10,8 @@ import { appUrl } from "@/lib/url";
 // Manager-only, same trust boundary as the Instagram connect route —
 // connecting a real social account on someone's behalf is a bigger
 // decision than editing posts. Redirects to TikTok's own
-// authorization page; the calendar id travels through as `state` so
-// the callback knows which calendar to attach the connection to.
+// authorization page. Signed, expiring state binds the calendar to
+// this browser so the callback cannot attach a forged connection.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -26,8 +28,13 @@ export async function GET(
   const redirectUri = `${appUrl()}/api/calendars/tiktok/callback`;
 
   try {
-    const authUrl = buildTikTokAuthUrl({ redirectUri, state: id });
-    return NextResponse.redirect(authUrl);
+    const state = createChannelOAuthState("tiktok", id);
+    const pkce = createTikTokPkce();
+    const authUrl = buildTikTokAuthUrl({ redirectUri, state: state.state, codeChallenge: pkce.challenge });
+    const response = NextResponse.redirect(authUrl);
+    response.cookies.set(state.cookieName, state.nonce, channelOAuthCookieOptions("tiktok", state.maxAge));
+    response.cookies.set(TIKTOK_PKCE_COOKIE, `${state.nonce}.${pkce.verifier}`, channelOAuthCookieOptions("tiktok", state.maxAge));
+    return response;
   } catch (err) {
     console.error("Failed to build TikTok auth URL:", err);
     return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&tiktokError=not_configured`);

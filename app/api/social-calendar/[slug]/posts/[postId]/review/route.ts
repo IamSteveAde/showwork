@@ -104,7 +104,7 @@ export async function POST(
     return NextResponse.json({ error: "This post is already publishing or published and cannot be reviewed again." }, { status: 409 });
   }
   const connection = await db.socialConnection.findFirst({ where: { calendarId: calendar.id, platform: post.platform, status: "CONNECTED" } });
-  const canSchedule = approved && !post.isAiDraft && !!connection && PUBLISHING_PLATFORMS.includes(post.platform);
+  const canSchedule = approved && !post.isAiDraft && !!connection && PUBLISHING_PLATFORMS.includes(post.platform) && post.platform !== "TIKTOK";
   if (canSchedule) {
     try {
       validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType);
@@ -117,6 +117,7 @@ export async function POST(
       approvalStatus: approved ? "APPROVED" : "NEEDS_REVISION",
       approvalNote: approved ? null : typeof note === "string" ? note.trim() || null : null,
       reviewedAt: new Date(),
+      ...(!approved && post.platform === "TIKTOK" ? { tikTokConsentAt: null, tikTokConsentBy: null, tikTokConsentHash: null, tikTokConsentAccountId: null, tikTokConsentVersion: null } : {}),
       ...(!approved && publishingStatus(post) === "SCHEDULED" ? statusUpdate(post.platform, "NOT_SCHEDULED") : {}),
       ...(canSchedule && publishingStatus(post) === "NOT_SCHEDULED" ? { ...statusUpdate(post.platform, "SCHEDULED"), publishWorkerStartedAt: null } : {}),
     },

@@ -1,239 +1,81 @@
-import { validatePublishContent } from "@/lib/publishing/state";
 import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
-import {
-  refreshTikTokAccessToken,
-  queryTikTokCreatorInfo,
-  initTikTokVideoPublish,
-  initTikTokPhotoPublish,
-  waitForTikTokPublishResult,
-} from "@/lib/tiktok";
+import { freshTikTokConnection, reserveTikTokRequest, TikTokRequestBusyError } from "@/lib/tiktokConnection";
+import { requireScopes } from "@/lib/socialTokens";
+import { buildCaption, validatePublishContent } from "@/lib/publishing/state";
+import { parseTikTokSettings, validateTikTokSettings, tikTokPostInfo, TIKTOK_CONSENT_VERSION } from "@/lib/tiktokSettings";
+import { tikTokConsentHash } from "@/lib/tiktokConsent";
+import { validateTikTokMedia } from "@/lib/tiktokMedia";
+import { queryTikTokCreatorInfo, initTikTokVideoPublish, initTikTokPhotoPublish, checkTikTokPublishStatus, TikTokApiError } from "@/lib/tiktok";
 
-/**
- * Same caption-combining approach as Instagram's — cta and hashtags
- * folded into the same title field TikTok's post_info.title expects,
- * with taggedAccounts written as plain @-mentions in the text itself
- * rather than claiming to support anything more structured.
- */
-function buildCaption(post: {
-  caption: string | null;
-  cta: string | null;
-  hashtags: string | null;
-  taggedAccounts: string | null;
-}): string {
-  const parts: string[] = [];
-  if (post.caption) parts.push(post.caption.trim());
-  if (post.taggedAccounts) {
-    const mentions = post.taggedAccounts
-      .split(/[\s,]+/)
-      .filter(Boolean)
-      .map((h) => (h.startsWith("@") ? h : `@${h}`))
-      .join(" ");
-    if (mentions) parts.push(mentions);
-  }
-  if (post.cta) parts.push(post.cta.trim());
-  if (post.hashtags) parts.push(post.hashtags.trim());
-  return parts.join("\n\n");
-}
-
-/**
- * Publishes one CalendarPost to TikTok — video or photo(s), decided
- * by the assets' own mediaType. Always updates the post's own
- * tikTokPublishStatus/tikTokPublishedAt/tikTokPublishId/
- * tikTokPublishError fields as its very last step, success or
- * failure, exactly the same contract publishPostToInstagram follows,
- * so nothing calling this needs its own separate error handling.
- *
- * Reminder for anyone reading this later: even a fully successful
- * run here only ever produces a SELF_ONLY (private) post until this
- * app clears TikTok's separate Content Audit — that's a platform
- * restriction TikTok enforces on its end, not something this
- * function controls or can work around.
- */
 export async function publishPostToTikTok(postId: string): Promise<void> {
-  const post = await db.calendarPost.findUnique({
-    where: { id: postId },
-    include: {
-      assets: { orderBy: { displayOrder: "asc" } },
-      calendar: {
-        select: {
-          id: true,
-          tikTokOpenId: true,
-          tikTokAccessToken: true,
-          tikTokAccessTokenExpiresAt: true,
-          tikTokRefreshToken: true,
-          socialConnections: {
-            where: { platform: "TIKTOK", status: "CONNECTED" },
-            take: 1,
-            select: {
-              id: true,
-              platformAccountId: true,
-              accessToken: true,
-              accessTokenExpiresAt: true,
-              refreshToken: true,
-              refreshTokenExpiresAt: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!post) throw new Error("Post not found");
-
-  const fail = async (message: string) => {
-    await db.calendarPost.update({
-      where: { id: postId },
-      data: { tikTokPublishStatus: "FAILED", tikTokPublishError: message },
-    });
-  };
-
-  const { calendar } = post;
-  const normalizedConnection = calendar.socialConnections[0];
-  const tikTokOpenId = normalizedConnection?.platformAccountId ?? calendar.tikTokOpenId;
-  const storedAccessToken = normalizedConnection?.accessToken ?? calendar.tikTokAccessToken;
-  const storedAccessTokenExpiresAt = normalizedConnection?.accessTokenExpiresAt ?? calendar.tikTokAccessTokenExpiresAt;
-  const storedRefreshToken = normalizedConnection?.refreshToken ?? calendar.tikTokRefreshToken;
-
-  if (!tikTokOpenId || !storedAccessToken || !storedRefreshToken) {
-    return fail("This calendar's TikTok connection was removed before this post could publish.");
-  }
-  if (post.assets.length === 0) {
-    return fail("This post has no uploaded content to publish.");
-  }
-  if (!post.tikTokPrivacyLevel) {
-    return fail("No privacy level was chosen for this post — edit it and pick one before it can publish.");
-  }
-
-  // TikTok's access tokens last only 24 hours — refreshing proactively
-  // here (rather than waiting for a publish call to fail first) keeps
-  // this working silently for as long as the refresh token itself
-  // stays valid, with no manager action ever needed for routine renewal.
-  let accessToken = storedAccessToken;
-  const tokenExpired = !storedAccessTokenExpiresAt || storedAccessTokenExpiresAt.getTime() <= Date.now() + 60_000;
-
-  if (tokenExpired) {
-    try {
-      const refreshed = await refreshTikTokAccessToken(storedRefreshToken);
-      accessToken = refreshed.access_token;
-      const newExpiresAt = new Date();
-      newExpiresAt.setSeconds(newExpiresAt.getSeconds() + refreshed.expires_in);
-      const newRefreshExpiresAt = new Date(Date.now() + refreshed.refresh_expires_in * 1000);
-      await db.socialCalendar.update({
-        where: { id: calendar.id },
-        data: {
-          tikTokAccessToken: refreshed.access_token,
-          tikTokAccessTokenExpiresAt: newExpiresAt,
-          tikTokRefreshToken: refreshed.refresh_token,
-        },
-      });
-      if (normalizedConnection) {
-        await db.socialConnection.update({
-          where: { id: normalizedConnection.id },
-          data: {
-            accessToken: refreshed.access_token,
-            accessTokenExpiresAt: newExpiresAt,
-            refreshToken: refreshed.refresh_token,
-            refreshTokenExpiresAt: newRefreshExpiresAt,
-          },
-        });
-      } else {
-        await db.socialConnection.updateMany({
-          where: { calendarId: calendar.id, platform: "TIKTOK" },
-          data: {
-            accessToken: refreshed.access_token,
-            accessTokenExpiresAt: newExpiresAt,
-            refreshToken: refreshed.refresh_token,
-            refreshTokenExpiresAt: newRefreshExpiresAt,
-          },
-        });
-      }
-    } catch (err) {
-      return fail("TikTok's connection has expired and couldn't be automatically renewed — reconnect TikTok on this calendar to keep publishing.");
-    }
-  }
-
+  const post = await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
+  let publishId = post.tikTokPublishId;
+  let attempted = !!post.tikTokInitStartedAt;
+  const fail = (message: string) => db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "FAILED", tikTokPublishError: message } });
   try {
-    // Required immediately before every publish, never cached —
-    // TikTok's own review criteria reject any app that assumes
-    // yesterday's available options still apply today.
-    const creatorInfo = await queryTikTokCreatorInfo(accessToken);
-
-    if (!creatorInfo.privacy_level_options.includes(post.tikTokPrivacyLevel)) {
-      return fail(
-        `This TikTok account no longer allows the "${post.tikTokPrivacyLevel}" privacy level — edit the post and choose one of: ${creatorInfo.privacy_level_options.join(", ")}.`
-      );
-    }
-
-    const caption = buildCaption(post);
-    validatePublishContent("TIKTOK", post.assets, caption, post.postType);
-    const isVideo = post.assets.some((a) => a.mediaType === "VIDEO");
-
-    let publishId: string;
-
-    if (post.tikTokPublishId) {
-      publishId = post.tikTokPublishId;
-    } else if (isVideo) {
-      // TikTok's Direct Post video flow is one video per post — the
-      // first video asset is used; a post mixing photos and a video
-      // isn't a real TikTok content type, same reasoning as
-      // Instagram not mixing media types within one carousel item.
-      const videoAsset = post.assets.find((a) => a.mediaType === "VIDEO")!;
-      const result = await initTikTokVideoPublish({
-        accessToken,
-        videoUrl: publicUrlFor(videoAsset.fileKey),
-        caption,
-        privacyLevel: post.tikTokPrivacyLevel,
-        disableComment: creatorInfo.comment_disabled,
-      });
+    if (!post.tikTokConsentAccountId || !post.tikTokConsentAt || !post.tikTokConsentBy || post.tikTokConsentVersion !== TIKTOK_CONSENT_VERSION) throw new Error("Review TikTok settings and authorize publishing before scheduling.");
+    const stored = await db.socialConnection.findFirst({ where: { calendarId: post.calendarId, platform: "TIKTOK", platformAccountId: post.tikTokConsentAccountId, status: "CONNECTED" } });
+    if (!stored) throw new Error("The authorized TikTok account was disconnected or replaced. Review the connected account and authorize again.");
+    const connection = await freshTikTokConnection(stored);
+    requireScopes(connection, ["video.publish"]);
+    const accessToken = connection.accessToken!;
+    if (!publishId) {
+      if (attempted) throw new Error("The earlier TikTok submission has an uncertain result. Check TikTok before explicitly retrying.");
+      const settings = parseTikTokSettings(post.tikTokSettings);
+      if (post.tikTokConsentHash !== tikTokConsentHash(post, settings, connection.platformAccountId)) throw new Error("The post changed after authorization. Review and authorize publishing again.");
+      await reserveTikTokRequest(connection.platformAccountId, "creator");
+      const creator = await queryTikTokCreatorInfo(accessToken);
+      const video = post.assets.some(a => a.mediaType === "VIDEO");
+      validateTikTokSettings(settings, creator, video);
+      validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType);
+      await validateTikTokMedia(post.assets, creator);
+      await reserveTikTokRequest(connection.platformAccountId, "init");
+      // Recheck both the connection and the post immediately before transfer.
+      const current = await db.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
+      if (current.status !== "CONNECTED" || current.platformAccountId !== post.tikTokConsentAccountId) throw new Error("The TikTok account was disconnected. Review authorization again.");
+      const claimed = await db.calendarPost.updateMany({ where: { id: postId, updatedAt: post.updatedAt, approvalStatus: "APPROVED", tikTokPublishStatus: "PUBLISHING", tikTokInitStartedAt: null }, data: { tikTokInitStartedAt: new Date() } });
+      if (!claimed.count) return;
+      attempted = true;
+      const info = tikTokPostInfo(settings, creator, video);
+      let result;
+      try {
+        result = video
+          ? await initTikTokVideoPublish({ accessToken, videoUrl: publicUrlFor(post.assets[0].fileKey), caption: buildCaption(post), privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info })
+          : await initTikTokPhotoPublish({ accessToken, photoUrls: post.assets.map(a => publicUrlFor(a.fileKey)), caption: buildCaption(post), photoTitle: settings.photoTitle, privacyLevel: settings.privacyLevel!, disableComment: info.disable_comment, postInfo: info, isAigc: settings.isAigc });
+      } catch (error) {
+        // A definite API rejection is safe to retry. Network/5xx ambiguity is not.
+        if (error instanceof TikTokApiError && error.status < 500) {
+          attempted = false;
+          await db.calendarPost.update({ where: { id: postId }, data: { tikTokInitStartedAt: null } });
+        }
+        throw error;
+      }
+      if (!result.publish_id) throw new Error("TikTok did not confirm a publish reference. Check TikTok before retrying.");
       publishId = result.publish_id;
-    } else {
-      const photoUrls = post.assets.map((a) => publicUrlFor(a.fileKey));
-      const result = await initTikTokPhotoPublish({
-        accessToken,
-        photoUrls,
-        disableComment: creatorInfo.comment_disabled,
-        caption,
-        privacyLevel: post.tikTokPrivacyLevel,
-      });
-      publishId = result.publish_id;
+      await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishId: publishId } });
     }
-
-    // Save the provider reference before polling so timeouts can be reconciled.
-    await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishId: publishId } });
-    const publishResult = await waitForTikTokPublishResult(accessToken, publishId);
-    const platformPostId = publishResult.publicaly_available_post_id?.[0] != null
-      ? String(publishResult.publicaly_available_post_id[0])
-      : null;
+    await reserveTikTokRequest(connection.platformAccountId, "status");
+    const result = await checkTikTokPublishStatus(accessToken, publishId);
+    if (result.status === "FAILED") { await fail(`TikTok could not publish this post (${result.fail_reason || "unknown_error"}). Correct the content and create a new post.`); return; }
+    if (result.status !== "PUBLISH_COMPLETE") {
+      // Persist the provider operation; minute-based reconciliation polls it later.
+      await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "PUBLISHING", publishWorkerStartedAt: null, tikTokPublishError: null } });
+      return;
+    }
     const publishedAt = new Date();
-
-    await db.calendarPost.update({
-      where: { id: postId },
-      data: {
-        tikTokPublishStatus: "PUBLISHED",
-        tikTokPublishedAt: publishedAt,
-        tikTokPublishId: publishId,
-        tikTokPublishError: null,
-      },
-    });
-    try {
-      await recordPublishedSocialPost({
-        calendarId: calendar.id,
-        calendarPostId: post.id,
-        platform: "TIKTOK",
-        platformAccountId: tikTokOpenId,
-        platformPostId,
-        providerReference: publishId,
-        publishedAt,
-        platformPostType: post.postType ?? (isVideo ? "VIDEO" : "PHOTO"),
-      });
-    } catch (reportingError) {
-      console.error(`Could not link TikTok post ${postId} to reporting:`, reportingError);
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to publish to TikTok";
-    console.error(`TikTok publish failed for post ${postId}:`, err);
-    await fail(message);
+    const platformPostId = result.publicaly_available_post_id?.[0] != null ? String(result.publicaly_available_post_id[0]) : null;
+    await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "PUBLISHED", tikTokPublishedAt: publishedAt, tikTokPublishError: null } });
+    try { await recordPublishedSocialPost({ calendarId: post.calendarId, calendarPostId: postId, platform: "TIKTOK", platformAccountId: connection.platformAccountId, platformPostId, providerReference: publishId, publishedAt, platformPostType: post.postType }); }
+    catch { console.error(`Could not link TikTok post ${postId} to reporting.`); }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "TikTok publishing failed. Please try again.";
+    if (publishId) {
+      // Status/network errors cannot turn an accepted post into another init.
+      await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "PUBLISHING", publishWorkerStartedAt: null, tikTokPublishError: `Waiting for TikTok confirmation. ${message}` } });
+    } else if (!attempted && (error instanceof TikTokRequestBusyError || (error instanceof TikTokApiError && error.code === "rate_limit_exceeded"))) {
+      await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "SCHEDULED", publishWorkerStartedAt: null, tikTokPublishError: message } });
+    } else await fail(attempted ? `${message} The submission result is uncertain. Check TikTok before retrying.` : message);
   }
 }

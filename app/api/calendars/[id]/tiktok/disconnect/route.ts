@@ -31,6 +31,10 @@ export async function POST(
     },
   });
   await markSocialConnectionDisconnected(id, "TIKTOK");
+  await db.calendarPost.updateMany({ where: { calendarId: id, platform: "TIKTOK", tikTokPublishStatus: "SCHEDULED" }, data: {
+    tikTokPublishStatus: "NOT_SCHEDULED", tikTokConsentAt: null, tikTokConsentBy: null, tikTokConsentHash: null,
+    tikTokConsentAccountId: null, tikTokConsentVersion: null, tikTokPublishError: "TikTok was disconnected. Reconnect, review settings and authorize again.",
+  } });
 
   return NextResponse.json({ ok: true });
 }

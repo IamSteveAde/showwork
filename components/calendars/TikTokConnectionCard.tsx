@@ -115,18 +115,18 @@ export default function TikTokConnectionCard({
           <>
             <p className="mt-4 text-sm font-medium text-white">{username}</p>
             <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
-              Approved TikTok posts will automatically publish here once their scheduled date arrives.
+              After client approval, review TikTok settings and authorize each post to publish at its scheduled time.
               {connectedAt && ` Connected ${new Date(connectedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}
             </p>
             <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2.5">
               <p className="text-[11px] leading-relaxed text-amber-200/80">
-                <span className="font-semibold text-amber-200">While this app awaits TikTok&apos;s content audit:</span> every post publishes as private (visible only to this account) — a TikTok platform restriction, not something this changes.
+                <span className="font-semibold text-amber-200">While this app awaits TikTok&apos;s content audit:</span> TikTok requires a private account and Only me visibility for test posts. Public publishing requires TikTok approval.
               </p>
             </div>
           </>
         ) : (
           <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
-            Connect this calendar to a client&apos;s TikTok account — once connected, approved TikTok posts publish automatically on their scheduled date, no manual posting needed.
+            Connect this calendar to a client&apos;s TikTok account — once connected, review the settings and authorize each approved TikTok post for scheduled publishing.
           </p>
         )}
         {isManager && isConnected && <TikTokMessagingPanel calendarId={calendarId} />}
