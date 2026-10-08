@@ -3879,11 +3879,11 @@ caption: draftDetails.caption,
                 </section>
               )}
 
-            {/* TIKTOK PUBLISH STATUS — same pattern as Instagram's,
-                but TikTok's API has no public permalink to link to
-                the way Instagram's does, so nothing to link even
-                once published. */}
+            {/* Viewers see the stored publishing status. Editors already have
+                the interactive TikTok panel above, which tracks action results
+                immediately without repeating a stale failure below it. */}
             {post.platform === "TIKTOK" &&
+              userRole !== "EDIT_CALENDAR" &&
               post.tikTokPublishStatus !== "NOT_SCHEDULED" && (
                 <section>
                   <div

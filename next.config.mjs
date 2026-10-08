@@ -4,10 +4,10 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 const nextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"],
-    "/api/calendars/*/posts/*/publish": ["./node_modules/ffprobe-static/bin/linux/x64/ffprobe", "./node_modules/ffmpeg-static/ffmpeg"],
+    "/api/calendars/*/posts/*/publish": ["./.media-bin/*.gz"],
   },
   outputFileTracingExcludes: {
-    "/**": ["./node_modules/.prisma/client/libquery_engine-darwin.dylib.node", "./node_modules/ffprobe-static/bin/darwin/**", "./node_modules/ffprobe-static/bin/win32/**", "./node_modules/ffprobe-static/bin/linux/ia32/**"],
+    "/**": ["./node_modules/.prisma/client/libquery_engine-darwin.dylib.node", "./node_modules/ffprobe-static/bin/**", "./node_modules/ffmpeg-static/ffmpeg", "./node_modules/ffmpeg-static/ffmpeg.exe"],
   },
   webpack(config, { isServer }) {
     config.output.environment = { ...config.output.environment, asyncFunction: true };

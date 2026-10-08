@@ -295,3 +295,18 @@ test('TikTok publishing stores a JPEG copy while preflight preserves the origina
 test('worker submits the prepared media URL to TikTok',async()=>{
   const h=publisher();await h.run();assert.deepEqual(h.videoUrls,['https://example.test/prepared.mp4']);
 });
+
+test('a successful retry hides the historical publishing error immediately',async()=>{
+  const oldWindow=global.window;global.window={dispatchEvent(){}};
+  global.fetch=async()=>new Response(JSON.stringify({ok:true,status:'SCHEDULED'}));
+  try{
+    const h=ui(creator,post({tikTokPublishStatus:'FAILED',tikTokPublishError:'Old media inspection failure'}));let tree=h.render();
+    assert.match(text(tree),/Previous publishing attempt: Old media inspection failure/);
+    nodes(tree,n=>n.type==='select')[0].props.onChange({target:{value:'SELF_ONLY'}});tree=h.render();
+    nodes(tree,n=>n.type==='label'&&text(n).startsWith('By posting'))[0].props.children[0].props.onChange({target:{checked:true}});
+    nodes(tree,n=>n.type==='label'&&text(n).startsWith('I checked TikTok'))[0].props.children[0].props.onChange({target:{checked:true}});tree=h.render();
+    nodes(tree,n=>n.type==='button'&&text(n)==='Authorize and retry')[0].props.onClick();
+    await new Promise(resolve=>setImmediate(resolve));tree=h.render();
+    assert.match(text(tree),/scheduled/);assert.doesNotMatch(text(tree),/Old media inspection failure/);
+  }finally{if(oldWindow===undefined)delete global.window;else global.window=oldWindow;}
+});

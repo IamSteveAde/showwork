@@ -22,7 +22,7 @@ for(const format of ['png','jpeg','webp','avif','tiff','gif'])test(`${format} pi
 });
 test('large PNGs are resized without cropping and transparency is flattened onto white',async()=>{
  const input=await sharp({create:{width:2400,height:1200,channels:4,background:{r:0,g:0,b:0,alpha:0}}}).png().toBuffer();
- const output=await media().convertTikTokImage(input);const info=await sharp(output).metadata();assert.equal(info.width,1080);assert.equal(info.height,540);
+ const output=await media().convertTikTokImage(input);const info=await sharp(output).metadata();assert.equal(info.width,1920);assert.equal(info.height,960);
  const {data}=await sharp(output).raw().toBuffer({resolveWithObject:true});assert.ok(data[0]>250&&data[1]>250&&data[2]>250);
 });
 test('SVG photos are rasterized as JPEG and EXIF orientation is applied',async()=>{

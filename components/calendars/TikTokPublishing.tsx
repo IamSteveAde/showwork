@@ -82,6 +82,8 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
   }
   const controlClass = "flex gap-2 text-sm";
   const inputClass = "mt-2 block w-full rounded-lg border border-slate-400/30 bg-white p-2 text-black disabled:opacity-50";
+  const storedError = !busy && status === post.tikTokPublishStatus && ["FAILED", "PUBLISHING"].includes(status)
+    ? post.tikTokPublishError : null;
   return <section className="my-4 space-y-4 rounded-2xl border border-teal-500/30 p-4 text-sm" aria-label="Post to TikTok">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Post to TikTok</h3><button type="button" disabled={loading || busy} onClick={() => void load()} className="underline disabled:opacity-50">Refresh account settings</button></div>
     {loading && <p role="status">Loading TikTok account and available settings…</p>}
@@ -121,7 +123,7 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
     {status === "PUBLISHING" && <p role="status">TikTok is processing this post. Showwork will keep checking for confirmation; do not submit it again.</p>}
     {status === "PUBLISHED" && <p role="status">TikTok confirmed this post. Open the account in TikTok to view it.</p>}
     {post.tikTokPublishId && status === "FAILED" && <p>This TikTok operation failed. Correct the media and create a new post to submit again.</p>}
-    {(error || post.tikTokPublishError) && <p role="alert" className="text-red-500">{error || post.tikTokPublishError}</p>}
+    {(error || storedError) && <p role="alert" className="text-red-500">{error || `${status === "FAILED" ? "Previous publishing attempt: " : ""}${storedError}`}</p>}
     {saved && <p role="status">{saved}</p>}
   </section>;
 }
