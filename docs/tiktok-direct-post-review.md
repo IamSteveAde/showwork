@@ -15,8 +15,11 @@ and media edits continue to require a client revision.
    consent evidence and account-wide API pacing. Historical scheduled TikTok
    posts become unscheduled; users must review and authorize them again.
 3. Deploy Next.js and Netlify functions together. `ffprobe-static` must be
-   packaged for media checks: Next output tracing and `netlify.toml` include
-   the Linux x64 binary. Verify executable permissions in the deployed function.
+   packaged for media checks: Next output tracing and the two function-specific
+   `netlify.toml` sections include only the Linux x64 binary for the Next server
+   and publishing worker. Do not add ffprobe to global function includes or
+   external packages: that duplicates large binaries into unrelated functions.
+   Verify executable permissions in the deployed function.
 4. Confirm the publishing OAuth redirect is exactly
    `/api/calendars/tiktok/callback`, the app has Direct Post enabled, and users
    grant `video.publish`. Set server-only app credentials, JWT_SECRET and
