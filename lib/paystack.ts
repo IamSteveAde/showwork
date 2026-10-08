@@ -282,3 +282,17 @@ export async function updatePrivatePlanPrice(planCode: string, amountNgn: number
   if (!response.ok || !result?.status) throw new Error("Could not restore the standard subscription price");
   return result;
 }
+
+/** Page through actual successful transactions; subscriptions are not payment receipts. */
+export async function listSuccessfulTransactions(params: {page:number;perPage:number;from?:Date;to?:Date}) {
+  const query = new URLSearchParams({status:"success",page:String(params.page),perPage:String(params.perPage)});
+  if (params.from) query.set("from",params.from.toISOString());
+  if (params.to) query.set("to",params.to.toISOString());
+  const response = await fetch(`${PAYSTACK_BASE_URL}/transaction?${query}`,{
+    headers:{Authorization:`Bearer ${paystackSecretKey()}`},cache:"no-store",signal:AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw new Error(`Paystack transaction listing failed (${response.status})`);
+  const result = await response.json();
+  if (!result.status || !Array.isArray(result.data)) throw new Error("Invalid Paystack transaction list");
+  return result as {status:boolean;data:{reference:string;domain:string;status:string;amount:number;currency:string}[];meta?:{total?:number;pageCount?:number}};
+}

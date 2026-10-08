@@ -1,3 +1,5 @@
+import { getAdminPaymentHistory } from "@/lib/adminPaymentHistory";
+import { getLiveRevenueTotals } from "@/lib/livePaymentRevenue";
 import PartnerTag from "@/components/admin/PartnerTag";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect, notFound } from "next/navigation";
@@ -318,44 +320,16 @@ export default async function CreatorDetailPage({
     },
   });
 
-  const paymentRecords = await db.paymentRecord.findMany({
-    where: {
-      revenueStatus: "LIVE",
-      creatorId: creator.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 50,
-  });
+  const paymentRecords = await getAdminPaymentHistory({creatorId:creator.id,limit:50});
 
-  const projectRevenue = paymentRecords
-    .filter(
-      (payment) =>
-        payment.type === "PROJECT_ONE_TIME" ||
-        payment.type === "SUBSCRIPTION_INITIAL" ||
-        payment.type === "SUBSCRIPTION_RENEWAL"
-    )
-    .reduce((total, payment) => total + payment.amountNgn, 0);
-
-  const contentWorkspaceRevenue = paymentRecords
-    .filter(
-      (payment) =>
-        payment.type === "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL" ||
-        payment.type === "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL"
-    )
-    .reduce((total, payment) => total + payment.amountNgn, 0);
-
-  const portfolioRevenue = paymentRecords
-    .filter(
-      (payment) =>
-        payment.type === "PORTFOLIO_SUBSCRIPTION_INITIAL" ||
-        payment.type === "PORTFOLIO_SUBSCRIPTION_RENEWAL"
-    )
-    .reduce((total, payment) => total + payment.amountNgn, 0);
-
-  const totalRevenue =
-    projectRevenue + contentWorkspaceRevenue + portfolioRevenue;
+  const deliveryRevenue = await getLiveRevenueTotals({creatorId:creator.id,tool:"delivery"});
+  const workspaceRevenue = await getLiveRevenueTotals({creatorId:creator.id,tool:"workspace"});
+  const portfolioTotals = await getLiveRevenueTotals({creatorId:creator.id,tool:"portfolio"});
+  const allRevenue = await getLiveRevenueTotals({creatorId:creator.id});
+  const projectRevenue = deliveryRevenue.amountNgn;
+  const contentWorkspaceRevenue = workspaceRevenue.amountNgn;
+  const portfolioRevenue = portfolioTotals.amountNgn;
+  const totalRevenue = allRevenue.amountNgn;
 
   const latestPayment = paymentRecords[0] || null;
 

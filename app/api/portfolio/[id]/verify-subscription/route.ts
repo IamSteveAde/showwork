@@ -1,3 +1,4 @@
+import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -24,7 +25,7 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (portfolio.billingStatus === "ACTIVE" && portfolio.paystackSubscriptionCode) {
+  if (portfolio.billingStatus === "ACTIVE" && portfolio.paystackSubscriptionCode && !portfolio.pendingSubscriptionRef) {
     return NextResponse.json({ ok: true, alreadyActive: true });
   }
 
@@ -45,6 +46,8 @@ export async function POST(
       );
     }
 
+    await syncVerifiedPayment(portfolio.pendingSubscriptionRef, verification, { expectedCreatorId: creator.id });
+
     await db.portfolio.update({
       where: { id: portfolio.id },
       data: {
@@ -59,19 +62,6 @@ export async function POST(
       },
     });
 
-    try {
-      await db.paymentRecord.create({
-        data: {
-          creatorId: portfolio.creatorId,
-          amountNgn: Math.round((verification?.data?.amount ?? 0) / 100),
-          type: "PORTFOLIO_SUBSCRIPTION_INITIAL",
-          portfolioId: portfolio.id,
-          paystackReference: portfolio.pendingSubscriptionRef,
-        },
-      });
-    } catch (err) {
-      console.error(`Failed to create PaymentRecord during direct subscription verification (portfolio ${portfolio.id})`, err);
-    }
 
     return NextResponse.json({ ok: true, alreadyActive: false });
   } catch (err) {

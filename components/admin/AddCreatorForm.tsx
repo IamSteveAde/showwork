@@ -38,7 +38,7 @@ export default function AddCreatorForm() {
         placeholder="Name (optional)"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
       />
       <input
         type="email"
@@ -47,7 +47,7 @@ export default function AddCreatorForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         style={{ fontSize: "16px" }}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
       />
       <input
         type="tel"
@@ -55,7 +55,7 @@ export default function AddCreatorForm() {
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         style={{ fontSize: "16px" }}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
       />
       <input
         type="text"
@@ -63,7 +63,7 @@ export default function AddCreatorForm() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={{ fontSize: "16px" }}
-        className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+        className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none"
       />
       {error && <p className="text-xs text-red-400">{error}</p>}
       <button

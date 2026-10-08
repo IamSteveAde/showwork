@@ -1,3 +1,4 @@
+import { getLiveRevenueTotals } from "@/lib/livePaymentRevenue";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -755,60 +756,12 @@ export default async function AdminSocialCalendarsPage({
   // REVENUE SUMMARY
   // ------------------------------------------------------------
 
-  const startOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1
-  );
+  const localMonth = new Date(now.getTime()+3600000).toISOString().slice(0,7);
+  const startOfMonth = new Date(`${localMonth}-01T00:00:00+01:00`);
+  const startOfYear = new Date(`${localMonth.slice(0,4)}-01-01T00:00:00+01:00`);
 
-  const startOfYear = new Date(
-    now.getFullYear(),
-    0,
-    1
-  );
-
-  const workspacePaymentTypes = [
-    "CALENDAR_SUBSCRIPTION_INITIAL",
-    "CALENDAR_SUBSCRIPTION_RENEWAL",
-    "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
-    "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL",
-  ] as const;
-
-  const monthRevenue =
-    await db.paymentRecord.aggregate({
-      _sum: {
-        amountNgn: true,
-      },
-      where: {
-        revenueStatus: "LIVE",
-        type: {
-          in: [
-            ...workspacePaymentTypes,
-          ],
-        },
-        createdAt: {
-          gte: startOfMonth,
-        },
-      },
-    });
-
-  const yearRevenue =
-    await db.paymentRecord.aggregate({
-      _sum: {
-        amountNgn: true,
-      },
-      where: {
-        revenueStatus: "LIVE",
-        type: {
-          in: [
-            ...workspacePaymentTypes,
-          ],
-        },
-        createdAt: {
-          gte: startOfYear,
-        },
-      },
-    });
+  const monthRevenue = await getLiveRevenueTotals({tool:"workspace",from:startOfMonth});
+  const yearRevenue = await getLiveRevenueTotals({tool:"workspace",from:startOfYear});
 
   // ------------------------------------------------------------
   // URL HELPERS
@@ -1108,18 +1061,14 @@ export default async function AdminSocialCalendarsPage({
               <RevenueMetric
                 label="This month"
                 value={formatNgn(
-                  monthRevenue
-                    ._sum
-                    .amountNgn ?? 0
+                  monthRevenue.amountNgn ?? 0
                 )}
               />
 
               <RevenueMetric
                 label="This year"
                 value={formatNgn(
-                  yearRevenue
-                    ._sum
-                    .amountNgn ?? 0
+                  yearRevenue.amountNgn ?? 0
                 )}
               />
             </div>

@@ -2,7 +2,8 @@
 // Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -1215,6 +1216,7 @@ enum PartnerCommissionStatus {
 
 enum PaymentType {
   PROJECT_ONE_TIME
+  PORTFOLIO_ONE_TIME
   SUBSCRIPTION_INITIAL
   SUBSCRIPTION_RENEWAL
   PORTFOLIO_SUBSCRIPTION_INITIAL
@@ -2627,4 +2629,48 @@ model BillingBenefitNotification {
   createdAt DateTime @default(now())
   @@index([status, nextAttemptAt])
   @@index([offerId])
+}
+
+// Stable provider scan window and lease let interrupted syncs resume without skipping charges.
+model PaymentRevenueSyncState {
+  id           String   @id
+  scanFrom     DateTime?
+  scanTo       DateTime?
+  nextPage     Int      @default(1)
+  lastSyncedAt DateTime?
+  leaseUntil   DateTime?
+  leaseToken   String?
+  lastError    String?
+  updatedAt    DateTime @updatedAt
+}
+
+// Failed or unmatched provider references stay visible and retryable; never fabricated as revenue.
+model PaymentRevenueSyncIssue {
+  id          String   @id
+  integration String
+  reference   String
+  reason      String
+  attempts    Int      @default(1)
+  resolvedAt  DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([integration, reference])
+  @@index([integration, resolvedAt, updatedAt])
+}
+
+// Provider receipts survive account deletion and preserve live charges awaiting account attribution.
+model PaymentRevenueReceipt {
+  reference       String   @id
+  integration     String
+  amountKobo      BigInt
+  currency        String
+  paidAt          DateTime
+  tool            String   @default("unattributed")
+  creatorId       String?
+  paymentRecordId String?
+  verifiedAt      DateTime @updatedAt
+
+  @@index([paidAt])
+  @@index([tool, paidAt])
+  @@index([creatorId])
 }

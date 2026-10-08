@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { createPlan, initializeSubscription, updatePrivatePlanPrice, verifyTransaction } from "@/lib/paystack";
+import { extractPaystackPlanCode } from "@/lib/paystackPlan";
 import { tierFromPlanCode, type PaidTier, type BillingCycle } from "@/lib/subscriptionTiers";
 import { contentWorkspacePlanFromPaystackPlanCode, type ContentWorkspacePlan } from "@/lib/contentWorkspaceEntitlements";
 import { addCalendarMonths, chooseOffer, discountedPrice, discountCycles, priceForProduct, type BillingProduct } from "@/lib/billingOfferRules";
@@ -97,7 +98,7 @@ export async function recordOfferPayment(reference: string, verified?: any): Pro
   const verification = verified ?? await verifyTransaction(reference);
   const data = verification?.data;
   if (!verification?.status || data?.status !== "success" || data.reference !== reference || data.currency !== "NGN" || !["live", "test"].includes(data.domain)) return;
-  const planCode = typeof data.plan === "string" ? data.plan : data.plan?.plan_code;
+  const planCode = extractPaystackPlanCode(data);
   const snapshot = await db.billingOfferSubscription.findFirst({ where: { OR: [
     { checkoutReference: reference }, ...(planCode ? [{ paystackPlanCode: planCode }] : []),
   ] }, include: { creator: { select: { email: true } } } });

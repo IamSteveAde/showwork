@@ -1,7 +1,8 @@
+import { extractPaystackPlanCode } from "@/lib/paystackPlan";
+import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
 import { NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
-import { processReferralCommission } from "@/lib/partnerCommissions";
 import { db } from "@/lib/db";
 import { verifyTransaction, fetchCustomerSubscriptions, cancelSubscription } from "@/lib/paystack";
 import {
@@ -108,10 +109,9 @@ export async function POST() {
      * identifier. Metadata is used as a fallback because the
      * checkout route also sends the Content Workspace plan.
      */
-    const transactionPlanCode =
-      typeof verification?.data?.plan === "string"
-        ? verification.data.plan
-        : verification?.data?.plan?.plan_code ?? null;
+    await syncVerifiedPayment(pendingReference, verification, { expectedCreatorId: creator.id });
+
+    const transactionPlanCode = extractPaystackPlanCode(verification?.data);
 
     await recordOfferPayment(pendingReference, verification);
 
@@ -212,50 +212,6 @@ export async function POST() {
       },
     });
 
-    /*
-     * Record the initial payment.
-     *
-     * The webhook can also receive the same payment.
-     * paystackReference is unique, so a duplicate webhook/payment
-     * record will be safely ignored below.
-     */
-    let paymentRecord;
-
-try {
-  paymentRecord = await db.paymentRecord.create({
-    data: {
-      creatorId: creator.id,
-      amountNgn: Math.round(
-        (verification?.data?.amount ?? 0) / 100
-      ),
-      type: "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
-      contentWorkspacePlan: plan,
-      paystackReference: pendingReference,
-    },
-  });
-} catch (err) {
-  console.error(
-    `PaymentRecord already exists during direct Content Workspace subscription verification (creator ${creator.id})`,
-    err
-  );
-
-  paymentRecord = await db.paymentRecord.findUnique({
-    where: {
-      paystackReference: pendingReference,
-    },
-  });
-}
-
-if (paymentRecord) {
-  try {
-    await processReferralCommission(paymentRecord);
-  } catch (err) {
-    console.error(
-      `Failed to process partner commission for Content Workspace payment ${paymentRecord.id}`,
-      err
-    );
-  }
-}
     return NextResponse.json({
       ok: true,
       alreadyActive: false,

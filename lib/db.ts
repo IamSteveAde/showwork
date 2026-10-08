@@ -28,10 +28,13 @@ function createDatabase() {
 
 // A generated schema can change while Next's development process retains globals.
 // Reuse the connection pool only when it was built for this schema.
-const schemaSignature = JSON.stringify(Prisma.dmmf.datamodel.models.map(model => ({
-  name: model.name,
-  fields: model.fields.map(field => ({ name: field.name, type: field.type, kind: field.kind, isList: field.isList, isRequired: field.isRequired })),
-})));
+const schemaSignature = JSON.stringify({
+  models: Prisma.dmmf.datamodel.models.map(model => ({
+    name: model.name,
+    fields: model.fields.map(field => ({ name: field.name, type: field.type, kind: field.kind, isList: field.isList, isRequired: field.isRequired })),
+  })),
+  enums: Prisma.dmmf.datamodel.enums.map(value => ({ name: value.name, values: value.values.map(entry => entry.name) })),
+});
 const globalForPrisma = globalThis as unknown as {
   revenuePrisma?: ReturnType<typeof createDatabase>;
   revenuePrismaSchema?: string;

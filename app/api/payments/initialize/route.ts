@@ -1,3 +1,4 @@
+import { getCurrentCreator } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
@@ -8,7 +9,10 @@ import { initializeTransaction } from "@/lib/paystack";
 // transaction and return the checkout URL for the browser to redirect to.
 export async function POST(req: NextRequest) {
   try {
-    const { projectId, creatorEmail } = await req.json();
+    const creator=await getCurrentCreator();
+    if(!creator)return NextResponse.json({error:"Unauthorized"},{status:401});
+    const { projectId } = await req.json();
+    const creatorEmail=creator.email;
 
     if (!projectId || !creatorEmail) {
       return NextResponse.json(
@@ -18,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const project = await db.project.findUnique({ where: { id: projectId } });
-    if (!project) {
+    if (!project || project.creatorId!==creator.id) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
     if (project.paid) {

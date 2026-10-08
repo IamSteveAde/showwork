@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
-const COLOR = { gold: "#F5C842", black: "#0A0A0A", charcoal: "#1A1A1A" };
+const COLOR = { gold: "#2563EB", black: "#F6F8FB", charcoal: "#FFFFFF" };
 
 // Converts Nigerian phone numbers into the international format WhatsApp requires.
 // Supports:
@@ -308,38 +308,38 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
     }
   };
 
-  const inputClass = "w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/25";
-  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-white/40";
-  const smallInputClass = "w-full rounded-md border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white outline-none focus:border-white/25";
+  const inputClass = "w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-200";
+  const labelClass = "mb-1.5 block text-xs font-semibold uppercase text-slate-500";
+  const smallInputClass = "w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-slate-200";
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal }}>
+    <div className="rounded-2xl p-6" style={{ background: COLOR.charcoal, border: "1px solid #E2E8F0" }}>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>
+          <h2 className="text-sm font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>
             Webinars
           </h2>
-          <p className="mt-1 text-xs text-white/30">
+          <p className="mt-1 text-xs text-slate-500">
             Upcoming / past is never set by hand — the public page computes it from the date and time below, automatically, the moment it passes.
           </p>
         </div>
         {!adding && (
-          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: COLOR.black }}>
+          <button onClick={startAdd} className="rounded-lg px-4 py-2 text-xs font-semibold" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
             + Add webinar
           </button>
         )}
       </div>
 
       {adding && (
-        <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "rgba(255,255,255,0.04)" }}>
+        <div className="mb-6 flex flex-col gap-4 rounded-xl p-5" style={{ background: "#F8FAFC" }}>
           <div>
-            <label className={labelClass}>Flyer <span className="normal-case text-white/25">(recommended 1080×1350px, portrait)</span></label>
+            <label className={labelClass}>Flyer <span className="normal-case text-slate-500">(recommended 1080×1350px, portrait)</span></label>
             <div className="flex items-center gap-3">
               {form.flyerImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={form.flyerImageUrl} alt="" className="h-16 w-12 flex-shrink-0 rounded-md object-cover" />
               )}
-              <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-white/15 px-3 py-2.5 text-center text-xs text-white/50 hover:border-white/25">
+              <label className="flex-1 cursor-pointer rounded-lg border border-dashed border-slate-200 px-3 py-2.5 text-center text-xs text-slate-500 hover:border-slate-200">
                 {uploading ? `Uploading ${uploadPercent}%` : form.flyerImageUrl ? "Change flyer" : "Upload flyer"}
                 <input
                   type="file"
@@ -362,11 +362,11 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
               <input type="text" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div className="sm:col-span-2">
-              <label className={labelClass}>Description <span className="normal-case text-white/25">(shown on the webinar's own landing page)</span></label>
+              <label className={labelClass}>Description <span className="normal-case text-slate-500">(shown on the webinar's own landing page)</span></label>
               <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} style={{ fontSize: "16px" }} className={`${inputClass} resize-none`} />
             </div>
             <div className="sm:col-span-2">
-              <label className={labelClass}>What to expect <span className="normal-case text-white/25">(one point per line — shown as a bullet list)</span></label>
+              <label className={labelClass}>What to expect <span className="normal-case text-slate-500">(one point per line — shown as a bullet list)</span></label>
               <textarea rows={4} value={form.whatToExpect} onChange={(e) => setForm({ ...form, whatToExpect: e.target.value })} style={{ fontSize: "16px" }} className={`${inputClass} resize-none`} placeholder={"e.g.\nHow to price your first client project\nLive Q&A with the panel"} />
             </div>
             <div>
@@ -378,38 +378,38 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
               <input type="text" placeholder="Physical location, or Online" value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Meeting link <span className="normal-case text-white/25">(emailed to everyone who RSVPs)</span></label>
+              <label className={labelClass}>Meeting link <span className="normal-case text-slate-500">(emailed to everyone who RSVPs)</span></label>
               <input type="url" placeholder="https://" value={form.applyUrl} onChange={(e) => setForm({ ...form, applyUrl: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Replay link <span className="normal-case text-white/25">(add once available, after it's happened)</span></label>
+              <label className={labelClass}>Replay link <span className="normal-case text-slate-500">(add once available, after it's happened)</span></label>
               <input type="url" placeholder="https://" value={form.replayUrl} onChange={(e) => setForm({ ...form, replayUrl: e.target.value })} style={{ fontSize: "16px" }} className={inputClass} />
             </div>
           </div>
 
-          <div className="border-t border-white/10 pt-4">
+          <div className="border-t border-slate-200 pt-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xs font-semibold uppercase text-white/40" style={{ letterSpacing: "0.08em" }}>Hosts & speakers</h3>
-                <p className="mt-1 text-xs text-white/25">Everything but name and title is optional.</p>
+                <h3 className="text-xs font-semibold uppercase text-slate-500" style={{ letterSpacing: "0.08em" }}>Hosts & speakers</h3>
+                <p className="mt-1 text-xs text-slate-500">Everything but name and title is optional.</p>
               </div>
-              <button type="button" onClick={addSpeaker} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}>
+              <button type="button" onClick={addSpeaker} className="rounded-lg px-3 py-1.5 text-xs font-semibold" style={{ background: "#EFF6FF", color: COLOR.gold }}>
                 + Add person
               </button>
             </div>
 
-            {speakers.length === 0 && <p className="text-xs text-white/25">No speakers added yet.</p>}
+            {speakers.length === 0 && <p className="text-xs text-slate-500">No speakers added yet.</p>}
 
             <div className="flex flex-col gap-4">
               {speakers.map((speaker, index) => (
-                <div key={index} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)" }}>
+                <div key={index} className="rounded-xl p-4" style={{ background: "#F8FAFC" }}>
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {speaker.profileImageUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={speaker.profileImageUrl} alt="" className="h-9 w-9 flex-shrink-0 rounded-full object-cover" />
                       )}
-                      <label className="cursor-pointer text-[10px] font-semibold uppercase text-white/30 underline hover:text-white/50">
+                      <label className="cursor-pointer text-[10px] font-semibold uppercase text-slate-500 underline hover:text-slate-500">
                         {uploadingSpeakerIndex === index ? `Uploading ${uploadPercent}%` : speaker.profileImageUrl ? "Change photo" : "Upload photo"}
                         <input
                           type="file"
@@ -456,7 +456,7 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                         style={{ fontSize: "16px" }}
                         className={`${smallInputClass} resize-none`}
                       />
-                      <p className="mt-1 text-right text-[10px] text-white/25">{speaker.bio.length}/{MAX_BIO_LENGTH}</p>
+                      <p className="mt-1 text-right text-[10px] text-slate-500">{speaker.bio.length}/{MAX_BIO_LENGTH}</p>
                     </div>
                     <input
                       type="url"
@@ -498,61 +498,61 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
 
           {(uploadError || saveError) && <p role="alert" className="text-xs text-red-400">{uploadError || saveError}</p>}
           <div className="flex items-center gap-3">
-            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: COLOR.black }}>
+            <button onClick={submit} disabled={saving} className="rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: COLOR.gold, color: "#FFFFFF" }}>
               {saving ? "Saving..." : editingId ? "Save changes" : "Add webinar"}
             </button>
-            <button onClick={cancel} className="text-xs text-white/40 hover:text-white">Cancel</button>
+            <button onClick={cancel} className="text-xs text-slate-500 hover:text-slate-900">Cancel</button>
           </div>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        {webinars.length === 0 && <p className="text-sm text-white/30">No webinars yet.</p>}
+        {webinars.length === 0 && <p className="text-sm text-slate-500">No webinars yet.</p>}
         {webinars.map((w) => {
           const isPast = new Date(w.startsAt) < new Date();
           const isExpanded = expandedWebinarId === w.id;
           const rsvps = rsvpsByWebinar[w.id];
 
           return (
-            <div key={w.id} className="rounded-lg" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div key={w.id} className="rounded-lg" style={{ background: "#F8FAFC" }}>
               <div className="flex items-center justify-between gap-3 p-3">
                 <div className="flex min-w-0 items-center gap-3">
                   {w.flyerImageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={w.flyerImageUrl} alt="" className="h-11 w-9 flex-shrink-0 rounded object-cover" />
                   ) : (
-                    <div className="h-11 w-9 flex-shrink-0 rounded" style={{ background: "rgba(255,255,255,0.08)" }} />
+                    <div className="h-11 w-9 flex-shrink-0 rounded" style={{ background: "#F8FAFC" }} />
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white">{w.topic}</p>
-                    <p className="truncate text-xs text-white/40">
+                    <p className="truncate text-sm font-medium text-slate-900">{w.topic}</p>
+                    <p className="truncate text-xs text-slate-500">
                       {new Date(w.startsAt).toLocaleString()} · {isPast ? "Past" : "Upcoming"} · {w.speakers.length} speaker{w.speakers.length === 1 ? "" : "s"}
                     </p>
-                    <a href={`/webinars/${w.slug}`} target="_blank" rel="noopener noreferrer" className="truncate text-xs underline" style={{ color: "#68B2FF" }}>
+                    <a href={`/webinars/${w.slug}`} target="_blank" rel="noopener noreferrer" className="truncate text-xs underline" style={{ color: "#2563EB" }}>
                       /webinars/{w.slug}
                     </a>
                   </div>
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-3">
-                  <button onClick={() => toggleRsvps(w.id)} className="text-xs font-semibold" style={{ color: "#68B2FF" }}>
+                  <button onClick={() => toggleRsvps(w.id)} className="text-xs font-semibold" style={{ color: "#2563EB" }}>
                     {isExpanded ? "Hide RSVPs" : "View RSVPs"}
                   </button>
                   <button onClick={() => startEdit(w)} className="text-xs font-semibold" style={{ color: COLOR.gold }}>Edit</button>
-                  <button onClick={() => remove(w.id)} className="text-xs text-white/30 hover:text-red-400">Remove</button>
+                  <button onClick={() => remove(w.id)} className="text-xs text-slate-500 hover:text-red-400">Remove</button>
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="border-t border-white/10 p-4">
+                <div className="border-t border-slate-200 p-4">
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-white/50">
+                    <p className="text-xs font-semibold text-slate-500">
                       {rsvps ? `${rsvps.length} RSVP${rsvps.length === 1 ? "" : "s"}` : "Loading..."}
                     </p>
                     {rsvps && rsvps.length > 0 && (
                       <a
                         href={`/api/admin/creativo/webinars/${w.id}/rsvps/export`}
                         className="rounded-lg px-3 py-1.5 text-xs font-semibold"
-                        style={{ background: "rgba(245,200,66,0.15)", color: COLOR.gold }}
+                        style={{ background: "#EFF6FF", color: COLOR.gold }}
                       >
                         Export CSV
                       </a>
@@ -560,25 +560,25 @@ export default function CreativoWebinarManager({ initialWebinars }: { initialWeb
                   </div>
 
                   {loadingRsvps && !rsvps ? (
-                    <p className="text-xs text-white/30">Loading RSVPs...</p>
+                    <p className="text-xs text-slate-500">Loading RSVPs...</p>
                   ) : rsvps && rsvps.length === 0 ? (
-                    <p className="text-xs text-white/30">No RSVPs yet for this webinar.</p>
+                    <p className="text-xs text-slate-500">No RSVPs yet for this webinar.</p>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {rsvps?.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg p-3 text-xs" style={{ background: "rgba(255,255,255,0.03)" }}>
+                        <div key={r.id} className="flex items-center justify-between gap-3 rounded-lg p-3 text-xs" style={{ background: "#F8FAFC" }}>
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-white">{r.name}</span>
-                              <span className="text-white/30">·</span>
-                              <span className="text-white/50">{r.field}</span>
+                              <span className="font-semibold text-slate-900">{r.name}</span>
+                              <span className="text-slate-500">·</span>
+                              <span className="text-slate-500">{r.field}</span>
                               {r.joinedCommunity && (
-                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>
+                                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: "rgba(74,222,128,0.15)", color: "#15803D" }}>
                                   In community
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1 text-white/40">{r.email} · {r.whatsappNumber}</p>
+                            <p className="mt-1 text-slate-500">{r.email} · {r.whatsappNumber}</p>
                           </div>
                           <a
                             href={rsvpWhatsappHref(r.whatsappNumber, r.name, w.topic)}

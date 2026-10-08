@@ -1,0 +1,11 @@
+.admin-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.admin-shell input[type="date"] { color-scheme: light; }
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *, .admin-shell *::before, .admin-shell *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

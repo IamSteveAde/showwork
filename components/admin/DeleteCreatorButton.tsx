@@ -25,7 +25,7 @@ export default function DeleteCreatorButton({
       setLoading(false);
       return;
     }
-    router.push("/admin");
+    router.push("/admin/accounts");
   };
 
   if (confirming) {

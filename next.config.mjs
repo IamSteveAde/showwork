@@ -2,6 +2,12 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/.prisma/client/libquery_engine-rhel-openssl-3.0.x.so.node"],
+  },
+  outputFileTracingExcludes: {
+    "/**": ["./node_modules/.prisma/client/libquery_engine-darwin.dylib.node"],
+  },
   webpack(config, { isServer }) {
     config.output.environment = { ...config.output.environment, asyncFunction: true };
     config.experiments = { ...config.experiments, asyncWebAssembly: true };

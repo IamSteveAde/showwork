@@ -16,6 +16,9 @@ import {
   cancelSubscription,
 } from "@/lib/paystack";
 import BillingSubscriptions from "./BillingSubscriptions";
+import { syncVerifiedPayment } from "@/lib/paymentSync";
+import { extractPaystackPlanCode } from "@/lib/paystackPlan";
+import { processReferralCommission } from "@/lib/partnerCommissions";
 
 export default async function BillingPage({
   searchParams,
@@ -127,10 +130,7 @@ export default async function BillingPage({
       const isSuccessful =
         verification?.data?.status === "success";
 
-      const planCode: string | undefined =
-        typeof verification?.data?.plan === "string"
-          ? verification.data.plan
-          : verification?.data?.plan?.plan_code;
+      const planCode = extractPaystackPlanCode(verification?.data);
 
       const match = planCode
         ? await resolveDeliveryPlan(planCode, creator.id)
@@ -150,12 +150,17 @@ export default async function BillingPage({
       const alreadyProcessed = paidAt && creator.currentCycleStart &&
         new Date(paidAt).getTime() < creator.currentCycleStart.getTime();
 
+      if (isSuccessful && match && customerCode) {
+        const { payment: paymentRecord } = await syncVerifiedPayment(ref, verification, { expectedCreatorId: creator.id });
+        await recordOfferPayment(ref, verification);
+        await processReferralCommission(paymentRecord);
+      }
+
       if (isSuccessful && match && customerCode && alreadyProcessed) {
         paymentVerified = true;
       }
 
       if (isSuccessful && match && customerCode && !alreadyProcessed) {
-        await recordOfferPayment(ref, verification);
         const { tier, cycle } = match;
 
         const subs =

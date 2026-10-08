@@ -1,3 +1,5 @@
+import { extractPaystackPlanCode } from "@/lib/paystackPlan";
+import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -136,12 +138,9 @@ export async function POST(
      * identifier. Metadata is used as a fallback because the
      * checkout route also sends the Content Workspace plan.
      */
-    const transactionPlanCode =
-      typeof verification?.data?.plan ===
-      "string"
-        ? verification.data.plan
-        : verification?.data?.plan?.plan_code ??
-          null;
+    await syncVerifiedPayment(pendingReference, verification, { expectedCreatorId: creator.id });
+
+    const transactionPlanCode = extractPaystackPlanCode(verification?.data);
 
     await recordOfferPayment(pendingReference, verification);
 
@@ -233,40 +232,6 @@ export async function POST(
           null,
       },
     });
-
-    /*
-     * Record the initial payment.
-     *
-     * The webhook can also receive the same payment. The existing
-     * system deliberately tolerates duplicate PaymentRecord creation
-     * because Paystack retries/events can arrive independently.
-     */
-    try {
-      await db.paymentRecord.create({
-        data: {
-          creatorId: creator.id,
-
-          amountNgn: Math.round(
-            (verification?.data?.amount ?? 0) /
-              100
-          ),
-
-          type:
-            "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL",
-
-          contentWorkspacePlan:
-            plan,
-
-          paystackReference:
-            pendingReference,
-        },
-      });
-    } catch (err) {
-      console.error(
-        `Failed to create PaymentRecord during direct Content Workspace subscription verification (creator ${creator.id})`,
-        err
-      );
-    }
 
     return NextResponse.json({
       ok: true,

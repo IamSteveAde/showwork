@@ -6,7 +6,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { db } from "@/lib/db";
 import BlogPostEditor from "@/components/admin/blog/BlogPostEditor";
 
-const COLOR = { black: "#0A0A0A" };
+const COLOR = { black: "#F6F8FB" };
 
 export default async function AdminBlogEditPage({
   params,
@@ -35,9 +35,9 @@ export default async function AdminBlogEditPage({
     .sort();
 
   return (
-    <main className="min-h-screen px-6 py-12 md:px-20" style={{ background: COLOR.black }}>
+    <main className="min-h-screen p-5 sm:p-8" style={{ background: COLOR.black }}>
       <div className="mx-auto max-w-3xl">
-        <Link href="/admin/blog" className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white"><>{" "}<UiSymbol name="left" />{" Back to all posts "}</></Link>
+        <Link href="/admin/blog" className="mb-8 inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"><>{" "}<UiSymbol name="left" />{" Back to all posts "}</></Link>
 
         <BlogPostEditor
           post={{
