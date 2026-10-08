@@ -507,15 +507,14 @@ function WallTile({
         )}
 
         <div
-          className="absolute right-3 top-3 transition-all duration-300"
-          style={{ opacity: hovered ? 1 : 0, transform: hovered ? "translateY(0)" : "translateY(-5px)" }}
+          className="absolute right-3 top-3 opacity-100 transition-opacity duration-300 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
         >
-          {item.type !== "VIDEO" && <DownloadIconButton onDownload={() => downloadFile(item.id)} />}
+          <DownloadIconButton onDownload={() => downloadFile(item.id)} />
         </div>
 
         {item.type === "VIDEO" && (
           <div
-            className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/40 px-2.5 py-1.5 text-[9px] font-medium text-white/75 backdrop-blur"
+            className="absolute right-14 top-3 rounded-full border border-white/15 bg-black/40 px-2.5 py-1.5 text-[9px] font-medium text-white/75 backdrop-blur"
             style={{ opacity: hovered ? 1 : 0 }}
           >
             Motion
