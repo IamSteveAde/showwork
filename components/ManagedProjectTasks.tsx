@@ -1,5 +1,7 @@
 "use client";
 
+import { getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 import AddTaskSubSection from "@/components/AddTaskSubSection";
@@ -62,7 +64,7 @@ function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded:
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("Content-Type", getFileContentType(file) || "application/octet-stream");
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(e.loaded, e.total);
     };
@@ -163,9 +165,9 @@ function TaskAssets({
   const [error, setError] = useState<string | null>(null);
 
   const detectType = (file: File): string => {
-    if (file.type.startsWith("video/")) return "VIDEO";
-    if (file.type === "application/pdf") return "PDF";
-    if (file.type.startsWith("image/")) return "PHOTO";
+    if (getFileContentType(file).startsWith("video/")) return "VIDEO";
+    if (getFileContentType(file) === "application/pdf") return "PDF";
+    if (getFileContentType(file).startsWith("image/")) return "PHOTO";
     return "DOCUMENT";
   };
 
@@ -176,7 +178,7 @@ function TaskAssets({
         const presignRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-presign`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+          body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
         });
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
@@ -212,7 +214,7 @@ function TaskAssets({
       const startRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const startData = await startRes.json();
       if (!startRes.ok) throw new Error(startData.error ?? "Failed to start large-file upload");

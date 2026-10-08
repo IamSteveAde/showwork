@@ -1,3 +1,4 @@
+import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getCurrentCreator } from "@/lib/auth";
@@ -9,7 +10,11 @@ export async function POST(req: NextRequest) {
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!isAdminEmail(creator.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { filename, contentType } = await req.json();
+  const { filename, contentType: suppliedContentType } = await req.json();
+  const contentType = resolveFileContentType(
+    typeof filename === "string" ? filename : "",
+    typeof suppliedContentType === "string" ? suppliedContentType : ""
+  );
 
   if (!contentType || !isAllowedContentType(contentType)) {
     return NextResponse.json({ error: "Unsupported file type" }, { status: 400 });

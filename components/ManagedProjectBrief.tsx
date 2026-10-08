@@ -1,5 +1,7 @@
 "use client";
 
+import { getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { putFileWithProgress } from "@/lib/uploadClient";
@@ -82,13 +84,13 @@ function BriefAttachments({ managedProjectId, isOwner }: { managedProjectId: str
       const presignRes = await fetch(`/api/managed-projects/${managedProjectId}/brief-attachments/upload-presign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
       await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: file.type,
+        contentType: getFileContentType(file),
         onProgress: ({ percent }) => setUploadPercent(percent),
       });
 

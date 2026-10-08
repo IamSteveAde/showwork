@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
@@ -76,12 +78,12 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
       const presignRes = await fetch("/api/admin/spotlight/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
-      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setUploadPercent(percent) });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: getFileContentType(file), onProgress: ({ percent }) => setUploadPercent(percent) });
 
       setForm((f) => ({ ...f, heroImageUrl: presignData.publicUrl }));
     } catch (err) {
@@ -208,7 +210,7 @@ export default function SpotlightCycleManager({ initialCycles }: { initialCycles
                 {uploading ? `Uploading ${uploadPercent}%` : form.heroImageUrl ? "Change image" : "Upload image"}
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept={IMAGE_FILE_ACCEPT}
                   className="hidden"
                   disabled={uploading}
                   onChange={(e) => {

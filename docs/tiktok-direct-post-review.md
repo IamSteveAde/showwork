@@ -14,9 +14,9 @@ and media edits continue to require a client revision.
    Migration `20261008160000_tiktok_direct_post_compliance` adds post settings,
    consent evidence and account-wide API pacing. Historical scheduled TikTok
    posts become unscheduled; users must review and authorize them again.
-3. Deploy Next.js and Netlify functions together. `ffprobe-static` must be
-   packaged for media checks: Next output tracing and the two function-specific
-   `netlify.toml` sections include only the Linux x64 binary for the Next server
+3. Deploy Next.js and Netlify functions together. `ffprobe-static` and
+   `ffmpeg-static` must be packaged for media checks and conversion: Next output tracing and the two function-specific
+   `netlify.toml` sections include only the runtime binaries for the Next server
    and publishing worker. Do not add ffprobe to global function includes or
    external packages: that duplicates large binaries into unrelated functions.
    Verify executable permissions in the deployed function.
@@ -101,3 +101,28 @@ app restrictions.
 - https://developers.tiktok.com/doc/content-posting-api-reference-photo-post
 - https://developers.tiktok.com/doc/content-posting-api-media-transfer-guide
 - https://developers.tiktok.com/doc/content-posting-api-reference-get-video-status
+
+## Input formats and automatic preparation
+
+Uploads are not limited to TikTok's output extensions. PNG, JPEG, WebP, AVIF,
+TIFF, GIF, SVG and decodable HEIC/HEIF files are converted into JPEG photos. Additional image decoders use
+FFmpeg where available. Photos retain aspect ratio, are resized to fit 1080p,
+use white for transparency and the first frame for animated inputs. Proprietary
+camera/editor formats that neither decoder can read require an exported copy;
+a file extension alone cannot make arbitrary or corrupt bytes publishable.
+
+Video source validation accepts the decodable video containers supported by the
+conversion pipeline, including AVI, MKV, WMV/ASF, FLV, MPEG, Ogg, 3GP/MOV/MP4,
+MXF and WebM. Compatible videos can pass through. Others are transcoded by the
+background worker to H.264/AAC MP4 without trimming. Resizing/padding and frame
+rate normalization are disclosed beside the publishing consent. Creator duration
+and platform size limits still apply. Very large or complex conversions may need
+a smaller exported copy to fit the worker's time/temporary-disk limits.
+
+Original assets are never replaced. Worker-only prepared copies use generated
+`tiktok-prepared-<UUID>.jpg/.mp4` names in the same source folder, preserving
+existing verified URL prefixes. The daily storage cleanup removes copies older
+than seven days; its R2 credential needs list/delete access. Only generated names
+are eligible; original assets are excluded. The updated consent version requires
+previously authorized posts to be reviewed and authorized again. This change
+adds no database migration.

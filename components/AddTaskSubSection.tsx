@@ -1,5 +1,7 @@
 "use client";
 
+import { getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useRef } from "react";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 
@@ -9,7 +11,7 @@ function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded:
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("Content-Type", getFileContentType(file) || "application/octet-stream");
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
     xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`)));
     xhr.onerror = () => reject(new Error("Network error during upload"));
@@ -104,9 +106,9 @@ const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function detectType(file: File): string {
-  if (file.type.startsWith("video/")) return "VIDEO";
-  if (file.type === "application/pdf") return "PDF";
-  if (file.type.startsWith("image/")) return "PHOTO";
+  if (getFileContentType(file).startsWith("video/")) return "VIDEO";
+  if (getFileContentType(file) === "application/pdf") return "PDF";
+  if (getFileContentType(file).startsWith("image/")) return "PHOTO";
   return "DOCUMENT";
 }
 
@@ -173,7 +175,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
         const presignRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-presign`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+          body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
         });
         const presignData = await presignRes.json();
         if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
@@ -215,7 +217,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
       const startRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const startData = await startRes.json();
       if (!startRes.ok) return { ok: false, error: startData.error ?? "Failed to start large-file upload" };

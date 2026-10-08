@@ -1,4 +1,7 @@
 "use client";
+
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -40,7 +43,7 @@ function uploadWithProgress(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    xhr.setRequestHeader("Content-Type", getFileContentType(file) || "application/octet-stream");
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(e.loaded, e.total);
     };
@@ -184,10 +187,10 @@ const CHUNK_CONCURRENCY = 3;
 // individually, not whatever was picked upfront for the section as a
 // whole.
 function detectFileType(file: File, fallback: MediaType): MediaType {
-  if (file.type === "application/pdf") return "PDF";
-  if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "DOCUMENT";
-  if (file.type.startsWith("video/")) return "VIDEO";
-  if (file.type.startsWith("image/")) return "PHOTO";
+  if (getFileContentType(file) === "application/pdf") return "PDF";
+  if (getFileContentType(file) === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") return "DOCUMENT";
+  if (getFileContentType(file).startsWith("video/")) return "VIDEO";
+  if (getFileContentType(file).startsWith("image/")) return "PHOTO";
   return fallback;
 }
 
@@ -286,7 +289,7 @@ export default function AddMoreFilesButton({
           body: JSON.stringify({
             projectId,
             filename: file.name,
-            contentType: file.type,
+            contentType: getFileContentType(file),
             fileSizeMb: file.size / (1024 * 1024),
           }),
         });
@@ -342,7 +345,7 @@ export default function AddMoreFilesButton({
         body: JSON.stringify({
           projectId,
           filename: file.name,
-          contentType: file.type,
+          contentType: getFileContentType(file),
           fileSizeMb: file.size / (1024 * 1024),
         }),
       });
@@ -644,9 +647,9 @@ export default function AddMoreFilesButton({
               multiple
               accept={
                 mediaType === "VIDEO"
-                  ? "video/*"
+                  ? VIDEO_FILE_ACCEPT
                   : mediaType === "PHOTO"
-                    ? "image/*"
+                    ? IMAGE_FILE_ACCEPT
                     : ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               }
               onChange={(e) => handleFileSelection(Array.from(e.target.files ?? []))}

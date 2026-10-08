@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import {
   useEffect,
@@ -127,9 +129,9 @@ function mediaDescription(type: MediaType) {
 function mediaAccept(type: MediaType) {
   switch (type) {
     case "PHOTO":
-      return "image/jpeg,image/png,image/webp,image/svg+xml,image/avif";
+      return IMAGE_FILE_ACCEPT;
     case "VIDEO":
-      return "video/mp4,video/quicktime,video/webm";
+      return VIDEO_FILE_ACCEPT;
     case "PDF":
       return "application/pdf";
     case "DOCUMENT":
@@ -156,7 +158,7 @@ function uploadWithProgress(
   onProgress: (loaded: number, total: number) => void
 ): Promise<void> {
   return putFileWithProgress(url, file, {
-    contentType: file.type,
+    contentType: getFileContentType(file),
     onProgress: ({ loaded, total }) => onProgress(loaded, total),
   }).then(() => undefined);
 }
@@ -363,19 +365,19 @@ export default function StartPage() {
 
     const allowed = files.filter((file) => {
       if (builderType === "PHOTO") {
-        return file.type.startsWith("image/");
+        return getFileContentType(file).startsWith("image/");
       }
 
       if (builderType === "VIDEO") {
-        return file.type.startsWith("video/");
+        return getFileContentType(file).startsWith("video/");
       }
 
       if (builderType === "PDF") {
-        return file.type === "application/pdf";
+        return getFileContentType(file) === "application/pdf";
       }
 
       return (
-        file.type ===
+        getFileContentType(file) ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       );
     });
@@ -631,7 +633,7 @@ export default function StartPage() {
               body: JSON.stringify({
                 projectId: project.id,
                 filename: file.name,
-                contentType: file.type,
+                contentType: getFileContentType(file),
                 fileSizeMb:
                   file.size / (1024 * 1024),
               }),

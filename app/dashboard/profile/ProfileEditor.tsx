@@ -1,5 +1,7 @@
-
 "use client";
+
+import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 
 import {
   useRef,
@@ -227,7 +229,7 @@ export default function ProfileEditor({
     setMessage(null);
     setError(null);
 
-    if (!file.type.startsWith("image/")) {
+    if (!getFileContentType(file).startsWith("image/")) {
       setError("Please choose an image file.");
       return;
     }
@@ -258,7 +260,7 @@ export default function ProfileEditor({
           },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type,
+            contentType: getFileContentType(file),
           }),
         }
       );
@@ -275,7 +277,7 @@ export default function ProfileEditor({
       }
 
       await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: file.type,
+        contentType: getFileContentType(file),
         onProgress: ({ percent }) => setAvatarUploadPercent(percent),
       });
 
@@ -366,7 +368,7 @@ export default function ProfileEditor({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/png,image/jpeg,image/webp"
+                accept={IMAGE_FILE_ACCEPT}
                 onChange={handleAvatarChange}
                 className="hidden"
               />

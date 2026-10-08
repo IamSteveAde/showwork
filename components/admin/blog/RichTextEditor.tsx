@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -63,13 +65,13 @@ async function uploadFile(file: File, onProgress: (percent: number) => void): Pr
   const presignRes = await fetch("/api/admin/blog/upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ filename: file.name, contentType: file.type }),
+    body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file) }),
   });
   const presignData = await presignRes.json();
   if (!presignRes.ok) throw new Error(presignData.error || "Upload failed");
 
   await putFileWithProgress(presignData.uploadUrl, file, {
-    contentType: file.type,
+    contentType: getFileContentType(file),
     onProgress: ({ percent }) => onProgress(percent),
   });
 
@@ -104,7 +106,7 @@ export default function RichTextEditor({
   const addImage = useCallback(async () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = IMAGE_FILE_ACCEPT;
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file || !editor) return;
@@ -124,7 +126,7 @@ export default function RichTextEditor({
   const addVideo = useCallback(async () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "video/*";
+    input.accept = VIDEO_FILE_ACCEPT;
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file || !editor) return;

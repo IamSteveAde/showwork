@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
@@ -9,7 +11,7 @@ type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 
 function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
   return putFileWithProgress(url, file, {
-    contentType: file.type || undefined,
+    contentType: getFileContentType(file) || undefined,
     onProgress: ({ loaded, total }) => onProgress(loaded, total),
   }).then(() => undefined);
 }
@@ -90,9 +92,9 @@ export default function ReplaceFileButton({
 
   const accept =
     type === "VIDEO"
-      ? "video/mp4,video/quicktime,video/webm"
+      ? VIDEO_FILE_ACCEPT
       : type === "PHOTO"
-        ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+        ? IMAGE_FILE_ACCEPT
         : type === "PDF"
           ? "application/pdf"
           : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -107,7 +109,7 @@ export default function ReplaceFileButton({
       const startRes = await fetch(`/api/media/${mediaId}/replace/multipart-start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const startData = await startRes.json();
       if (!startRes.ok) throw new Error(startData.error ?? "Failed to start large-file upload");
@@ -212,7 +214,7 @@ export default function ReplaceFileButton({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             filename: file.name,
-            contentType: file.type,
+            contentType: getFileContentType(file),
             fileSizeMb: file.size / (1024 * 1024),
           }),
         });

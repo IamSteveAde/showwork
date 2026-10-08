@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -24,7 +26,7 @@ function uploadWithProgress(
     xhr.open("PUT", url);
     xhr.setRequestHeader(
       "Content-Type",
-      file.type || "application/octet-stream"
+      getFileContentType(file) || "application/octet-stream"
     );
 
     xhr.upload.onprogress = (event) => {
@@ -397,7 +399,7 @@ export default function PortfolioAddSection({
             },
             body: JSON.stringify({
               filename: file.name,
-              contentType: file.type,
+              contentType: getFileContentType(file),
               fileSizeMb:
                 file.size / (1024 * 1024),
             }),
@@ -515,7 +517,7 @@ export default function PortfolioAddSection({
             },
             body: JSON.stringify({
               filename: file.name,
-              contentType: file.type,
+              contentType: getFileContentType(file),
               fileSizeMb:
                 file.size / (1024 * 1024),
             }),
@@ -1293,9 +1295,9 @@ export default function PortfolioAddSection({
                     multiple
                     accept={
                       mediaType === "VIDEO"
-                        ? "video/mp4,video/quicktime,video/webm"
+                        ? VIDEO_FILE_ACCEPT
                         : mediaType === "PHOTO"
-                          ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+                          ? IMAGE_FILE_ACCEPT
                           : mediaType === "PDF"
                             ? "application/pdf"
                             : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

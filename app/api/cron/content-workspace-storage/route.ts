@@ -1,3 +1,4 @@
+import { cleanupTikTokPreparedFiles } from "@/lib/r2";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanupExpiredContentWorkspaceStorageReservations } from "@/lib/contentWorkspaceUsage";
 
@@ -19,5 +20,6 @@ export async function POST(req: NextRequest) {
   const summary =
     await cleanupExpiredContentWorkspaceStorageReservations();
 
-  return NextResponse.json(summary);
+  const preparedMedia = await cleanupTikTokPreparedFiles();
+  return NextResponse.json({ ...summary, preparedMedia });
 }

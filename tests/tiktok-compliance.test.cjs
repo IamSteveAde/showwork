@@ -104,14 +104,14 @@ test('video and photo API payloads preserve explicit commercial, interaction and
 
 function publisher(extra={},providerStatus='PROCESSING_DOWNLOAD') {
   const s=settings(),p=post({tikTokPublishStatus:'PUBLISHING',tikTokSettings:s,tikTokConsentAt:new Date(),tikTokConsentBy:'actor',tikTokConsentAccountId:'account',tikTokConsentVersion:settingsModule().TIKTOK_CONSENT_VERSION,...extra});
-  p.tikTokConsentHash=extra.tikTokConsentHash || load('lib/tiktokConsent.ts').tikTokConsentHash(p,s,'account');let inits=0;const updates=[];
+  p.tikTokConsentHash=extra.tikTokConsentHash || load('lib/tiktokConsent.ts').tikTokConsentHash(p,s,'account');let inits=0;const updates=[],videoUrls=[];
   const connection={id:'connection',platformAccountId:'account',status:'CONNECTED',accessToken:'fake'};
   const db={calendarPost:{findUniqueOrThrow:async()=>p,updateMany:async args=>{updates.push(args.data);return{count:1};},update:async args=>{updates.push(args.data);Object.assign(p,args.data);return p;}},socialConnection:{findFirst:async()=>extra.disconnected?null:connection,findUniqueOrThrow:async()=>connection}};
-  const api=load('lib/tiktokPublishing.ts',{'@/lib/db':{db},'@/lib/r2':{publicUrlFor:k=>'https://example.test/'+k},'@/lib/socialReporting':{recordPublishedSocialPost:async()=>{}},'@/lib/socialTokens':{requireScopes(){}},'@/lib/tiktokMedia':{validateTikTokMedia:async()=>{}},'@/lib/tiktokConnection':{freshTikTokConnection:async c=>c,reserveTikTokRequest:async()=>{},TikTokRequestBusyError:class extends Error{}},'@/lib/tiktok':{queryTikTokCreatorInfo:async()=>creator,initTikTokVideoPublish:async()=>{inits++;return{publish_id:'provider'};},checkTikTokPublishStatus:async()=>({status:providerStatus}),TikTokApiError:class extends Error{}}});
-  return{run:()=>api.publishPostToTikTok('post'),p,inits:()=>inits,updates};
+  const api=load('lib/tiktokPublishing.ts',{'@/lib/db':{db},'@/lib/r2':{publicUrlFor:k=>'https://example.test/'+k},'@/lib/socialReporting':{recordPublishedSocialPost:async()=>{}},'@/lib/socialTokens':{requireScopes(){}},'@/lib/tiktokMedia':{validateTikTokMedia:async (assets,_creator,options)=>{assert.equal(options.publish,true);return assets.map(()=>({url:'https://example.test/prepared.mp4',converted:true}));}},'@/lib/tiktokConnection':{freshTikTokConnection:async c=>c,reserveTikTokRequest:async()=>{},TikTokRequestBusyError:class extends Error{}},'@/lib/tiktok':{queryTikTokCreatorInfo:async()=>creator,initTikTokVideoPublish:async args=>{videoUrls.push(args.videoUrl);inits++;return{publish_id:'provider'};},checkTikTokPublishStatus:async()=>({status:providerStatus}),TikTokApiError:class extends Error{}}});
+  return{run:()=>api.publishPostToTikTok('post'),p,inits:()=>inits,updates,videoUrls};
 }
 test('worker preserves processing and resumes status checks without another initialization',async()=>{
-  const h=publisher();await h.run();assert.equal(h.p.tikTokPublishStatus,'PUBLISHING');assert.equal(h.p.tikTokPublishId,'provider');assert.equal(h.p.publishWorkerStartedAt,null);await h.run();assert.equal(h.inits(),1);
+  const h=publisher();await h.run();assert.equal(h.p.tikTokPublishStatus,'PUBLISHING',h.p.tikTokPublishError);assert.equal(h.p.tikTokPublishId,'provider');assert.equal(h.p.publishWorkerStartedAt,null);await h.run();assert.equal(h.inits(),1);
 });
 test('worker blocks disconnected account, stale consent and legacy posts before transfer',async()=>{
   for(const extra of [{disconnected:true},{tikTokConsentHash:'stale'},{tikTokConsentAt:null}]) {const h=publisher(extra);await h.run();assert.equal(h.inits(),0);assert.equal(h.p.tikTokPublishStatus,'FAILED');}
@@ -252,4 +252,46 @@ test('probe resolves from the Lambda task root even with a different working dir
 
 test('probe missing from the deployment produces a configuration error before inspecting media',async()=>{
   const m=load('lib/tiktokProbe.ts',{'node:fs/promises':{access:async()=>{throw Object.assign(new Error(),{code:'ENOENT'});}}});await assert.rejects(m.resolveTikTokProbe(),/probe missing/);
+});
+
+test('TikTok prepares PNG, WebP, TIFF and SVG photos as correctly sized JPEGs',async()=>{
+  const sharp=require('sharp'),m=load('lib/tiktokMedia.ts',{'@/lib/r2':{}});
+  const base=sharp({create:{width:2400,height:1200,channels:4,background:{r:255,g:0,b:0,alpha:0.5}}});
+  const inputs=[await base.clone().png().toBuffer(),await base.clone().webp().toBuffer(),await base.clone().tiff().toBuffer(),Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200"><rect width="800" height="1200" fill="blue"/></svg>')];
+  for(let i=0;i<inputs.length;i++) {
+    const jpeg=await m.convertTikTokImage(inputs[i]),meta=await sharp(jpeg).metadata();
+    assert.equal(meta.format,'jpeg');assert.equal(meta.hasAlpha,false);
+    assert.ok(Math.max(meta.width,meta.height)<=1920);assert.ok(Math.min(meta.width,meta.height)<=1080);
+    assert.ok(Math.abs(meta.width/meta.height-(i===3?2/3:2))<0.005);
+  }
+});
+test('TikTok converts a real AVI into compliant MP4',async()=>{
+  const run=require('node:util').promisify(require('node:child_process').execFile),fsp=require('node:fs/promises');
+  const directory=await fsp.mkdtemp(path.join(require('node:os').tmpdir(),'tiktok-video-test-'));
+  const m=load('lib/tiktokMedia.ts',{'@/lib/r2':{}});
+  try {
+    const input=path.join(directory,'source.avi'),output=path.join(directory,'prepared.mp4');
+    const ffmpeg=require('ffmpeg-static'),ffprobe=require('ffprobe-static').path;
+    await run(ffmpeg,['-y','-v','error','-f','lavfi','-i','color=c=blue:s=640x480:r=12','-t','1','-c:v','mpeg4',input]);
+    const source=JSON.parse((await run(ffprobe,['-v','error','-show_streams','-show_format','-of','json',input])).stdout);
+    const args=m.tikTokConversionArgs(input,output,source);args[args.indexOf('-protocol_whitelist')+1]='file,pipe';
+    await run(ffmpeg,args);
+    const metadata=JSON.parse((await run(ffprobe,['-v','error','-show_streams','-show_format','-of','json',output])).stdout);
+    assert.equal(metadata.streams[0].width/metadata.streams[0].height,4/3);
+    assert.doesNotThrow(()=>m.validateTikTokMediaProbe(metadata,fs.statSync(output).size,'VIDEO',180));
+  } finally {await fsp.rm(directory,{recursive:true,force:true});}
+});
+test('TikTok publishing stores a JPEG copy while preflight preserves the original',async()=>{
+  const sharp=require('sharp'),source=await sharp({create:{width:800,height:600,channels:3,background:'red'}}).png().toBuffer();
+  let uploaded;
+  const m=load('lib/tiktokMedia.ts',{'@/lib/r2':{publicUrlFor:key=>'https://media.test/'+key,putTikTokPreparedFile:async(key,bytes,type,size)=>{uploaded={key,bytes,type,size};}}});
+  global.fetch=async(url,options)=>options.method==='HEAD'?new Response(null,{headers:{'content-length':String(source.length)}}):new Response(source);
+  const asset={fileKey:'calendars/c/p/source.png',mediaType:'PHOTO'};
+  await m.validateTikTokMedia([asset],creator);assert.equal(uploaded,undefined);
+  const [result]=await m.validateTikTokMedia([asset],creator,{publish:true});
+  assert.equal(result.url,'https://media.test/'+uploaded.key);assert.equal(uploaded.type,'image/jpeg');
+  assert.equal((await sharp(uploaded.bytes).metadata()).format,'jpeg');assert.equal(asset.fileKey,'calendars/c/p/source.png');
+});
+test('worker submits the prepared media URL to TikTok',async()=>{
+  const h=publisher();await h.run();assert.deepEqual(h.videoUrls,['https://example.test/prepared.mp4']);
 });

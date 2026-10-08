@@ -1,3 +1,4 @@
+import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { getPresignedUploadUrl, isAllowedContentType } from "@/lib/r2";
@@ -53,10 +54,14 @@ export async function POST(
 
   const {
     filename,
-    contentType,
+    contentType: suppliedContentType,
     variant,
     fileSize,
   } = body;
+  const contentType = resolveFileContentType(
+    typeof filename === "string" ? filename : "",
+    typeof suppliedContentType === "string" ? suppliedContentType : ""
+  );
 
   if (!filename || !contentType || !fileSize) {
     return NextResponse.json(

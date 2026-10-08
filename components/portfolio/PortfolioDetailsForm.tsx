@@ -1,5 +1,7 @@
 "use client";
 
+import { IMAGE_FILE_ACCEPT, MEDIA_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
+
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +14,7 @@ interface BannerCandidate {
 }
 
 async function prepareBannerFile(file: File, maxDimension: number): Promise<File> {
-  if (!file.type.startsWith("image/") || typeof createImageBitmap === "undefined") return file;
+  if (!getFileContentType(file).startsWith("image/") || typeof createImageBitmap === "undefined") return file;
   let bitmap: ImageBitmap | undefined;
   try {
     bitmap = await createImageBitmap(file);
@@ -125,12 +127,12 @@ export default function PortfolioDetailsForm({
       const presignRes = await fetch("/api/portfolio/upload/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSizeMb: file.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await putFileWithProgress(presignData.uploadUrl, file, { contentType: file.type, onProgress: ({ percent }) => setPhotoProgress(percent) });
+      await putFileWithProgress(presignData.uploadUrl, file, { contentType: getFileContentType(file), onProgress: ({ percent }) => setPhotoProgress(percent) });
 
       // A profile photo isn't gallery work, so this deliberately never
       // calls /api/portfolio/upload/complete — that route creates a
@@ -161,12 +163,12 @@ export default function PortfolioDetailsForm({
       const presignRes = await fetch("/api/portfolio/upload/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: uploadFile.name, contentType: uploadFile.type, fileSizeMb: uploadFile.size / (1024 * 1024) }),
+        body: JSON.stringify({ filename: uploadFile.name, contentType: getFileContentType(uploadFile), fileSizeMb: uploadFile.size / (1024 * 1024) }),
       });
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await putFileWithProgress(presignData.uploadUrl, uploadFile, { contentType: uploadFile.type, onProgress: ({ percent }) => setProgress(percent) });
+      await putFileWithProgress(presignData.uploadUrl, uploadFile, { contentType: getFileContentType(uploadFile), onProgress: ({ percent }) => setProgress(percent) });
 
       // Same reasoning as the bio photo above — a banner isn't a
       // gallery piece, so this never calls /api/portfolio/upload/
@@ -174,7 +176,7 @@ export default function PortfolioDetailsForm({
       // recorded alongside it so the public page knows whether to
       // render this as an <img> or a <video>.
       setUrl(presignData.publicUrl);
-      setType(uploadFile.type.startsWith("video/") ? "VIDEO" : "IMAGE");
+      setType(getFileContentType(uploadFile).startsWith("video/") ? "VIDEO" : "IMAGE");
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Banner upload failed. Please try again.");
     } finally {
@@ -289,7 +291,7 @@ export default function PortfolioDetailsForm({
               {uploadingDesktopBanner ? `Uploading ${desktopBannerProgress}%` : bannerDesktopUrl ? "Change desktop banner" : "Upload desktop banner"}
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                accept={MEDIA_FILE_ACCEPT}
                 className="hidden"
                 disabled={uploadingDesktopBanner}
                 onChange={(e) => {
@@ -320,7 +322,7 @@ export default function PortfolioDetailsForm({
               {uploadingMobileBanner ? `Uploading ${mobileBannerProgress}%` : bannerMobileUrl ? "Change mobile banner" : "Upload mobile banner"}
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                accept={MEDIA_FILE_ACCEPT}
                 className="hidden"
                 disabled={uploadingMobileBanner}
                 onChange={(e) => {
@@ -491,7 +493,7 @@ export default function PortfolioDetailsForm({
               {uploadingPhoto ? `Uploading ${photoProgress}%` : bioPhotoUrl ? "Change photo" : "Upload photo"}
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept={IMAGE_FILE_ACCEPT}
                 className="hidden"
                 disabled={uploadingPhoto}
                 onChange={(e) => {
