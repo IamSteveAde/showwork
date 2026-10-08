@@ -38,8 +38,14 @@ export function validateTikTokMediaProbe(probe: MediaProbe, size: number, type: 
 // Decode actual pixels, apply EXIF orientation and retain the entire image.
 // Animated PHOTO uploads use the first frame; transparency becomes white.
 export async function convertTikTokImage(input: Buffer): Promise<Buffer> {
-  return sharp(input, { animated: false, limitInputPixels: 100_000_000 })
-    .rotate().flatten({ background: "#ffffff" }).resize({ width: 1080, height: 1080, fit: "inside", withoutEnlargement: true })
+  const image = sharp(input, { animated: false, limitInputPixels: 100_000_000 });
+  const metadata = await image.metadata();
+  const rotated = (metadata.orientation || 1) >= 5;
+  const width = rotated ? metadata.height : metadata.width;
+  const height = rotated ? metadata.width : metadata.height;
+  const landscape = (width || 0) > (height || 0);
+  return image.rotate().flatten({ background: "#ffffff" })
+    .resize({ width: landscape ? 1920 : 1080, height: landscape ? 1080 : 1920, fit: "inside", withoutEnlargement: true })
     .jpeg({ quality: 90, mozjpeg: true }).toBuffer();
 }
 
