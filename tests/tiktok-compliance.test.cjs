@@ -234,3 +234,22 @@ test('callback rejects a missing PKCE cookie before exchange and clears temporar
   const route=load('app/api/calendars/tiktok/callback/route.ts',{'@/lib/channelOAuthState':{verifyChannelOAuthState:()=> 'calendar',channelOAuthCookieOptions:()=>({httpOnly:true,path:'/api/calendars/tiktok/callback',maxAge:0})},'@/lib/auth':{},'@/lib/db':{},'@/lib/url':{appUrl:()=> 'https://example.test'},'@/lib/socialReporting':{},'@/lib/tiktok':{exchangeCodeForTikTokTokens:async()=>{exchanges++;}}});
   const response=await route.GET({nextUrl:new URL('https://example.test/api/calendars/tiktok/callback?state=signed&code=code'),cookies:{get:name=>name==='showwork_tiktok_oauth_state'?{value:'nonce'}:undefined}});assert.equal(exchanges,0);assert.match(response.headers.get('location'),/missing_state/);assert.equal(response.cookies.get('showwork_tiktok_pkce').maxAge,0);
 });
+
+test('probe failures distinguish deployment, network, timeout and invalid media',()=>{
+  const m=load('lib/tiktokProbe.ts');
+  assert.match(m.tikTokProbeError({code:'ENOENT'}).message,/server/);
+  assert.match(m.tikTokProbeError({code:'EACCES'}).message,/startup/);
+  assert.match(m.tikTokProbeError({killed:true,signal:'SIGTERM'}).message,/timed out/);
+  assert.match(m.tikTokProbeError({code:1,stderr:'Protocol https not on whitelist'}).message,/public media URL/);
+  assert.match(m.tikTokProbeError({code:1,stderr:'Invalid data found when processing input'}).message,/decode/);
+});
+
+test('probe resolves from the Lambda task root even with a different working directory',async()=>{
+  const expected=require('node:path').join('/bundle','node_modules','ffprobe-static','bin',process.platform,process.arch,process.platform==='win32'?'ffprobe.exe':'ffprobe');const old=process.env.LAMBDA_TASK_ROOT;process.env.LAMBDA_TASK_ROOT='/bundle';
+  try{const m=load('lib/tiktokProbe.ts',{'node:fs/promises':{access:async file=>{if(file!==expected)throw Object.assign(new Error(),{code:'ENOENT'});}}});assert.equal(await m.resolveTikTokProbe(),expected);}
+  finally{if(old===undefined)delete process.env.LAMBDA_TASK_ROOT;else process.env.LAMBDA_TASK_ROOT=old;}
+});
+
+test('probe missing from the deployment produces a configuration error before inspecting media',async()=>{
+  const m=load('lib/tiktokProbe.ts',{'node:fs/promises':{access:async()=>{throw Object.assign(new Error(),{code:'ENOENT'});}}});await assert.rejects(m.resolveTikTokProbe(),/probe missing/);
+});
