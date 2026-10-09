@@ -119,7 +119,7 @@ test('automatic reply settings reject Studio requests without persisting any set
   const api = load('app/api/calendars/[id]/inbox/settings/route.ts', {
     '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) },
     '@/lib/db': { db: { socialCalendar: { findUnique: async () => ({ managerId: 'owner' }) } } },
-    '@/lib/calendarPermissions': { calendarFeatureGate: async (_id, feature) => {
+    '@/lib/calendarPermissions': { hasCalendarPermission: async () => true, calendarFeatureGate: async (_id, feature) => {
       assert.equal(feature, 'aiAutoReplies'); return require('next/server').NextResponse.json({ error: plans.workspaceFeatureUpgradeMessage(feature) }, { status: 403 });
     } },
     '@/lib/socialMessaging/replyProfile': {},

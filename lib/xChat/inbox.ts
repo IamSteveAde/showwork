@@ -19,3 +19,9 @@ export function mergeInboxConversations(saved: UnifiedInboxConversation[], encry
     && (!query || [item.participantName, item.participantUsername, item.lastMessagePreview, ...item.messages.map(message => message.text)].some(value => value?.toLowerCase().includes(query))))
     .sort((a, b) => (Date.parse(b.lastMessageAt || "") || 0) - (Date.parse(a.lastMessageAt || "") || 0));
 }
+
+/** Keep a saved thread open while filters change, but never retain an unlocked X thread after it disappears. */
+export function resolveSelectedInboxConversation(conversations: UnifiedInboxConversation[], selectedId: string, previous: UnifiedInboxConversation | null) {
+  return conversations.find(item => item.id === selectedId)
+    ?? (previous?.id === selectedId && !previous.encrypted ? previous : null);
+}

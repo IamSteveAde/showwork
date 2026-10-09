@@ -249,7 +249,7 @@ export default function CalendarWorkspaceShell({
       setActiveId(
         validViews.includes(requestedView as WorkspaceSectionId)
           ? (requestedView as WorkspaceSectionId)
-          : "overview",
+          : sections[0]?.id || "overview",
       );
       if (validViews.includes(requestedView as WorkspaceSectionId)) rememberInsightView(requestedView as WorkspaceSectionId);
     };
@@ -325,6 +325,8 @@ export default function CalendarWorkspaceShell({
 
   if (!active) return null;
 
+  const canUseAi = visibleSections.some(section => section.id === "generate" || section.id === "knowledge");
+  const canPlanContent = visibleSections.some(section => section.id === "content");
   const canGenerate = visibleSections.some((section) => section.id === "generate");
   const aiTarget: WorkspaceSectionId = canGenerate ? "generate" : "knowledge";
 
@@ -345,7 +347,7 @@ export default function CalendarWorkspaceShell({
   };
 
   const sidebar = <>
-          <div className="hidden border-b border-[#E7ECF3] p-3 lg:block xl:p-4">
+          {canPlanContent && <div className="hidden border-b border-[#E7ECF3] p-3 lg:block xl:p-4">
             <button
               type="button"
               onClick={() => select("content")}
@@ -364,7 +366,7 @@ export default function CalendarWorkspaceShell({
               </div>
               <span className="ml-auto text-[#A9B4C2] transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
             </button>
-          </div>
+          </div>}
 
           <nav
             className="min-h-0 flex-1 overflow-y-auto px-3 py-3 xl:px-4"
@@ -449,7 +451,7 @@ export default function CalendarWorkspaceShell({
           </nav>
 
           <div className="border-t border-[#E7ECF3] p-3 xl:p-4">
-            <div className="rounded-xl border border-[#E1E8F1] bg-white px-3 py-1.5 lg:rounded-[18px] lg:p-3">
+            {clientUrl && <div className="rounded-xl border border-[#E1E8F1] bg-white px-3 py-1.5 lg:rounded-[18px] lg:p-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#98A2B3]">
@@ -469,9 +471,9 @@ export default function CalendarWorkspaceShell({
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </a>
               </div>
-            </div>
+            </div>}
 
-            {isManager && publishAction && <div className="mt-2.5">{publishAction}</div>}
+            {publishAction && <div className="mt-2.5">{publishAction}</div>}
           </div>
   </>;
 
@@ -541,7 +543,7 @@ export default function CalendarWorkspaceShell({
 
       {/* DESKTOP ACTIONS */}
       <div className="hidden items-center gap-2 lg:flex">
-        <button
+        {canUseAi && <button
           type="button"
           onClick={() => select(aiTarget)}
           className="group flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.10] px-3 text-[11px] font-semibold text-white transition-all duration-150 hover:border-white/25 hover:bg-white/[0.17]"
@@ -549,9 +551,9 @@ export default function CalendarWorkspaceShell({
           <SparkMark className="h-3.5 w-3.5" />
           AI Studio
           <span className="text-white/45 transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
-        </button>
+        </button>}
 
-        <a
+        {clientUrl && <a
           href={clientUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -559,7 +561,7 @@ export default function CalendarWorkspaceShell({
         >
           Client view
           <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </a>
+        </a>}
 
         {settings}
       </div>
@@ -631,9 +633,10 @@ export default function CalendarWorkspaceShell({
           <div
             className={`mx-auto ${
               active.id === "content" ? "max-w-none" : "max-w-[1480px]"
-            } px-4 py-6 sm:px-5 md:py-8 lg:px-7 xl:px-9`}
+            } ${["inbox", "team"].includes(active.id) ? "px-3 py-4 sm:px-4 lg:px-5" : "px-4 py-6 sm:px-5 md:py-8 lg:px-7 xl:px-9"}`}
           >
             {/* CONTEXT BAR */}
+            {["inbox", "team"].includes(active.id) ? <h1 className="sr-only">{active.title}</h1> : (
             <div className="mb-5 flex flex-col gap-4 rounded-[24px] border border-[#E1E8F1] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0 max-w-4xl">
                 <div className="flex flex-wrap items-center gap-2">
@@ -683,6 +686,7 @@ export default function CalendarWorkspaceShell({
                 </div>
               </div>
             </div>
+            )}
 
             {/* Keep visited panels mounted so navigation preserves local work. */}
             {visibleSections.map((section) => {
@@ -692,10 +696,10 @@ export default function CalendarWorkspaceShell({
               </div>;
             })}
 
-            <div className="mt-8 flex items-center justify-between border-t border-[#E4E9F0] pt-5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A0A8B4]">
+            {active.id !== "inbox" && <div className="mt-8 flex items-center justify-between border-t border-[#E4E9F0] pt-5 text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A0A8B4]">
               <span>Showwork · Client Content Workspace</span>
               <span className="hidden sm:inline">{clientName}</span>
-            </div>
+            </div>}
           </div>
         </main>
            </div>

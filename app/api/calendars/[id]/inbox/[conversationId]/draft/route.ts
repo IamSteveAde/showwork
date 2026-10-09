@@ -21,7 +21,7 @@ export async function POST(
   if (!creator)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId, conversationId } = await params;
-  if (!(await hasCalendarPermission(creator.id, calendarId, "EDIT_CALENDAR")))
+  if (!(await hasCalendarPermission(creator.id, calendarId, "inbox.reply")))
     return NextResponse.json(
       { error: "You don’t have permission to draft replies." },
       { status: 403 },

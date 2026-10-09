@@ -1,12 +1,12 @@
+import { TOOL_COPY } from "@/components/dashboard/toolCopy";
+import WorkspaceCard from "@/components/dashboard/WorkspaceCard";
+import workspaceStyles from "@/components/dashboard/WorkspaceCard.module.css";
 import BillingBenefits from "@/components/billing/BillingBenefits";
-import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
-import { getCreatorUsage } from "@/lib/subscriptionUsage";
-import { PLAN_DISPLAY_NAME } from "@/lib/subscriptionTiers";
 import { isAdminEmail } from "@/lib/admin";
 
 const COMMUNITY_URL =
@@ -30,29 +30,6 @@ function initials(name: string | null, email: string) {
 /*                                   ICONS                                    */
 /* -------------------------------------------------------------------------- */
 
-function ArrowIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M5 12h14M14 7l5 5-5 5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function ArrowUpRightIcon({
   className = "h-4 w-4",
 }: {
@@ -70,35 +47,6 @@ function ArrowUpRightIcon({
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function SparkIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M12 2.8 13.7 9l6.2 1.7-6.2 1.7-1.7 6.2-1.7-6.2-6.2-1.7L10.3 9 12 2.8Z"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-      />
-
-      <path
-        d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"
-        stroke="currentColor"
-        strokeWidth="1.15"
         strokeLinejoin="round"
       />
     </svg>
@@ -225,44 +173,6 @@ function WorkspaceIcon({
   );
 }
 
-function CommunityIcon({
-  className = "h-5 w-5",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle
-        cx="9"
-        cy="9"
-        r="3"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-
-      <circle
-        cx="17"
-        cy="10"
-        r="2.5"
-        stroke="currentColor"
-        strokeWidth="1.4"
-      />
-
-      <path
-        d="M3.5 19c.5-3.2 2.5-5 5.5-5s5 1.8 5.5 5M15 15c2.8 0 4.6 1.4 5 4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*                                   LOGO                                     */
 /* -------------------------------------------------------------------------- */
@@ -299,7 +209,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const [portfolio, calendar, projectCount, usage] = await Promise.all([
+  const [portfolio, calendar, projectCount] = await Promise.all([
     db.portfolio.findFirst({
       where: {
         creatorId: creator.id,
@@ -324,47 +234,45 @@ export default async function DashboardPage() {
         deletedAt: null,
       },
     }),
-
-    getCreatorUsage(creator),
   ]);
 
   const firstName = creator.name?.trim().split(" ")[0];
-  const planName = PLAN_DISPLAY_NAME[usage.tier];
   const admin = isAdminEmail(creator.email);
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-[#101114]">
+    <main className={`${workspaceStyles.page} min-h-screen text-[#101114] [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-[#175CD3]`}>
       {/* ------------------------------------------------------------------ */}
       {/*                              NAVBAR                                */}
       {/* ------------------------------------------------------------------ */}
 
-      <header className="sticky top-0 z-50 border-b border-[#E8EAEE] bg-white/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-[#DCE4F0] bg-[#F3F6FB]/95 backdrop-blur-xl">
         <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between sm:h-[70px]">
             {/* Logo */}
             <Link
               href="/dashboard"
               aria-label="Showwork dashboard"
-              className="shrink-0"
+              className="flex shrink-0 items-center gap-5"
             >
               <Logo />
+              <span className="hidden border-l border-[#CCD8EA] pl-5 text-xs font-medium text-[#526780] sm:block">Your creative HQ</span>
             </Link>
 
             {/* ------------------------------------------------------------ */}
             {/*                        DESKTOP NAV                            */}
             {/* ------------------------------------------------------------ */}
 
-            <div className="hidden items-center gap-2 sm:flex">
+            <div className="hidden items-center gap-2 lg:flex">
               <Link
   href="/dashboard/profile"
-  className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+  className="rounded-full px-3.5 py-2 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
 >
   Profile
 </Link>
 
 <Link
   href="/dashboard/partners"
-  className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+  className="rounded-full px-3.5 py-2 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
 >
   Partner Program
 </Link>
@@ -372,7 +280,7 @@ export default async function DashboardPage() {
 {admin && (
                 <Link
                   href="/admin"
-                  className="rounded-full px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+                  className="rounded-full px-3.5 py-2 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
                 >
                   Admin
                 </Link>
@@ -380,7 +288,7 @@ export default async function DashboardPage() {
 
               <Link
                 href="/dashboard/billing?product=delivery#project-delivery-plans"
-                className="rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-[11px] font-semibold text-[#555B65] transition-colors duration-150 hover:border-[#CBD1DA] hover:bg-[#F9FAFB] hover:text-[#101114]"
+                className="rounded-full border border-[#E1E4E9] bg-white px-3.5 py-2 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:border-[#CBD1DA] hover:bg-[#F9FAFB] hover:text-[#101114]"
               >
                 Billing
               </Link>
@@ -388,7 +296,7 @@ export default async function DashboardPage() {
               {/* Avatar */}
               <Link
                 href="/dashboard/profile"
-                className="ml-1 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-[11px] font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
+                className="ml-1 flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-sm font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
                 aria-label="Profile"
               >
                 {creator.avatarUrl ? (
@@ -412,11 +320,11 @@ export default async function DashboardPage() {
             {/*                         MOBILE NAV                            */}
             {/* ------------------------------------------------------------ */}
 
-            <div className="flex items-center gap-2 sm:hidden">
+            <div className="flex items-center gap-2 lg:hidden">
               {/* Mobile avatar */}
               <Link
                 href="/dashboard/profile"
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-[11px] font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
+                className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-[#EDF3FF] text-sm font-bold text-[#2478FF] ring-1 ring-[#D8E6FF]"
                 aria-label="Profile"
               >
                 {creator.avatarUrl ? (
@@ -435,7 +343,7 @@ export default async function DashboardPage() {
               <details className="relative">
                 <summary
                   aria-label="Open navigation menu"
-                  className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full border border-[#E1E4E9] bg-white text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] [&::-webkit-details-marker]:hidden"
+                  className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#E1E4E9] bg-white text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] [&::-webkit-details-marker]:hidden"
                 >
                   <svg
                     viewBox="0 0 24 24"
@@ -455,15 +363,15 @@ export default async function DashboardPage() {
                 <div className="absolute right-0 top-[calc(100%+10px)] w-[230px] overflow-hidden rounded-[20px] border border-[#E2E5E9] bg-white p-2 shadow-[0_18px_50px_rgba(15,23,42,0.14)]">
                   {/* Account */}
                   <div className="border-b border-[#ECEEF1] px-3 pb-3 pt-2">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#A0A5AD]">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#A0A5AD]">
                       Account
                     </p>
 
-                    <p className="mt-1 truncate text-[12px] font-semibold text-[#25282D]">
+                    <p className="mt-1 truncate text-sm font-semibold text-[#25282D]">
                       {creator.name?.trim() || creator.email}
                     </p>
 
-                    <p className="mt-0.5 truncate text-[10px] text-[#9298A1]">
+                    <p className="mt-0.5 truncate text-xs text-[#9298A1]">
                       {creator.email}
                     </p>
                   </div>
@@ -472,7 +380,7 @@ export default async function DashboardPage() {
                   <div className="py-1">
                     <Link
   href="/dashboard/profile"
-  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
 >
   <span>Profile</span>
 
@@ -481,7 +389,7 @@ export default async function DashboardPage() {
 
 <Link
   href="/dashboard/partners"
-  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
 >
   <span>Partner Program</span>
 
@@ -491,7 +399,7 @@ export default async function DashboardPage() {
 {admin && (
                       <Link
                         href="/admin"
-                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
                       >
                         <span>Admin</span>
 
@@ -501,7 +409,7 @@ export default async function DashboardPage() {
 
                     <Link
                       href="/dashboard/billing?product=delivery#project-delivery-plans"
-                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[12px] font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
+                      className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-[#555B65] transition-colors duration-150 hover:bg-[#F5F6F8] hover:text-[#101114]"
                     >
                       <span>Billing</span>
 
@@ -526,407 +434,68 @@ export default async function DashboardPage() {
       {/*                              CONTENT                               */}
       {/* ------------------------------------------------------------------ */}
 
-      <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
+      <div className={workspaceStyles.shell}>
+        <div className={workspaceStyles.topGreeting}>
+          <h1>{firstName ? `Good to see you, ${firstName}.` : "Good to see you."}</h1>
+        </div>
+        <section aria-labelledby="workspace-actions" className="scroll-mt-24">
+          <div className={workspaceStyles.sectionHeading}>
+            <h2 id="workspace-actions">Your tools</h2>
+          </div>
+          <div className={workspaceStyles.grid}>
+            <WorkspaceCard index="01" variant="workspace" product={TOOL_COPY.workspace.product} title={TOOL_COPY.workspace.title} description={TOOL_COPY.workspace.description} href="/dashboard/calendars" action={calendar ? TOOL_COPY.workspace.openAction : TOOL_COPY.workspace.createAction} icon={<WorkspaceIcon />} />
+            <WorkspaceCard index="02" variant="delivery" product={TOOL_COPY.delivery.product} title={TOOL_COPY.delivery.title} description={TOOL_COPY.delivery.description} href={projectCount > 0 ? "/dashboard/projects" : "/dashboard/start"} action={projectCount > 0 ? TOOL_COPY.delivery.openAction : TOOL_COPY.delivery.createAction} icon={<DeliveryIcon />} />
+            <WorkspaceCard index="03" variant="portfolio" product={TOOL_COPY.portfolio.product} title={TOOL_COPY.portfolio.title} description={TOOL_COPY.portfolio.description} href="/dashboard/portfolio" action={portfolio ? TOOL_COPY.portfolio.openAction : TOOL_COPY.portfolio.createAction} icon={<PortfolioIcon />} />
+          </div>
+        </section>
+        <section className={`${workspaceStyles.hero} mt-7`} aria-labelledby="dashboard-welcome">
+          <svg className={workspaceStyles.heroLines} viewBox="0 0 800 600" fill="none" aria-hidden="true">
+            {Array.from({ length: 12 }, (_, i) => <path key={i} d={`M${170 + i * 26} -50 C${-160 + i * 30} 260 ${850 + i * 18} 90 ${420 + i * 35} 680`} stroke="#8fb8ff" strokeWidth="1" />)}
+          </svg>
+          <div>
+            <p className={workspaceStyles.eyebrow}>The creative business, connected</p>
+            <h2 id="dashboard-welcome" className={workspaceStyles.heroTitle}>Less back and forth.<br /><em>More great work.</em></h2>
+            <p className={workspaceStyles.heroDescription}>Your clients, content, and creative projects. One thoughtful space to bring it all together.</p>
+            <div className={workspaceStyles.heroLinks}>
+              <a href="#workspace-actions" className={workspaceStyles.heroLink}>Explore your tools <ArrowUpRightIcon /></a>
+              <Link href="/dashboard/profile" className={`${workspaceStyles.heroLink} ${workspaceStyles.heroLinkSecondary}`}>Your profile <ArrowUpRightIcon /></Link>
+            </div>
+          </div>
+          <div className={workspaceStyles.heroAside}>
+            <p className={workspaceStyles.asideLabel}>Your workspace at a glance</p>
+            <div className={workspaceStyles.statusRow}><span>Client Workspace</span><b>{calendar ? "Ready to open" : "Ready to create"}</b></div>
+            <div className={workspaceStyles.statusRow}><span>Project Delivery</span><b>{projectCount} {projectCount === 1 ? "project" : "projects"}</b></div>
+            <div className={workspaceStyles.statusRow}><span>Portfolio</span><b>{portfolio ? "Created" : "Free to create"}</b></div>
+            <p className={workspaceStyles.asideFoot}>Start where you need us.<br />The rest is here when you’re ready.</p>
+          </div>
+        </section>
         <BillingBenefits creator={creator} />
-        {/* Compact orientation header + tutorial */}
-        <section className="pt-10 sm:pt-14 lg:pt-16">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#D9E6FF] bg-[#F1F6FF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
-                <SparkIcon className="h-3.5 w-3.5" />
-
-                Your workspace
-              </div>
-
-              <h1 className="mt-5 text-[42px] font-semibold leading-[0.98] tracking-[-0.055em] sm:text-[58px]">
-                {firstName
-                  ? `Good to see you, ${firstName}.`
-                  : "Good to see you."}
-              </h1>
-
-              <p className="mt-4 max-w-xl text-[14px] leading-6 text-[#69717D] sm:text-[16px]">
-                Everything you use to run your creative work, in one place.
-                Pick an app and get straight to work.
-              </p>
-
-              <div className="mt-6 flex items-center gap-2 text-xs text-[#7B828D]">
-                <span className="h-2 w-2 rounded-full bg-[#2478FF]" />
-
-                <span>
-                  {projectCount}{" "}
-                  {projectCount === 1 ? "project" : "projects"}
-                </span>
-
-                <span className="text-[#C4C8CE]">·</span>
-
-                <span>
-                  {calendar
-                    ? "Content workspace ready"
-                    : "No content workspace yet"}
-                </span>
-              </div>
-            </div>
-
-            {/* Must-watch tutorial */}
-            <div className="w-full shrink-0 lg:w-[330px] xl:w-[360px]">
-              <div className="overflow-hidden rounded-[22px] border border-[#DCE2EA] bg-white shadow-[0_12px_35px_rgba(15,23,42,0.08)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(15,23,42,0.11)]">
-                <div className="flex items-center justify-between px-4 py-3.5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EEF5FF] text-[#2478FF]">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        className="h-3.5 w-3.5"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M8 5.5v13l10-6.5L8 5.5Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </span>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em] text-[#2478FF]">
-                          Must watch
-                        </p>
-                        <span className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[9px] font-semibold text-[#7B828D]">
-                          Quick tour
-                        </span>
-                      </div>
-                      <p className="mt-0.5 truncate text-[11px] text-[#858C96]">
-                        Content Workspace for social media managers
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-[#0B0D11] p-2.5">
-                  <div className="relative aspect-video overflow-hidden rounded-[15px] bg-black ring-1 ring-white/10">
-                    <iframe
-                      className="absolute inset-0 h-full w-full"
-                      src="https://www.youtube.com/embed/2UFJNWqFnxQ?si=diogQGUi6AR2MxPr"
-                      title="Showwork Content Workspace tutorial"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-                  <p className="text-[10px] leading-4 text-[#7B828D]">
-                    Learn the content planning, review and publishing workflow.
-                  </p>
-
-                  <span className="shrink-0 rounded-full bg-[#101114] px-2.5 py-1 text-[9px] font-bold text-white"><>{" Start here "}<UiSymbol name="right" />{" "}</></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/*                                APPS                               */}
-        {/* ---------------------------------------------------------------- */}
-
-        <section className="mt-10 sm:mt-12">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#969CA5]">
-                Apps
-              </p>
-
-              <h2 className="mt-1 text-xl font-semibold tracking-[-0.03em]">
-                Choose where to work
-              </h2>
-            </div>
-
-            <span className="hidden text-xs text-[#969CA5] sm:block">
-              4 environments
-            </span>
-          </div>
-
-          {/* Featured workspace */}
-          <Link
-            href="/dashboard/calendars"
-            className="group relative block overflow-hidden rounded-[28px] border border-[#CFE0FF] bg-[#EEF5FF] shadow-[0_18px_55px_rgba(36,120,255,0.08)] transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-[#B9D1FA] hover:shadow-[0_24px_70px_rgba(36,120,255,0.12)]"
-          >
-            <div className="absolute -right-28 -top-40 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(36,120,255,.25),transparent_68%)]" />
-
-            <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-end lg:p-10">
-              <div className="max-w-2xl">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#2478FF] shadow-sm">
-                    <WorkspaceIcon className="h-5 w-5" />
-                  </span>
-
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#2478FF]">
-                      Content Workspace
-                    </p>
-
-                    <p className="mt-0.5 text-[11px] text-[#7889A2]">
-                      Plan · create · approve · publish
-                    </p>
-                  </div>
-                </div>
-
-                <h3 className="mt-8 text-[38px] font-semibold leading-[0.96] tracking-[-0.055em] sm:text-[52px]">
-                  Your client content,
-                  <br className="hidden sm:block" /> in one place.
-                </h3>
-
-                <p className="mt-4 max-w-xl text-sm leading-6 text-[#617087]">
-                  Plan content with AI, collect approvals, manage conversations
-                  and leads, and track client performance.
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {["AI Studio", "Calendar", "Approvals", "Publishing"].map(
-                    (item) => (
-                      <span
-                        key={item}
-                        className="rounded-full border border-white bg-white/70 px-3 py-1.5 text-[10px] font-semibold text-[#65748A]"
-                      >
-                        {item}
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-5 border-t border-[#D2E0F4] pt-5 lg:min-w-[220px] lg:flex-col lg:items-end lg:border-t-0 lg:pt-0">
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-[#8998AD]">
-                    {calendar ? "Ready" : "Get started"}
-                  </p>
-
-                  <p className="mt-1 text-sm font-semibold text-[#1B2B42]">
-                    {calendar ? "Open workspace" : "Create workspace"}
-                  </p>
-                </div>
-
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2478FF] text-white shadow-[0_10px_25px_rgba(36,120,255,.22)] transition-transform duration-200 group-hover:translate-x-1">
-                  <ArrowIcon />
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Three secondary apps */}
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {/* Project Delivery */}
-            <Link
-              href="/dashboard/projects"
-              className="group rounded-[24px] border border-[#E0E3E8] bg-[#101114] p-6 text-white transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_55px_rgba(10,12,16,.13)] sm:p-7"
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.07] text-white ring-1 ring-white/10">
-                  <DeliveryIcon />
-                </span>
-
-                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#72A8FF]">
-                  Delivery
-                </span>
-              </div>
-
-              <h3 className="mt-8 text-2xl font-semibold tracking-[-0.04em]">
-                Project Delivery
-              </h3>
-
-              <p className="mt-2 min-h-[48px] text-xs leading-5 text-white/45">
-                Deliver work, collect feedback and get projects across the
-                line.
-              </p>
-
-              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-xs font-semibold text-white/80">
-                  Open projects
-                </span>
-
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#101114] transition-transform duration-150 group-hover:translate-x-1">
-                  <ArrowIcon className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </Link>
-
-            {/* Portfolio */}
-            <Link
-              href="/dashboard/portfolio"
-              className="group rounded-[24px] border border-[#E0E3E8] bg-white p-6 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_55px_rgba(20,30,45,.07)] sm:p-7"
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F1F5FC] text-[#2478FF]">
-                  <PortfolioIcon />
-                </span>
-
-                <span className="rounded-full bg-[#F1F6FF] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-[#2478FF]">
-                  Free
-                </span>
-              </div>
-
-              <h3 className="mt-8 text-2xl font-semibold tracking-[-0.04em]">
-                Portfolio
-              </h3>
-
-              <p className="mt-2 min-h-[48px] text-xs leading-5 text-[#737A84]">
-                Present your best work in a polished, professional home.
-              </p>
-
-              <div className="mt-6 flex items-center justify-between border-t border-[#ECEEF1] pt-4">
-                <span className="text-xs font-semibold text-[#343941]">
-                  {portfolio ? "Open portfolio" : "Create portfolio"}
-                </span>
-
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F1F5FC] text-[#2478FF] transition-transform duration-150 group-hover:translate-x-1">
-                  <ArrowIcon className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </Link>
-
-            {/* Creativo */}
-            <a
-              href={COMMUNITY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-[24px] border border-[#24262C] bg-[#191A1E] p-6 text-white transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_55px_rgba(10,10,15,.14)] sm:p-7"
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.07] text-white ring-1 ring-white/10">
-                  <CommunityIcon />
-                </span>
-
-                <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#91B8FF]">
-                  Community
-                </span>
-              </div>
-
-              <h3 className="mt-8 text-2xl font-semibold tracking-[-0.04em]">
-                Creativo
-              </h3>
-
-              <p className="mt-2 min-h-[48px] text-xs leading-5 text-white/45">
-                Learn, connect, exchange ideas and grow with other creators.
-              </p>
-
-              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
-                <span className="text-xs font-semibold text-white/80">
-                  Enter Creativo
-                </span>
-
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#191A1E] transition-transform duration-150 group-hover:translate-x-1">
-                  <ArrowUpRightIcon className="h-3.5 w-3.5" />
-                </span>
-              </div>
-            </a>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/*                            SUPPORT                                */}
-        {/* ---------------------------------------------------------------- */}
-
-        <section className="mt-10 rounded-[22px] border border-[#E2E5E9] bg-white px-5 py-5 shadow-[0_4px_18px_rgba(15,23,42,0.025)] sm:px-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF8EF] text-[#25D366]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-[19px] w-[19px]"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M20 11.5a8.5 8.5 0 0 1-12.65 7.42L4 20l1.13-3.2A8.5 8.5 0 1 1 20 11.5Z"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-
-                  <path
-                    d="M8.5 9.2c.2-.45.42-.47.76-.48h.48c.17 0 .35.07.43.28l.65 1.56c.08.2.06.36-.07.53l-.43.55c-.1.13-.13.27-.04.42.34.58.83 1.08 1.4 1.43.16.1.3.08.43-.02l.54-.42c.16-.13.31-.15.5-.07l1.53.72c.2.09.27.23.25.43-.06.54-.31 1-.76 1.27-.4.24-.9.27-1.37.16-1.03-.24-2.13-.93-3.04-1.84-.91-.91-1.6-2-1.84-3.04-.11-.47-.08-.97.16-1.37.1-.16.22-.3.41-.49Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <p className="text-sm font-semibold text-[#25282D]">
-                  Need a hand choosing where to start?
-                </p>
-
-                <p className="mt-1 max-w-xl text-xs leading-5 text-[#858B94]">
-                  Tell us what you&apos;re trying to accomplish and we&apos;ll
-                  point you to the right Showwork workspace. Our team is happy
-                  to help.
-                </p>
-              </div>
-            </div>
-
-            <a
-              href={`https://wa.me/2347018819588?text=${encodeURIComponent(
-                "Hello Showwork Support\n\nI’m on my Showwork dashboard and I’d like some help choosing the right workspace for what I’m trying to accomplish.\n\nCould you please point me in the right direction?\n\nThank you."
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex w-full shrink-0 items-center justify-center gap-2.5 rounded-xl bg-[#25D366] px-4 py-3 text-xs font-bold text-white shadow-[0_8px_20px_rgba(37,211,102,0.18)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-[#20BD5A] hover:shadow-[0_10px_24px_rgba(37,211,102,0.24)] sm:w-auto"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-4 w-4"
-                aria-hidden="true"
-              >
-                <path
-                  d="M20 11.5a8.5 8.5 0 0 1-12.65 7.42L4 20l1.13-3.2A8.5 8.5 0 1 1 20 11.5Z"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-
-                <path
-                  d="M8.5 9.2c.2-.45.42-.47.76-.48h.48c.17 0 .35.07.43.28l.65 1.56c.08.2.06.36-.07.53l-.43.55c-.1.13-.13.27-.04.42.34.58.83 1.08 1.4 1.43.16.1.3.08.43-.02l.54-.42c.16-.13.31-.15.5-.07l1.53.72c.2.09.27.23.25.43-.06.54-.31 1-.76 1.27-.4.24-.9.27-1.37.16-1.03-.24-2.13-.93-3.04-1.84-.91-.91-1.6-2-1.84-3.04-.11-.47-.08-.97.16-1.37.1-.16.22-.3.41-.49Z"
-                  fill="currentColor"
-                />
-              </svg>
-
-              <span>Chat with Showwork</span>
-
-              <ArrowUpRightIcon className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </a>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/*                              FOOTER                              */}
-        {/* ---------------------------------------------------------------- */}
-
-        <footer className="mt-10 flex flex-col gap-3 border-t border-[#E3E5E9] pt-6 text-xs text-[#969CA5] sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Logo />
-
-            <span>Tools for modern creators.</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard/profile"
-              className="transition-colors duration-150 hover:text-[#2478FF]"
-            >
-              Account
-            </Link>
-
-            <a
-              href="mailto:hello@useshowwork.com"
-              className="transition-colors duration-150 hover:text-[#2478FF]"
-            >
-              Support
-            </a>
-          </div>
+        <div className={workspaceStyles.resources}>
+          <section className={workspaceStyles.resource} aria-label="Optional Client Workspace tutorial">
+            <p className={workspaceStyles.resourceLabel}>A little guidance</p>
+            <details>
+              <summary>Meet your Client Workspace</summary>
+              <p>Optional tour for social media managers: planning, approvals, and publishing.</p>
+              <iframe className={workspaceStyles.resourceVideo} loading="lazy" src="https://www.youtube.com/embed/2UFJNWqFnxQ" title="Showwork Content Workspace tutorial" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
+            </details>
+            <p>Get familiar with your tools, at your own pace.</p>
+          </section>
+          <section className={workspaceStyles.resource}>
+            <p className={workspaceStyles.resourceLabel}>Good company</p>
+            <h2>Creative work, shared.</h2>
+            <p>Find your people in Creativo. Exchange ideas with other creators building their businesses.</p>
+            <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className={workspaceStyles.resourceAction}>Join on WhatsApp <ArrowUpRightIcon /><span className="sr-only">Opens in a new tab</span></a>
+          </section>
+          <section className={workspaceStyles.resource}>
+            <p className={workspaceStyles.resourceLabel}>A real helping hand</p>
+            <h2>Let’s find your starting point.</h2>
+            <p>Tell us what you’re working on. Our team will help you choose the right tool.</p>
+            <a href="https://wa.me/2347018819588?text=Hello%20Showwork%2C%20I%27d%20like%20help%20choosing%20where%20to%20start." target="_blank" rel="noopener noreferrer" className={workspaceStyles.resourceAction}>Talk to our team <ArrowUpRightIcon /><span className="sr-only">Opens WhatsApp in a new tab</span></a>
+          </section>
+        </div>
+        <footer className={workspaceStyles.footer}>
+          <div className="flex items-center gap-4"><Logo /><span>A little more room to create.</span></div>
+          <div className={workspaceStyles.footerLinks}><Link href="/dashboard/profile">Account</Link><Link href="/dashboard/billing">Billing</Link><a href="mailto:hello@useshowwork.com">Support</a></div>
         </footer>
       </div>
     </main>

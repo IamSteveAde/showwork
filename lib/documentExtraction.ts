@@ -17,15 +17,7 @@
 // (pdf-parse can be removed if it was installed for this earlier.)
 // ─────────────────────────────────────────────
 
-export const ALLOWED_BUSINESS_DOCUMENT_TYPES = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-  "text/plain",
-];
-
-export function isAllowedBusinessDocumentType(contentType: string): boolean {
-  return ALLOWED_BUSINESS_DOCUMENT_TYPES.includes(contentType);
-}
+export { ALLOWED_BUSINESS_DOCUMENT_TYPES, isAllowedBusinessDocumentType } from "./businessDocumentTypes";
 
 /**
  * pdf2json has no reliable official TypeScript types, so it's
@@ -79,9 +71,38 @@ export async function extractTextFromDocument(fileUrl: string, contentType: stri
     return result.value;
   }
 
+  if (contentType === "text/csv") {
+    const { parse } = await import("csv-parse/sync");
+    const rows = parse(buffer.toString("utf-8"), { bom: true, relax_column_count: true, skip_empty_lines: true }) as string[][];
+    return readableTable(rows);
+  }
+  if (["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"].includes(contentType)) {
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+    const sheets = workbook.SheetNames.map(name => {
+      const sheet = workbook.Sheets[name];
+      if (sheet["!ref"]) {
+        const range = XLSX.utils.decode_range(sheet["!ref"]);
+        if (range.e.r - range.s.r > 5000 || range.e.c - range.s.c > 80) throw new Error("This spreadsheet is too large. Split it into smaller price lists.");
+      }
+      const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "", raw: false, blankrows: false });
+      const text = readableTable(rows);
+      return text ? `Sheet: ${name}\n${text}` : "";
+    }).filter(Boolean);
+    const text = sheets.join("\n\n");
+    if (text.length > 100000) throw new Error("This spreadsheet is too large. Split it into smaller price lists.");
+    return text;
+  }
+
   if (contentType === "text/plain") {
     return buffer.toString("utf-8");
   }
 
   throw new Error("That file type isn't supported for business documents");
+}
+function readableTable(rows: unknown[][]): string {
+  if (rows.length > 5000 || rows.some(row => row.length > 80)) throw new Error("This sheet is too large. Split it into smaller price lists.");
+  const text = rows.filter(row => row.some(value => String(value ?? "").trim())).map(row => row.map(value => JSON.stringify(String(value ?? ""))).join(" | ")).join("\n");
+  if (text.length > 100000) throw new Error("This sheet is too large. Split it into smaller price lists.");
+  return text;
 }

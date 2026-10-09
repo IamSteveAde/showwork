@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -44,7 +45,7 @@ export async function POST(
     },
   });
 
-  if (!calendar || calendar.managerId !== creator.id) {
+  if (!calendar || !(await hasCalendarPermission(creator.id, calendarId, "channels.manage"))) {
     return redirectWithClearedSelection(
       `${settingsPath}&facebookError=not_found`,
     );

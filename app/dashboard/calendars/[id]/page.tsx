@@ -1,3 +1,4 @@
+import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import UiSymbol from "@/components/ui/UiSymbol";
 import CalendarPaymentCallbackHandler from "@/components/calendars/CalendarPaymentCallbackHandler";
@@ -10,6 +11,7 @@ import { db } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import {
   getCalendarRole,
+  getCalendarAccess,
   canAccessCalendarById,
 } from "@/lib/calendarPermissions";
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
@@ -372,15 +374,15 @@ compedUntil: true,
   }
 
   const isAdmin = isAdminEmail(creator.email);
-  const userRole = (await getCalendarRole(creator.id, id)) ?? (isAdmin ? "VIEW_ONLY" : null);
-
-  if (!userRole) {
-    notFound();
-  }
-
-  const isManager = calendar.managerId === creator.id;
-const canEditWorkspace = userRole === "EDIT_CALENDAR";
-const totalMembers = 1 + calendar._count.collaborators;
+  const access = await getCalendarAccess(creator.id, id);
+  if (!access && !isAdmin) notFound();
+  const permissions: TeamPermission[] = access?.permissions ?? ["calendar.view", "analytics.view"];
+  const can = (permission: TeamPermission) => permissions.includes(permission);
+  const isOwner = calendar.managerId === creator.id;
+  const isManager = isOwner || access?.role === "MANAGER";
+  const canEditWorkspace = can("calendar.edit");
+  const userRole = canEditWorkspace ? "EDIT_CALENDAR" : can("creatives.upload") ? "ADD_CONTENT" : "VIEW_ONLY";
+  const totalMembers = 1 + calendar._count.collaborators;
 
   const workspaceActive = await canAccessCalendarById(calendar.id);
   const agencyTrial = isContentWorkspaceTrialActive(calendar.manager);
@@ -662,298 +664,21 @@ contentIdea: p.contentIdea,
         <div className="overflow-hidden rounded-[26px] border border-[#DCE5F0] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
           <CalendarGrid
             calendarId={calendar.id}
-            isOwner={isManager}
+            isOwner={isOwner}
             planStatus={calendar.planStatus}
             userRole={userRole}
             clientName={calendar.clientName}
+            permissions={permissions}
             initialPosts={calendarPosts}
           />
         </div>
       ),
     },
-    ...(canEditWorkspace
-  ? [
-          {
-  id: "team" as const,
-  label: "People",
-  eyebrow: "Collaboration",
-  title: "Build the right room.",
-  description:
-    "Bring the people behind the work into one shared space. Give every collaborator exactly the access they need.",
-  group: "Collaboration" as const,
-
-  content: (
-    <div className="space-y-8">
-      {/* ─────────────────────────────────────────────────────────
-          PEOPLE HEADER
-      ───────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-[32px] border border-[#E1E7EF] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.055)]">
-        {/* atmospheric light */}
-        <div className="pointer-events-none absolute -right-24 -top-32 h-72 w-72 rounded-full bg-[#2478FF]/[0.08] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-[-120px] left-[25%] h-64 w-64 rounded-full bg-[#7C3AED]/[0.045] blur-3xl" />
-
-        <div className="relative flex flex-col gap-7 px-6 py-7 sm:px-8 sm:py-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-4 flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#EAF2FF] text-[#2478FF]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-4 w-4"
-                >
-                  <path
-                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="9" cy="7" r="4" />
-                  <path
-                    d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
-                Collaboration
-              </span>
-            </div>
-
-            <h2 className="text-[30px] font-semibold tracking-[-0.045em] text-[#101828] sm:text-[38px] lg:text-[42px]">
-              The people behind the work.
-            </h2>
-
-            <p className="mt-3 max-w-xl text-[14px] leading-6 text-[#667085]">
-              Designers, creators, strategists and clients can work from the
-              same space without stepping on each other&apos;s permissions.
-            </p>
-          </div>
-
-          {/* Small contextual summary */}
-          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-[#E7ECF2] bg-[#F8FAFC] px-4 py-3">
-            <div className="flex -space-x-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8FAFC] bg-[#101828] text-[11px] font-bold text-white">
-                +
-              </div>
-
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#F8FAFC] bg-[#EAF2FF] text-[#2478FF]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-4 w-4"
-                >
-                  <path
-                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-                    strokeLinecap="round"
-                  />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-[#101828]">
-                Shared workspace
-              </p>
-              <p className="mt-0.5 text-[10px] text-[#98A2B3]">
-                Invite people as you need them
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────
-          MAIN COLLABORATION AREA
-      ───────────────────────────────────────────────────────── */}
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        {/* MAIN PEOPLE EXPERIENCE */}
-        <div className="min-w-0">
-          <InviteCollaboratorForm calendarId={calendar.id} advancedPermissionsAccess={featureAccess("advancedTeamPermissions")} />
-        </div>
-
-        {/* ───────────────────────────────────────────────────────
-            ACCESS MODEL
-        ─────────────────────────────────────────────────────── */}
-        <aside className="space-y-4 xl:sticky xl:top-6">
-          <div className="relative overflow-hidden rounded-[28px] bg-[#101828] p-6 text-white shadow-[0_20px_55px_rgba(16,24,40,0.12)]">
-            {/* blue glow */}
-            <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#2478FF]/30 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-20 -left-12 h-40 w-40 rounded-full bg-[#7C3AED]/20 blur-3xl" />
-
-            <div className="relative">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-white/40">
-                  Access model
-                </span>
-
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/70">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="h-4 w-4"
-                  >
-                    <path
-                      d="M12 3 5 6v5c0 4.5 2.9 8.5 7 10 4.1-1.5 7-5.5 7-10V6l-7-3Z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="m9 12 2 2 4-4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              </div>
-
-              <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.035em]">
-                Everyone sees what they need.
-              </h3>
-
-              <p className="mt-2 text-[12px] leading-5 text-white/45">
-                Keep creative collaboration open while keeping workspace
-                control in the right hands.
-              </p>
-
-              <div className="mt-7 divide-y divide-white/10">
-                {/* VIEW */}
-                <div className="flex gap-3 py-4 first:pt-0">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-white/60">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.7"
-                      className="h-4 w-4"
-                    >
-                      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
-                      <circle cx="12" cy="12" r="2.5" />
-                    </svg>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-white">
-                      View only
-                    </p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
-                      Review the workspace without changing anything.
-                    </p>
-                  </div>
-                </div>
-
-                {/* ADD */}
-                <div className="flex gap-3 py-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#2478FF]/15 text-[#6EA4FF]">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        d="M12 16V4M7.5 8.5 12 4l4.5 4.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-semibold text-white">
-                        Add content
-                      </p>
-                      <span className="rounded-full bg-[#2478FF]/15 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-[#6EA4FF]">
-                        Best for creators
-                      </span>
-                    </div>
-
-                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
-                      Upload creative to planned content without changing the
-                      workspace.
-                    </p>
-                  </div>
-                </div>
-
-                {/* EDIT */}
-                <div className="flex gap-3 py-4 last:pb-0">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F97316]/10 text-[#FB923C]">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      className="h-4 w-4"
-                    >
-                      <path
-                        d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-white">
-                      Edit workspace
-                    </p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-white/40">
-                      Full control over posts and workspace details.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SMALL GUIDANCE CARD */}
-          <div className="rounded-[24px] border border-[#E1E7EF] bg-white p-5 shadow-[0_12px_35px_rgba(15,23,42,0.035)]">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F2F4F7] text-[#667085]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-4 w-4"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <path
-                    d="M12 10v6M12 7.5h.01"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-[#101828]">
-                  A good default
-                </p>
-                <p className="mt-1 text-[10px] leading-5 text-[#667085]">
-                  For most creative teams,{" "}
-                  <span className="font-semibold text-[#2478FF]">
-                    Add content
-                  </span>{" "}
-                  gives collaborators enough freedom without exposing
-                  workspace controls.
-                </p>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  ),
-},
-        ]
-      : []),
+    ...(can("people.view") ? [{
+      id: "team" as const, label: "People", eyebrow: "Team & permissions", title: "The right people. The right access.",
+      description: "Invite teammates, set clear roles, and choose the features they can use.", group: "Collaboration" as const,
+      content: <InviteCollaboratorForm calendarId={calendar.id} />,
+    }] : []),
     {
       id: "analytics",
       label: "Analytics & Reporting",
@@ -966,11 +691,12 @@ contentIdea: p.contentIdea,
         <div className="space-y-6">
           <CalendarReportingPanel
             calendarId={calendar.id}
-            isManager={isManager}
-            canAnalyze={canEditWorkspace && featureAccess("performanceRecommendations")}
+            isManager={can("analytics.manage")}
+            canViewLeads={can("leads.view")}
+            canAnalyze={can("analytics.manage") && featureAccess("performanceRecommendations")}
             advancedAccess={featureAccess("advancedAnalytics")}
             recommendationsAccess={featureAccess("performanceRecommendations")}
-            canApplyRecommendations={canEditWorkspace && aiActive && featureAccess("performanceRecommendations")}
+            canApplyRecommendations={can("analytics.manage") && canEditWorkspace && aiActive && featureAccess("performanceRecommendations")}
           />
           <div className="grid gap-5 xl:grid-cols-2">
           <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)] sm:p-6">
@@ -1018,7 +744,7 @@ contentIdea: p.contentIdea,
       group: "Leads & Messages",
       content: (
         <div>
-          <CalendarLeadsPanel calendarId={calendar.id} canEdit={canEditWorkspace} featureLocked={!featureAccess("leadManagement")} />
+          <CalendarLeadsPanel calendarId={calendar.id} canEdit={can("leads.manage")} featureLocked={!featureAccess("leadManagement")} />
         </div>
       ),
     },
@@ -1032,11 +758,21 @@ contentIdea: p.contentIdea,
       content: (
         <div>
         <SocialLeadInbox
+          key={calendar.id}
           calendarId={calendar.id}
-          isManager={isManager}
-          canReplyFromWorkspace={canEditWorkspace && featureAccess("socialInbox")}
+          isManager={can("workspace.manage")}
+          isOwner={isOwner}
+          canManageLeads={can("leads.manage")}
+          canViewChannels={can("channels.view")}
+          canReplyFromWorkspace={can("inbox.reply") && featureAccess("socialInbox")}
           inboxAccess={featureAccess("socialInbox")}
           autoRepliesAccess={featureAccess("aiAutoReplies")}
+          businessKnowledge={can("knowledge.manage") ? {
+            aiActive,
+            businessSummary: calendar.aiBusinessSummary,
+            summaryUpdatedAt: calendar.aiBusinessSummaryUpdatedAt?.toISOString() ?? null,
+            documents: calendar.businessDocuments.map(doc => ({ id: doc.id, originalName: doc.originalName, createdAt: doc.createdAt.toISOString(), websiteUrl: doc.websiteUrl })),
+          } : undefined}
         />
         </div>
       ),
@@ -1099,13 +835,14 @@ contentIdea: p.contentIdea,
     <CalendarPasswordDisplay
       calendarId={calendar.id}
       accessCode={calendar.accessCode ?? ""}
+      canManage={can("workspace.manage")}
     />
   </div>
 </div>
         </div>
       ),
     },
-    ...(canEditWorkspace
+    ...((can("channels.view") || can("knowledge.view") || can("ai.generate"))
   ? [
           {
             id: "channels" as const,
@@ -1121,36 +858,36 @@ contentIdea: p.contentIdea,
   calendarId={calendar.id}
   username={calendar.instagramUsername}
   connectedAt={calendar.instagramConnectedAt?.toISOString() ?? null}
-  isManager={isManager}
+  isManager={can("channels.manage")}
 />
 
 <TikTokConnectionCard
   calendarId={calendar.id}
   username={calendar.tikTokUsername}
   connectedAt={calendar.tikTokConnectedAt?.toISOString() ?? null}
-  isManager={isManager}
+  isManager={can("channels.manage")}
 />
                 <AdditionalChannelCard
                   channel="facebook"
                   calendarId={calendar.id}
                   accountName={calendar.facebookPageName}
                   connectedAt={calendar.facebookConnectedAt?.toISOString() ?? null}
-                  isManager={isManager}
+                  isManager={can("channels.manage")}
                 />
                 <AdditionalChannelCard
                   channel="linkedin"
                   calendarId={calendar.id}
                   accountName={calendar.linkedinName}
                   connectedAt={calendar.linkedinConnectedAt?.toISOString() ?? null}
-                  isManager={isManager}
+                  isManager={can("channels.manage")}
                 />
-                <WhatsAppConnectionCard calendarId={calendar.id} isManager={isManager} />
+                <WhatsAppConnectionCard calendarId={calendar.id} isManager={can("channels.manage")} />
                 <AdditionalChannelCard
                   channel="x"
                   calendarId={calendar.id}
                   accountName={calendar.xUsername}
                   connectedAt={calendar.xConnectedAt?.toISOString() ?? null}
-                  isManager={isManager}
+                  isManager={can("channels.manage")}
                 />
               </div>
             ),
@@ -1165,6 +902,7 @@ contentIdea: p.contentIdea,
             group: "AI Studio" as const,
             content: (
               <BusinessKnowledgeCard
+                canEdit={can("knowledge.manage")}
                 calendarId={calendar.id}
                 aiActive={aiActive}
                 businessSummary={calendar.aiBusinessSummary}
@@ -1202,8 +940,8 @@ contentIdea: p.contentIdea,
           },
           {
             id: "publish" as const,
-            label: "Publish",
-            eyebrow: "Publishing control",
+            label: "Client delivery",
+            eyebrow: "Client review & delivery",
             title: "Put the approved plan into the world.",
             description:
               "Control the client-facing plan, header and publication state from one focused publishing room.",
@@ -1234,28 +972,32 @@ contentIdea: p.contentIdea,
     <CalendarPaymentCallbackHandler />
     <CalendarWorkspaceShell
       clientName={calendar.clientName}
-      clientUrl={clientUrl}
+      clientUrl={can("delivery.manage") ? clientUrl : ""}
       isManager={isManager}
-      settings={
+      settings={can("workspace.manage") ?
         <CalendarSettingsMenu
           calendarId={calendar.id}
           clientName={calendar.clientName}
-          userRole={userRole}
-          isManager={isManager}
-        />
+          userRole={can("workspace.manage") ? "EDIT_CALENDAR" : "VIEW_ONLY"}
+          isManager={isOwner}
+        /> : undefined
       }
      publishAction={
-  canEditWorkspace && workspaceActive ? (
+  can("delivery.manage") && workspaceActive ? (
     <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
       Publish workspace <span aria-hidden><><UiSymbol name="right" /></></span>
     </PublishTrigger>
   ) : undefined
 }
-      sections={sections.map(section => ({ ...section, content: (
+      sections={sections.filter(section => {
+        const required: Record<string, TeamPermission> = { overview: "workspace.manage", content: "calendar.view", team: "people.view", analytics: "analytics.view", inbox: "inbox.view", leads: "leads.view", access: "delivery.manage", channels: "channels.view", knowledge: "knowledge.view", generate: "ai.generate", publish: "delivery.manage" };
+        if (section.id === "overview") return can("workspace.manage") && can("calendar.view") && can("analytics.view") && can("inbox.view") && can("leads.view");
+        return can(required[section.id]);
+      }).map(section => ({ ...section, content: (
         <>
           {agencyTrial && <WorkspaceFeatureNotice trial paidPlan={calendar.manager.contentWorkspaceBillingStatus === "ACTIVE" ? calendar.manager.contentWorkspacePlan : null} trialEndsAt={calendar.manager.contentWorkspaceTrialEndsAt} />}
           {!workspaceActive && <WorkspaceFeatureNotice />}
-          {!workspaceActive && !["overview", "analytics", "inbox", "leads"].includes(section.id)
+          {!workspaceActive && !["overview", "analytics", "inbox", "leads", "team"].includes(section.id)
             ? <fieldset disabled className="min-w-0">{section.content}</fieldset>
             : section.content}
         </>

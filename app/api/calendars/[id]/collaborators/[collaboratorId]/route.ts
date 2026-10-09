@@ -1,69 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-
-import { getCurrentCreator } from "@/lib/auth";
-
-import { db } from "@/lib/db";
-
-import { hasCalendarPermission } from "@/lib/calendarPermissions";
-
-// DELETE — removes an already-accepted collaborator from the
-// calendar. Manager and EDIT_CALENDAR users can do this. The person
-// keeps their account and any other calendars they're on; this only
-// revokes access to this one.
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string; collaboratorId: string }> }
-) {
-  const creator = await getCurrentCreator();
-
-  if (!creator) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const { id, collaboratorId } = await params;
-
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id },
-  });
-
-  if (!calendar) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const canManageCollaborators = await hasCalendarPermission(
-    creator.id,
-    id,
-    "EDIT_CALENDAR"
-  );
-
-  if (!canManageCollaborators) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const collaborator = await db.calendarCollaborator.findUnique({
-    where: { id: collaboratorId },
-  });
-
-  if (!collaborator || collaborator.calendarId !== id) {
-    return NextResponse.json(
-      { error: "Collaborator not found" },
-      { status: 404 }
-    );
-  }
-
-  await db.calendarCollaborator.delete({
-    where: { id: collaboratorId },
-  });
-
-  return NextResponse.json({ ok: true });
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentCreator } from '@/lib/auth';
+import { editTeammate, removeTeammate, teamErrorResponse } from '@/lib/calendarTeamService';
+type Context = { params: Promise<{ id: string; collaboratorId: string }> };
+async function action(req: NextRequest, { params }: Context, remove: boolean) {
+  const actor = await getCurrentCreator();
+  if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const { id, collaboratorId } = await params;
+    return NextResponse.json(remove ? await removeTeammate(id, collaboratorId, actor) : await editTeammate(id, collaboratorId, actor, await req.json().catch(() => null)));
+  } catch (error) { const result = teamErrorResponse(error); return NextResponse.json({ error: result.error }, { status: result.status }); }
 }
+export const DELETE = (req: NextRequest, context: Context) => action(req, context, true);
+export const PATCH = (req: NextRequest, context: Context) => action(req, context, false);

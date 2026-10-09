@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId, leadId } = await params;
-  if (!(await hasCalendarPermission(creator.id, calendarId, "EDIT_CALENDAR"))) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (!(await hasCalendarPermission(creator.id, calendarId, "leads.manage"))) return NextResponse.json({ error: "Not found." }, { status: 404 });
   if (!(await canAccessCalendarById(calendarId))) return NextResponse.json({ error: "This workspace isn’t active." }, { status: 403 });
   const featureLock = await calendarFeatureGate(calendarId, "leadManagement");
   if (featureLock) return featureLock;

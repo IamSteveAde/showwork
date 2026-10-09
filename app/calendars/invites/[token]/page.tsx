@@ -1,99 +1,34 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { createHash } from "crypto";
-import { getCurrentCreator } from "@/lib/auth";
-import { db } from "@/lib/db";
-import AcceptCalendarInviteButton from "@/components/calendars/AcceptCalendarInviteButton";
-
-const COLOR = { black: "#0A0A0A", blue: "#2478FF" };
-
-const ROLE_META: Record<string, { label: string; description: string; color: string }> = {
-  VIEW_ONLY: { label: "View only", description: "You'll be able to see this calendar, but not make changes.", color: "#888786" },
-  ADD_CONTENT: { label: "Add content", description: "You'll be able to upload images and videos to planned posts.", color: "#2478FF" },
-  EDIT_CALENDAR: { label: "Edit calendar", description: "You'll be able to create, edit, and delete posts, and edit the calendar itself.", color: "#F97316" },
-};
-
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export const dynamic = "force-dynamic";
-
-export default async function CalendarInvitePage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { createHash } from 'node:crypto';
+import { Users, Check, ShieldCheck } from 'lucide-react';
+import { getCurrentCreator } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { TEAM_ROLES, TEAM_PERMISSIONS, normalizeTeamRole, effectiveTeamPermissions } from '@/lib/calendarTeamPolicy';
+import AcceptCalendarInviteButton from '@/components/calendars/AcceptCalendarInviteButton';
+import SwitchInviteAccountButton from '@/components/calendars/SwitchInviteAccountButton';
+export const dynamic = 'force-dynamic';
+export default async function CalendarInvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const invite = await db.calendarInvite.findUnique({
-    where: { tokenHash: hashToken(token) },
-    include: { calendar: { select: { clientName: true } }, invitedByCreator: { select: { name: true, email: true } } },
-  });
-
+  const invite = await db.calendarInvite.findUnique({ where: { tokenHash: createHash('sha256').update(token).digest('hex') }, include: { calendar: { select: { id: true, clientName: true } }, invitedByCreator: { select: { name: true, email: true } } } });
   if (!invite) notFound();
-
-  const roleMeta = ROLE_META[invite.role] ?? ROLE_META.ADD_CONTENT;
-
-  const currentCreator = await getCurrentCreator();
+  const role = normalizeTeamRole(invite.role);
+  if (!role) notFound();
+  const features = effectiveTeamPermissions(role, invite.permissions, invite.customPermissions);
+  const actor = await getCurrentCreator();
   const nextUrl = `/calendars/invites/${token}`;
-
-  let body: React.ReactNode;
-
-  if (invite.status !== "PENDING") {
-    body = <p className="text-sm text-white/50">This invite has already been used.</p>;
-  } else if (invite.expiresAt < new Date()) {
-    body = <p className="text-sm text-white/50">This invite has expired — ask {invite.invitedByCreator.name || invite.invitedByCreator.email} to send a new one.</p>;
-  } else if (currentCreator) {
-    if (currentCreator.email.toLowerCase() === invite.email.toLowerCase()) {
-      body = <AcceptCalendarInviteButton token={token} />;
-    } else {
-      body = (
-        <p className="text-sm text-white/50">
-          This invite was sent to {invite.email}, but you&apos;re logged in as {currentCreator.email}. Log out and try again with the right account.
-        </p>
-      );
-    }
-  } else {
-    const existingAccount = await db.creator.findUnique({ where: { email: invite.email }, select: { id: true } });
-    body = existingAccount ? (
-      <Link
-        href={`/login?next=${encodeURIComponent(nextUrl)}`}
-        className="inline-block rounded-lg px-6 py-3 text-sm font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
-      >
-        Log in to accept
-      </Link>
-    ) : (
-      <Link
-        href={`/signup?next=${encodeURIComponent(nextUrl)}`}
-        className="inline-block rounded-lg px-6 py-3 text-sm font-semibold text-white"
-        style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
-      >
-        Sign up to accept
-      </Link>
-    );
+  let body;
+  if (invite.status === 'ACCEPTED' && actor?.email.toLowerCase() === invite.email.toLowerCase()) body = <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#2463CC] px-5 text-sm font-semibold text-white" href={`/dashboard/calendars/${invite.calendarId}`}>Open workspace</Link>;
+  else if (invite.status !== 'PENDING') body = <p className="text-sm text-[#6C83A2]">This invitation is no longer active.</p>;
+  else if (invite.expiresAt <= new Date()) body = <p className="text-sm text-[#6C83A2]">This invitation expired. Ask the owner or manager to resend it.</p>;
+  else if (actor && actor.email.trim().toLowerCase() === invite.email.trim().toLowerCase()) body = <AcceptCalendarInviteButton token={token} />;
+  else if (actor) body = <div><p className="text-sm leading-6 text-[#6C83A2]">This invitation is for {invite.email}. You are signed in as {actor.email}.</p><SwitchInviteAccountButton nextUrl={nextUrl} /></div>;
+  else {
+    const account = await db.creator.findUnique({ where: { email: invite.email }, select: { id: true } });
+    body = <Link className="inline-flex min-h-11 items-center rounded-xl bg-[#2463CC] px-5 text-sm font-semibold text-white" href={`/${account ? 'login' : 'signup'}?next=${encodeURIComponent(nextUrl)}`}>{account ? 'Sign in to join' : 'Create an account to join'}</Link>;
   }
-
-  return (
-    <main className="flex min-h-screen items-center justify-center px-6" style={{ background: COLOR.black }}>
-      <div className="w-full max-w-md rounded-2xl p-8 text-center" style={{ background: "#1A1A1A" }}>
-        <p className="mb-2 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
-          Calendar invite
-        </p>
-        <h1 className="mb-2 text-xl font-bold text-white">
-          {invite.invitedByCreator.name || invite.invitedByCreator.email} invited you
-        </h1>
-        <p className="mb-6 text-sm text-white/50">
-          To help create content for <strong className="text-white">{invite.calendar.clientName}</strong>&apos;s calendar.
-        </p>
-        <div className="mb-6 rounded-xl p-4 text-left" style={{ background: `${roleMeta.color}14` }}>
-          <p className="text-xs font-semibold uppercase" style={{ color: roleMeta.color, letterSpacing: "0.06em" }}>
-            {roleMeta.label} access
-          </p>
-          <p className="mt-1 text-xs text-white/50">{roleMeta.description}</p>
-        </div>
-        {body}
-      </div>
-    </main>
-  );
+  return <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,#D7E7FF,#EEF3FB_65%)] p-5 text-[#234369]"><div className="w-full max-w-xl overflow-hidden rounded-3xl border border-[#C9DBF4] bg-white shadow-[0_25px_65px_-35px_#244A81]">
+    <header className="bg-[linear-gradient(130deg,#164283,#2468D0)] p-7 text-white"><Users size={29} aria-hidden="true" /><p className="mt-5 text-xs uppercase tracking-widest text-blue-100">You’re invited</p><h1 className="mt-2 text-3xl font-medium tracking-tight">A place on the team.</h1><p className="mt-3 text-sm leading-6 text-blue-100">{invite.invitedByCreator.name || invite.invitedByCreator.email} invited you to {invite.calendar.clientName}.</p></header>
+    <div className="p-7"><div className="flex items-center gap-2"><ShieldCheck size={18} aria-hidden="true" /><h2 className="text-lg font-semibold">{TEAM_ROLES[role].label}</h2></div><p className="mt-2 text-sm leading-6 text-[#7187A3]">{TEAM_ROLES[role].description}</p>{invite.customPermissions && <p className="mt-3 text-xs leading-6 text-[#5C7DA4]">Your access is customized. Only the features listed below are enabled.</p>}<ul className="mt-5 grid gap-2 sm:grid-cols-2">{features.map(permission => <li key={permission} className="flex items-start gap-2 rounded-lg bg-[#F1F6FF] p-2.5 text-xs leading-5 text-[#587BA5]"><Check size={13} className="mt-1 shrink-0" aria-hidden="true" />{TEAM_PERMISSIONS[permission].label}</li>)}</ul><div className="mt-6 border-t border-[#D8E4F4] pt-5">{body}</div></div>
+  </div></main>;
 }

@@ -30,7 +30,7 @@ export async function DELETE(
     !(await hasCalendarPermission(
       creator.id,
       id,
-      "EDIT_CALENDAR"
+      "knowledge.manage"
     ))
   ) {
     return NextResponse.json(

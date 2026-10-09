@@ -254,7 +254,7 @@ export async function GET(
   // Read-only report — safe for any registered role on the calendar,
   // not just the manager. Downloading a status summary can't damage
   // anyone else's work, same reasoning as the project delivery report.
-  if (!(await hasCalendarPermission(creator.id, id, "VIEW_ONLY"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "analytics.view"))) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

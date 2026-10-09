@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -20,7 +21,7 @@ export async function GET(
 
   const { id } = await params;
   const calendar = await db.socialCalendar.findUnique({ where: { id }, select: { managerId: true } });
-  if (!calendar || calendar.managerId !== creator.id) {
+  if (!calendar || !(await hasCalendarPermission(creator.id, id, "channels.manage"))) {
     return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&instagramError=not_found`);
   }
 

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) return NextResponse.json({ error: "You don't have permission to sync this inbox." }, { status: 403 });
+  if (!(await hasCalendarPermission(creator.id, id, "channels.manage"))) return NextResponse.json({ error: "You don't have permission to sync this inbox." }, { status: 403 });
   if (!(await canAccessCalendarById(id))) return NextResponse.json({ error: "This workspace isn't active." }, { status: 403 });
   const featureLock = await calendarFeatureGate(id, "socialInbox");
   if (featureLock) return featureLock;

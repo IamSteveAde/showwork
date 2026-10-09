@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id, postId } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR")) || !(await canAccessCalendarById(id))) return NextResponse.json({ error: "You cannot publish in this workspace." }, { status: 403 });
+  if (!(await hasCalendarPermission(creator.id, id, "publishing.manage")) || !(await canAccessCalendarById(id))) return NextResponse.json({ error: "You cannot publish in this workspace." }, { status: 403 });
   const body = await req.json().catch(() => ({}));
   if (!body || !["save", "schedule", "publish", "cancel", "retry"].includes(body.action)) return NextResponse.json({ error: "Choose a publishing action." }, { status: 400 });
   const post = await db.calendarPost.findFirst({ where: { id: postId, calendarId: id }, include: { assets: true } });

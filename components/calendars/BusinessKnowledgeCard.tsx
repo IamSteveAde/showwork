@@ -1,14 +1,16 @@
 "use client";
 
-import { getFileContentType } from "@/lib/mediaFileTypes";
+import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
+import { useRouter } from "next/navigation";
+import { UploadCloud, FileText, CheckCircle2 } from "lucide-react";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
 import UiSymbol from "@/components/ui/UiSymbol";
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
-interface BusinessDocumentData {
+export interface BusinessDocumentData {
   id: string;
   originalName: string;
   createdAt: string;
@@ -16,6 +18,8 @@ interface BusinessDocumentData {
 }
 
 type BusinessKnowledgeCardProps = {
+  compact?: boolean;
+  canEdit?: boolean;
   calendarId: string;
   aiActive: boolean;
   businessSummary: string | null;
@@ -149,13 +153,17 @@ export default function BusinessKnowledgeCard({
   summaryUpdatedAt,
   lastResearchedAt,
   documents,
+  compact = false,
+  canEdit = true,
 }: BusinessKnowledgeCardProps) {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [businessSummaryState, setBusinessSummaryState] = useState(businessSummary);
   const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
   const [documentsState, setDocumentsState] = useState(documents);
   const [uploading, setUploading] = useState(false);
+  const [uploadFile, setUploadFile] = useState<{ index: number; total: number; name: string } | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [addingWebsite, setAddingWebsite] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
@@ -165,6 +173,12 @@ export default function BusinessKnowledgeCard({
   const [confirmingDeleteId, setConfirmingDeleteId] =
     useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBusinessSummaryState(businessSummary);
+    setSummaryUpdatedAtState(summaryUpdatedAt);
+    setDocumentsState(documents);
+  }, [businessSummary, summaryUpdatedAt, documents]);
 
   const uploadOne = async (file: File) => {
     setUploadPercent(0);
@@ -182,7 +196,7 @@ export default function BusinessKnowledgeCard({
         },
         body: JSON.stringify({
           filename: file.name,
-          contentType: getFileContentType(file),
+          contentType: businessDocumentType(file),
           fileSize: file.size,
         }),
       }
@@ -236,7 +250,7 @@ if (presignContentType.includes("application/json")) {
      * Upload the file directly to R2.
      */
     await putFileWithProgress(presignData.uploadUrl, file, {
-      contentType: getFileContentType(file),
+      contentType: businessDocumentType(file),
       onProgress: ({ percent }) => setUploadPercent(percent),
     });
 
@@ -257,7 +271,7 @@ if (presignContentType.includes("application/json")) {
         body: JSON.stringify({
           fileKey: presignData.fileKey,
           originalName: file.name,
-          contentType: getFileContentType(file),
+          contentType: businessDocumentType(file),
           fileSize: file.size,
           reservationId: presignData.reservationId,
         }),
@@ -276,56 +290,41 @@ if (presignContentType.includes("application/json")) {
   };
 
   const handleFiles = async (files: FileList) => {
-    if (files.length === 0) return;
-
+    const selectedFiles = Array.from(files);
+    if (!selectedFiles.length || uploading || !canEdit) return;
     setUploading(true);
     setError(null);
-
+    const failures: string[] = [];
     try {
-      let anyFailedToFold = false;
-
-      for (const file of Array.from(files)) {
-        const result = await uploadOne(file);
-
-        if (result?.document) {
-          const uploadedDocument = result.document as BusinessDocumentData;
-          setDocumentsState((current) => [
-            ...current.filter((document) => document.id !== uploadedDocument.id),
-            uploadedDocument,
-          ]);
-        }
-
-        if (result?.summaryUpdated && typeof result.businessSummary === "string") {
-          setBusinessSummaryState(result.businessSummary);
-          setSummaryUpdatedAtState(result.summaryUpdatedAt ?? new Date().toISOString());
-          window.sessionStorage.setItem(`calendar:${calendarId}:has-business-summary`, "true");
-        }
-
-        if (result?.summaryUpdated === false) {
-          anyFailedToFold = true;
+      for (const [index, file] of selectedFiles.entries()) {
+        setUploadFile({ index: index + 1, total: selectedFiles.length, name: file.name });
+        try {
+          const result = await uploadOne(file);
+          if (result?.document) {
+            const uploadedDocument = result.document as BusinessDocumentData;
+            setDocumentsState(current => [...current.filter(document => document.id !== uploadedDocument.id), uploadedDocument]);
+          }
+          if (result?.summaryUpdated && typeof result.businessSummary === "string") {
+            setBusinessSummaryState(result.businessSummary);
+            setSummaryUpdatedAtState(result.summaryUpdatedAt ?? new Date().toISOString());
+            window.sessionStorage.setItem(`calendar:${calendarId}:has-business-summary`, "true");
+          }
+          if (result?.summaryUpdated === false) failures.push(`${file.name}: uploaded, but AI could not update its knowledge.`);
+        } catch (error) {
+          failures.push(`${file.name}: ${error instanceof Error ? error.message : "Upload failed. Please try again."}`);
         }
       }
-
-      if (anyFailedToFold) {
-        setError(
-          "The document uploaded, but AI couldn't process it into a summary. Try again in a moment."
-        );
-      }
-
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong"
-      );
+      router.refresh();
+      if (failures.length) setError(failures.join("\n"));
     } finally {
       setUploading(false);
+      setUploadFile(null);
     }
   };
 
   const addWebsite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!websiteUrl.trim()) return;
+    if (!websiteUrl.trim() || !canEdit) return;
     setAddingWebsite(true);
     setError(null);
     try {
@@ -356,6 +355,7 @@ if (presignContentType.includes("application/json")) {
   };
 
   const removeDocument = async (documentId: string) => {
+    if (!canEdit) return;
     setDeletingId(documentId);
     setError(null);
 
@@ -388,6 +388,26 @@ if (presignContentType.includes("application/json")) {
 
   const updated = formatDate(summaryUpdatedAtState);
   const researched = formatDate(lastResearchedAt);
+
+  if (compact) {
+    return <div className="mt-5 border-t border-[#DCE6F3] pt-5">
+      <h4 className="text-base font-medium tracking-tight text-[#26496E]">Give AI your business documents.</h4>
+      <p className="mt-2 text-xs leading-6 text-[#6B83A3]">Add your business profile, price lists, brochures, and FAQs. Select several files together or add more later.</p>
+      {!aiActive && <WorkspaceFeatureNotice compact message="Activate your workspace to add business documents." />}
+      <button type="button" disabled={uploading || !aiActive || !canEdit} onClick={() => fileInputRef.current?.click()} className="mt-4 flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#9FBDEB] bg-[linear-gradient(135deg,#E8F1FF,#F7FAFF)] px-5 py-6 text-[#285B9E] transition hover:border-[#3478EC] hover:bg-[#E1EDFF] disabled:opacity-50">
+        <UploadCloud size={28} strokeWidth={1.5} aria-hidden="true" />
+        <span className="text-sm font-semibold">{uploading ? `File ${uploadFile?.index || 1} of ${uploadFile?.total || 1} · Uploading ${uploadPercent}% & reading…` : documentsState.length ? "Add more documents" : "Upload documents or price lists"}</span>
+        <span className="text-xs text-[#6B83A3]">PDF · Word · Excel · CSV · Text</span>
+      </button>
+      <input ref={fileInputRef} type="file" multiple accept={BUSINESS_DOCUMENT_ACCEPT} disabled={uploading || !aiActive || !canEdit} className="hidden" aria-label="Upload business documents and price lists" onChange={event => { if (event.target.files?.length) void handleFiles(event.target.files); event.currentTarget.value = ""; }} />
+      {uploadFile && <p role="status" className="mt-3 truncate text-xs text-[#607898]" title={uploadFile.name}>{uploadFile.name}</p>}
+      {error && <p role="alert" className="mt-3 whitespace-pre-line rounded-lg bg-red-50 p-3 text-xs leading-5 text-red-700">{error}</p>}
+      {businessSummaryState && !error && <p role="status" className="mt-4 flex items-center gap-2 text-xs text-[#287768]"><CheckCircle2 size={15} aria-hidden="true" />Business knowledge ready{updated ? ` · Updated ${updated}` : ""}</p>}
+      {documentsState.length > 0 && <p className="mt-4 text-xs font-semibold text-[#42658D]">{documentsState.length} source {documentsState.length === 1 ? "document" : "documents"}</p>}
+      {documentsState.length > 0 && <ul className="mt-4 divide-y divide-[#DFE7F3]">{documentsState.map(document => <li key={document.id} className="flex min-w-0 items-center gap-3 py-3 text-xs text-[#4D6D94]"><FileText size={16} className="shrink-0" aria-hidden="true" /><span className="truncate" title={document.originalName}>{document.originalName}</span></li>)}</ul>}
+      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("showwork-workspace-navigate", { detail: { id: "knowledge" } }))} className="mt-3 min-h-11 text-xs font-semibold text-[#2866BE]">Review business knowledge →</button>
+    </div>;
+  }
 
   if (!aiActive) {
     return (
@@ -625,7 +645,7 @@ if (presignContentType.includes("application/json")) {
                 onClick={() =>
                   fileInputRef.current?.click()
                 }
-                disabled={uploading}
+                disabled={uploading || !canEdit}
                 className="mt-auto flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white shadow-[0_10px_24px_rgba(36,120,255,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <UploadIcon />
@@ -636,7 +656,7 @@ if (presignContentType.includes("application/json")) {
               </button>
 
               <p className="mt-2 text-center text-[9px] font-medium text-[#98A2B3]">
-                PDF, Word or plain text
+                PDF, Word, Excel, CSV or plain text
               </p>
               <form onSubmit={(event) => void addWebsite(event)} className="mt-4 border-t border-[#E4E7EC] pt-4">
                 <label htmlFor="business-website-url" className="block text-[10px] font-semibold text-[#475467]">Website URL</label>
@@ -648,12 +668,12 @@ if (presignContentType.includes("application/json")) {
                     placeholder="example.com or https://example.com"
                     value={websiteUrl}
                     onChange={(event) => setWebsiteUrl(event.target.value)}
-                    disabled={addingWebsite || uploading}
+                    disabled={addingWebsite || uploading || !canEdit}
                     className="min-w-0 flex-1 rounded-xl border border-[#D0D5DD] bg-white px-3 py-2.5 text-xs text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/10 disabled:opacity-60"
                   />
                   <button
                     type="submit"
-                    disabled={addingWebsite || uploading || !websiteUrl.trim()}
+                    disabled={addingWebsite || uploading || !canEdit || !websiteUrl.trim()}
                     className="shrink-0 rounded-xl bg-[#101828] px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   >{addingWebsite ? "Reading…" : "Add website"}</button>
                 </div>
@@ -667,9 +687,9 @@ if (presignContentType.includes("application/json")) {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          accept={BUSINESS_DOCUMENT_ACCEPT}
           className="hidden"
-          disabled={uploading}
+          disabled={uploading || !canEdit}
           onChange={(event) => {
             if (
               event.target.files &&

@@ -1,3 +1,6 @@
+import { normalizeTeamRole, TEAM_ROLES } from "@/lib/calendarTeamPolicy";
+import { retryDatabaseRead } from "@/lib/retryDatabaseRead";
+import styles from "@/components/calendars/CalendarDashboard.module.css";
 import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -51,7 +54,7 @@ export default async function CalendarsPage({
       : {}),
   };
   const [billing, totalCalendars, matchingCalendars, collaboratorMemberships] =
-    await Promise.all([
+    await retryDatabaseRead(() => Promise.all([
       db.creator.findUnique({
         where: { id: creator.id },
         select: {
@@ -85,19 +88,19 @@ export default async function CalendarsPage({
           },
         },
       }),
-    ]);
+    ]));
   if (billing?.contentWorkspaceBillingStatus === "ACTIVE")
     await syncContentWorkspaceRenewal(creator.id);
   const totalPages = Math.max(1, Math.ceil(matchingCalendars / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const skip = (safePage - 1) * PAGE_SIZE;
-  const calendars = await db.socialCalendar.findMany({
+  const calendars = await retryDatabaseRead(() => db.socialCalendar.findMany({
     where,
     orderBy: { createdAt: "desc" },
     skip,
     take: PAGE_SIZE,
     include: { _count: { select: { posts: true, collaborators: true } } },
-  });
+  }));
   const trialEnd = billing?.contentWorkspaceTrialEndsAt;
   const complimentary = Boolean(
     billing && workspaceComplimentaryPlan(billing),
@@ -133,11 +136,11 @@ export default async function CalendarsPage({
           : null;
 
   return (
-    <main className="calendar-dashboard min-h-screen bg-[#F7F9FC] px-4 py-4 text-[#101828] sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+    <main className={`calendar-dashboard ${styles.page}`}>
+      <div className={styles.shell}>
         <nav
           aria-label="Dashboard navigation"
-          className="mb-6 flex items-center justify-between gap-3 border-b border-[#E4E7EC] pb-3"
+          className={styles.nav}
         >
           <Link
             href="/dashboard"
@@ -176,18 +179,20 @@ export default async function CalendarsPage({
           </div>
         </nav>
         <div data-dashboard-tour-slot="billing" />
-        <header className="mb-5">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Client workspaces
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-[#667085]">
-            Open a client’s workspace, or add a new client.
-          </p>
+        <header className={styles.hero}>
+          <svg className={styles.heroArt} viewBox="0 0 660 460" fill="none" aria-hidden="true">
+            {Array.from({ length: 10 }, (_, i) => <path key={i} d={`M${80 + i * 32} -50 C${-120 + i * 24} 200 ${680 + i * 15} 60 ${320 + i * 30} 500`} stroke="#a7caff" strokeWidth="1" />)}
+          </svg>
+          <div><p className={styles.eyebrow}>One client. One space.</p><h1>Client workspaces</h1><p>Content, approvals, and conversations. Keep every client moving.</p></div>
+          <div className={styles.heroStats}>
+            <div><strong>{totalCalendars.toString().padStart(2, "0")}</strong><span>{totalCalendars === 1 ? "Client workspace" : "Client workspaces"}</span></div>
+            <div><strong className={styles.plan}>{planName}</strong><span>{billingSummary || "Choose your plan"}</span></div>
+          </div>
         </header>
         {billing?.contentWorkspacePlan && needsBilling && (
           <aside
             aria-label="Workspace access"
-            className={`mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border px-4 py-3 text-sm ${needsBilling ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-100 bg-blue-50 text-[#175CD3]"}`}
+            className={`my-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border px-4 py-3 text-sm ${needsBilling ? "border-amber-200 bg-amber-50 text-amber-900" : "border-blue-100 bg-blue-50 text-[#175CD3]"}`}
           >
             <p>Subscribe to restore workspace access.</p>
             <Link
@@ -201,27 +206,31 @@ export default async function CalendarsPage({
         )}
         <section
           data-onboarding="create-workspace"
-          className="mb-6"
+          className={styles.create}
           aria-label="Create a client workspace"
         >
-          <CreateCalendarForm
-            contentWorkspacePlan={billing?.contentWorkspacePlan ?? null}
-          />
+          <div className={styles.createIntro}>
+            <span className={styles.createIcon}><Users size={20} aria-hidden="true" /></span>
+            <div><h2>Make room for your next client.</h2><p>A dedicated space, ready for their next idea.</p></div>
+          </div>
+          <div className={styles.createForm}>
+            <CreateCalendarForm contentWorkspacePlan={billing?.contentWorkspacePlan ?? null} />
+          </div>
           <div data-dashboard-tour-slot="create" />
         </section>
         <Suspense fallback={null}>
           <CalendarPaymentCallbackHandler />
         </Suspense>
         <section id="your-workspaces" aria-labelledby="your-workspaces-title">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className={styles.workspaceHeading}>
             <h2
               id="your-workspaces-title"
               data-dashboard-tour="workspaces"
               className="text-base font-semibold"
             >
               Your workspaces{" "}
-              <span className="ml-1 font-normal text-[#667085]">
-                ({totalCalendars})
+              <span className={styles.count}>
+                {totalCalendars}
               </span>
             </h2>
             {(totalCalendars > 0 ||
@@ -269,7 +278,7 @@ export default async function CalendarsPage({
             </p>
           )}
           {calendars.length ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className={styles.grid}>
               {calendars.map((cal, index) => (
                 <CalendarCard
                   key={cal.id}
@@ -284,11 +293,8 @@ export default async function CalendarsPage({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#D0D5DD] bg-white px-5 py-10 text-center">
-              <CalendarDays
-                aria-hidden="true"
-                className="mx-auto mb-3 h-8 w-8 text-[#98A2B3]"
-              />
+            <div className={styles.empty}>
+              <span className={styles.emptyIcon}><CalendarDays aria-hidden="true" size={28} /></span>
               <h3 className="text-base font-semibold">
                 {query ? "No matching workspaces" : "Your clients start here"}
               </h3>
@@ -341,12 +347,12 @@ export default async function CalendarsPage({
               <Users aria-hidden="true" className="h-4 w-4 text-[#667085]" />
               Shared with you
             </h2>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className={styles.grid}>
               {collaboratorMemberships.map(({ calendar: cal, role }) => (
                 <Link
                   key={cal.id}
                   href={`/dashboard/calendars/${cal.id}`}
-                  className="rounded-2xl border border-[#E4E7EC] bg-white p-4 transition hover:border-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
+                  className={styles.sharedCard}
                 >
                   <h3 className="truncate font-semibold">{cal.clientName}</h3>
                   <p className="mt-1 truncate text-xs text-[#667085]">
@@ -354,11 +360,7 @@ export default async function CalendarsPage({
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[#667085]">
                     <span>
-                      {role === "EDIT_CALENDAR"
-                        ? "Can edit"
-                        : role === "ADD_CONTENT"
-                          ? "Can add content"
-                          : "View only"}
+                      {TEAM_ROLES[normalizeTeamRole(role) || "VIEWER"].label}
                     </span>
                     <span className="inline-flex min-h-11 items-center gap-1 font-semibold text-[#1768E8]">
                       Open workspace
@@ -370,6 +372,7 @@ export default async function CalendarsPage({
             </div>
           </section>
         )}
+        <footer className={styles.footer}><span>Showwork / Client Workspace</span><Link href="/dashboard">Back to your dashboard</Link></footer>
         <WorkspaceOnboarding
           isFirstWorkspace={totalCalendars === 0}
           hasExistingPlan={Boolean(billing?.contentWorkspacePlan)}

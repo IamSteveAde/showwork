@@ -9,7 +9,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId, conversationId } = await params;
-  if (!(await hasCalendarPermission(creator.id, calendarId, "VIEW_ONLY"))) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (!(await hasCalendarPermission(creator.id, calendarId, "inbox.reply"))) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const featureLock = await calendarFeatureGate(calendarId, "socialInbox");
   if (featureLock) return featureLock;
 
@@ -22,6 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof body?.leadStatus !== "string" || !SOCIAL_LEAD_STATUSES.includes(body.leadStatus as (typeof SOCIAL_LEAD_STATUSES)[number])) {
     return NextResponse.json({ error: "Choose a valid lead status." }, { status: 400 });
   }
+  if (!(await hasCalendarPermission(creator.id, calendarId, "leads.manage"))) return NextResponse.json({ error: "You do not have permission to manage leads." }, { status: 403 });
   const updated = await db.socialLeadConversation.updateMany({ where: { id: conversationId, calendarId }, data: { leadStatus: body.leadStatus as (typeof SOCIAL_LEAD_STATUSES)[number] } });
   if (!updated.count) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
   await db.calendarLead.updateMany({

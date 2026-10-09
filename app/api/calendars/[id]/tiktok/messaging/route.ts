@@ -9,7 +9,7 @@ export const maxDuration = 60;
 async function context(id: string) {
   const creator = await getCurrentCreator();
   if (!creator) return { error: "Unauthorized", status: 401 } as const;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR")) || !(await canAccessCalendarById(id))) return { error: "You don't have access to this inbox.", status: 403 } as const;
+  if (!(await hasCalendarPermission(creator.id, id, "inbox.reply")) || !(await canAccessCalendarById(id))) return { error: "You don't have access to this inbox.", status: 403 } as const;
   if (!(await canUseCalendarFeature(id, "socialInbox"))) return { error: "Upgrade to Studio to use Social Inbox. Your existing data is preserved.", status: 403 } as const;
   const calendar = await db.socialCalendar.findUnique({ where: { id }, select: { tikTokOpenId: true } });
   const connection = calendar?.tikTokOpenId ? await db.socialConnection.findFirst({ where: { calendarId: id, platform: "TIKTOK", platformAccountId: calendar.tikTokOpenId, status: "CONNECTED" } }) : null;

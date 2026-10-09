@@ -6,7 +6,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await hasCalendarPermission(creator.id, id, "channels.view"))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   try {
     const { connection, info } = await getTikTokCreator(id);
     return NextResponse.json({ ...info, accountId: connection.platformAccountId,

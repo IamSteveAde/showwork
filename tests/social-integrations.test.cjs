@@ -123,7 +123,7 @@ test('X reporting keeps unavailable counters null, rather than inventing zeros',
   assert.equal(m.engagement,10);assert.equal(m.engagementRate,.1);
 });
 test('worker duplicate lease never makes a platform call',async()=>{
-  const {runPublishJob}=load('lib/publishing/worker.ts',{'@/lib/db':{db:{calendarPost:{updateMany:async()=>({count:0})}}},'@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, },'@/lib/instagramPublishing':{},'@/lib/tiktokPublishing':{},'@/lib/socialReporting':{},'@/lib/socialTokens':{},'./providers':{}});
+  const {runPublishJob}=load('lib/publishing/worker.ts',{'@/lib/db':{db:{calendarPost:{updateMany:async()=>({count:0})}}},'@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, },'@/lib/instagramPublishing':{},'@/lib/tiktokPublishing':{},'@/lib/socialReporting':{},'@/lib/socialTokens':{},'./providers':{}});
   await runPublishJob('post','FACEBOOK',new Date());
 });
 test('dispatch timeout fails ambiguous job instead of automatically retrying',async()=>{
@@ -148,7 +148,7 @@ test('new inbox event scopes conversation and CRM lead to its connection workspa
   assert.equal(conversationArgs.create.calendarId,'workspaceA');assert.equal(conversationArgs.where.socialConnectionId_providerConversationId.socialConnectionId,'connectionA');assert.equal(leadArgs.create.calendarId,'workspaceA');assert.equal(unread,1);assert.equal(messageArgs.data[0].autoReplyEligible,false);
 });
 test('shared messaging dispatch keeps Meta and X separate',async()=>{
-  const {sendSocialInboxMessage}=load('lib/socialMessaging/registry.ts',{'@/lib/calendarPermissions':{canUseCalendarFeature:async()=>true,canAccessCalendarById:async()=>true},'@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:tokenMock.requireScopes},'./meta':{sendMetaInboxMessage:async()=> 'meta-message'},'@/lib/publishing/http':{providerJson:async(url,init)=>{assert.match(url,/with\/recipient\/messages$/);assert.equal(JSON.parse(init.body).text,'Hello');return{data:{dm_event_id:'x-message'}};}}});
+  const {sendSocialInboxMessage}=load('lib/socialMessaging/registry.ts',{'@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature:async()=>true,canAccessCalendarById:async()=>true},'@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:tokenMock.requireScopes},'./meta':{sendMetaInboxMessage:async()=> 'meta-message'},'@/lib/publishing/http':{providerJson:async(url,init)=>{assert.match(url,/with\/recipient\/messages$/);assert.equal(JSON.parse(init.body).text,'Hello');return{data:{dm_event_id:'x-message'}};}}});
   assert.equal(await sendSocialInboxMessage({connection:{status:'CONNECTED',platform:'FACEBOOK'},recipientId:'recipient',text:'Hello'}),'meta-message');
   assert.equal(await sendSocialInboxMessage({connection:{status:'CONNECTED',platform:'X',tokenScopes:'dm.write'},recipientId:'recipient',text:'Hello'}),'x-message');
   await assert.rejects(sendSocialInboxMessage({connection:{status:'CONNECTED',platform:'TIKTOK'},recipientId:'recipient',text:'Hello'}),/approval/);
@@ -158,7 +158,7 @@ test('initial X inbox history cannot trigger AI replies, and group DMs are exclu
   const now=new Date();
   const {syncXInbox}=load('lib/socialMessaging/x.ts',{
     '@/lib/db':{db:{socialInboxSettings:{findUnique:async()=>({aiAutoReplyEnabled:true})},socialConnection:{updateMany:async()=>({count:1})}}},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:()=>{}},
     '@/lib/publishing/http':{providerJson:async()=>({data:[{id:'message1',sender_id:'other',participant_ids:['me','other'],dm_conversation_id:'me-other',created_at:now.toISOString(),text:'Hello'},{id:'group',sender_id:'other',participant_ids:['me','other','third'],dm_conversation_id:'group',created_at:now.toISOString(),text:'Hello'}]})},
     './ingest':{ingestSocialMessage:async(c,event)=>ingested.push(event)},
@@ -169,7 +169,7 @@ test('initial X inbox history cannot trigger AI replies, and group DMs are exclu
 test('publishing route denies an unapproved post without changing state',async()=>{
   const {POST}=load('app/api/calendars/[id]/posts/[postId]/publish/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
     '@/lib/db':{db:{calendarPost:{findFirst:async()=>({platform:'FACEBOOK',publishStatus:'NOT_SCHEDULED',approvalStatus:'PENDING'}),updateMany:async()=>assert.fail('must not schedule')}}},
   });
   const result=await POST(new Request('https://site.test',{method:'POST',body:JSON.stringify({action:'schedule'})}),{params:Promise.resolve({id:'workspace',postId:'post'})});
@@ -178,7 +178,7 @@ test('publishing route denies an unapproved post without changing state',async()
 test('publishing route requires duplicate-risk acknowledgment before retry',async()=>{
   const {POST}=load('app/api/calendars/[id]/posts/[postId]/publish/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
     '@/lib/db':{db:{calendarPost:{findFirst:async()=>({platform:'FACEBOOK',publishStatus:'FAILED',approvalStatus:'APPROVED',isAiDraft:false}),updateMany:async()=>assert.fail('must not retry')}}},
   });
   const result=await POST(new Request('https://site.test',{method:'POST',body:JSON.stringify({action:'retry'})}),{params:Promise.resolve({id:'workspace',postId:'post'})});
@@ -186,7 +186,7 @@ test('publishing route requires duplicate-risk acknowledgment before retry',asyn
 });
 test('publishing worker requires matching lease and approved non-draft content',async()=>{
   const stamp=new Date();let query;
-  const {runPublishJob}=load('lib/publishing/worker.ts',{'@/lib/db':{db:{calendarPost:{updateMany:async args=>{query=args.where;return{count:0};}}}},'@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, },'@/lib/instagramPublishing':{},'@/lib/tiktokPublishing':{},'@/lib/socialReporting':{},'@/lib/socialTokens':{},'./providers':{}});
+  const {runPublishJob}=load('lib/publishing/worker.ts',{'@/lib/db':{db:{calendarPost:{updateMany:async args=>{query=args.where;return{count:0};}}}},'@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, },'@/lib/instagramPublishing':{},'@/lib/tiktokPublishing':{},'@/lib/socialReporting':{},'@/lib/socialTokens':{},'./providers':{}});
   await runPublishJob('post','X',stamp);assert.equal(query.updatedAt,stamp);assert.equal(query.approvalStatus,'APPROVED');assert.equal(query.isAiDraft,false);assert.equal(query.publishWorkerStartedAt,null);
 });
 test('client revision cancels a scheduled post atomically',async()=>{
@@ -206,7 +206,7 @@ function xInboxFixture(pages = [], overrides = {}) {
   const stored = { id:'x-connection', calendarId:'workspace', platformAccountId:'me', status:'CONNECTED', tokenScopes:'dm.read tweet.read users.read', messagingLastSyncAt:new Date() };
   const mod = load('lib/socialMessaging/x.ts', {
     '@/lib/db':{db:{socialInboxSettings:{findUnique:async()=>({aiAutoReplyEnabled:true})},socialConnection:{findMany:async query=>{assert.equal(query.where.tokenScopes,undefined);return [stored];},updateMany:async update=>{writes.push(update);return {count:1};}}}},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:tokenMock.requireScopes},
     '@/lib/publishing/http':{providerJson:async url=>{requests.push(new URL(url));return pages.shift();}},
     './ingest':{ingestSocialMessage:async(c,event)=>{messages.push(event);return true;}},
@@ -257,7 +257,7 @@ test('X provider failures retain HTTP status and produce actionable inbox errors
 test('manual X sync route enforces workspace permission before provider access',async()=>{
   const {POST}=load('app/api/calendars/[id]/inbox/sync/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>false,canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>false,canAccessCalendarById:async()=>true},
     '@/lib/socialMessaging/x':{syncSocialInboxes:async()=>assert.fail('unauthorized sync')},
   });
   assert.equal((await POST(new Request('https://site.test'),{params:Promise.resolve({id:'workspace'})})).status,403);
@@ -266,7 +266,7 @@ test('manual X sync route scopes recovery and returns missing-account/provider f
   for(const [summary,status] of [[{checked:0,synced:0,errors:[]},409],[{checked:1,synced:0,errors:['Denied']},502],[{checked:1,synced:1,errors:[]},200]]) {
     const {POST}=load('app/api/calendars/[id]/inbox/sync/route.ts',{
       '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
-      '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
+      '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, hasCalendarPermission:async()=>true,canAccessCalendarById:async()=>true},
       '@/lib/socialMessaging/x':{syncSocialInboxes:async(id,options)=>{assert.equal(id,'workspace');assert.deepEqual(options,{fullHistory:true,maxPages:2,pageSize:25});return summary;}},
     });
     assert.equal((await POST(new Request('https://site.test'),{params:Promise.resolve({id:'workspace'})})).status,status);
@@ -339,7 +339,7 @@ function chatRouteFixture({owner=true,connected=true}={}) {
   const calls=[];
   const route=load('app/api/calendars/[id]/inbox/x-chat/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/db':{db:{socialCalendar:{findFirst:async query=>{assert.deepEqual(query.where,{id:'workspace',managerId:'owner'});return owner?{id:'workspace'}:null;}},socialConnection:{findFirst:async query=>{assert.deepEqual(query.where,{id:'connection',calendarId:'workspace',platform:'X',status:'CONNECTED'});return connected?{...connection(),id:'connection',connectedAt:new Date('2026-01-01T00:00:00Z')}:null;}}}},
     '@/lib/socialTokens':{freshConnection:async c=>c,requireScopes:()=>{}},
   });
@@ -531,6 +531,7 @@ test('LinkedIn authorization requests analytics explicitly without requiring it 
 test('LinkedIn reconnection preserves previously granted analytics permission',async()=>{
   const {NextRequest}=require('next/server');let authorization;
   const route=load('app/api/calendars/[id]/channels/[channel]/connect/route.ts',{
+    '@/lib/calendarPermissions': { hasCalendarPermission: async () => true },
     '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
     '@/lib/db':{db:{socialCalendar:{findUnique:async()=>({managerId:'owner'})},socialConnection:{findFirst:async()=>({platformAccountId:'123',tokenScopes:'w_member_social,r_member_postAnalytics'})}}},
     '@/lib/url':{appUrl:()=> 'https://example.test'},
@@ -598,7 +599,7 @@ test('LinkedIn Page selection rejects unauthorized owners, foreign Pages and cro
   const route=load('app/api/calendars/[id]/channels/linkedin/pages/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},
     '@/lib/db':{db:{socialCalendar:{findFirst:async()=>owner?{id:'workspace'}:null,update:async()=>{writes++;}},socialConnection:{findFirst:async()=>({...connection(),calendarId:'workspace'})}}},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => owner, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/socialTokens':{freshConnection:async c=>c},
     '@/lib/linkedin/pages':{linkedInPages:async()=>[{id:'urn:li:organization:9',name:'Page'}]},
     '@/lib/socialReporting':{upsertSocialConnection:async()=>{writes++;}},
@@ -651,7 +652,7 @@ function linkedinInboxFixture() {
   const tx={socialLeadConversation:{upsert:async query=>{writes.push(query);return{id:'thread',leadStatus:'QUALIFIED'};},update:async()=>{unread++;},updateMany:async()=>({count:1})},socialLeadMessage:{createMany:async query=>{const event=query.data[0];if(seen.has(event.providerMessageId))return{count:0};seen.add(event.providerMessageId);writes.push(event);return{count:1};}},calendarLead:{upsert:async query=>{if(!leads.has(query.where.socialConversationId))leads.set(query.where.socialConversationId,query.create);else Object.assign(leads.get(query.where.socialConversationId),query.update);}}};
   const mod=load('lib/socialMessaging/linkedin.ts',{
     '@/lib/db':{db:{$transaction:fn=>fn(tx),socialConnection:{findMany:async query=>{assert.equal(query.where.platformAccountId,connection.platformAccountId);return[connection];}},socialLeadConversation:{findUnique:async()=>null,findFirst:async query=>query.where.participantPlatformId==='member'?{id:'thread'}:null}}},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/socialTokens':{freshConnection:async c=>c},
     '@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>true,linkedInMessagingAccess:c=>({available:c.status==='CONNECTED'})},
     '@/lib/linkedin/messagingProvider':{linkedInMessagingProvider:{decodeNotification:async events=>events,send:async()=>({messageId:'confirmed'})}},
@@ -700,7 +701,7 @@ test('LinkedIn subscription setup cannot be enabled by an unauthorized user or a
   const route=load('app/api/calendars/[id]/channels/linkedin/messaging/route.ts',{
     '@/lib/auth':{getCurrentCreator:async()=>({id:'creator'})},
     '@/lib/db':{db:{socialCalendar:{findFirst:async()=>owner?{id:'workspace'}:null},socialConnection:{findFirst:async()=>assert.fail('must not load or subscribe')}}},
-    '@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+    '@/lib/calendarPermissions':{hasCalendarPermission: async () => owner, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/linkedin/messagingAccess':{linkedInMessagingConfigured:()=>false},
     '@/lib/url':{appUrl:()=> 'https://site.test'},
   });
@@ -731,7 +732,7 @@ function autoReplyFixture({sendFails=false,persistFails=false,disabled=false,cla
   const updates=[];let sends=0;let generated=0;
   const inbound={id:'message',conversationId:'thread',autoReplyAttemptCount:0,text:'Hello',conversation:{providerConversationId:'external-thread',platform:'FACEBOOK',participantPlatformId:'person',connection:{platform:'FACEBOOK',status:'CONNECTED'},calendar:{clientName:'Business',aiBusinessSummary:'Summary',instagramPageId:null},messages:[]}};
   const db={socialInboxSettings:{findMany:async()=>[{calendarId:'calendar'}],findUnique:async()=>({aiAutoReplyEnabled:!disabled})},socialLeadMessage:{findMany:async()=>[inbound],updateMany:async()=>({count:claimCount}),update:async args=>{updates.push(args);}},$transaction:async fn=>{if(persistFails)throw new Error('storage unavailable');await fn({socialLeadMessage:{createMany:async()=>({count:1}),update:async args=>updates.push(args)},socialLeadConversation:{update:async()=>{}}});}};
-  const mod=load('lib/socialMessaging/autoReply.ts',{ '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: true, limit: 2000 }) },'@/lib/calendarPermissions':{canUseCalendarFeature:async()=>true},'@/lib/db':{db},'@/lib/openai':{generateSocialInboxAutoReply:async()=>{generated++;return{shouldReply:true,replyText:'Hi'};}},'@/lib/socialMessaging/registry':{supportsMessaging:()=>true,sendSocialInboxMessage:async input=>{sends++;assert.equal(input.conversationId,'external-thread');if(sendFails)throw new Error('timeout');return 'confirmed';}}});
+  const mod=load('lib/socialMessaging/autoReply.ts',{ '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: true, limit: 2000 }) },'@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature:async()=>true},'@/lib/db':{db},'@/lib/openai':{generateSocialInboxAutoReply:async()=>{generated++;return{shouldReply:true,replyText:'Hi'};}},'@/lib/socialMessaging/registry':{supportsMessaging:()=>true,sendSocialInboxMessage:async input=>{sends++;assert.equal(input.conversationId,'external-thread');if(sendFails)throw new Error('timeout');return 'confirmed';}}});
   return {...mod,updates,counts:()=>({sends,generated})};
 }
 test('AI replies pass conversation identity and persist confirmed delivery',async()=>{
@@ -781,7 +782,7 @@ function tikTokNativeFixture({duplicate=false,enabled=true}={}) {
   const event={client_key:'business-app',event:'im_receive_msg',user_openid:'business-id',content:JSON.stringify(wire)};
   let stored=[],dispatches=0;
   const db={socialConnection:{findMany:async()=>[connection],updateMany:async()=>({count:1})},socialLeadConversation:{findUnique:async()=>null,findFirst:async args=>args.where.participantPlatformId==='person-id'?{messages:[{platformCreatedAt:new Date()}]}:null},socialInboxSettings:{findUnique:async()=>({aiAutoReplyEnabled:true})},socialLeadMessage:{findFirst:async()=>({id:'saved'})}};
-  const mod=load('lib/socialMessaging/tiktok.ts',{'@/lib/db':{db},'@/lib/calendarPermissions':{canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
+  const mod=load('lib/socialMessaging/tiktok.ts',{'@/lib/db':{db},'@/lib/calendarPermissions':{hasCalendarPermission: async () => true, canUseCalendarFeature: async () => true, calendarFeatureGate: async () => null, canAccessCalendarById:async()=>true},
     '@/lib/tiktokMessaging':{...load('lib/tiktokMessaging.ts'),tikTokMessagingConfigured:()=>enabled},
     './ingest':{ingestSocialMessage:async(c,m)=>{stored.push(m);return !duplicate;}},'./dispatchAutoReply':{dispatchSocialInboxAutoReply:async()=>{dispatches++;}}});
   return {...mod,connection,wire,event,db,counts:()=>({stored,dispatches})};
@@ -850,4 +851,23 @@ test('TikTok Business authorization validates the official host and requests fre
 test('TikTok Business token exchange rejects partial authorization before credentials are stored',async()=>{
   global.fetch=async(url,init)=>{assert.match(url,/tt_user\/oauth2\/token/);const body=JSON.parse(init.body);assert.equal(body.auth_code,'code');assert.equal(body.redirect_uri,'https://example.test/callback');return response({code:0,data:{access_token:'business',refresh_token:'refresh',open_id:'id',scope:'message.list.read',expires_in:86400,refresh_token_expires_in:100000}});};
   await assert.rejects(load('lib/tiktokMessaging.ts').tikTokMessagingTokens({code:'code',redirectUri:'https://example.test/callback'}),/all four/);
+});
+
+
+test('an open saved conversation survives list filters and updates when fresh history arrives', () => {
+  const { resolveSelectedInboxConversation: select } = load('lib/xChat/inbox.ts');
+  const previous = { id: 'meta', platform: 'FACEBOOK', messages: [{ id: 'old', text: 'Hello' }] };
+  assert.equal(select([], 'meta', previous), previous);
+  const refreshed = { ...previous, messages: [...previous.messages, { id: 'new', text: 'New reply' }] };
+  assert.equal(select([refreshed], 'meta', previous), refreshed);
+  const other = { id: 'other', platform: 'WHATSAPP', messages: [] };
+  assert.equal(select([other], 'other', previous), other);
+  assert.equal(select([], 'other', previous), null);
+});
+
+test('the active chat never falls back to cached decrypted X history after locking', () => {
+  const { resolveSelectedInboxConversation: select } = load('lib/xChat/inbox.ts');
+  const encrypted = { id: 'xchat:connection:thread', encrypted: { connectionId: 'connection', conversationId: 'thread' }, messages: [{ text: 'Private' }] };
+  assert.equal(select([encrypted], encrypted.id, null), encrypted);
+  assert.equal(select([], encrypted.id, encrypted), null);
 });

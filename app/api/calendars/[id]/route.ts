@@ -47,30 +47,11 @@ export async function PATCH(
     );
   }
 
-  if (
-    !(await hasCalendarPermission(
-      creator.id,
-      id,
-      "EDIT_CALENDAR"
-    ))
-  ) {
-    return NextResponse.json(
-      { error: "You don't have permission to edit this calendar" },
-      { status: 403 }
-    );
-  }
-
-   const reqBody = await req.json();
-
-  const {
-    action,
-    clientName,
-    password,
-    headerBannerDesktopUrl,
-    headerBannerMobileUrl,
-    headerTitle,
-    headerDescription,
-  } = reqBody;
+  const reqBody = await req.json().catch(() => null);
+  if (!reqBody || typeof reqBody !== "object") return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const { action, clientName, password, headerBannerDesktopUrl, headerBannerMobileUrl, headerTitle, headerDescription } = reqBody;
+  const deliveryActions = ["publish", "update_header"];
+  if (!(await hasCalendarPermission(creator.id, id, deliveryActions.includes(action) ? "delivery.manage" : "workspace.manage"))) return NextResponse.json({ error: "You do not have permission for this workspace action." }, { status: 403 });
 
   // ─────────────────────────────────────────────
   // PUBLISH

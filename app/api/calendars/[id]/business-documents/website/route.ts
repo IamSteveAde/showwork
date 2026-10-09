@@ -16,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "knowledge.manage"))) {
     return NextResponse.json({ error: "You don't have permission to add business knowledge to this calendar." }, { status: 403 });
   }
 

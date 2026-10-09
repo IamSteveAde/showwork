@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { createChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
 import { createTikTokPkce, TIKTOK_PKCE_COOKIE } from "@/lib/tiktokOAuthPkce";
 import { NextRequest, NextResponse } from "next/server";
@@ -21,7 +22,7 @@ export async function GET(
 
   const { id } = await params;
   const calendar = await db.socialCalendar.findUnique({ where: { id }, select: { managerId: true } });
-  if (!calendar || calendar.managerId !== creator.id) {
+  if (!calendar || !(await hasCalendarPermission(creator.id, id, "channels.manage"))) {
     return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&tiktokError=not_found`);
   }
 

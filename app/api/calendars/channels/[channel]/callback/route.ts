@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -96,10 +97,10 @@ export async function GET(
 
   const calendar = await db.socialCalendar.findUnique({
     where: { id: calendarId },
-    select: { managerId: true },
+    select: { id: true, managerId: true },
   });
 
-  if (!calendar || calendar.managerId !== creator.id) {
+  if (!calendar || !(await hasCalendarPermission(creator.id, calendar.id, "channels.manage"))) {
     return makeRedirect(`${settingsPath}&${channel}Error=not_found`);
   }
 

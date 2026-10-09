@@ -11,12 +11,12 @@ export async function GET(
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "VIEW_ONLY"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "analytics.view"))) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
   // Saved reporting stays readable after expiry; premium actions are separately gated.
   try {
-    return NextResponse.json(await getCalendarReportingData(id, req.nextUrl.searchParams, true));
+    return NextResponse.json(await getCalendarReportingData(id, req.nextUrl.searchParams, true, await hasCalendarPermission(creator.id, id, "leads.view")));
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load reporting." }, { status: 400 });
   }
