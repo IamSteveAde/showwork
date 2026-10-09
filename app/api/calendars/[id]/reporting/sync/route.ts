@@ -10,7 +10,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id: calendarId } = await params;
-  if (!(await hasCalendarPermission(creator.id, calendarId, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, calendarId, "analytics.manage"))) {
     return NextResponse.json({ error: "You don’t have permission to sync this workspace." }, { status: 403 });
   }
   if (!(await canAccessCalendarById(calendarId))) {

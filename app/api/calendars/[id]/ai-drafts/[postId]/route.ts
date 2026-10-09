@@ -82,7 +82,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       "EDIT_CALENDAR"
     );
 
-    if (!hasPermission) {
+    if (!hasPermission || !(await hasCalendarPermission(creatorId, calendarId, "ai.generate"))) {
       return {
         error: "You don't have permission to edit this post with AI.",
         status: 403,

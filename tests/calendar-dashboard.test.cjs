@@ -7,7 +7,13 @@ const { renderToStaticMarkup } = require('react-dom/server');
 function loadPage({ total = 12, matches = total, billing = null, signedIn = true } = {}) {
   const calls = [];
   const stub = { default: () => null, __esModule: true };
+  const retryModule = { exports: {} };
+  const retryCode = ts.transpileModule(fs.readFileSync("lib/retryDatabaseRead.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  new Function("module", "exports", retryCode)(retryModule, retryModule.exports);
   const mocks = {
+    "@/lib/calendarTeamPolicy": require("./helpers/billing-fixtures.cjs").withBillingDependencies({})["@/lib/calendarTeamPolicy"],
+    "@/lib/retryDatabaseRead": retryModule.exports,
+    "@/components/calendars/CalendarDashboard.module.css": { default: new Proxy({}, { get: (_, key) => String(key) }), __esModule: true },
     "@/lib/complimentaryAccess": require("./helpers/billing-fixtures.cjs").withBillingDependencies({})["@/lib/complimentaryAccess"],
     'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children), __esModule: true },
     'next/navigation': { redirect: href => { throw new Error(`redirect:${href}`); } },

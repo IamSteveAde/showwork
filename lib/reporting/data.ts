@@ -33,6 +33,7 @@ export async function getCalendarReportingData(
   calendarId: string,
   searchParams: URLSearchParams,
   includeSyncErrors: boolean,
+  includeLeads = includeSyncErrors,
 ) {
   const advancedAccess = await canUseCalendarFeature(calendarId, "advancedAnalytics");
   const { start, end } = reportingPeriod(searchParams);
@@ -223,7 +224,7 @@ export async function getCalendarReportingData(
   accountPosts.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 
   const leadWhere = { calendarId, ...(platform ? { socialConversation: { platform } } : {}) };
-  const [leadTotal, newLeads, previousLeads, hotCount, customers, hottest] = includeSyncErrors ? await Promise.all([
+  const [leadTotal, newLeads, previousLeads, hotCount, customers, hottest] = includeSyncErrors && includeLeads ? await Promise.all([
     db.calendarLead.count({ where: { ...leadWhere, createdAt: { lte: end } } }),
     db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: start, lte: end } } }),
     db.calendarLead.count({ where: { ...leadWhere, createdAt: { gte: previousStart, lte: previousEnd } } }),
@@ -269,7 +270,7 @@ export async function getCalendarReportingData(
     period: { start: start.toISOString(), end: end.toISOString() },
     comparisonPeriod: { start: previousStart.toISOString(), end: previousEnd.toISOString() },
     performance,
-    leads: includeSyncErrors && advancedAccess ? { total: leadTotal, acquired: change(newLeads, previousLeads, "vs previous period"), hotCount, customers, hottest } : null,
+    leads: includeSyncErrors && includeLeads && advancedAccess ? { total: leadTotal, acquired: change(newLeads, previousLeads, "vs previous period"), hotCount, customers, hottest } : null,
     clientSharing: { enabled: true },
     connections: connections.map((connection) => ({
       id: connection.id,

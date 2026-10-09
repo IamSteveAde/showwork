@@ -13,7 +13,7 @@ export async function POST(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, postId } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "delivery.manage"))) {
     return NextResponse.json({ error: "You don't have permission to edit this calendar" }, { status: 403 });
   }
 

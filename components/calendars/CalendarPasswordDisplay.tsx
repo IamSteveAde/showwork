@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 export default function CalendarPasswordDisplay({
   calendarId,
   accessCode,
+  canManage = true,
 }: {
   calendarId: string;
   accessCode: string;
+  canManage?: boolean;
 }) {
   const router = useRouter();
   const [showChange, setShowChange] = useState(false);
@@ -73,9 +75,9 @@ export default function CalendarPasswordDisplay({
         <button onClick={copy} className="text-xs font-semibold underline" style={{ color: "#2478FF" }}>
           {copied ? "Copied" : "Copy"}
         </button>
-        <button onClick={() => setShowChange((prev) => !prev)} className="text-xs text-white/40 underline">
+        {canManage && <button onClick={() => setShowChange((prev) => !prev)} className="text-xs text-white/40 underline">
           {showChange ? "Cancel" : "Change password"}
-        </button>
+        </button>}
       </div>
 
       {showChange && (

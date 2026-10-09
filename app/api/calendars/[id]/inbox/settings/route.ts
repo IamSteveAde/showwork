@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { normalizeReplyProfile, validateReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId } = await params;
   const calendar = await db.socialCalendar.findUnique({ where: { id: calendarId }, select: { managerId: true } });
-  if (!calendar || calendar.managerId !== creator.id) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+  if (!calendar || !(await hasCalendarPermission(creator.id, calendarId, "workspace.manage"))) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
   const body = await req.json().catch(() => null) as { clientAccessEnabled?: unknown; aiAutoReplyEnabled?: unknown; aiAutoReplyInstructions?: unknown; aiReplyProfile?: unknown } | null;
   if (typeof body?.clientAccessEnabled !== "boolean" || typeof body.aiAutoReplyEnabled !== "boolean" || typeof body.aiAutoReplyInstructions !== "string") {
     return NextResponse.json({ error: "Inbox settings are invalid." }, { status: 400 });

@@ -41,7 +41,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 const cached = globalForPrisma.revenuePrisma;
 const cacheMatches = cached && globalForPrisma.revenuePrismaSchema === schemaSignature
-  && !!cached.billingOfferSubscription && !!cached.billingOfferRedemption && !!cached.billingOffer && !!cached.billingBenefitNotification;
+  && !!cached.billingOfferSubscription && !!cached.billingOfferRedemption && !!cached.billingOffer && !!cached.billingBenefitNotification && !!cached.calendarTeamActivity;
 export const db = cacheMatches ? cached : createDatabase();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.revenuePrisma = db;

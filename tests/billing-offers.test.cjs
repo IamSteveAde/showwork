@@ -10,7 +10,7 @@ function load(file, mocks = {}, cache = new Map()) {
   if (cache.has(file)) return cache.get(file);
   const mod = { exports: {} };
   const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', js)(name => name in mocks ? mocks[name] : name.startsWith('@/') ? load(`${name.slice(2)}.ts`, mocks, cache) : require(name), mod, mod.exports);
+  new Function('require', 'module', 'exports', js)(name => name.endsWith('.module.css') ? { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) } : name in mocks ? mocks[name] : name.startsWith('@/') ? load(`${name.slice(2)}.ts`, mocks, cache) : require(name), mod, mod.exports);
   cache.set(file, mod.exports); return mod.exports;
 }
 const rules = load('lib/billingOfferRules.ts');

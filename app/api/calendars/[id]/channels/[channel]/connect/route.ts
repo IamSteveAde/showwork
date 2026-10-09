@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -33,7 +34,7 @@ export async function GET(
     select: { managerId: true },
   });
   const settingsPath = `/dashboard/calendars/${id}?view=channels`;
-  if (!calendar || calendar.managerId !== creator.id) {
+  if (!calendar || !(await hasCalendarPermission(creator.id, id, "channels.manage"))) {
     return NextResponse.redirect(`${appUrl()}${settingsPath}&${channel}Error=not_found`);
   }
 

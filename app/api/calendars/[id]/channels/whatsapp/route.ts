@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -14,14 +15,14 @@ async function owner(calendarId: string) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const calendar = await db.socialCalendar.findUnique({ where: { id: calendarId }, select: { managerId: true } });
-  if (!calendar || calendar.managerId !== creator.id) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+  if (!calendar || !(await hasCalendarPermission(creator.id, calendarId, "channels.manage"))) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
   return null;
 }
 export async function GET(_req: NextRequest, { params }: Context) {
   const { id } = await params;
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!(await getCalendarRole(creator.id, id))) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+  if (!(await hasCalendarPermission(creator.id, id, "channels.view"))) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
   const connection = await db.socialConnection.findFirst({ where: { calendarId: id, platform: "WHATSAPP", status: { not: "DISCONNECTED" } },
     orderBy: { connectedAt: "desc" }, select: publicFields });
   return NextResponse.json({ configured: whatsappConfigured(), connection });

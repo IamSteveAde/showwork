@@ -1,372 +1,53 @@
-import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
-import { calendarFeatureGate } from "@/lib/calendarPermissions";
-import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
-import { NextRequest, NextResponse } from "next/server";
-import { randomUUID, createHash } from "crypto";
-import { getCurrentCreator } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { sendCalendarInviteEmail } from "@/lib/resend";
-import {
-  canAddContentWorkspaceCollaborator,
-  getContentWorkspacePlan,
-  canAccessContentWorkspace,
-  canUseContentWorkspaceFeature,
-} from "@/lib/contentWorkspaceUsage";
-import { hasCalendarPermission } from "@/lib/calendarPermissions";
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentCreator } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { teamAccess, inviteTeammate, teamErrorResponse } from '@/lib/calendarTeamService';
+import { effectiveTeamPermissions, normalizeTeamRole, canManageTeamRole } from '@/lib/calendarTeamPolicy';
+import { getContentWorkspacePlan, canUseContentWorkspaceFeature } from '@/lib/contentWorkspaceUsage';
+import { CONTENT_WORKSPACE_PLANS } from '@/lib/contentWorkspaceEntitlements';
+import { canAccessCalendarById } from '@/lib/calendarPermissions';
 
-function hashToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-const VALID_ROLES = [
-  "VIEW_ONLY",
-  "ADD_CONTENT",
-  "EDIT_CALENDAR",
-];
-
-// GET — everyone currently on this calendar (accepted collaborators)
-// plus anyone still waiting on an invite.
-// Manager and EDIT_CALENDAR collaborators can access this.
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const creator = await getCurrentCreator();
-
-  if (!creator) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
+type Context = { params: Promise<{ id: string }> };
+export async function GET(_req: NextRequest, { params }: Context) {
+  const actor = await getCurrentCreator();
+  if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { id } = await params;
-
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      managerId: true,
-      manager: {
-        select: {
-          id: true,
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          contentWorkspaceBillingCycle: true,
-          contentWorkspaceTrialUsedAt: true,
-          contentWorkspaceTrialEndsAt: true,
-          ...complimentaryAccessSelect, isComped: true,
-          compedUntil: true,
-        },
-      },
-    },
-  });
-
-  if (!calendar) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const canManageCollaborators =
-    await hasCalendarPermission(
-      creator.id,
-      id,
-      "EDIT_CALENDAR"
-    );
-
-  if (!canManageCollaborators) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const [collaborators, pendingInvites] =
-    await Promise.all([
-      db.calendarCollaborator.findMany({
-        where: {
-          calendarId: id,
-        },
-        orderBy: {
-          addedAt: "desc",
-        },
-        include: {
-          creator: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      }),
-
-      db.calendarInvite.findMany({
-        where: {
-          calendarId: id,
-          status: "PENDING",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
-    ]);
-
-  return NextResponse.json({
-    collaborators: collaborators.map((c) => ({
-      id: c.id,
-      name: c.creator.name,
-      email: c.creator.email,
-      role: c.role,
-    })),
-
-    pendingInvites: pendingInvites.map((i) => ({
-      id: i.id,
-      email: i.email,
-      role: i.role,
-      expiresAt: i.expiresAt,
-    })),
-  });
-}
-
-// POST — sends a new collaborator invite.
-//
-// Creator: up to 3 collaborators/invites across the account.
-// Studio: up to 15 collaborators/invites across the account.
-//
-// Creator accounts ARE allowed to collaborate. The old
-// Individual-only restriction has therefore been removed.
-//
-// Manager and EDIT_CALENDAR collaborators can send invites.
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const creator = await getCurrentCreator();
-
-  if (!creator) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const { id } = await params;
-
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      managerId: true,
-      clientName: true,
-      manager: {
-        select: {
-          id: true,
-          contentWorkspacePlan: true,
-          contentWorkspaceBillingStatus: true,
-          contentWorkspaceBillingCycle: true,
-          contentWorkspaceTrialUsedAt: true,
-          contentWorkspaceTrialEndsAt: true,
-          ...complimentaryAccessSelect, isComped: true,
-          compedUntil: true,
-        },
-      },
-    },
-  });
-
-  if (!calendar) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const canManageCollaborators =
-    await hasCalendarPermission(
-      creator.id,
-      id,
-      "EDIT_CALENDAR"
-    );
-
-  if (!canManageCollaborators) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  /*
-   * Content Workspace access and collaborator entitlement are both
-   * enforced server-side.
-   *
-   * The Content Workspace subscription belongs to the calendar owner.
-   */
-  const collaboratorEntitlement =
-    await canAddContentWorkspaceCollaborator(
-      calendar.manager
-    );
-
-  if (!collaboratorEntitlement.allowed) {
-    const plan = getContentWorkspacePlan(
-      calendar.manager
-    );
-
-    const message =
-      plan === "CREATOR"
-        ? "Your Creator plan allows up to 3 collaborators, including pending invitations."
-        : "Your Studio plan allows up to 15 collaborators, including pending invitations.";
-
-    return NextResponse.json(
-      {
-        error:
-          collaboratorEntitlement.reason ??
-          message,
-        capReached: true,
-        plan,
-      },
-      { status: 403 }
-    );
-  }
-
-  const { email, role } = await req.json();
-
-  if (!email || !email.trim()) {
-    return NextResponse.json(
-      { error: "Email is required" },
-      { status: 400 }
-    );
-  }
-
-  const finalRole = VALID_ROLES.includes(role)
-    ? role
-    : "ADD_CONTENT";
-
-  if (finalRole !== "ADD_CONTENT") {
-    const featureLock = await calendarFeatureGate(id, "advancedTeamPermissions");
-    if (featureLock) return featureLock;
-  }
-
-  /*
-   * Re-check the account-level collaborator count immediately before
-   * creating the invite.
-   *
-   * This prevents the route from relying only on the entitlement
-   * helper's earlier read.
-   */
-  const [collaboratorCount, pendingInviteCount] =
-    await Promise.all([
-      db.calendarCollaborator.count({
-        where: {
-          calendar: {
-            managerId: calendar.managerId,
-          },
-        },
-      }),
-
-      db.calendarInvite.count({
-        where: {
-          calendar: {
-            managerId: calendar.managerId,
-          },
-          status: "PENDING",
-          expiresAt: { gt: new Date() },
-        },
-      }),
-    ]);
-
-  const plan = getContentWorkspacePlan(
-    calendar.manager
-  );
-
-  const collaboratorLimit =
-    plan ? CONTENT_WORKSPACE_PLANS[plan].collaborators : 0;
-
-  if (
-    collaboratorCount + pendingInviteCount >=
-    collaboratorLimit
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          plan === "CREATOR"
-            ? "Your Creator plan allows up to 3 collaborators, including pending invitations."
-            : "Your Studio plan allows up to 15 collaborators, including pending invitations.",
-        capReached: true,
-        plan,
-        collaboratorLimit,
-      },
-      { status: 403 }
-    );
-  }
-
-  const normalizedEmail =
-    email.trim().toLowerCase();
-
-  /*
-   * Prevent inviting the same email repeatedly while an existing
-   * invitation is still pending.
-   */
-  const existingPendingInvite =
-    await db.calendarInvite.findFirst({
-      where: {
-        calendarId: calendar.id,
-        email: normalizedEmail,
-        status: "PENDING",
-      },
-      select: {
-        id: true,
-      },
-    });
-
-  if (existingPendingInvite) {
-    return NextResponse.json(
-      {
-        error:
-          "There is already a pending invitation for this email.",
-      },
-      { status: 400 }
-    );
-  }
-
-  const token =
-    randomUUID() + randomUUID();
-
-  const invite = await db.$transaction(async tx => {
-    await tx.$queryRaw`SELECT "id" FROM "Creator" WHERE "id" = ${calendar.managerId} FOR UPDATE`;
-    const owner = await tx.creator.findUniqueOrThrow({ where: { id: calendar.managerId } });
-    const currentPlan = getContentWorkspacePlan(owner);
-    if (!currentPlan || !canAccessContentWorkspace(owner)) return null;
-    if (finalRole !== "ADD_CONTENT" && !canUseContentWorkspaceFeature(owner, "advancedTeamPermissions")) return null;
-    const [accepted, pending] = await Promise.all([
-      tx.calendarCollaborator.count({ where: { calendar: { managerId: calendar.managerId } } }),
-      tx.calendarInvite.count({ where: { calendar: { managerId: calendar.managerId }, status: "PENDING", expiresAt: { gt: new Date() } } }),
-    ]);
-    if (accepted + pending >= CONTENT_WORKSPACE_PLANS[currentPlan].collaborators) return null;
-    return tx.calendarInvite.create({ data: {
-      calendarId: calendar.id, invitedByCreatorId: creator.id, email: normalizedEmail,
-      role: finalRole, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 7 * 86400000),
-    } });
-  });
-  if (!invite) return NextResponse.json({ error: "Your collaborator allowance or role permissions require an upgrade. Existing collaborators are preserved." }, { status: 403 });
-
   try {
-    await sendCalendarInviteEmail({
-      to: invite.email,
-      invitedByName:
-        creator.name || creator.email,
-      clientName: calendar.clientName,
-      token,
-    });
-  } catch (error) {
-    console.error(
-      "Failed to send calendar invite email:",
-      error
-    );
-  }
-
-  return NextResponse.json({
-    ok: true,
-    role: finalRole,
-  });
+    const access = await teamAccess(actor.id, id);
+    const calendar = await db.socialCalendar.findUniqueOrThrow({ where: { id }, include: { manager: true } });
+    const eventCount = await db.calendarTeamActivity.count({ where: { calendarId: id } });
+    const activityPages = Math.max(1, Math.ceil(eventCount / 50));
+    const requestedActivityPage = Number(_req.nextUrl.searchParams.get('activityPage') || 1);
+    const activityPage = Math.min(activityPages, Math.max(1, Number.isFinite(requestedActivityPage) ? Math.floor(requestedActivityPage) : 1));
+    const [collaborators, pendingInvites, activity, memberCount, pendingCount, active] = await Promise.all([
+      db.calendarCollaborator.findMany({ where: { calendarId: id }, orderBy: { addedAt: 'desc' }, include: { creator: { select: { name: true, email: true } } } }),
+      db.calendarInvite.findMany({ where: { calendarId: id, status: 'PENDING' }, orderBy: { createdAt: 'desc' } }),
+      db.calendarTeamActivity.findMany({ where: { calendarId: id }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 50, skip: (activityPage - 1) * 50, select: { id: true, actorName: true, action: true, targetEmail: true, details: true, createdAt: true } }),
+      db.calendarCollaborator.count({ where: { calendar: { managerId: calendar.managerId } } }),
+      db.calendarInvite.count({ where: { calendar: { managerId: calendar.managerId }, status: 'PENDING', expiresAt: { gt: new Date() } } }),
+      canAccessCalendarById(id),
+    ]);
+    const plan = getContentWorkspacePlan(calendar.manager);
+    const limit = plan ? CONTENT_WORKSPACE_PLANS[plan].collaborators : 0;
+    return NextResponse.json({
+      owner: { id: calendar.manager.id, name: calendar.manager.name, email: calendar.manager.email, role: 'OWNER' },
+      actorRole: access.role, actorPermissions: access.permissions, canManage: access.permissions.includes('people.manage'), active,
+      advancedPermissionsAccess: canUseContentWorkspaceFeature(calendar.manager, 'advancedTeamPermissions'),
+      usage: { members: memberCount, pending: pendingCount, limit, remaining: Math.max(0, limit - memberCount - pendingCount) },
+      collaborators: collaborators.map(member => ({ id: member.id, creatorId: member.creatorId, name: member.creator.name, email: member.creator.email,
+        role: normalizeTeamRole(member.role), permissions: effectiveTeamPermissions(member.role, member.permissions, member.customPermissions), customPermissions: member.customPermissions,
+        canEdit: access.permissions.includes("people.manage") && member.creatorId !== actor.id && canManageTeamRole(access.role, member.role) && (access.role === "OWNER" || effectiveTeamPermissions(member.role, member.permissions, member.customPermissions).every(permission => access.permissions.includes(permission))),
+        canManage: access.permissions.includes('people.manage') && member.creatorId !== actor.id && canManageTeamRole(access.role, member.role) })),
+      pendingInvites: pendingInvites.map(invite => ({ id: invite.id, email: invite.email, role: normalizeTeamRole(invite.role), permissions: effectiveTeamPermissions(invite.role, invite.permissions, invite.customPermissions), customPermissions: invite.customPermissions,
+        canResend: access.permissions.includes("people.manage") && canManageTeamRole(access.role, invite.role) && (access.role === "OWNER" || effectiveTeamPermissions(invite.role, invite.permissions, invite.customPermissions).every(permission => access.permissions.includes(permission))),
+        expiresAt: invite.expiresAt, expired: invite.expiresAt <= new Date(), deliveryStatus: invite.deliveryStatus, canManage: access.permissions.includes('people.manage') && canManageTeamRole(access.role, invite.role) })),
+      activity, activityPage, activityPages, activityTotal: eventCount,
+    }, { headers: { 'Cache-Control': 'no-store, private' } });
+  } catch (error) { const result = teamErrorResponse(error); return NextResponse.json({ error: result.error }, { status: result.status }); }
+}
+export async function POST(req: NextRequest, { params }: Context) {
+  const actor = await getCurrentCreator();
+  if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try { const { id } = await params; return NextResponse.json(await inviteTeammate(id, actor, await req.json().catch(() => null))); }
+  catch (error) { const result = teamErrorResponse(error); return NextResponse.json({ error: result.error }, { status: result.status }); }
 }

@@ -24,7 +24,7 @@ export async function POST(
 
   const { id } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "knowledge.manage"))) {
     return NextResponse.json(
       {
         error:

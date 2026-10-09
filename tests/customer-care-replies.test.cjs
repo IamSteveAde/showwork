@@ -94,7 +94,7 @@ function draftRoute({ signedIn = true, authorized = true, active = true, quotaAl
   const db = { socialLeadConversation: { findFirst: async args => { calls.push({ db: args }); return conversation; } }, socialInboxSettings: { findUnique: async () => ({ aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis.' }) } };
   const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
     '@/lib/auth': { getCurrentCreator: async () => signedIn ? ({ id: 'creator' }) : null }, '@/lib/db': { db },
-    '@/lib/calendarPermissions': { calendarFeatureGate: async () => null, hasCalendarPermission: async (...args) => { assert.equal(args[2], 'EDIT_CALENDAR'); return authorized; }, canAccessCalendarById: async () => active },
+    '@/lib/calendarPermissions': { calendarFeatureGate: async () => null, hasCalendarPermission: async (...args) => { assert.equal(args[2], 'inbox.reply'); return authorized; }, canAccessCalendarById: async () => active },
     '@/lib/openai': { generateSocialInboxAutoReply: async args => { calls.push({ ai: args }); return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } },
   });
   return { ...mod, calls };
@@ -123,7 +123,7 @@ test('draft route rejects unknown tones and excessive context without model call
 test('settings validates profile, saves facts, and preserves profiles for legacy requests', async () => {
   let write;
   const db = { socialCalendar: { findUnique: async () => ({ managerId: 'owner' }) }, $transaction: async fn => fn({ socialInboxSettings: { upsert: async args => { write = args; return { ...args.create, aiAutoReplyEnabled: true }; } } }) };
-  const mod = load('app/api/calendars/[id]/inbox/settings/route.ts', { '@/lib/calendarPermissions': { calendarFeatureGate: async () => null }, '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) }, '@/lib/db': { db } });
+  const mod = load('app/api/calendars/[id]/inbox/settings/route.ts', { '@/lib/calendarPermissions': { hasCalendarPermission: async () => true, calendarFeatureGate: async () => null }, '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) }, '@/lib/db': { db } });
   const body = { clientAccessEnabled: true, aiAutoReplyEnabled: true, aiAutoReplyInstructions: '', aiReplyProfile: profile() };
   let res = await mod.POST(request(body), params()); assert.equal(res.status, 200); assert.deepEqual(write.update.aiReplyProfile, profile());
   res = await mod.POST(request({ ...body, aiReplyProfile: profile({ tone: 'invalid' }) }), params()); assert.equal(res.status, 400);

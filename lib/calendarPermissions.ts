@@ -1,3 +1,4 @@
+import { effectiveTeamPermissions, normalizeTeamRole, type TeamPermission, type TeamRole } from "@/lib/calendarTeamPolicy";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { db } from "@/lib/db";
 import {
@@ -10,53 +11,31 @@ import { CONTENT_WORKSPACE_PLANS, CONTENT_WORKSPACE_FEATURES, workspaceFeatureUp
 import { NextResponse } from "next/server";
 
 export type CalendarRole = "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
-
-// The manager (owner) always has full EDIT_CALENDAR-level access,
-// regardless of anything in the collaborator table — they're not a
-// collaborator on their own calendar, they own it outright.
-export async function getCalendarRole(
-  creatorId: string,
-  calendarId: string
-): Promise<CalendarRole | null> {
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id: calendarId },
-    select: { managerId: true },
-  });
-
+export type CalendarAccess = { role: TeamRole; isOwner: boolean; permissions: TeamPermission[]; memberId?: string };
+export async function getCalendarAccess(creatorId: string, calendarId: string): Promise<CalendarAccess | null> {
+  const calendar = await db.socialCalendar.findUnique({ where: { id: calendarId }, select: { managerId: true } });
   if (!calendar) return null;
-
-  if (calendar.managerId === creatorId) return "EDIT_CALENDAR";
-
-  const collab = await db.calendarCollaborator.findUnique({
-    where: {
-      calendarId_creatorId: {
-        calendarId,
-        creatorId,
-      },
-    },
-  });
-
-  return collab?.role ?? null;
+  if (calendar.managerId === creatorId) return { role: "OWNER", isOwner: true, permissions: effectiveTeamPermissions("OWNER") };
+  const member = await db.calendarCollaborator.findUnique({ where: { calendarId_creatorId: { calendarId, creatorId } } });
+  if (!member) return null;
+  const role = normalizeTeamRole(member.role);
+  if (!role) return null;
+  return { role, isOwner: false, memberId: member.id, permissions: effectiveTeamPermissions(member.role, member.permissions, member.customPermissions) };
 }
-
-// Each role includes everything the role below it can do.
-const ROLE_RANK: Record<CalendarRole, number> = {
-  VIEW_ONLY: 0,
-  ADD_CONTENT: 1,
-  EDIT_CALENDAR: 2,
-};
-
-export async function hasCalendarPermission(
-  creatorId: string,
-  calendarId: string,
-  required: CalendarRole
-): Promise<boolean> {
-  const role = await getCalendarRole(creatorId, calendarId);
-
-  if (!role) return false;
-
-  if (required !== "VIEW_ONLY" && !(await canAccessCalendarById(calendarId))) return false;
-  return ROLE_RANK[role] >= ROLE_RANK[required];
+/** Legacy projection for calendar widgets; API authorization always uses feature permissions. */
+export async function getCalendarRole(creatorId: string, calendarId: string): Promise<CalendarRole | null> {
+  const access = await getCalendarAccess(creatorId, calendarId);
+  if (!access) return null;
+  return access.permissions.includes("calendar.edit") ? "EDIT_CALENDAR" : access.permissions.includes("creatives.upload") ? "ADD_CONTENT" : "VIEW_ONLY";
+}
+export async function hasCalendarPermission(creatorId: string, calendarId: string, required: CalendarRole | TeamPermission): Promise<boolean> {
+  const access = await getCalendarAccess(creatorId, calendarId);
+  if (!access) return false;
+  const permission: TeamPermission = required === "VIEW_ONLY" ? "calendar.view" : required === "ADD_CONTENT" ? "creatives.upload" : required === "EDIT_CALENDAR" ? "calendar.edit" : required;
+  if (!access.permissions.includes(permission)) return false;
+  // Reading existing data and revoking team access are available after billing expiry.
+  if (permission.endsWith(".view") || permission === "people.manage") return true;
+  return canAccessCalendarById(calendarId);
 }
 
 /**

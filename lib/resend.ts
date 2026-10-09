@@ -1261,11 +1261,15 @@ export async function sendCalendarInviteEmail({
   invitedByName,
   clientName,
   token,
+  roleLabel,
+  permissions,
 }: {
   to: string;
   invitedByName: string;
   clientName: string;
   token: string;
+  roleLabel?: string;
+  permissions?: readonly string[];
 }) {
   const acceptUrl = `${APP_URL}/calendars/invites/${token}`;
 
@@ -1285,7 +1289,7 @@ export async function sendCalendarInviteEmail({
         ${infoBox("Client workspace", clientName)}
         <div style="margin-top:14px;padding:15px 17px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:14px;">
           <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#344054;">
-            Your access level will be set by the workspace owner.
+            Your role: ${escapeHtml(roleLabel || "Creative Contributor")}. You can review your assigned feature access before joining.
           </p>
         </div>
       `,

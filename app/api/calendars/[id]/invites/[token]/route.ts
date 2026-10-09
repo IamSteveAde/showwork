@@ -1,74 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCurrentCreator } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { hasCalendarPermission } from "@/lib/calendarPermissions";
-
-// DELETE — revokes a pending invite before it's ever accepted.
-// Manager and EDIT_CALENDAR users can do this. Does nothing to any
-// existing collaborator relationship since an unaccepted invite never
-// created one.
-//
-// The folder here is named [token] rather than [inviteId] purely
-// because Next.js requires every dynamic segment that follows an
-// "invites" folder anywhere in the app to share one parameter name —
-// app/api/calendars/invites/[token]/accept already claimed that name
-// elsewhere in the tree. The value passed in the URL is still just
-// this invite's database id; only the internal param key had to
-// match, not the row it identifies.
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string; token: string }> }
-) {
-  const creator = await getCurrentCreator();
-
-  if (!creator) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
-  }
-
-  const { id, token: inviteId } = await params;
-
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id },
-  });
-
-  if (!calendar) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const canManageCollaborators = await hasCalendarPermission(
-    creator.id,
-    id,
-    "EDIT_CALENDAR"
-  );
-
-  if (!canManageCollaborators) {
-    return NextResponse.json(
-      { error: "Calendar not found" },
-      { status: 404 }
-    );
-  }
-
-  const invite = await db.calendarInvite.findUnique({
-    where: { id: inviteId },
-  });
-
-  if (!invite || invite.calendarId !== id) {
-    return NextResponse.json(
-      { error: "Invite not found" },
-      { status: 404 }
-    );
-  }
-
-  await db.calendarInvite.delete({
-    where: { id: inviteId },
-  });
-
-  return NextResponse.json({ ok: true });
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentCreator } from '@/lib/auth';
+import { cancelTeamInvite, inviteTeammate, teamErrorResponse } from '@/lib/calendarTeamService';
+type Context = { params: Promise<{ id: string; token: string }> };
+async function action(_req: NextRequest, { params }: Context, resend: boolean) {
+  const actor = await getCurrentCreator();
+  if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try { const { id, token: inviteId } = await params; return NextResponse.json(resend ? await inviteTeammate(id, actor, null, inviteId) : await cancelTeamInvite(id, inviteId, actor)); }
+  catch (error) { const result = teamErrorResponse(error); return NextResponse.json({ error: result.error }, { status: result.status }); }
 }
+export const DELETE = (req: NextRequest, context: Context) => action(req, context, false);
+export const POST = (req: NextRequest, context: Context) => action(req, context, true);

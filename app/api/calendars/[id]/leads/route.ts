@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { cleanOptionalString, LEAD_PIPELINE_STATUSES, LEAD_TEMPERATURES, normalizedEmail } from "@/lib/calendarLeads";
 
 async function authorization(calendarId: string, creatorId: string, write = false) {
-  if (!(await hasCalendarPermission(creatorId, calendarId, write ? "EDIT_CALENDAR" : "VIEW_ONLY"))) return 404;
+  if (!(await hasCalendarPermission(creatorId, calendarId, write ? "leads.manage" : "leads.view"))) return 404;
   return 200; // Existing lead data remains readable after trial expiry or downgrade.
 }
 

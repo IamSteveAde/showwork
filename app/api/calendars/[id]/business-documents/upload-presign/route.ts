@@ -30,7 +30,7 @@ export async function POST(
     !(await hasCalendarPermission(
       creator.id,
       id,
-      "EDIT_CALENDAR"
+      "knowledge.manage"
     ))
   ) {
     return NextResponse.json(
@@ -139,7 +139,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "That file type isn't supported — upload a PDF, Word document, or plain text file",
+          "That file type isn't supported — upload a PDF, Word document, Excel sheet, CSV, or plain text file",
       },
       { status: 400 }
     );

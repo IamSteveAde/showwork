@@ -27,7 +27,7 @@ export async function POST(
     !(await hasCalendarPermission(
       creator.id,
       id,
-      "EDIT_CALENDAR"
+      "delivery.manage"
     ))
   ) {
     return NextResponse.json(

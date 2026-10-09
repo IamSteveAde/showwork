@@ -1,6 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, CalendarDays } from "lucide-react";
+import styles from "./CalendarDashboard.module.css";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -93,6 +94,7 @@ export default function CalendarCard({
   planStatus,
   postCount,
   collaboratorCount,
+  createdAt,
 }: CalendarCardProps) {
   const router = useRouter();
 
@@ -149,53 +151,26 @@ export default function CalendarCard({
 
   return (
     <>
-      <article className="group relative min-w-0 rounded-2xl border border-[#E4E7EC] bg-white p-4 transition hover:border-[#A9C9FA]">
-        <Link
-          href={href}
-          className="absolute inset-0 z-10 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
-          aria-label={`Open ${clientName}`}
-        />
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-semibold text-[#101828]">
-              {clientName}
-            </h2>
-            <p className="mt-1 text-xs text-[#667085]">
-              {postCount} {postCount === 1 ? "post" : "posts"}
-            </p>
+      <article className={styles.card}>
+        <Link href={href} className={styles.cardLink} aria-label={`Open ${clientName}`} />
+        <div className={styles.cover}>
+          <div className={styles.coverTop}>
+            <span className={styles.monogram} aria-hidden="true">{clientName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "CW"}</span>
+            <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ color: status.color, background: status.bg }}>{status.text}</span>
           </div>
-          <span
-            className="shrink-0 rounded-full px-2 py-1 text-[11px] font-medium"
-            style={{ color: status.color, background: status.bg }}
-          >
-            {status.text}
-          </span>
+          <h3 className={styles.cardTitle} title={clientName}>{clientName}</h3>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#EEF1F5] pt-2">
-          <div className="relative z-30 -ml-2">
-            <CalendarPeopleManager
-              compact
-              calendarId={id}
-              calendarName={clientName}
-              totalMembers={totalMembers}
-            />
+        <div className={styles.cardBody}>
+          <div className={styles.cardMeta}>
+            <span className={styles.postCount}><CalendarDays size={15} aria-hidden="true" />{postCount} {postCount === 1 ? "post" : "posts"}</span>
+            <span>Since {new Date(createdAt).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "Africa/Lagos" })}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setConfirming(true);
-              }}
-              aria-label={`Delete ${clientName}'s workspace`}
-              className="relative z-20 flex h-11 w-11 items-center justify-center rounded-lg text-[#98A2B3] hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-            <span className="inline-flex min-h-11 items-center gap-1 text-xs font-semibold text-[#1768E8]">
-              Open
-              <ArrowRightIcon className="h-4 w-4" />
-            </span>
+          <div className={styles.cardFooter}>
+            <div className="relative z-30 -ml-2"><CalendarPeopleManager compact calendarId={id} calendarName={clientName} totalMembers={totalMembers} /></div>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => { setError(null); setConfirming(true); }} aria-label={`Delete ${clientName}'s workspace`} className="relative z-20 flex h-11 w-11 items-center justify-center rounded-lg text-[#7890AE] hover:bg-red-50 hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#1768E8]"><TrashIcon className="h-4 w-4" /></button>
+              <span className={styles.open}>Open <ArrowRightIcon /></span>
+            </div>
           </div>
         </div>
       </article>

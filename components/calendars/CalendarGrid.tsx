@@ -1,4 +1,5 @@
 "use client";
+import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 
 import { MEDIA_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
 
@@ -906,12 +907,14 @@ function PostTile({
 
 function AddPostPanel({
   calendarId,
+  canUpload = true,
   date,
   theme,
   onClose,
   onCreated,
 }: {
   calendarId: string;
+  canUpload?: boolean;
   date: Date;
   theme: Theme;
   onClose: () => void;
@@ -1026,6 +1029,7 @@ function AddPostPanel({
   // time the form re-renders (which happens on every keystroke
   // elsewhere in the form).
   const addFiles = (files: FileList) => {
+    if (!canUpload) return;
     // Converted to real, independent objects right here, synchronously,
     // the instant this runs — not deferred into the setState updater
     // below. React doesn't guarantee that updater function runs
@@ -2631,6 +2635,7 @@ function AddPostPanel({
 
                 <input
                   type="file"
+                    disabled={!canUpload}
                   multiple
                   accept={MEDIA_FILE_ACCEPT}
                   className="hidden"
@@ -3050,6 +3055,7 @@ function PostDetailPanel({
   calendarId,
   post,
   userRole,
+  permissions,
   theme,
   onClose,
   onUpdated,
@@ -3057,10 +3063,16 @@ function PostDetailPanel({
   calendarId: string;
   post: CalendarPostData;
   userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
+  permissions?: readonly TeamPermission[];
   theme: Theme;
   onClose: () => void;
   onUpdated: (post: CalendarPostData) => void;
 }) {
+  const canUpload = permissions ? permissions.includes("creatives.upload") : userRole !== "VIEW_ONLY";
+  const canEdit = permissions ? permissions.includes("calendar.edit") : userRole === "EDIT_CALENDAR";
+  const canAiEdit = canEdit && (!permissions || permissions.includes("ai.generate"));
+  const canPublish = permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR";
+  const canDeliver = permissions ? permissions.includes("delivery.manage") : userRole === "EDIT_CALENDAR";
   const t = THEMES[theme];
   const router = useRouter();
 
@@ -3106,7 +3118,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   const handleAiEdit = async () => {
   const instruction = aiInstruction.trim();
 
-  if (!instruction || aiEditing) {
+  if (!canAiEdit || !instruction || aiEditing) {
     return;
   }
 
@@ -3177,7 +3189,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   }
 };
   const startEditingDetails = () => {
-    if (isApproved) return;
+    if (!canEdit || isApproved) return;
 
     const date = new Date(post.postDate);
     const localDateTime = new Date(
@@ -3211,7 +3223,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   };
 
   const saveDetails = async () => {
-    if (isApproved || savingDetails) return;
+    if (!canEdit || isApproved || savingDetails) return;
 
     setSavingDetails(true);
     setDetailsError(null);
@@ -3286,6 +3298,7 @@ caption: draftDetails.caption,
     null;
 
   const uploadOne = async (file: File) => {
+    if (!canUpload) throw new Error("You do not have permission to upload creative assets.");
     setUploadPercent(0);
     if (isApproved) {
       throw new Error(
@@ -3404,6 +3417,7 @@ caption: draftDetails.caption,
       return;
     }
 
+    if (!canEdit) return;
     try {
       const res = await fetch(
         `/api/calendars/${calendarId}/posts/${post.id}/assets/${assetId}`,
@@ -3778,7 +3792,7 @@ caption: draftDetails.caption,
                     </div>
                   )}
                 {post.approvalStatus === "NEEDS_REVISION" &&
-                  userRole === "EDIT_CALENDAR" && (
+                  canDeliver && (
                     <div className="mt-3">
                       <button
                         type="button"
@@ -3797,7 +3811,7 @@ caption: draftDetails.caption,
               </section>
             )}
 
-            {userRole === "EDIT_CALENDAR" && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
+            {canPublish && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
 
             {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
                 post has actually been scheduled, published, or
@@ -3883,7 +3897,7 @@ caption: draftDetails.caption,
                 the interactive TikTok panel above, which tracks action results
                 immediately without repeating a stale failure below it. */}
             {post.platform === "TIKTOK" &&
-              userRole !== "EDIT_CALENDAR" &&
+              !canPublish &&
               post.tikTokPublishStatus !== "NOT_SCHEDULED" && (
                 <section>
                   <div
@@ -4040,6 +4054,7 @@ caption: draftDetails.caption,
 
                     <button
                       type="button"
+                      disabled={!canEdit || isApproved}
                       onClick={() =>
                         removeAsset(
                           activeAsset.id
@@ -4245,7 +4260,7 @@ caption: draftDetails.caption,
               )}
 
               {/* UPLOAD */}
-              {!isApproved && (
+              {canUpload && !isApproved && (
                 <label
                   className="
                   group
@@ -4446,7 +4461,7 @@ caption: draftDetails.caption,
                   </p>
                 </div>
 
-               {!isApproved && !editingDetails && (
+               {canEdit && !isApproved && !editingDetails && (
   <div className="flex items-center gap-2">
     <button
       type="button"
@@ -4459,6 +4474,7 @@ caption: draftDetails.caption,
 
     <button
   type="button"
+  disabled={!canAiEdit}
   onClick={() => {
   setEditingWithAI(true);
   setAiInstruction("");
@@ -5486,6 +5502,7 @@ export default function CalendarGrid({
   planStatus,
   initialPosts,
   userRole,
+  permissions,
   clientName,
   isOwner = false,
 }: {
@@ -5494,6 +5511,7 @@ export default function CalendarGrid({
   planStatus: string;
   initialPosts: CalendarPostData[];
   userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
+  permissions?: readonly TeamPermission[];
   clientName: string;
 }) {
   const [theme, setTheme] =
@@ -7082,6 +7100,7 @@ export default function CalendarGrid({
 
       {addingDate && (
         <AddPostPanel
+          canUpload={!permissions || permissions.includes("creatives.upload")}
           calendarId={calendarId}
           date={addingDate}
           theme={theme}
@@ -7106,6 +7125,7 @@ export default function CalendarGrid({
           calendarId={calendarId}
           post={selectedPost}
           userRole={userRole}
+          permissions={permissions}
           theme={theme}
           onClose={() =>
             setSelectedPost(null)

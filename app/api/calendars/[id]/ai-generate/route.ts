@@ -23,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "ai.generate"))) {
     return NextResponse.json({ error: "You don't have permission to generate content on this calendar" }, { status: 403 });
   }
 

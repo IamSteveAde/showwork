@@ -1806,6 +1806,8 @@ model SocialCalendar {
   contentWorkspaceStorageReservations ContentWorkspaceStorageReservation[]
 
   @@index([managerId])
+  teamActivities CalendarTeamActivity[]
+
 }
 
 // One uploaded file the manager provided so the AI can understand
@@ -2405,6 +2407,11 @@ model CalendarPostVideoComment {
 }
 
 enum CalendarRole {
+  MANAGER
+  SOCIAL_MEDIA_MANAGER
+  CREATIVE_CONTRIBUTOR
+  INBOX_AGENT
+  VIEWER
   VIEW_ONLY // can see the calendar, nothing else
   ADD_CONTENT // can also upload/add content to existing posts — the default for most collaborators
   EDIT_CALENDAR // can also create, edit, and delete posts, and edit the calendar's own details — a trusted, higher-risk role
@@ -2417,6 +2424,8 @@ model CalendarCollaborator {
   creator    Creator        @relation("CalendarMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
   creatorId  String
   role       CalendarRole   @default(ADD_CONTENT)
+  permissions String[] @default([])
+  customPermissions Boolean @default(false)
   addedAt    DateTime       @default(now())
 
   @@unique([calendarId, creatorId])
@@ -2432,6 +2441,10 @@ model CalendarInvite {
   invitedByCreatorId String
   email              String
   role               CalendarRole   @default(ADD_CONTENT)
+  permissions String[] @default([])
+  customPermissions Boolean @default(false)
+  deliveryStatus String @default("QUEUED")
+  lastDeliveryError String?
   tokenHash          String         @unique
   status             InviteStatus   @default(PENDING)
   expiresAt          DateTime
@@ -2688,4 +2701,17 @@ model TikTokAccountRuntime {
   creatorNextAt DateTime?
   initNextAt DateTime?
   statusNextAt DateTime?
+}
+
+model CalendarTeamActivity {
+  id String @id @default(uuid())
+  calendarId String
+  calendar SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  actorCreatorId String
+  actorName String
+  action String
+  targetEmail String
+  details Json?
+  createdAt DateTime @default(now())
+  @@index([calendarId, createdAt])
 }

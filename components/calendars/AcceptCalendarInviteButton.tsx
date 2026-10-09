@@ -11,12 +11,13 @@ export default function AcceptCalendarInviteButton({ token }: { token: string })
   const accept = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/calendars/invites/${token}/accept`, { method: "POST" });
-    const data = await res.json();
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/calendars/invites/${token}/accept`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not accept this invitation.");
       router.push(`/dashboard/calendars/${data.calendarId}`);
-    } else {
-      setError(data.error ?? "Something went wrong");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Connection failed. Please try again.");
       setLoading(false);
     }
   };

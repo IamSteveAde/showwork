@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id: calendarId } = await params;
-  if (!(await hasCalendarPermission(creator.id, calendarId, "EDIT_CALENDAR"))) {
+  if (!(await hasCalendarPermission(creator.id, calendarId, "analytics.manage"))) {
     return NextResponse.json({ error: "You don’t have permission to analyze this workspace." }, { status: 403 });
   }
   if (!(await canAccessCalendarById(calendarId))) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { start, end } = reportingPeriod(params);
     const [calendar, report] = await Promise.all([
       db.socialCalendar.findUnique({ where: { id: calendarId }, select: { clientName: true, aiBusinessSummary: true } }),
-      getCalendarReportingData(calendarId, params, true),
+      getCalendarReportingData(calendarId, params, true, await hasCalendarPermission(creator.id, calendarId, "leads.view")),
     ]);
     if (!calendar) return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
     const showworkPosts = report.posts.map((post) => {

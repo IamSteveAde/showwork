@@ -12,7 +12,7 @@ export async function DELETE(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, postId, assetId } = await params;
-  if (!(await hasCalendarPermission(creator.id, id, "ADD_CONTENT"))) {
+  if (!(await hasCalendarPermission(creator.id, id, "calendar.edit"))) {
     return NextResponse.json({ error: "You don't have permission to modify content on this calendar" }, { status: 403 });
   }
 

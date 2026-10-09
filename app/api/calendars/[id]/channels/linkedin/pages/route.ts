@@ -1,3 +1,4 @@
+import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -12,7 +13,7 @@ type Context = { params: Promise<{ id: string }> };
 async function account(context: Context) {
   const creator = await getCurrentCreator();
   const { id } = await context.params;
-  if (!creator || !(await db.socialCalendar.findFirst({ where: { id, managerId: creator.id }, select: { id: true } })) || !(await canAccessCalendarById(id))) throw new Error("Only the active workspace owner can manage LinkedIn Pages.");
+  if (!creator || !(await hasCalendarPermission(creator.id, id, "channels.manage")) || !(await canAccessCalendarById(id))) throw new Error("Only a workspace owner or authorized manager can manage LinkedIn Pages.");
   const stored = await db.socialConnection.findFirst({ where: { calendarId: id, platform: "LINKEDIN", status: "CONNECTED" } });
   if (!stored) throw new Error("Connect LinkedIn before choosing a Page.");
   return freshConnection(stored);
