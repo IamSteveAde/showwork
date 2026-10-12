@@ -1,0 +1,13 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "checks": [
+    "Temporary pre-send read and rejection-write failure remains recoverable while the consumer lease is live",
+    "Stale actor cannot release a replacement token",
+    "Committed external boundary cannot be requeued by prepared cleanup"
+  ],
+  "success": true,
+  "clusterRemoved": true,
+  "sourceArtifact": "showwork-prepared-recovery-0908967d-f20d-403f-8153-8b3595dca887.json"
+}

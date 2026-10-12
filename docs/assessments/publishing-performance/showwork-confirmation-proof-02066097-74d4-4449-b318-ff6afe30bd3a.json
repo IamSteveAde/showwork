@@ -1,0 +1,12 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "checks": [
+    "All five native confirmed outcomes retain full proof when database failure precedes completion callback; reconciliation confirms and reports with one create each",
+    "TikTok upload acceptance retains its operation ID after failed checkpoint but never acquires publication proof or a PUBLISHED timestamp"
+  ],
+  "success": true,
+  "clusterRemoved": true,
+  "sourceArtifact": "showwork-confirmation-proof-02066097-74d4-4449-b318-ff6afe30bd3a.json"
+}

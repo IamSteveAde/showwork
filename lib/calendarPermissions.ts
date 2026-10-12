@@ -62,9 +62,9 @@ export function canAccessCalendar(
  * state.
  */
 export async function canAccessCalendarById(
-  calendarId: string
+  calendarId: string, database: typeof db = db
 ): Promise<boolean> {
-  const calendar = await db.socialCalendar.findUnique({
+  const calendar = await database.socialCalendar.findUnique({
     where: { id: calendarId },
     select: {
       managerId: true,
@@ -84,7 +84,7 @@ export async function canAccessCalendarById(
   const limit = CONTENT_WORKSPACE_PLANS[plan].activeWorkspaces;
   if (limit === Number.MAX_SAFE_INTEGER) return true;
   // Keep excess trial workspaces intact and readable; only covered workspaces can mutate.
-  const covered = await db.socialCalendar.findMany({
+  const covered = await database.socialCalendar.findMany({
     where: { managerId: calendar.managerId },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: limit,
     select: { id: true },

@@ -1,0 +1,368 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "nativePayloadHelpers": true,
+  "budgetProtocol": "transaction-lock",
+  "count": 250,
+  "globalDataBudget": 3,
+  "injectedDataTransactionMs": 1923,
+  "injectedControlTransactionMs": 320,
+  "backendCap": 5,
+  "errors": [
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028"
+  ],
+  "dataPeak": 5,
+  "transactionPeak": 7,
+  "backendPeak": 5,
+  "measurements": [
+    {
+      "durationMs": 683.473727,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 714.9932819999999,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 666.4642039999999,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 659.7181500000002,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 600757.858968,
+      "rounds": 72,
+      "outcomes": {
+        "confirmed": 118,
+        "deferred": 223
+      },
+      "opportunities": {
+        "INSTAGRAM": 68,
+        "TIKTOK": 68,
+        "FACEBOOK": 71,
+        "LINKEDIN": 68,
+        "X": 66
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 605014.14044,
+      "rounds": 72,
+      "outcomes": {
+        "deferred": 206,
+        "confirmed": 130,
+        "outcome-unknown": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 67,
+        "TIKTOK": 68,
+        "FACEBOOK": 71,
+        "LINKEDIN": 67,
+        "X": 64
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 3379.9319460000843,
+      "rounds": 1,
+      "outcomes": {
+        "deferred": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 1,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 665.1545569999143,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 7259.67023300007,
+      "rounds": 1,
+      "outcomes": {
+        "confirmed": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 1,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "durationMs": 657.3055279999971,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    }
+  ],
+  "providerAttempts": 250,
+  "duplicateAttempts": 0,
+  "maintenancePeak": 1,
+  "admissionMs": 69331.417892,
+  "admitted": 250,
+  "completedMs": 613739.351235,
+  "confirmed": 250,
+  "publishedStatus": 250,
+  "maximumMockPublishingDelayMs": 621368.235958,
+  "platformCompletions": {
+    "INSTAGRAM": 50,
+    "TIKTOK": 50,
+    "FACEBOOK": 50,
+    "LINKEDIN": 50,
+    "X": 50
+  },
+  "databaseOperationMs": {
+    "median": 723.7341189999715,
+    "p95": 2294.413870999997,
+    "max": 3776.948168999981
+  },
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 4,
+      "durationMs": 17270.862542000003,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 2,
+      "durationMs": 9326.531938000007,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "success": false,
+  "failure": {
+    "code": "ERR_ASSERTION",
+    "message": "LIFECYCLE_CHECK_FAILED"
+  }
+}

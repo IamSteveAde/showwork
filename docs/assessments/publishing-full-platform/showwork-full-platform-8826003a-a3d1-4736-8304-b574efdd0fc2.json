@@ -1,0 +1,3586 @@
+{
+  "runId": "8826003a-a3d1-4736-8304-b574efdd0fc2",
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "count": 250,
+  "injectedTransactionMs": 1923,
+  "controlLatencyMs": 320,
+  "backendCap": 5,
+  "errors": [
+    23,
+    "P2028",
+    "P2028",
+    "P2028",
+    "P2028",
+    "PrismaClientInitializationError",
+    "PrismaClientInitializationError",
+    "PrismaClientInitializationError"
+  ],
+  "platformFailures": {
+    "0": 1,
+    "1": 1
+  },
+  "backendPeak": 5,
+  "dataPeak": 3,
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 3,
+      "durationMs": 16772.974562999996,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 1,
+      "durationMs": 9823.419310000005,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 629.7833200000023,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 653.9025810000021,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 565.7315890000027,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 761.1222289999714,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 343.007161000045,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 762.7497600000352,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 630.9121560000349,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 364.16978200001176,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 647.1562840000261,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 747.2157230000012,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 595.364682000014,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.80472799995914,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 791.9250440000324,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 353.9579809999559,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 425.30315699998755,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 623.1071859999793,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 502.7264799999539,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.6191350000445,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 622.7496440000832,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 657.6159220000263,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 480.7012930000201,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.1262370001059,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 343.8357359999791,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 334.56328899995424,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 397.720708000008,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 397.9297310002148,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.252371000126,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.92957899998873,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 346.2616909998469,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.09275299985893,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 412.496933999937,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 325.89557199995033,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.5562829999253,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.8595839999616,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 340.93929399969056,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.8491440000944,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.2681360002607,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 329.59743899991736,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.4910169998184,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.05346899991855,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 341.43079100036994,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.56253800028935,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 333.5656829997897,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.7301429999061,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.92659100005403,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.68910100031644,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 341.77920600026846,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.10424999985844,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 335.279899999965,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 329.2051329999231,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.9267529998906,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.1787020000629,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 344.82167400000617,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.5793030001223,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.6391259999946,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.6136870002374,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.89474600041285,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 1232.4262060001493,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 348.96955799963325,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 326.4164389995858,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 325.38265100028366,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 326.54659899976104,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.44223299995065,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 339.7808710001409,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 323.77803599927574,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 325.7668759999797,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 323.8664199998602,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.8007089998573,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.2512870002538,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.086415999569,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.69522000011057,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.9430889999494,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.8709400007501,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 325.1591700008139,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 323.8039009999484,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.2394369998947,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.5166100002825,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.7252640007064,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 324.1418209997937,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 329.49234199989587,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.05270200036466,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.50466400012374,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.04983500018716,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.1067719999701,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 326.8761950004846,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 325.552407999523,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 361.0560130001977,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 500.1420390000567,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 736.1866319999099,
+      "controlErrors": 1,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "admissionMs": 69826.025037,
+  "success": false,
+  "failure": {
+    "code": "Error",
+    "message": "FULL_PLATFORM_CHECK_FAILED"
+  },
+  "clusterRemoved": true,
+  "interrupted": false,
+  "sourceArtifact": "showwork-full-platform-8826003a-a3d1-4736-8304-b574efdd0fc2.json"
+}

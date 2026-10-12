@@ -1,0 +1,874 @@
+{
+  "profile": {
+    "sqlStatements": 821,
+    "sqlExecutionMs": 939.5452149999783,
+    "sqlKinds": {
+      "BEGIN": 93,
+      "DEALLOCATE ALL": 93,
+      "SELECT 1": 7,
+      "COMMIT": 93,
+      "WITH free": 2,
+      "UPDATE \"public\".\"CalendarPost\"": 8,
+      "UPDATE \"PublishingJob\"": 45,
+      "SELECT EXISTS(SELECT": 7,
+      "SELECT id,\"postId\",platform,lease,phase,\"workerToken\",\"remoteId\",\"accountId\",\"confirmation\"": 50,
+      "WITH stale": 31,
+      "UPDATE \"PublishingLeader\"": 3,
+      "SELECT j.*": 63,
+      "WITH candidate": 34,
+      "SET LOCAL": 30,
+      "SELECT pg_try_advisory_xact_lock(19370421,$1::integer)": 30,
+      "SELECT id": 5,
+      "WITH operation": 5,
+      "UPDATE \"PublishingBudget\"": 30,
+      "SELECT id,\"postId\",platform,lease,phase,\"workerToken\"": 6,
+      "WITH requested": 6,
+      "SELECT \"public\".\"CalendarPost\".\"id\",": 8,
+      "SELECT \"public\".\"CalendarPostAsset\".\"id\",": 7,
+      "SELECT \"public\".\"SocialCalendar\".\"id\",": 12,
+      "SELECT \"public\".\"SocialConnection\".\"id\",": 11,
+      "SELECT \"public\".\"Creator\".\"id\",": 5,
+      "SELECT count(DISTINCT": 28,
+      "WITH locked": 5,
+      "SELECT j.id": 13,
+      "SAVEPOINT publishing_reporting": 6,
+      "SELECT \"public\".\"SocialConnection\".\"id\"": 6,
+      "INSERT INTO": 7,
+      "RELEASE SAVEPOINT": 6,
+      "UPDATE \"PublishingConsumerLease\"": 6,
+      "WITH saved": 6,
+      "SELECT count(*)::int": 28,
+      "SELECT pg_try_advisory_xact_lock(hashtext($1))": 6,
+      "SELECT \"public\".\"TikTokAccountRuntime\".\"accountId\"": 4,
+      "SELECT \"public\".\"TikTokAccountRuntime\".\"accountId\",": 7,
+      "UPDATE \"public\".\"TikTokAccountRuntime\"": 4,
+      "SELECT phase,count(*)::int": 1,
+      "SELECT p.platform,count(*)::int": 1,
+      "SELECT COUNT(*)": 2,
+      "SELECT platform,phase,count(*)::int": 1
+    },
+    "applicationSqlStatements": 566,
+    "harnessSqlStatements": 255,
+    "modelCallsByPost": {
+      "native-1": 21,
+      "native-3": 5,
+      "native-2": 5,
+      "native-0": 5,
+      "native-4": 5
+    },
+    "perPostPhases": {
+      "native-1": {
+        "preflight": 2619.6291150000015,
+        "publish": 29156.335676000002,
+        "reconcile": 12921.349117999998
+      },
+      "native-3": {
+        "preflight": 3231.068443,
+        "publish": 5179.3164529999995
+      },
+      "native-2": {
+        "preflight": 3931.311540999999,
+        "publish": 5184.548051000002
+      },
+      "native-0": {
+        "preflight": 6584.757445000001,
+        "publish": 3267.254975
+      },
+      "native-4": {
+        "preflight": 4540.475126999998,
+        "publish": 5192.237119000001
+      }
+    },
+    "apiMs": 127.22733799999696,
+    "apiCalls": 21,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 681.7591269999994
+      },
+      "scheduledWorkExists": {
+        "calls": 2,
+        "wallMs": 688.6311070000002
+      },
+      "reconciliationJobs": {
+        "calls": 24,
+        "wallMs": 7787.991592000003
+      },
+      "recoverExpired": {
+        "calls": 31,
+        "wallMs": 20153.49171200003
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 650.358534
+      },
+      "reportingJobs": {
+        "calls": 24,
+        "wallMs": 7751.528430999988
+      },
+      "readyFair": {
+        "calls": 63,
+        "wallMs": 20379.018314999972
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 12975.641624999998
+      },
+      "findJobs": {
+        "calls": 6,
+        "wallMs": 1949.0306630000014
+      },
+      "prepareMany": {
+        "calls": 6,
+        "wallMs": 1958.0135150000006
+      },
+      "localEntryWait": {
+        "calls": 25,
+        "wallMs": 13513
+      },
+      "budget": {
+        "calls": 29,
+        "wallMs": 66046.821609
+      },
+      "capacityBackoff": {
+        "calls": 4,
+        "wallMs": 4002
+      },
+      "TIKTOK.preflight": {
+        "calls": 1,
+        "wallMs": 2619.624724000001
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 322.4700759999996
+      },
+      "LINKEDIN.preflight": {
+        "calls": 1,
+        "wallMs": 3231.0429250000016
+      },
+      "beginExternal": {
+        "calls": 5,
+        "wallMs": 1617.7544340000059
+      },
+      "assertPublication": {
+        "calls": 5,
+        "wallMs": 1625.0157260000015
+      },
+      "FACEBOOK.preflight": {
+        "calls": 1,
+        "wallMs": 3931.301004000001
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 1,
+        "wallMs": 6584.749417000001
+      },
+      "X.preflight": {
+        "calls": 1,
+        "wallMs": 4540.468063
+      },
+      "renewConsumer": {
+        "calls": 6,
+        "wallMs": 1941.5041010000023
+      },
+      "INSTAGRAM.publish": {
+        "calls": 1,
+        "wallMs": 3267.2526789999974
+      },
+      "finish": {
+        "calls": 5,
+        "wallMs": 1624.3541740000037
+      },
+      "LINKEDIN.publish": {
+        "calls": 1,
+        "wallMs": 5179.315020000002
+      },
+      "releasePrepared": {
+        "calls": 5,
+        "wallMs": 1615.4743330000092
+      },
+      "FACEBOOK.publish": {
+        "calls": 1,
+        "wallMs": 5184.54465
+      },
+      "X.publish": {
+        "calls": 1,
+        "wallMs": 5192.235251000002
+      },
+      "TIKTOK.publish": {
+        "calls": 1,
+        "wallMs": 29156.330598
+      },
+      "accept": {
+        "calls": 1,
+        "wallMs": 325.07876899999974
+      },
+      "findJob": {
+        "calls": 2,
+        "wallMs": 646.058097000001
+      },
+      "claimReconciliation": {
+        "calls": 1,
+        "wallMs": 323.3113169999997
+      },
+      "TIKTOK.reconcile": {
+        "calls": 1,
+        "wallMs": 12921.344386000004
+      },
+      "releaseReconciliation": {
+        "calls": 1,
+        "wallMs": 322.9783479999969
+      },
+      "markReported": {
+        "calls": 1,
+        "wallMs": 323.94877400000405
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.19118199999502394
+      }
+    },
+    "lockSamples": 0,
+    "lockPeak": 0,
+    "sqlPerPost": 160.2,
+    "applicationSqlPerPost": 113.2
+  },
+  "baseline": false,
+  "runId": "ace84e91-45fd-4034-be3e-d83a5b940fbb",
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "count": 5,
+  "injectedTransactionMs": 1923,
+  "controlLatencyMs": 320,
+  "backendCap": 5,
+  "reconciliationTimeoutMs": 120000,
+  "errors": [],
+  "platformFailures": {
+    "0": 0,
+    "1": 0
+  },
+  "backendPeak": 5,
+  "dataPeak": 3,
+  "modelCalls": {
+    "calendarPost.findUniqueOrThrow": 8,
+    "socialCalendar.findUnique": 5,
+    "socialConnection.findFirst": 1,
+    "calendarPost.update": 7,
+    "socialConnection.findUnique": 6,
+    "publishedSocialPost.upsert": 6,
+    "socialConnection.findUniqueOrThrow": 3,
+    "tikTokAccountRuntime.upsert": 4,
+    "tikTokAccountRuntime.update": 4
+  },
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 1,
+      "durationMs": 8772.211721,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 1,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 1,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 1,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 1,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 1,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "transactionErrors": [],
+  "consumerRounds": [
+    {
+      "consumer": 1,
+      "durationMs": 988.7787209999997,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 989.0193519999993,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 977.3948590000009,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 977.2735819999998,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 12199.521518000001,
+      "rounds": 3,
+      "outcomes": {
+        "confirmed": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 1,
+        "TIKTOK": 1,
+        "FACEBOOK": 1,
+        "LINKEDIN": 1,
+        "X": 1
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 973.9677210000009,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 968.2962129999978,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 967.4513580000021,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 972.0905299999977,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 972.6620369999982,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 971.6569889999992,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 970.8510840000017,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 970.5337369999979,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 970.0539159999971,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 971.1242950000014,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 971.052496999997,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 34695.854221,
+      "rounds": 3,
+      "outcomes": {
+        "confirmed": 3,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 1,
+        "TIKTOK": 1,
+        "FACEBOOK": 1,
+        "LINKEDIN": 1,
+        "X": 1
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 968.4824789999984,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 969.1997349999947,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 972.0390849999967,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 968.2065000000002,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 967.1582019999987,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 970.5190870000006,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 967.4930930000046,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 968.1220759999997,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 970.7746079999997,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 969.1616890000005,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 975.0849719999969,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 969.0876639999988,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 1030.6437289999958,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 968.6769980000026,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    }
+  ],
+  "acceptanceChecks": [
+    {
+      "name": "published",
+      "passed": true
+    },
+    {
+      "name": "confirmed",
+      "passed": true
+    },
+    {
+      "name": "reporting",
+      "passed": true
+    },
+    {
+      "name": "duplicates",
+      "passed": true
+    },
+    {
+      "name": "dataBudget",
+      "passed": true
+    },
+    {
+      "name": "backendBudget",
+      "passed": true
+    },
+    {
+      "name": "databaseErrors",
+      "passed": true
+    }
+  ],
+  "backpressure": 0,
+  "admissionMs": 8775.199405000001,
+  "lastCheckpoint": {
+    "elapsedMs": 30004.652112000003,
+    "states": [
+      {
+        "phase": "EXTERNAL_PENDING",
+        "n": 1
+      },
+      {
+        "phase": "CONFIRMED",
+        "n": 4
+      }
+    ]
+  },
+  "duplicateAttempts": 0,
+  "totalPublishingMs": 51701.769972,
+  "firstAttemptMs": 11479.483546,
+  "allAttemptsStartedMs": 27018.013989,
+  "attemptDelaysMs": {
+    "native-3": 11485.483642578125,
+    "native-2": 12168.870361328125,
+    "native-0": 12843.791259765625,
+    "native-4": 14775.42431640625,
+    "native-1": 27024.013916015625
+  },
+  "maximumAttemptDelayMs": 27024.013916015625,
+  "attemptTargetMs": 60000,
+  "attemptTargetPassed": true,
+  "published": [
+    {
+      "platform": "INSTAGRAM",
+      "n": 1,
+      "maximumDelayMs": 13766
+    },
+    {
+      "platform": "TIKTOK",
+      "n": 1,
+      "maximumDelayMs": 46322
+    },
+    {
+      "platform": "FACEBOOK",
+      "n": 1,
+      "maximumDelayMs": 12175
+    },
+    {
+      "platform": "X",
+      "n": 1,
+      "maximumDelayMs": 14782
+    },
+    {
+      "platform": "LINKEDIN",
+      "n": 1,
+      "maximumDelayMs": 11493
+    }
+  ],
+  "confirmed": 5,
+  "reportingRows": 5,
+  "maximumPublishingDelayMs": 46322,
+  "tikTokConvertedImages": 1,
+  "refreshRequests": 0,
+  "transactionMs": {
+    "p50": 1938.8576560000001,
+    "p95": 1963.5466929999984,
+    "max": 1970.2796620000008,
+    "count": 30
+  },
+  "success": true,
+  "finalStates": [
+    {
+      "platform": "INSTAGRAM",
+      "phase": "CONFIRMED",
+      "n": 1
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "CONFIRMED",
+      "n": 1
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "CONFIRMED",
+      "n": 1
+    },
+    {
+      "platform": "X",
+      "phase": "CONFIRMED",
+      "n": 1
+    },
+    {
+      "platform": "FACEBOOK",
+      "phase": "CONFIRMED",
+      "n": 1
+    }
+  ],
+  "clusterRemoved": true,
+  "interrupted": false,
+  "sourceArtifact": "showwork-performance-ace84e91-45fd-4034-be3e-d83a5b940fbb.json"
+}

@@ -1,0 +1,16 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "deliverySimulation": true,
+  "checks": [
+    "Simulated 202 with lost delivery leaves durable wake pending and retries later without another admission",
+    "Adapter enforces authentication, emergency disable and hint-only payloads; no arbitrary SQL, post selection or database destination",
+    "Overlapping consumers are globally bounded to two leased worker instances",
+    "Duplicate wake delivery runs native publishers once and reconciles accepted TikTok operations",
+    "Old consumer epochs are fenced after ownership changes"
+  ],
+  "success": true,
+  "clusterRemoved": true,
+  "sourceArtifact": "showwork-runtime-validation-493f57f6-0264-4da0-8190-e8073efafd45.json"
+}

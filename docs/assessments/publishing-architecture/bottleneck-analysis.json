@@ -1,0 +1,402 @@
+{
+  "productionAccess": false,
+  "implementationChanges": false,
+  "measurements": [
+    {
+      "runId": "000b2369-db60-43b3-929c-55a9825a5146",
+      "latencyMs": 1380,
+      "allAttemptsMs": 898170.44633,
+      "confirmedMs": 918379.624615,
+      "applicationCommands": 18677,
+      "applicationCommandsPerPost": 74.708,
+      "harnessCommands": 530,
+      "nativeTransactions": 1267,
+      "nativeTransactionWrapperCommands": 3801,
+      "localEntryWaitMs": 1272875,
+      "capacityBackoffMs": 747737,
+      "physicalPoolAcquisitionWaitMs": null,
+      "physicalWireRoundTripsPerPost": null,
+      "phases": {
+        "acquireConsumer": {
+          "calls": 2,
+          "wallMs": 701.3471879999997
+        },
+        "scheduledWorkExists": {
+          "calls": 17,
+          "wallMs": 5710.858127000067
+        },
+        "reconciliationJobs": {
+          "calls": 90,
+          "wallMs": 29172.217355999783
+        },
+        "recoverExpired": {
+          "calls": 38,
+          "wallMs": 24652.845448000167
+        },
+        "leader": {
+          "calls": 3,
+          "wallMs": 977.0821520000045
+        },
+        "reportingJobs": {
+          "calls": 90,
+          "wallMs": 29190.862946999823
+        },
+        "readyFair": {
+          "calls": 954,
+          "wallMs": 309403.9230769982
+        },
+        "admit": {
+          "calls": 20,
+          "wallMs": 35954.973514
+        },
+        "findJobs": {
+          "calls": 200,
+          "wallMs": 64648.70641299919
+        },
+        "prepareMany": {
+          "calls": 200,
+          "wallMs": 65409.929892999266
+        },
+        "localEntryWait": {
+          "calls": 1250,
+          "wallMs": 1272875
+        },
+        "budget": {
+          "calls": 1997,
+          "wallMs": 2802823.787484994
+        },
+        "capacityBackoff": {
+          "calls": 747,
+          "wallMs": 747737
+        },
+        "TIKTOK.preflight": {
+          "calls": 50,
+          "wallMs": 172773.01098300004
+        },
+        "INSTAGRAM.preflight": {
+          "calls": 50,
+          "wallMs": 248622.886841
+        },
+        "beginExternal": {
+          "calls": 250,
+          "wallMs": 81318.15516399991
+        },
+        "assertPublication": {
+          "calls": 250,
+          "wallMs": 81434.99928999985
+        },
+        "LINKEDIN.preflight": {
+          "calls": 50,
+          "wallMs": 302055.03213999985
+        },
+        "renewConsumer": {
+          "calls": 122,
+          "wallMs": 39574.67681299956
+        },
+        "releaseLeader": {
+          "calls": 2,
+          "wallMs": 647.1020670000071
+        },
+        "FACEBOOK.preflight": {
+          "calls": 50,
+          "wallMs": 312069.12416999997
+        },
+        "INSTAGRAM.publish": {
+          "calls": 50,
+          "wallMs": 307604.4130609998
+        },
+        "LINKEDIN.publish": {
+          "calls": 50,
+          "wallMs": 314393.631824
+        },
+        "finish": {
+          "calls": 250,
+          "wallMs": 81185.5950870004
+        },
+        "releasePrepared": {
+          "calls": 250,
+          "wallMs": 80825.97758800013
+        },
+        "FACEBOOK.publish": {
+          "calls": 50,
+          "wallMs": 299630.8729640001
+        },
+        "X.preflight": {
+          "calls": 50,
+          "wallMs": 260845.39099599977
+        },
+        "X.publish": {
+          "calls": 50,
+          "wallMs": 302708.42707800004
+        },
+        "TIKTOK.publish": {
+          "calls": 50,
+          "wallMs": 1467610.3818299994
+        },
+        "accept": {
+          "calls": 50,
+          "wallMs": 16240.879101999875
+        },
+        "findJob": {
+          "calls": 100,
+          "wallMs": 32287.76171399979
+        },
+        "claimReconciliation": {
+          "calls": 50,
+          "wallMs": 16313.034086000058
+        },
+        "recoverAdmission": {
+          "calls": 3,
+          "wallMs": 974.3657419999945
+        },
+        "TIKTOK.reconcile": {
+          "calls": 50,
+          "wallMs": 754148.610927
+        },
+        "releaseReconciliation": {
+          "calls": 50,
+          "wallMs": 16162.843541000024
+        },
+        "markReported": {
+          "calls": 50,
+          "wallMs": 16167.875845999893
+        },
+        "releaseConsumer": {
+          "calls": 2,
+          "wallMs": 0.15614199999254197
+        }
+      }
+    },
+    {
+      "runId": "c641eb16-dc4f-4645-bf6e-8f0c9323823a",
+      "latencyMs": 1923,
+      "allAttemptsMs": 1119585.632699,
+      "confirmedMs": 1149679.14504,
+      "applicationCommands": 19219,
+      "applicationCommandsPerPost": 76.876,
+      "harnessCommands": 751,
+      "nativeTransactions": 1265,
+      "nativeTransactionWrapperCommands": 3795,
+      "localEntryWaitMs": 1588529,
+      "capacityBackoffMs": 845763,
+      "physicalPoolAcquisitionWaitMs": null,
+      "physicalWireRoundTripsPerPost": null,
+      "phases": {
+        "acquireConsumer": {
+          "calls": 2,
+          "wallMs": 677.9266650000009
+        },
+        "scheduledWorkExists": {
+          "calls": 21,
+          "wallMs": 7014.632776000284
+        },
+        "reconciliationJobs": {
+          "calls": 92,
+          "wallMs": 29786.258511000487
+        },
+        "recoverExpired": {
+          "calls": 61,
+          "wallMs": 39658.00677899956
+        },
+        "leader": {
+          "calls": 3,
+          "wallMs": 972.8677579999858
+        },
+        "reportingJobs": {
+          "calls": 92,
+          "wallMs": 29790.60247100037
+        },
+        "readyFair": {
+          "calls": 1333,
+          "wallMs": 432010.4850280001
+        },
+        "admit": {
+          "calls": 18,
+          "wallMs": 40384.32379799998
+        },
+        "findJobs": {
+          "calls": 184,
+          "wallMs": 59707.49994499996
+        },
+        "prepareMany": {
+          "calls": 184,
+          "wallMs": 60017.04900899976
+        },
+        "localEntryWait": {
+          "calls": 1252,
+          "wallMs": 1588529
+        },
+        "budget": {
+          "calls": 2097,
+          "wallMs": 3514018.240132996
+        },
+        "capacityBackoff": {
+          "calls": 845,
+          "wallMs": 845763
+        },
+        "TIKTOK.preflight": {
+          "calls": 50,
+          "wallMs": 217811.2801260001
+        },
+        "LINKEDIN.preflight": {
+          "calls": 50,
+          "wallMs": 347440.42058299994
+        },
+        "beginExternal": {
+          "calls": 250,
+          "wallMs": 81226.98773200047
+        },
+        "assertPublication": {
+          "calls": 250,
+          "wallMs": 81362.28759900053
+        },
+        "renewConsumer": {
+          "calls": 154,
+          "wallMs": 49912.02534399992
+        },
+        "FACEBOOK.preflight": {
+          "calls": 50,
+          "wallMs": 349516.58760999993
+        },
+        "releaseLeader": {
+          "calls": 2,
+          "wallMs": 650.896886999999
+        },
+        "LINKEDIN.publish": {
+          "calls": 50,
+          "wallMs": 351587.3518429999
+        },
+        "finish": {
+          "calls": 250,
+          "wallMs": 81389.19192600061
+        },
+        "releasePrepared": {
+          "calls": 251,
+          "wallMs": 81113.34368099982
+        },
+        "INSTAGRAM.preflight": {
+          "calls": 51,
+          "wallMs": 414231.2978750001
+        },
+        "FACEBOOK.publish": {
+          "calls": 50,
+          "wallMs": 320202.09947899997
+        },
+        "X.preflight": {
+          "calls": 50,
+          "wallMs": 360931.1603430002
+        },
+        "INSTAGRAM.publish": {
+          "calls": 50,
+          "wallMs": 370996.52467500017
+        },
+        "X.publish": {
+          "calls": 50,
+          "wallMs": 352934.3094410005
+        },
+        "recoverAdmission": {
+          "calls": 3,
+          "wallMs": 972.091293000005
+        },
+        "TIKTOK.publish": {
+          "calls": 50,
+          "wallMs": 1813167.4979880003
+        },
+        "accept": {
+          "calls": 50,
+          "wallMs": 16226.287155000318
+        },
+        "findJob": {
+          "calls": 100,
+          "wallMs": 32374.283615999884
+        },
+        "claimReconciliation": {
+          "calls": 50,
+          "wallMs": 16261.495910000012
+        },
+        "TIKTOK.reconcile": {
+          "calls": 50,
+          "wallMs": 888412.5172589998
+        },
+        "releaseReconciliation": {
+          "calls": 50,
+          "wallMs": 16172.717319000061
+        },
+        "reject": {
+          "calls": 1,
+          "wallMs": 326.92136800001026
+        },
+        "markReported": {
+          "calls": 50,
+          "wallMs": 16169.277316000254
+        },
+        "releaseConsumer": {
+          "calls": 2,
+          "wallMs": 0.18782699992880225
+        }
+      }
+    }
+  ],
+  "estimates": [
+    {
+      "posts": 50,
+      "snapshotBatchSize": 1,
+      "redundantTikTokReadsRemovedPerPost": 0,
+      "preSendTransactions": 100.0,
+      "warmFloorSecondsThreeSlots": 46.0,
+      "tailFloorSecondsThreeSlots": 64.10000000000001,
+      "tailFloorSecondsTwoStartSlots": 96.15,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    },
+    {
+      "posts": 50,
+      "snapshotBatchSize": 10,
+      "redundantTikTokReadsRemovedPerPost": 0,
+      "preSendTransactions": 55.0,
+      "warmFloorSecondsThreeSlots": 25.299999999999997,
+      "tailFloorSecondsThreeSlots": 35.255,
+      "tailFloorSecondsTwoStartSlots": 52.8825,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    },
+    {
+      "posts": 50,
+      "snapshotBatchSize": 10,
+      "redundantTikTokReadsRemovedPerPost": 2,
+      "preSendTransactions": 35.0,
+      "warmFloorSecondsThreeSlots": 16.099999999999998,
+      "tailFloorSecondsThreeSlots": 22.435000000000002,
+      "tailFloorSecondsTwoStartSlots": 33.6525,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    },
+    {
+      "posts": 250,
+      "snapshotBatchSize": 1,
+      "redundantTikTokReadsRemovedPerPost": 0,
+      "preSendTransactions": 500.0,
+      "warmFloorSecondsThreeSlots": 230.0,
+      "tailFloorSecondsThreeSlots": 320.5,
+      "tailFloorSecondsTwoStartSlots": 480.75,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    },
+    {
+      "posts": 250,
+      "snapshotBatchSize": 10,
+      "redundantTikTokReadsRemovedPerPost": 0,
+      "preSendTransactions": 275.0,
+      "warmFloorSecondsThreeSlots": 126.49999999999999,
+      "tailFloorSecondsThreeSlots": 176.275,
+      "tailFloorSecondsTwoStartSlots": 264.4125,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    },
+    {
+      "posts": 250,
+      "snapshotBatchSize": 10,
+      "redundantTikTokReadsRemovedPerPost": 2,
+      "preSendTransactions": 175.0,
+      "warmFloorSecondsThreeSlots": 80.49999999999999,
+      "tailFloorSecondsThreeSlots": 112.17500000000001,
+      "tailFloorSecondsTwoStartSlots": 168.26250000000002,
+      "scope": "Analytic database service floor only; not an end-to-end prediction"
+    }
+  ]
+}

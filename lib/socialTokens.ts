@@ -1,3 +1,4 @@
+import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 
@@ -6,7 +7,7 @@ export function requireScopes(connection: Pick<SocialConnection, "tokenScopes" |
   const missing = required.filter(scope => !scopes.has(scope));
   if (missing.length) throw new Error(`${connection.platform} permission is missing (${missing.join(", ")}). Reconnect after enabling access in the developer app.`);
 }
-export async function freshConnection(connection: SocialConnection): Promise<SocialConnection> {
+export async function freshConnection(connection: SocialConnection, database: typeof db = db): Promise<SocialConnection> {
   if (connection.status !== "CONNECTED" || !connection.accessToken) throw new Error("Reconnect this account before continuing.");
   if (!connection.accessTokenExpiresAt || connection.accessTokenExpiresAt.getTime() > Date.now() + 60_000) return connection;
   if (!["X", "LINKEDIN"].includes(connection.platform) || !connection.refreshToken) throw new Error(`${connection.platform} connection has expired. Reconnect the account.`);
@@ -23,13 +24,13 @@ export async function freshConnection(connection: SocialConnection): Promise<Soc
   const result = await response.json();
   if (!response.ok || !result.access_token) throw new Error(`${connection.platform} connection could not be renewed. Reconnect the account.`);
   // Compare-and-swap avoids resurrecting an account disconnected while refreshing.
-  await db.socialConnection.updateMany({ where: { id: connection.id, status: "CONNECTED", refreshToken: connection.refreshToken }, data: {
+  await database.socialConnection.updateMany({ where: { id: connection.id, status: "CONNECTED", refreshToken: connection.refreshToken }, data: {
     accessToken: result.access_token, accessTokenExpiresAt: new Date(Date.now() + result.expires_in * 1000),
     refreshToken: result.refresh_token ?? connection.refreshToken,
     ...(result.refresh_token_expires_in ? { refreshTokenExpiresAt: new Date(Date.now() + result.refresh_token_expires_in * 1000) } : {}),
     ...(result.scope ? { tokenScopes: result.scope } : {}),
   } });
-  const updated = await db.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
+  const updated = await database.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
   if (updated.status !== "CONNECTED" || !updated.accessToken) throw new Error("This account was disconnected.");
   return updated;
 }

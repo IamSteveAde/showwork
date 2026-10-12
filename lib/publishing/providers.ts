@@ -1,3 +1,4 @@
+import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 import type { CalendarPost, CalendarPostAsset, SocialConnection } from "@prisma/client";
 import { publicUrlFor } from "@/lib/r2";
 import { requireScopes } from "@/lib/socialTokens";

@@ -1,0 +1,340 @@
+TAP version 13
+# Subtest: consumer rotates platforms under a continuous hot backlog and isolates worker failures
+ok 1 - consumer rotates platforms under a continuous hot backlog and isolates worker failures
+  ---
+  duration_ms: 144.653418
+  type: 'test'
+  ...
+# Subtest: consumer storage outage remains visible and later rounds recover durable work
+ok 2 - consumer storage outage remains visible and later rounds recover durable work
+  ---
+  duration_ms: 78.720911
+  type: 'test'
+  ...
+# Subtest: staging adapter refuses other environments, unauthenticated requests, non-POST and payloads
+ok 3 - staging adapter refuses other environments, unauthenticated requests, non-POST and payloads
+  ---
+  duration_ms: 155.774416
+  type: 'test'
+  ...
+# Subtest: accepted provider operation is distinct from confirmed publication and cannot be reinitialized
+ok 4 - accepted provider operation is distinct from confirmed publication and cannot be reinitialized
+  ---
+  duration_ms: 325.171275
+  type: 'test'
+  ...
+# Subtest: busy storage boundary retries the same prepared token before calling provider once
+ok 5 - busy storage boundary retries the same prepared token before calling provider once
+  ---
+  duration_ms: 521.90569
+  type: 'test'
+  ...
+# Subtest: database gate bounds concurrent operations to three and releases after errors
+ok 6 - database gate bounds concurrent operations to three and releases after errors
+  ---
+  duration_ms: 214.756471
+  type: 'test'
+  ...
+# Subtest: rounds are fair, first platform rotates, and dispatch waits for commit
+ok 7 - rounds are fair, first platform rotates, and dispatch waits for commit
+  ---
+  duration_ms: 445.307963
+  type: 'test'
+  ...
+# Subtest: platform failure does not cancel other platforms
+ok 8 - platform failure does not cancel other platforms
+  ---
+  duration_ms: 109.432395
+  type: 'test'
+  ...
+# Subtest: commit failure never dispatches returned IDs
+ok 9 - commit failure never dispatches returned IDs
+  ---
+  duration_ms: 77.588613
+  type: 'test'
+  ...
+# Subtest: deadline stops queued claims, and concurrency above three is rejected
+ok 10 - deadline stops queued claims, and concurrency above three is rejected
+  ---
+  duration_ms: 75.35576
+  type: 'test'
+  ...
+# Subtest: only one publishing cron remains and invokes the batch scheduler
+ok 11 - only one publishing cron remains and invokes the batch scheduler
+  ---
+  duration_ms: 2.711208
+  type: 'test'
+  ...
+# Subtest: hosted diagnostic authenticates before any database activity
+ok 12 - hosted diagnostic authenticates before any database activity
+  ---
+  duration_ms: 354.602109
+  type: 'test'
+  ...
+# Subtest: diagnostic permits only read-only query plans and synthetic publication
+ok 13 - diagnostic permits only read-only query plans and synthetic publication
+  ---
+  duration_ms: 186.803119
+  type: 'test'
+  ...
+# Subtest: credential-free acknowledgement mode exclusively calls the dedicated no-op diagnostic worker
+ok 14 - credential-free acknowledgement mode exclusively calls the dedicated no-op diagnostic worker
+  ---
+  duration_ms: 277.221864
+  type: 'test'
+  ...
+# Subtest: production mode rejects publishing acknowledgements, admin credentials, arbitrary fields, and expired endpoints
+ok 15 - production mode rejects publishing acknowledgements, admin credentials, arbitrary fields, and expired endpoints
+  ---
+  duration_ms: 187.699509
+  type: 'test'
+  ...
+# Subtest: credential-free mode never connects to or queries a database
+ok 16 - credential-free mode never connects to or queries a database
+  ---
+  duration_ms: 101.028235
+  type: 'test'
+  ...
+# Subtest: gateway verifies signatures, path, audience and body before any executor work
+ok 17 - gateway verifies signatures, path, audience and body before any executor work
+  ---
+  duration_ms: 185.983843
+  type: 'test'
+  ...
+# Subtest: replayed signed requests execute only once, including across clean restart
+ok 18 - replayed signed requests execute only once, including across clean restart
+  ---
+  duration_ms: 162.088869
+  type: 'test'
+  ...
+# Subtest: future, stale and expired request timestamps fail closed
+ok 19 - future, stale and expired request timestamps fail closed
+  ---
+  duration_ms: 159.515436
+  type: 'test'
+  ...
+# Subtest: six requests per minute, per-profile quota and global sixty-request quota persist
+ok 20 - six requests per minute, per-profile quota and global sixty-request quota persist
+  ---
+  duration_ms: 5613.257101
+  type: 'test'
+  ...
+# Subtest: ingress attempt limiter caps each source and the whole service before authentication
+ok 21 - ingress attempt limiter caps each source and the whole service before authentication
+  ---
+  duration_ms: 2.426048
+  type: 'test'
+  ...
+# Subtest: simultaneous callers cannot queue a second database operation
+ok 22 - simultaneous callers cannot queue a second database operation
+  ---
+  duration_ms: 183.09067
+  type: 'test'
+  ...
+# Subtest: arbitrary SQL, fields, duplicate JSON keys, destinations and publishing profiles are rejected
+ok 23 - arbitrary SQL, fields, duplicate JSON keys, destinations and publishing profiles are rejected
+  ---
+  duration_ms: 99.563445
+  type: 'test'
+  ...
+# Subtest: responses discard customer rows, tokens, queries and plans; malformed timings fail
+ok 24 - responses discard customer rows, tokens, queries and plans; malformed timings fail
+  ---
+  duration_ms: 196.124045
+  type: 'test'
+  ...
+# Subtest: two executor failures shut down permanently; permission mismatch stops immediately
+ok 25 - two executor failures shut down permanently; permission mismatch stops immediately
+  ---
+  duration_ms: 690.567101
+  type: 'test'
+  ...
+# Subtest: emergency file and explicit shutdown reject work and stop the executor
+ok 26 - emergency file and explicit shutdown reject work and stop the executor
+  ---
+  duration_ms: 193.982206
+  type: 'test'
+  ...
+# Subtest: ledger refuses simultaneous owners, corrupt files, and crash-left-active state
+ok 27 - ledger refuses simultaneous owners, corrupt files, and crash-left-active state
+  ---
+  duration_ms: 166.894687
+  type: 'test'
+  ...
+# Subtest: HTTP parser enforces body cap, duplicate keys, no CORS and no raw destination route
+ok 28 - HTTP parser enforces body cap, duplicate keys, no CORS and no raw destination route
+  ---
+  duration_ms: 255.585934
+  type: 'test'
+  ...
+# Subtest: supervisor kills stalled executor before releasing the operation lease
+ok 29 - supervisor kills stalled executor before releasing the operation lease
+  ---
+  duration_ms: 105.67547
+  type: 'test'
+  ...
+# Subtest: failed executor startup confirms process termination before releasing the gate
+ok 30 - failed executor startup confirms process termination before releasing the gate
+  ---
+  duration_ms: 74.731009
+  type: 'test'
+  ...
+# Subtest: query map is pinned and contains only the reviewed SELECT plans
+ok 31 - query map is pinned and contains only the reviewed SELECT plans
+  ---
+  duration_ms: 1.878189
+  type: 'test'
+  ...
+# Subtest: executor configuration rejects production, alternate databases and unverified TLS
+ok 32 - executor configuration rejects production, alternate databases and unverified TLS
+  ---
+  duration_ms: 10.518739
+  type: 'test'
+  ...
+# Subtest: expiry and emergency shutdown cancel in-flight work and never return late results
+ok 33 - expiry and emergency shutdown cancel in-flight work and never return late results
+  ---
+  duration_ms: 317.947728
+  type: 'test'
+  ...
+# Subtest: Netlify relay authenticates before HTTP and carries only signed profiles and timings
+ok 34 - Netlify relay authenticates before HTTP and carries only signed profiles and timings
+  ---
+  duration_ms: 93.722334
+  type: 'test'
+  ...
+# Subtest: Netlify client dependency graph contains no executor, SQL templates or Prisma
+ok 35 - Netlify client dependency graph contains no executor, SQL templates or Prisma
+  ---
+  duration_ms: 1.412853
+  type: 'test'
+  ...
+# Subtest: independent revoker rejects production destinations, unverified TLS and arbitrary targets
+ok 36 - independent revoker rejects production destinations, unverified TLS and arbitrary targets
+  ---
+  duration_ms: 60.685215
+  type: 'test'
+  ...
+# Subtest: revoker commits LOGIN/password disable before killing sessions and verifying
+ok 37 - revoker commits LOGIN/password disable before killing sessions and verifying
+  ---
+  duration_ms: 21.097134
+  type: 'test'
+  ...
+# Subtest: failed revocation verification cannot emit a successful receipt
+ok 38 - failed revocation verification cannot emit a successful receipt
+  ---
+  duration_ms: 21.538424
+  type: 'test'
+  ...
+# Subtest: public ingress dependency graph contains no SQL, Prisma, executor config or revoker
+ok 39 - public ingress dependency graph contains no SQL, Prisma, executor config or revoker
+  ---
+  duration_ms: 3.330077
+  type: 'test'
+  ...
+# Subtest: monotonic expiry prevents backward wall-clock changes extending a run
+ok 40 - monotonic expiry prevents backward wall-clock changes extending a run
+  ---
+  duration_ms: 0.476933
+  type: 'test'
+  ...
+# Subtest: public relay rejects alternate routes before opening its private socket
+ok 41 - public relay rejects alternate routes before opening its private socket
+  ---
+  duration_ms: 10.676513
+  type: 'test'
+  ...
+# Subtest: live actor reconciles a lost boundary acknowledgement before one external call
+ok 42 - live actor reconciles a lost boundary acknowledgement before one external call
+  ---
+  duration_ms: 385.834445
+  type: 'test'
+  ...
+# Subtest: lost confirmation acknowledgement retries only storage, never publishing
+ok 43 - lost confirmation acknowledgement retries only storage, never publishing
+  ---
+  duration_ms: 168.405348
+  type: 'test'
+  ...
+# Subtest: unknown external outcome cannot be requeued and only existing-result lookup confirms
+ok 44 - unknown external outcome cannot be requeued and only existing-result lookup confirms
+  ---
+  duration_ms: 166.003137
+  type: 'test'
+  ...
+# Subtest: durable admission reconciliation reads an outbox instead of dispatching a provider
+ok 45 - durable admission reconciliation reads an outbox instead of dispatching a provider
+  ---
+  duration_ms: 258.59063
+  type: 'test'
+  ...
+# Subtest: overlapping admission skips when another durable leader owns the minute
+ok 46 - overlapping admission skips when another durable leader owns the minute
+  ---
+  duration_ms: 114.758572
+  type: 'test'
+  ...
+# Subtest: provider timeout quarantines the job even when the provider ignores abort
+ok 47 - provider timeout quarantines the job even when the provider ignores abort
+  ---
+  duration_ms: 66.3519
+  type: 'test'
+  ...
+# Subtest: shutdown aborts a stalled external request after grace and never republishes it
+ok 48 - shutdown aborts a stalled external request after grace and never republishes it
+  ---
+  duration_ms: 71.317003
+  type: 'test'
+  ...
+# Subtest: worker resolves authority from the stored job instead of caller-supplied post or platform
+ok 49 - worker resolves authority from the stored job instead of caller-supplied post or platform
+  ---
+  duration_ms: 34.578884
+  type: 'test'
+  ...
+# Subtest: portable runtime prevents overlap, repeated minute and backward-clock duplication
+ok 50 - portable runtime prevents overlap, repeated minute and backward-clock duplication
+  ---
+  duration_ms: 116.054804
+  type: 'test'
+  ...
+# Subtest: shutdown drains active committed dispatch before closing the transport
+ok 51 - shutdown drains active committed dispatch before closing the transport
+  ---
+  duration_ms: 39.058316
+  type: 'test'
+  ...
+# Subtest: failed cycle releases leadership and later minute can recover
+ok 52 - failed cycle releases leadership and later minute can recover
+  ---
+  duration_ms: 32.608472
+  type: 'test'
+  ...
+# Subtest: minute loop uses UTC boundaries, skips missed ticks and stops without launching more work
+ok 53 - minute loop uses UTC boundaries, skips missed ticks and stops without launching more work
+  ---
+  duration_ms: 21.433931
+  type: 'test'
+  ...
+# Subtest: durable dispatch rejects unconfirmed persistence and uses exact lease in idempotency key
+ok 54 - durable dispatch rejects unconfirmed persistence and uses exact lease in idempotency key
+  ---
+  duration_ms: 108.786407
+  type: 'test'
+  ...
+# Subtest: queue consumer validates envelopes and passes the exact lease to existing worker
+ok 55 - queue consumer validates envelopes and passes the exact lease to existing worker
+  ---
+  duration_ms: 72.899303
+  type: 'test'
+  ...
+1..55
+# tests 55
+# suites 0
+# pass 55
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8685.882896

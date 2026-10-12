@@ -1,0 +1,16 @@
+{
+  "productionAccess": false,
+  "independentProcesses": 3,
+  "latencyFault": "1800ms held transaction",
+  "connectionsBudget": 5,
+  "transactionPooler": true,
+  "backendRoleCap": 5,
+  "snapshot": {
+    "connections": 4,
+    "held": 3
+  },
+  "activeExpiredSlotsNotStolen": true,
+  "recoveredAfterExit": true,
+  "success": true,
+  "clusterRemoved": true
+}

@@ -15,13 +15,13 @@ export type SocialConnectionInput = {
 };
 
 /** Upserts a server-side normalized account row while preserving legacy callers. */
-export function upsertSocialConnection(input: SocialConnectionInput) {
+export function upsertSocialConnection(input: SocialConnectionInput, database: typeof db = db) {
   const { calendarId, platform, platformAccountId, ...values } = input;
   const definedValues = Object.fromEntries(
     Object.entries(values).filter(([, value]) => value !== undefined),
   );
 
-  return db.$transaction(async (tx) => {
+  return database.$transaction(async (tx) => {
     await tx.socialConnection.updateMany({
       where: {
         calendarId,
@@ -98,8 +98,8 @@ export async function recordPublishedSocialPost({
   permalink?: string | null;
   publishedAt: Date;
   platformPostType?: string | null;
-}) {
-  const connection = await db.socialConnection.findUnique({
+}, database: typeof db = db) {
+  const connection = await database.socialConnection.findUnique({
     where: { calendarId_platform_platformAccountId: { calendarId, platform, platformAccountId } },
     select: { id: true },
   });
@@ -107,9 +107,9 @@ export async function recordPublishedSocialPost({
     calendarId,
     platform,
     platformAccountId,
-  });
+  }, database);
 
-  return db.publishedSocialPost.upsert({
+  return database.publishedSocialPost.upsert({
     where: {
       calendarPostId_socialConnectionId: {
         calendarPostId,

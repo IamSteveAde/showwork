@@ -1,0 +1,106 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "backendCap": 5,
+  "acceleratedAdmissionMinutes": true,
+  "injectedLatencyMs": 0,
+  "rounds": [
+    {
+      "wave": 0,
+      "admissionMs": 120.15023900000006,
+      "consumerMs": 1553.172802,
+      "opportunities": {
+        "INSTAGRAM": 13,
+        "TIKTOK": 1,
+        "FACEBOOK": 2,
+        "LINKEDIN": 1,
+        "X": 1
+      },
+      "confirmed": {
+        "INSTAGRAM": 13,
+        "TIKTOK": 1,
+        "FACEBOOK": 1,
+        "LINKEDIN": 1,
+        "X": 1
+      }
+    },
+    {
+      "wave": 1,
+      "admissionMs": 34.32551299999977,
+      "consumerMs": 1562.0618279999999,
+      "opportunities": {
+        "INSTAGRAM": 16,
+        "TIKTOK": 1,
+        "FACEBOOK": 1,
+        "LINKEDIN": 2,
+        "X": 1
+      },
+      "confirmed": {
+        "INSTAGRAM": 28,
+        "TIKTOK": 2,
+        "FACEBOOK": 2,
+        "LINKEDIN": 2,
+        "X": 2
+      }
+    },
+    {
+      "wave": 2,
+      "admissionMs": 36.67989099999977,
+      "consumerMs": 1567.4610269999994,
+      "opportunities": {
+        "INSTAGRAM": 16,
+        "TIKTOK": 2,
+        "FACEBOOK": 1,
+        "LINKEDIN": 1,
+        "X": 1
+      },
+      "confirmed": {
+        "INSTAGRAM": 43,
+        "TIKTOK": 3,
+        "FACEBOOK": 3,
+        "LINKEDIN": 3,
+        "X": 3
+      }
+    },
+    {
+      "wave": 3,
+      "admissionMs": 39.45017000000007,
+      "consumerMs": 1595.4880640000001,
+      "opportunities": {
+        "INSTAGRAM": 16,
+        "TIKTOK": 2,
+        "FACEBOOK": 1,
+        "LINKEDIN": 2,
+        "X": 1
+      },
+      "confirmed": {
+        "INSTAGRAM": 59,
+        "TIKTOK": 4,
+        "FACEBOOK": 4,
+        "LINKEDIN": 4,
+        "X": 4
+      }
+    },
+    {
+      "wave": 4,
+      "admissionMs": 34.64198700000088,
+      "consumerMs": 1579.3213859999996,
+      "opportunities": {
+        "INSTAGRAM": 16,
+        "TIKTOK": 2,
+        "FACEBOOK": 2,
+        "LINKEDIN": 1,
+        "X": 1
+      },
+      "confirmed": {
+        "INSTAGRAM": 75,
+        "TIKTOK": 5,
+        "FACEBOOK": 5,
+        "LINKEDIN": 5,
+        "X": 5
+      }
+    }
+  ],
+  "duplicateAttempts": 0,
+  "success": true
+}

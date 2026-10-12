@@ -1,3 +1,4 @@
+import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createReadStream } from "node:fs";

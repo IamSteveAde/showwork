@@ -1,0 +1,14 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "authenticatedSessionIsSynthetic": true,
+  "checks": [
+    "Actual application route denies unauthenticated/non-owner actors and preserves authorized cancellation",
+    "Actual TikTok authorization route requires explicit consent and persists actor/account/settings/content hash with native media preflight",
+    "Actual TikTok route refuses reposting an accepted/confirmed operation; a checkbox cannot clear it",
+    "Existing Facebook/LinkedIn/X retry route retains its explicit not-published confirmation and approval/connection checks"
+  ],
+  "dispatches": 0,
+  "success": true,
+  "sourceArtifact": "showwork-action-validation-996209f3-eff3-4545-86d5-b4b322af865c.json"
+}

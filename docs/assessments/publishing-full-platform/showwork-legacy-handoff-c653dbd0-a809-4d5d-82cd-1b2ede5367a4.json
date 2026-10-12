@@ -1,0 +1,11 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "checks": [
+    "New lease fences delayed legacy background envelopes; the unstarted post publishes once through the durable worker",
+    "Legacy TikTok acceptance is imported as a known pending operation and recovers status only",
+    "Stale started legacy publishing remains uncertain; recent active workers are left untouched"
+  ],
+  "success": true,
+  "sourceArtifact": "showwork-legacy-handoff-c653dbd0-a809-4d5d-82cd-1b2ede5367a4.json"
+}

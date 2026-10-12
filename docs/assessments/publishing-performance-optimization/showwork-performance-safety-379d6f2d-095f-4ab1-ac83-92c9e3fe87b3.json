@@ -1,0 +1,21 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "checks": [
+    "Two independent workers publish 35 posts across shared/distinct accounts: no same-account SDK overlap, cross-account concurrency, all five platforms confirmed and reported once",
+    "Workspace access revoked after bounded snapshot blocks live publication",
+    "Token changed after snapshot prevents send and leaves a durable retry",
+    "Cancellation and rescheduling after snapshot remain fenced",
+    "Lost proof-journal acknowledgement is verified with exact token; finalization does not repeat publication",
+    "Accepted provider request with lost response stays quarantined; reconciliation/restart never republish",
+    "Terminal TikTok provider failure is visible as FAILED, retains its operation ID, cannot auto-retry and is never counted as confirmed",
+    "Fixed live authorization matches the existing policy for excess workspaces, active/expired trials and active/expired complimentary access",
+    "Publication fence rejects absent/stale account ownership",
+    "Concurrent atomic TikTok reservations preserve 10.1-second init pacing"
+  ],
+  "duplicateAttempts": 0,
+  "maximumConcurrentDifferentAccounts": 5,
+  "success": true,
+  "clusterRemoved": true
+}

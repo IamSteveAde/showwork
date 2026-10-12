@@ -1,7 +1,25 @@
 import { schedule } from "@netlify/functions";
+import { runPublishingBatchScheduler } from "../../lib/publishing/batchScheduler";
+import { db } from "../../lib/db";
+
+// The sole publishing schedule. Provider/media work stays in background workers.
 export const handler = schedule("* * * * *", async () => {
+  const startedAt = Date.now();
   const site = process.env.URL || process.env.DEPLOY_URL;
-  if (!site || !process.env.CRON_SECRET) return { statusCode: 503 };
-  const response = await fetch(`${site}/api/cron/social-publish`, { method: "POST", headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` }, signal: AbortSignal.timeout(25_000) });
-  return { statusCode: response.status };
+  if (!site || !process.env.CRON_SECRET) {
+    console.error("Publishing scheduler configuration is missing.");
+    return { statusCode: 503 };
+  }
+  try {
+    const result = await runPublishingBatchScheduler({ database: db, startedAt });
+    for (const [platform, summary] of Object.entries(result.platforms)) {
+      console.info("Publishing scheduler platform completed", { platform, ...summary });
+    }
+    const failed = Object.values(result.platforms).some(summary => summary.errors || summary.dispatchFailures);
+    console.info("Publishing scheduler completed", { durationMs: result.durationMs, rounds: result.rounds, concurrency: result.concurrency, failed });
+    return { statusCode: failed ? 503 : 200 };
+  } catch {
+    console.error("Publishing scheduler could not complete.");
+    return { statusCode: 503 };
+  }
 });

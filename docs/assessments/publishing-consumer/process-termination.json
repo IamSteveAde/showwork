@@ -1,0 +1,14 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "actualProcessKills": true,
+  "acceleratedLeaseExpiry": true,
+  "transactionPoolerBackendCap": 5,
+  "checks": [
+    "Scheduler SIGKILL after commit: READY job survives before any dispatch",
+    "Worker SIGKILL before external boundary: fresh process resumes and calls synthetic provider exactly once",
+    "Worker SIGKILL after synthetic external acceptance: restart never republishes; existing-result read confirms"
+  ],
+  "success": true,
+  "clusterRemoved": true
+}

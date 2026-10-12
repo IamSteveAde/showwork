@@ -1,0 +1,27 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "checks": [
+    "Actual blocked UPDATE times out; the worker skips the locked claim and leaves the durable job READY and sends no publishing request",
+    "Finalization under a held post-row lock retains durable publication proof; after lock release reconciliation confirms and reports once without republishing"
+  ],
+  "timeouts": [
+    {
+      "phase": "prepare",
+      "code": "P2010",
+      "sqlState": "57014",
+      "durationMs": 2008.1284510000005
+    },
+    {
+      "phase": "finalization",
+      "code": "PrismaClientUnknownRequestError",
+      "timeoutVerified": true,
+      "durationMs": 2038.5407810000006
+    }
+  ],
+  "duplicateAttempts": 0,
+  "confirmed": 1,
+  "success": true,
+  "clusterRemoved": true
+}

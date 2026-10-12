@@ -1,0 +1,11 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "checks": [
+    "A stalled real TikTok media-preparation path does not stop all 12 healthy-platform posts",
+    "Shutdown before an actual publishing request safely defers the prepared job and prevents late init after media IO returns"
+  ],
+  "shutdownMs": 38.34758299999976,
+  "success": true,
+  "sourceArtifact": "showwork-fair-shutdown-9a492439-93d0-41a1-a3c9-214b6fa21bb3.json"
+}

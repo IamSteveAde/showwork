@@ -1,4 +1,5 @@
-import { db } from "@/lib/db";
+import type { Prisma, SocialConnection } from "@prisma/client";
+import { db as defaultDb } from "@/lib/db";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
 import { freshTikTokConnection, reserveTikTokRequest, TikTokRequestBusyError } from "@/lib/tiktokConnection";
 import { requireScopes } from "@/lib/socialTokens";
@@ -8,14 +9,19 @@ import { tikTokConsentHash } from "@/lib/tiktokConsent";
 import { validateTikTokMedia } from "@/lib/tiktokMedia";
 import { queryTikTokCreatorInfo, initTikTokVideoPublish, initTikTokPhotoPublish, checkTikTokPublishStatus, TikTokApiError } from "@/lib/tiktok";
 
-export async function publishPostToTikTok(postId: string): Promise<void> {
-  const post = await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
+/** Explicit database port for isolated/staged workers; the default export path is unchanged. */
+export function createTikTokPublisher(database: typeof defaultDb, services: { freshTikTokConnection: typeof freshTikTokConnection; reserveTikTokRequest: typeof reserveTikTokRequest; recordPublishedSocialPost: typeof recordPublishedSocialPost; complete?: (operation: () => Promise<void>) => Promise<void>; claimInit?: () => Promise<boolean>; onConfirmed?: (data: Record<string, string>) => void; preloadedConnection?: SocialConnection; liveConnectionGuard?: boolean; deferAcceptance?: (reference: string) => Promise<void> }, preload?: (id: string) => Promise<Prisma.CalendarPostGetPayload<{ include: { assets: true } }>>) {
+  const db = database;
+  const complete = services.complete ?? ((operation: () => Promise<void>) => operation());
+  const { freshTikTokConnection, reserveTikTokRequest, recordPublishedSocialPost: reportPublished } = services;
+  return async function publishPostToTikTok(postId: string): Promise<void> {
+  const post = preload ? await preload(postId) : await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
   let publishId = post.tikTokPublishId;
   let attempted = !!post.tikTokInitStartedAt;
   const fail = (message: string) => db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "FAILED", tikTokPublishError: message } });
   try {
     if (!post.tikTokConsentAccountId || !post.tikTokConsentAt || !post.tikTokConsentBy || post.tikTokConsentVersion !== TIKTOK_CONSENT_VERSION) throw new Error("Review TikTok settings and authorize publishing before scheduling.");
-    const stored = await db.socialConnection.findFirst({ where: { calendarId: post.calendarId, platform: "TIKTOK", platformAccountId: post.tikTokConsentAccountId, status: "CONNECTED" } });
+    const stored = services.preloadedConnection ?? await db.socialConnection.findFirst({ where: { calendarId: post.calendarId, platform: "TIKTOK", platformAccountId: post.tikTokConsentAccountId, status: "CONNECTED" } });
     if (!stored) throw new Error("The authorized TikTok account was disconnected or replaced. Review the connected account and authorize again.");
     const connection = await freshTikTokConnection(stored);
     requireScopes(connection, ["video.publish"]);
@@ -32,9 +38,11 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       const preparedAssets = await validateTikTokMedia(post.assets, creator, { publish: true });
       await reserveTikTokRequest(connection.platformAccountId, "init");
       // Recheck both the connection and the post immediately before transfer.
-      const current = await db.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
-      if (current.status !== "CONNECTED" || current.platformAccountId !== post.tikTokConsentAccountId) throw new Error("The TikTok account was disconnected. Review authorization again.");
-      const claimed = await db.calendarPost.updateMany({ where: { id: postId, updatedAt: post.updatedAt, approvalStatus: "APPROVED", tikTokPublishStatus: "PUBLISHING", tikTokInitStartedAt: null }, data: { tikTokInitStartedAt: new Date() } });
+      if (!services.liveConnectionGuard) {
+        const current = await db.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
+        if (current.status !== "CONNECTED" || current.platformAccountId !== post.tikTokConsentAccountId) throw new Error("The TikTok account was disconnected. Review authorization again.");
+      }
+      const claimed = services.claimInit ? { count: await services.claimInit() ? 1 : 0 } : await db.calendarPost.updateMany({ where: { id: postId, updatedAt: post.updatedAt, approvalStatus: "APPROVED", tikTokPublishStatus: "PUBLISHING", tikTokInitStartedAt: null }, data: { tikTokInitStartedAt: new Date() } });
       if (!claimed.count) return;
       attempted = true;
       const info = tikTokPostInfo(settings, creator, video);
@@ -53,6 +61,7 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       }
       if (!result.publish_id) throw new Error("TikTok did not confirm a publish reference. Check TikTok before retrying.");
       publishId = result.publish_id;
+      if (services.deferAcceptance) { await services.deferAcceptance(publishId); return; }
       await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishId: publishId } });
     }
     await reserveTikTokRequest(connection.platformAccountId, "status");
@@ -65,9 +74,12 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
     }
     const publishedAt = new Date();
     const platformPostId = result.publicaly_available_post_id?.[0] != null ? String(result.publicaly_available_post_id[0]) : null;
+    services.onConfirmed?.({ tikTokPublishStatus: "PUBLISHED", tikTokPublishedAt: publishedAt.toISOString(), tikTokPublishId: publishId });
+    await complete(async () => {
     await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "PUBLISHED", tikTokPublishedAt: publishedAt, tikTokPublishError: null } });
-    try { await recordPublishedSocialPost({ calendarId: post.calendarId, calendarPostId: postId, platform: "TIKTOK", platformAccountId: connection.platformAccountId, platformPostId, providerReference: publishId, publishedAt, platformPostType: post.postType }); }
+    try { await reportPublished({ calendarId: post.calendarId, calendarPostId: postId, platform: "TIKTOK", platformAccountId: connection.platformAccountId, platformPostId, providerReference: publishId, publishedAt, platformPostType: post.postType }); }
     catch { console.error(`Could not link TikTok post ${postId} to reporting.`); }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "TikTok publishing failed. Please try again.";
     if (publishId) {
@@ -77,4 +89,9 @@ export async function publishPostToTikTok(postId: string): Promise<void> {
       await db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "SCHEDULED", publishWorkerStartedAt: null, tikTokPublishError: message } });
     } else await fail(attempted ? `${message} The submission result is uncertain. Check TikTok before retrying.` : message);
   }
+  };
+}
+
+export async function publishPostToTikTok(postId: string): Promise<void> {
+  return createTikTokPublisher(defaultDb, { freshTikTokConnection, reserveTikTokRequest, recordPublishedSocialPost })(postId);
 }

@@ -1,0 +1,16 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "actualSigkill": true,
+  "acceleratedLeaseExpiry": true,
+  "checks": [
+    "SIGKILL after real native validation but before any publishing request resumes with one publish",
+    "SIGKILL after fake Facebook acceptance with lost response stays quarantined; restart sends no second request and cannot invent an ID",
+    "SIGKILL after native TikTok operation checkpoint resumes status-only recovery, saves publication/reporting and never re-initializes"
+  ],
+  "recordedPublishAttempts": 3,
+  "duplicateAttempts": 0,
+  "success": true,
+  "clusterRemoved": true,
+  "sourceArtifact": "showwork-native-crash-79ee028e-0122-4bbf-a3ab-a735f5b988ef.json"
+}

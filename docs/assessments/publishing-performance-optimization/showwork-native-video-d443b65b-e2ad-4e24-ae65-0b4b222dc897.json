@@ -1,0 +1,13 @@
+{
+  "optimized": true,
+  "productionAccess": false,
+  "realPublishing": false,
+  "actualFfmpegAndFfprobe": true,
+  "mediaUrlMappedToLocalSyntheticFile": true,
+  "checks": [
+    "All five native video upload/init/processing/status paths confirm once and save reporting",
+    "TikTok executes actual ffprobe validation on real synthetic H.264 bytes; no remote media or social API connection"
+  ],
+  "videoBytes": 2624,
+  "success": true
+}

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "deploymentAuthorized": false,
+  "verificationRequiredOnTargetHost": true,
+  "publicIngress": {
+    "identity": "showwork-diagnostic-ingress",
+    "root": false,
+    "capabilities": [],
+    "readOnlyRootFilesystem": true,
+    "secretMounts": ["ingress-tls-key"],
+    "forbiddenMounts": ["executor-database-config", "revoker-database-config", "application-env"],
+    "outbound": ["executor-unix-socket"],
+    "automaticScaling": false
+  },
+  "privateExecutor": {
+    "identity": "showwork-diagnostic-executor",
+    "root": false,
+    "capabilities": [],
+    "readOnlyRootFilesystem": true,
+    "secretMounts": ["dedicated-diagnostic-database-config"],
+    "forbiddenMounts": ["application-env", "revoker-database-config"],
+    "outbound": ["approved-database-addresses-and-port", "approved-dns-resolver-if-required"],
+    "inbound": ["ingress-group-unix-socket"],
+    "replicas": 1,
+    "databaseOperations": 1,
+    "writableMounts": ["private-durable-ledger"]
+  },
+  "independentRevoker": {
+    "identity": "showwork-diagnostic-revoker",
+    "root": false,
+    "capabilities": [],
+    "dependsOnGatewayProcess": false,
+    "secretMounts": ["role-scoped-revocation-database-config"],
+    "outbound": ["approved-database-addresses-and-port"],
+    "permittedActions": ["disable-one-diagnostic-role", "clear-its-password", "terminate-only-its-sessions", "verify-revocation"],
+    "expiryMaximumSeconds": 7200
+  },
+  "releaseChecks": [
+    "prove-ingress-cannot-read-executor-or-revoker-secrets",
+    "prove-executor-cannot-read-application-or-revoker-secrets",
+    "prove-egress-denies-providers-metadata-services-and-arbitrary-ports",
+    "prove-readonly-root-and-no-elevated-capabilities",
+    "prove-singleton-and-durable-replay-budget-across-restart",
+    "kill-gateway-and-prove-independent-revocation",
+    "audit-actual-production-inactive-role-and-scoped-revocation-functions",
+    "verify-TLS-and-DNS-firewall-policy-on-target",
+    "verify-expiry-emergency-stop-and-external-alerting"
+  ]
+}

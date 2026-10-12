@@ -1,0 +1,9 @@
+{
+  "lib/publishing/reliableStore.ts": "ffdd3b8e0a0cc19f2d8dc614e3ad4638983148ac77fe410330f5e9348d7df3df",
+  "lib/publishing/coordinatorTransport.ts": "759b05be252a05a48ec4e986bc4c17a8f2abfe829f001b72ceb4a346bb020991",
+  "lib/publishing/budgetedDatabase.ts": "7159f7162a76704b4d7d5cbd5b05514e665c98dd695a248bb81573d1b6aec56a",
+  "scripts/publishing-reliability/lifecycle-performance.cjs": "fe6c369217bfbd40793d1e786f2b9befe4c4b5f8ecd7cfabca830ca7cad287ad",
+  "scripts/publishing-reliability/mock-social-apis.cjs": "1da7e017b3a09c43d68613bed531e601138d342639e9a73b9731e2af521fd39a",
+  "tests/helpers/isolated-coordinator.cjs": "e80854a9e3d73c17509a9ea07085925fbba93d5fc0bb80992bd284e2031472fc",
+  "tests/helpers/isolated-pooler.cjs": "088d2c96f1f038cbc5c1108ada421b29a16e28f9b9b7b58a9b9c5614df8ebb85"
+}

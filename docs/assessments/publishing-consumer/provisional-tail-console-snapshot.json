@@ -1,0 +1,32 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "status": "provisional; connection assertion failed; original raw artifact overwritten by interrupted comparison",
+  "source": "Captured completed-run tool output and pre-overwrite JSON readback",
+  "injectedDataTransactionMs": 1923,
+  "injectedControlTransactionMs": 320,
+  "admissionMs": 72565.527266,
+  "admitted": 250,
+  "completedMs": 780699.814077,
+  "confirmed": 250,
+  "publishedStatus": 250,
+  "maximumMockPublishingDelayMs": 787751.907363,
+  "dataPeak": 3,
+  "allBackendRowsPeakIncludingMaintenance": 6,
+  "clientBackendPeak": null,
+  "databaseErrors": 0,
+  "duplicateAttempts": 0,
+  "platformCompletions": {
+    "INSTAGRAM": 50,
+    "TIKTOK": 50,
+    "FACEBOOK": 50,
+    "LINKEDIN": 50,
+    "X": 50
+  },
+  "databaseOperationMs": {
+    "median": 333.1182090000002,
+    "p95": 1941.065809000007,
+    "max": 2288.7704939999385
+  }
+}

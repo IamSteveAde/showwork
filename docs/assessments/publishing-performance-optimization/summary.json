@@ -1,0 +1,2322 @@
+[
+  {
+    "runId": "a9e4061b-af21-4ad9-a8f6-3e966dfd5baa",
+    "count": 50,
+    "admissionMs": 7373.668042,
+    "firstAttemptMs": 7956.146229000001,
+    "maximumAttemptDelayMs": 39187.90673828125,
+    "totalPublishingMs": 188430.687947,
+    "confirmed": 50,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 33768.177734375,
+      "TIKTOK": 36523.7197265625,
+      "FACEBOOK": 37872.306396484375,
+      "LINKEDIN": 39176.34375,
+      "X": 39187.90673828125
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 7967.146240234375,
+      "TIKTOK:native-calendar-0-TIKTOK": 10689.480224609375,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 11028.0576171875,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 11039.27197265625,
+      "X:native-calendar-0-X": 16384.7587890625,
+      "INSTAGRAM:native-calendar-1-INSTAGRAM": 33768.177734375,
+      "TIKTOK:native-calendar-1-TIKTOK": 36523.7197265625,
+      "FACEBOOK:native-calendar-1-FACEBOOK": 16360.00439453125,
+      "LINKEDIN:native-calendar-1-LINKEDIN": 16375.68310546875,
+      "X:native-calendar-1-X": 15468.8232421875,
+      "INSTAGRAM:native-calendar-2-INSTAGRAM": 7970.65576171875,
+      "TIKTOK:native-calendar-2-TIKTOK": 12023.87158203125,
+      "FACEBOOK:native-calendar-2-FACEBOOK": 15440.243408203125,
+      "LINKEDIN:native-calendar-2-LINKEDIN": 15453.392822265625,
+      "X:native-calendar-2-X": 19099.78369140625,
+      "INSTAGRAM:native-calendar-3-INSTAGRAM": 11026.034423828125,
+      "TIKTOK:native-calendar-3-TIKTOK": 13743.815185546875,
+      "FACEBOOK:native-calendar-3-FACEBOOK": 19072.49365234375,
+      "LINKEDIN:native-calendar-3-LINKEDIN": 19085.587158203125,
+      "X:native-calendar-3-X": 20410.7109375,
+      "INSTAGRAM:native-calendar-4-INSTAGRAM": 16359.6318359375,
+      "TIKTOK:native-calendar-4-TIKTOK": 13749.107177734375,
+      "FACEBOOK:native-calendar-4-FACEBOOK": 25738.63427734375,
+      "LINKEDIN:native-calendar-4-LINKEDIN": 20393.67431640625,
+      "X:native-calendar-4-X": 28429.033447265625,
+      "INSTAGRAM:native-calendar-5-INSTAGRAM": 19069.478759765625,
+      "TIKTOK:native-calendar-5-TIKTOK": 21799.4111328125,
+      "FACEBOOK:native-calendar-5-FACEBOOK": 31101.991943359375,
+      "LINKEDIN:native-calendar-5-LINKEDIN": 31112.25537109375,
+      "X:native-calendar-5-X": 25763.942626953125,
+      "INSTAGRAM:native-calendar-6-INSTAGRAM": 20385.802978515625,
+      "TIKTOK:native-calendar-6-TIKTOK": 23099.690185546875,
+      "FACEBOOK:native-calendar-6-FACEBOOK": 33789.0341796875,
+      "LINKEDIN:native-calendar-6-LINKEDIN": 33799.794189453125,
+      "X:native-calendar-6-X": 33802.713134765625,
+      "INSTAGRAM:native-calendar-7-INSTAGRAM": 28401.7607421875,
+      "TIKTOK:native-calendar-7-TIKTOK": 31124.6767578125,
+      "FACEBOOK:native-calendar-7-FACEBOOK": 35195.09375,
+      "LINKEDIN:native-calendar-7-LINKEDIN": 35208.057861328125,
+      "X:native-calendar-7-X": 35220.66552734375,
+      "INSTAGRAM:native-calendar-8-INSTAGRAM": 25738.462158203125,
+      "TIKTOK:native-calendar-8-TIKTOK": 28476.7216796875,
+      "FACEBOOK:native-calendar-8-FACEBOOK": 35195.13720703125,
+      "LINKEDIN:native-calendar-8-LINKEDIN": 37885.93603515625,
+      "X:native-calendar-8-X": 37895.5185546875,
+      "INSTAGRAM:native-calendar-9-INSTAGRAM": 31101.448486328125,
+      "TIKTOK:native-calendar-9-TIKTOK": 33841.0595703125,
+      "FACEBOOK:native-calendar-9-FACEBOOK": 37872.306396484375,
+      "LINKEDIN:native-calendar-9-LINKEDIN": 39176.34375,
+      "X:native-calendar-9-X": 39187.90673828125
+    },
+    "transactionMs": {
+      "p50": 1403.207549999992,
+      "p95": 1429.9145950000002,
+      "max": 1682.7116139999998,
+      "count": 115
+    },
+    "success": true,
+    "label": "50 warm",
+    "applicationSqlStatements": 2629,
+    "applicationSqlPerPost": 52.58,
+    "localEntryWaitMs": 99748,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 700.3548340000007
+      },
+      "scheduledWorkExists": {
+        "calls": 5,
+        "wallMs": 1713.39090199999
+      },
+      "reconciliationJobs": {
+        "calls": 30,
+        "wallMs": 9927.594656000012
+      },
+      "recoverExpired": {
+        "calls": 133,
+        "wallMs": 86551.15815500006
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 645.4871719999992
+      },
+      "reportingJobs": {
+        "calls": 30,
+        "wallMs": 9726.035290999997
+      },
+      "recoverAccountLeases": {
+        "calls": 133,
+        "wallMs": 43292.77422199988
+      },
+      "readyFairAccounts": {
+        "calls": 148,
+        "wallMs": 48422.76472500002
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 10498.408816999998
+      },
+      "findJobs": {
+        "calls": 14,
+        "wallMs": 4553.349575000004
+      },
+      "prepareMany": {
+        "calls": 14,
+        "wallMs": 4558.923097999992
+      },
+      "localEntryWait": {
+        "calls": 110,
+        "wallMs": 99748
+      },
+      "budget": {
+        "calls": 128,
+        "wallMs": 232021.08819700006
+      },
+      "TIKTOK.preflight": {
+        "calls": 10,
+        "wallMs": 3.8846169999942504
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 10,
+        "wallMs": 2.5261430000082328
+      },
+      "acquireAccount": {
+        "calls": 50,
+        "wallMs": 16306.544683999993
+      },
+      "readLiveAuthorization": {
+        "calls": 50,
+        "wallMs": 16219.477148999998
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 325.6165839999994
+      },
+      "capacityBackoff": {
+        "calls": 18,
+        "wallMs": 18009
+      },
+      "beginExternal": {
+        "calls": 50,
+        "wallMs": 16220.280900000014
+      },
+      "assertPublication": {
+        "calls": 50,
+        "wallMs": 16300.936092000025
+      },
+      "unknown": {
+        "calls": 40,
+        "wallMs": 13131.355466999998
+      },
+      "INSTAGRAM.publish": {
+        "calls": 10,
+        "wallMs": 13253.26860800001
+      },
+      "releasePrepared": {
+        "calls": 50,
+        "wallMs": 16143.448070000008
+      },
+      "releaseAccount": {
+        "calls": 50,
+        "wallMs": 16283.881953000024
+      },
+      "reserveTikTokRate": {
+        "calls": 40,
+        "wallMs": 12979.063496999981
+      },
+      "FACEBOOK.preflight": {
+        "calls": 10,
+        "wallMs": 4.041382999988855
+      },
+      "LINKEDIN.preflight": {
+        "calls": 10,
+        "wallMs": 3.8709100000123726
+      },
+      "accept": {
+        "calls": 10,
+        "wallMs": 3248.288838000015
+      },
+      "TIKTOK.publish": {
+        "calls": 10,
+        "wallMs": 41787.121531
+      },
+      "claimReconciliation": {
+        "calls": 60,
+        "wallMs": 19504.11008899993
+      },
+      "FACEBOOK.publish": {
+        "calls": 10,
+        "wallMs": 13180.804106000003
+      },
+      "LINKEDIN.publish": {
+        "calls": 10,
+        "wallMs": 13294.707643999995
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 10,
+        "wallMs": 32120.235010999993
+      },
+      "finish": {
+        "calls": 50,
+        "wallMs": 16315.167243000062
+      },
+      "findJob": {
+        "calls": 50,
+        "wallMs": 16200.857194999957
+      },
+      "X.preflight": {
+        "calls": 10,
+        "wallMs": 2.4109999999855063
+      },
+      "releaseReconciliation": {
+        "calls": 60,
+        "wallMs": 19407.11902899996
+      },
+      "renewConsumer": {
+        "calls": 24,
+        "wallMs": 7752.141745999976
+      },
+      "X.publish": {
+        "calls": 10,
+        "wallMs": 13407.721188000003
+      },
+      "TIKTOK.reconcile": {
+        "calls": 20,
+        "wallMs": 94813.782181
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 10,
+        "wallMs": 45685.09823500001
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 10,
+        "wallMs": 44252.180620000014
+      },
+      "X.reconcile": {
+        "calls": 10,
+        "wallMs": 40272.75804700003
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 2.3693789999815635
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.2209139999977197,
+      "p95": 14.293353000000934,
+      "max": 30.63061699998798
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.10383399997954257,
+      "p95": 1.5737569999982952,
+      "max": 30.14111000000048
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "62a5a2f4-f52c-4ab6-af99-f71f48fac5f8",
+    "count": 50,
+    "admissionMs": 8815.355244999999,
+    "firstAttemptMs": 10875.033264000002,
+    "maximumAttemptDelayMs": 42391.755615234375,
+    "totalPublishingMs": 216440.204421,
+    "confirmed": 50,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 37892.974365234375,
+      "TIKTOK": 41159.25244140625,
+      "FACEBOOK": 42376.12890625,
+      "LINKEDIN": 42391.755615234375,
+      "X": 42289.683349609375
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 10892.484619140625,
+      "TIKTOK:native-calendar-0-TIKTOK": 12957.401611328125,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 12933.588623046875,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 12947.195068359375,
+      "X:native-calendar-0-X": 12957.537841796875,
+      "INSTAGRAM:native-calendar-1-INSTAGRAM": 37892.974365234375,
+      "TIKTOK:native-calendar-1-TIKTOK": 41159.25244140625,
+      "FACEBOOK:native-calendar-1-FACEBOOK": 15470.2705078125,
+      "LINKEDIN:native-calendar-1-LINKEDIN": 15482.45361328125,
+      "X:native-calendar-1-X": 15499.578857421875,
+      "INSTAGRAM:native-calendar-2-INSTAGRAM": 10888.033203125,
+      "TIKTOK:native-calendar-2-TIKTOK": 14138.968505859375,
+      "FACEBOOK:native-calendar-2-FACEBOOK": 20005.37841796875,
+      "LINKEDIN:native-calendar-2-LINKEDIN": 18828.178955078125,
+      "X:native-calendar-2-X": 18837.07421875,
+      "INSTAGRAM:native-calendar-3-INSTAGRAM": 12933.410400390625,
+      "TIKTOK:native-calendar-3-TIKTOK": 16209.517333984375,
+      "FACEBOOK:native-calendar-3-FACEBOOK": 23402.82568359375,
+      "LINKEDIN:native-calendar-3-LINKEDIN": 20014.521240234375,
+      "X:native-calendar-3-X": 20031.29638671875,
+      "INSTAGRAM:native-calendar-4-INSTAGRAM": 15470.971923828125,
+      "TIKTOK:native-calendar-4-TIKTOK": 18742.693359375,
+      "FACEBOOK:native-calendar-4-FACEBOOK": 24576.51416015625,
+      "LINKEDIN:native-calendar-4-LINKEDIN": 23414.71142578125,
+      "X:native-calendar-4-X": 23423.655517578125,
+      "INSTAGRAM:native-calendar-5-INSTAGRAM": 23399.93701171875,
+      "TIKTOK:native-calendar-5-TIKTOK": 26670.18408203125,
+      "FACEBOOK:native-calendar-5-FACEBOOK": 33274.836669921875,
+      "LINKEDIN:native-calendar-5-LINKEDIN": 24589.378662109375,
+      "X:native-calendar-5-X": 24604.163330078125,
+      "INSTAGRAM:native-calendar-6-INSTAGRAM": 24574.217041015625,
+      "TIKTOK:native-calendar-6-TIKTOK": 27861.34912109375,
+      "FACEBOOK:native-calendar-6-FACEBOOK": 36383.533203125,
+      "LINKEDIN:native-calendar-6-LINKEDIN": 36386.260009765625,
+      "X:native-calendar-6-X": 30507.4921875,
+      "INSTAGRAM:native-calendar-7-INSTAGRAM": 33273.597900390625,
+      "TIKTOK:native-calendar-7-TIKTOK": 36540.4931640625,
+      "FACEBOOK:native-calendar-7-FACEBOOK": 37892.726318359375,
+      "LINKEDIN:native-calendar-7-LINKEDIN": 37902.344970703125,
+      "X:native-calendar-7-X": 36391.766845703125,
+      "INSTAGRAM:native-calendar-8-INSTAGRAM": 30477.762939453125,
+      "TIKTOK:native-calendar-8-TIKTOK": 35161.86669921875,
+      "FACEBOOK:native-calendar-8-FACEBOOK": 42264.77001953125,
+      "LINKEDIN:native-calendar-8-LINKEDIN": 42276.14111328125,
+      "X:native-calendar-8-X": 37917.191650390625,
+      "INSTAGRAM:native-calendar-9-INSTAGRAM": 36383.6826171875,
+      "TIKTOK:native-calendar-9-TIKTOK": 39648.271728515625,
+      "FACEBOOK:native-calendar-9-FACEBOOK": 42376.12890625,
+      "LINKEDIN:native-calendar-9-LINKEDIN": 42391.755615234375,
+      "X:native-calendar-9-X": 42289.683349609375
+    },
+    "transactionMs": {
+      "p50": 1945.0668520000181,
+      "p95": 1966.8591360000137,
+      "max": 2080.5995330000005,
+      "count": 115
+    },
+    "success": true,
+    "label": "50 tail",
+    "applicationSqlStatements": 2731,
+    "applicationSqlPerPost": 54.62,
+    "localEntryWaitMs": 120547,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 700.0906860000005
+      },
+      "scheduledWorkExists": {
+        "calls": 5,
+        "wallMs": 1706.1817729999802
+      },
+      "reconciliationJobs": {
+        "calls": 34,
+        "wallMs": 11206.27459700007
+      },
+      "recoverExpired": {
+        "calls": 154,
+        "wallMs": 100401.62636000011
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 646.7742150000004
+      },
+      "reportingJobs": {
+        "calls": 34,
+        "wallMs": 11003.847514999983
+      },
+      "recoverAccountLeases": {
+        "calls": 154,
+        "wallMs": 50011.74094400014
+      },
+      "readyFairAccounts": {
+        "calls": 170,
+        "wallMs": 55606.084942000154
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 13027.335864999997
+      },
+      "findJobs": {
+        "calls": 14,
+        "wallMs": 4534.849224999998
+      },
+      "prepareMany": {
+        "calls": 14,
+        "wallMs": 4585.407805999988
+      },
+      "localEntryWait": {
+        "calls": 110,
+        "wallMs": 120547
+      },
+      "budget": {
+        "calls": 129,
+        "wallMs": 291823.62941499986
+      },
+      "capacityBackoff": {
+        "calls": 19,
+        "wallMs": 19016
+      },
+      "TIKTOK.preflight": {
+        "calls": 10,
+        "wallMs": 3.1105960000004416
+      },
+      "acquireAccount": {
+        "calls": 50,
+        "wallMs": 16281.755640999996
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 323.71645999999964
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 10,
+        "wallMs": 2.663966000003711
+      },
+      "readLiveAuthorization": {
+        "calls": 50,
+        "wallMs": 16286.96222799999
+      },
+      "beginExternal": {
+        "calls": 50,
+        "wallMs": 16216.510068000014
+      },
+      "assertPublication": {
+        "calls": 50,
+        "wallMs": 16241.679389000012
+      },
+      "unknown": {
+        "calls": 40,
+        "wallMs": 12963.21569499998
+      },
+      "INSTAGRAM.publish": {
+        "calls": 10,
+        "wallMs": 13230.337781999999
+      },
+      "releasePrepared": {
+        "calls": 50,
+        "wallMs": 16177.98571700001
+      },
+      "reserveTikTokRate": {
+        "calls": 40,
+        "wallMs": 13167.993931000005
+      },
+      "FACEBOOK.preflight": {
+        "calls": 10,
+        "wallMs": 4.036429000010685
+      },
+      "LINKEDIN.preflight": {
+        "calls": 10,
+        "wallMs": 3.9838790000030713
+      },
+      "X.preflight": {
+        "calls": 10,
+        "wallMs": 3.8466779999907885
+      },
+      "releaseAccount": {
+        "calls": 50,
+        "wallMs": 16147.345284999978
+      },
+      "FACEBOOK.publish": {
+        "calls": 10,
+        "wallMs": 13115.851677999999
+      },
+      "LINKEDIN.publish": {
+        "calls": 10,
+        "wallMs": 13218.968647999998
+      },
+      "accept": {
+        "calls": 10,
+        "wallMs": 3241.1413130000074
+      },
+      "TIKTOK.publish": {
+        "calls": 10,
+        "wallMs": 48576.445729
+      },
+      "X.publish": {
+        "calls": 10,
+        "wallMs": 13337.607840999997
+      },
+      "renewConsumer": {
+        "calls": 28,
+        "wallMs": 9048.141705999999
+      },
+      "claimReconciliation": {
+        "calls": 60,
+        "wallMs": 19827.103446000074
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 10,
+        "wallMs": 44205.45252899999
+      },
+      "finish": {
+        "calls": 50,
+        "wallMs": 16238.115063999943
+      },
+      "findJob": {
+        "calls": 50,
+        "wallMs": 16295.412863999929
+      },
+      "releaseReconciliation": {
+        "calls": 60,
+        "wallMs": 19439.296778000036
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 10,
+        "wallMs": 50616.34582299999
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 10,
+        "wallMs": 53220.665413999996
+      },
+      "TIKTOK.reconcile": {
+        "calls": 20,
+        "wallMs": 106433.93672600006
+      },
+      "X.reconcile": {
+        "calls": 10,
+        "wallMs": 60992.67405100002
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.2939400000323076
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.079996000000392,
+      "p95": 12.050404000001436,
+      "max": 21.295373999999356
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.10226999998849351,
+      "p95": 1.5352600000042003,
+      "max": 88.00505400000839
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "a42018d9-90b2-464f-86be-58464e03cc6d",
+    "count": 250,
+    "admissionMs": 67782.207333,
+    "firstAttemptMs": 7735.279857000001,
+    "maximumAttemptDelayMs": 195148.89184570312,
+    "totalPublishingMs": 718141.2446170001,
+    "confirmed": 250,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 178006.33642578125,
+      "TIKTOK": 186090.84008789062,
+      "FACEBOOK": 195148.89184570312,
+      "LINKEDIN": 194042.83715820312,
+      "X": 187416.25366210938
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 7756.27978515625,
+      "TIKTOK:native-calendar-0-TIKTOK": 17061.64892578125,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 102685.41723632812,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 102694.10913085938,
+      "X:native-calendar-0-X": 93507.90258789062,
+      "INSTAGRAM:native-calendar-1-INSTAGRAM": 146895.25854492188,
+      "TIKTOK:native-calendar-1-TIKTOK": 160461.26391601562,
+      "FACEBOOK:native-calendar-1-FACEBOOK": 167248.73291015625,
+      "LINKEDIN:native-calendar-1-LINKEDIN": 169792.619140625,
+      "X:native-calendar-1-X": 157865.14306640625,
+      "INSTAGRAM:native-calendar-2-INSTAGRAM": 7757.85888671875,
+      "TIKTOK:native-calendar-2-TIKTOK": 22452.099853515625,
+      "FACEBOOK:native-calendar-2-FACEBOOK": 19721.174560546875,
+      "LINKEDIN:native-calendar-2-LINKEDIN": 19737.744384765625,
+      "X:native-calendar-2-X": 19746.615478515625,
+      "INSTAGRAM:native-calendar-3-INSTAGRAM": 53253.13232421875,
+      "TIKTOK:native-calendar-3-TIKTOK": 71990.9580078125,
+      "FACEBOOK:native-calendar-3-FACEBOOK": 19714.156494140625,
+      "LINKEDIN:native-calendar-3-LINKEDIN": 19731.65283203125,
+      "X:native-calendar-3-X": 19740.04638671875,
+      "INSTAGRAM:native-calendar-4-INSTAGRAM": 93484.55615234375,
+      "TIKTOK:native-calendar-4-TIKTOK": 110778.88500976562,
+      "FACEBOOK:native-calendar-4-FACEBOOK": 104242.85180664062,
+      "LINKEDIN:native-calendar-4-LINKEDIN": 108070.54321289062,
+      "X:native-calendar-4-X": 96024.24438476562,
+      "INSTAGRAM:native-calendar-5-INSTAGRAM": 126828.56567382812,
+      "TIKTOK:native-calendar-5-TIKTOK": 140361.79248046875,
+      "FACEBOOK:native-calendar-5-FACEBOOK": 108059.71899414062,
+      "LINKEDIN:native-calendar-5-LINKEDIN": 112251.06811523438,
+      "X:native-calendar-5-X": 97549.28564453125,
+      "INSTAGRAM:native-calendar-6-INSTAGRAM": 126894.46435546875,
+      "TIKTOK:native-calendar-6-TIKTOK": 142841.556640625,
+      "FACEBOOK:native-calendar-6-FACEBOOK": 112240.13916015625,
+      "LINKEDIN:native-calendar-6-LINKEDIN": 112090.70874023438,
+      "X:native-calendar-6-X": 108084.662109375,
+      "INSTAGRAM:native-calendar-7-INSTAGRAM": 132204.02221679688,
+      "TIKTOK:native-calendar-7-TIKTOK": 149645.818359375,
+      "FACEBOOK:native-calendar-7-FACEBOOK": 116081.29809570312,
+      "LINKEDIN:native-calendar-7-LINKEDIN": 116094.12475585938,
+      "X:native-calendar-7-X": 112265.173828125,
+      "INSTAGRAM:native-calendar-8-INSTAGRAM": 137625.33911132812,
+      "TIKTOK:native-calendar-8-TIKTOK": 150967.3818359375,
+      "FACEBOOK:native-calendar-8-FACEBOOK": 117548.5146484375,
+      "LINKEDIN:native-calendar-8-LINKEDIN": 117558.35864257812,
+      "X:native-calendar-8-X": 112104.02270507812,
+      "INSTAGRAM:native-calendar-9-INSTAGRAM": 140144.95458984375,
+      "TIKTOK:native-calendar-9-TIKTOK": 156401.62573242188,
+      "FACEBOOK:native-calendar-9-FACEBOOK": 121435.9951171875,
+      "LINKEDIN:native-calendar-9-LINKEDIN": 126841.90795898438,
+      "X:native-calendar-9-X": 116108.79907226562,
+      "INSTAGRAM:native-calendar-10-INSTAGRAM": 148225.783203125,
+      "TIKTOK:native-calendar-10-TIKTOK": 155026.4267578125,
+      "FACEBOOK:native-calendar-10-FACEBOOK": 126828.76416015625,
+      "LINKEDIN:native-calendar-10-LINKEDIN": 126912.28540039062,
+      "X:native-calendar-10-X": 117575.97607421875,
+      "INSTAGRAM:native-calendar-11-INSTAGRAM": 152347.96166992188,
+      "TIKTOK:native-calendar-11-TIKTOK": 160441.99072265625,
+      "FACEBOOK:native-calendar-11-FACEBOOK": 172590.14477539062,
+      "LINKEDIN:native-calendar-11-LINKEDIN": 172601.50634765625,
+      "X:native-calendar-11-X": 161939.61083984375,
+      "INSTAGRAM:native-calendar-12-INSTAGRAM": 157692.48828125,
+      "TIKTOK:native-calendar-12-TIKTOK": 164652.15698242188,
+      "FACEBOOK:native-calendar-12-FACEBOOK": 173801.02319335938,
+      "LINKEDIN:native-calendar-12-LINKEDIN": 173814.10083007812,
+      "X:native-calendar-12-X": 165794.00170898438,
+      "INSTAGRAM:native-calendar-13-INSTAGRAM": 157859.88525390625,
+      "TIKTOK:native-calendar-13-TIKTOK": 168521.431640625,
+      "FACEBOOK:native-calendar-13-FACEBOOK": 178008.99267578125,
+      "LINKEDIN:native-calendar-13-LINKEDIN": 178008.90161132812,
+      "X:native-calendar-13-X": 167267.748046875,
+      "INSTAGRAM:native-calendar-14-INSTAGRAM": 161912.4658203125,
+      "TIKTOK:native-calendar-14-TIKTOK": 169960.87524414062,
+      "FACEBOOK:native-calendar-14-FACEBOOK": 183120.54174804688,
+      "LINKEDIN:native-calendar-14-LINKEDIN": 183132.00537109375,
+      "X:native-calendar-14-X": 169801.796875,
+      "INSTAGRAM:native-calendar-15-INSTAGRAM": 165793.55029296875,
+      "TIKTOK:native-calendar-15-TIKTOK": 175292.37915039062,
+      "FACEBOOK:native-calendar-15-FACEBOOK": 187163.17578125,
+      "LINKEDIN:native-calendar-15-LINKEDIN": 183364.68603515625,
+      "X:native-calendar-15-X": 173827.03051757812,
+      "INSTAGRAM:native-calendar-16-INSTAGRAM": 167242.76245117188,
+      "TIKTOK:native-calendar-16-TIKTOK": 176569.42016601562,
+      "FACEBOOK:native-calendar-16-FACEBOOK": 187163.3798828125,
+      "LINKEDIN:native-calendar-16-LINKEDIN": 187177.58740234375,
+      "X:native-calendar-16-X": 178025.41284179688,
+      "INSTAGRAM:native-calendar-17-INSTAGRAM": 169782.25854492188,
+      "TIKTOK:native-calendar-17-TIKTOK": 180707.83569335938,
+      "FACEBOOK:native-calendar-17-FACEBOOK": 191138.89990234375,
+      "LINKEDIN:native-calendar-17-LINKEDIN": 187177.93090820312,
+      "X:native-calendar-17-X": 183375.9013671875,
+      "INSTAGRAM:native-calendar-18-INSTAGRAM": 173794.169921875,
+      "TIKTOK:native-calendar-18-TIKTOK": 185834.87670898438,
+      "FACEBOOK:native-calendar-18-FACEBOOK": 191139.02465820312,
+      "LINKEDIN:native-calendar-18-LINKEDIN": 191153.88232421875,
+      "X:native-calendar-18-X": 187187.59765625,
+      "INSTAGRAM:native-calendar-19-INSTAGRAM": 178006.33642578125,
+      "TIKTOK:native-calendar-19-TIKTOK": 186090.84008789062,
+      "FACEBOOK:native-calendar-19-FACEBOOK": 195148.89184570312,
+      "LINKEDIN:native-calendar-19-LINKEDIN": 194042.83715820312,
+      "X:native-calendar-19-X": 187416.25366210938,
+      "INSTAGRAM:native-calendar-20-INSTAGRAM": 19720.758544921875,
+      "TIKTOK:native-calendar-20-TIKTOK": 10477.98486328125,
+      "FACEBOOK:native-calendar-20-FACEBOOK": 25072.496826171875,
+      "LINKEDIN:native-calendar-20-LINKEDIN": 23761.321044921875,
+      "X:native-calendar-20-X": 23771.8095703125,
+      "INSTAGRAM:native-calendar-21-INSTAGRAM": 19706.451416015625,
+      "TIKTOK:native-calendar-21-TIKTOK": 22451.98828125,
+      "FACEBOOK:native-calendar-21-FACEBOOK": 27778.09716796875,
+      "LINKEDIN:native-calendar-21-LINKEDIN": 27789.827392578125,
+      "X:native-calendar-21-X": 27800.7392578125,
+      "INSTAGRAM:native-calendar-22-INSTAGRAM": 23753.58447265625,
+      "TIKTOK:native-calendar-22-TIKTOK": 30503.98583984375,
+      "FACEBOOK:native-calendar-22-FACEBOOK": 29115.96240234375,
+      "LINKEDIN:native-calendar-22-LINKEDIN": 29129.73779296875,
+      "X:native-calendar-22-X": 29140.0458984375,
+      "INSTAGRAM:native-calendar-23-INSTAGRAM": 27778.255859375,
+      "TIKTOK:native-calendar-23-TIKTOK": 31840.302734375,
+      "FACEBOOK:native-calendar-23-FACEBOOK": 34533.00048828125,
+      "LINKEDIN:native-calendar-23-LINKEDIN": 39885.6767578125,
+      "X:native-calendar-23-X": 34535.266845703125,
+      "INSTAGRAM:native-calendar-24-INSTAGRAM": 29108.486572265625,
+      "TIKTOK:native-calendar-24-TIKTOK": 37245.272216796875,
+      "FACEBOOK:native-calendar-24-FACEBOOK": 39873.42041015625,
+      "LINKEDIN:native-calendar-24-LINKEDIN": 45257.83056640625,
+      "X:native-calendar-24-X": 43870.354248046875,
+      "INSTAGRAM:native-calendar-25-INSTAGRAM": 34522.556884765625,
+      "TIKTOK:native-calendar-25-TIKTOK": 37245.14013671875,
+      "FACEBOOK:native-calendar-25-FACEBOOK": 45241.03076171875,
+      "LINKEDIN:native-calendar-25-LINKEDIN": 47906.713623046875,
+      "X:native-calendar-25-X": 45268.652099609375,
+      "INSTAGRAM:native-calendar-26-INSTAGRAM": 34522.676513671875,
+      "TIKTOK:native-calendar-26-TIKTOK": 42591.27880859375,
+      "FACEBOOK:native-calendar-26-FACEBOOK": 47894.47021484375,
+      "LINKEDIN:native-calendar-26-LINKEDIN": 53263.26171875,
+      "X:native-calendar-26-X": 47921.72509765625,
+      "INSTAGRAM:native-calendar-27-INSTAGRAM": 43842.373046875,
+      "TIKTOK:native-calendar-27-TIKTOK": 47970.512451171875,
+      "FACEBOOK:native-calendar-27-FACEBOOK": 54571.834716796875,
+      "LINKEDIN:native-calendar-27-LINKEDIN": 54580.94091796875,
+      "X:native-calendar-27-X": 53272.085693359375,
+      "INSTAGRAM:native-calendar-28-INSTAGRAM": 45240.882568359375,
+      "TIKTOK:native-calendar-28-TIKTOK": 50608.6689453125,
+      "FACEBOOK:native-calendar-28-FACEBOOK": 57290.6640625,
+      "LINKEDIN:native-calendar-28-LINKEDIN": 57303.307861328125,
+      "X:native-calendar-28-X": 54596.17529296875,
+      "INSTAGRAM:native-calendar-29-INSTAGRAM": 47894.251708984375,
+      "TIKTOK:native-calendar-29-TIKTOK": 60014.05859375,
+      "FACEBOOK:native-calendar-29-FACEBOOK": 58618.1572265625,
+      "LINKEDIN:native-calendar-29-LINKEDIN": 58628.873779296875,
+      "X:native-calendar-29-X": 57312.36181640625,
+      "INSTAGRAM:native-calendar-30-INSTAGRAM": 57289.181396484375,
+      "TIKTOK:native-calendar-30-TIKTOK": 61344.441650390625,
+      "FACEBOOK:native-calendar-30-FACEBOOK": 62653.66455078125,
+      "LINKEDIN:native-calendar-30-LINKEDIN": 72010.74560546875,
+      "X:native-calendar-30-X": 58648.655517578125,
+      "INSTAGRAM:native-calendar-31-INSTAGRAM": 58616.29296875,
+      "TIKTOK:native-calendar-31-TIKTOK": 69341.84545898438,
+      "FACEBOOK:native-calendar-31-FACEBOOK": 71999.115234375,
+      "LINKEDIN:native-calendar-31-LINKEDIN": 77227.40161132812,
+      "X:native-calendar-31-X": 62670.509521484375,
+      "INSTAGRAM:native-calendar-32-INSTAGRAM": 62650.716796875,
+      "TIKTOK:native-calendar-32-TIKTOK": 74731.95263671875,
+      "FACEBOOK:native-calendar-32-FACEBOOK": 77227.26977539062,
+      "LINKEDIN:native-calendar-32-LINKEDIN": 81294.19799804688,
+      "X:native-calendar-32-X": 72025.849609375,
+      "INSTAGRAM:native-calendar-33-INSTAGRAM": 62650.46142578125,
+      "TIKTOK:native-calendar-33-TIKTOK": 79984.408203125,
+      "FACEBOOK:native-calendar-33-FACEBOOK": 81284.54345703125,
+      "LINKEDIN:native-calendar-33-LINKEDIN": 86650.31591796875,
+      "X:native-calendar-33-X": 77389.02978515625,
+      "INSTAGRAM:native-calendar-34-INSTAGRAM": 71999.22045898438,
+      "TIKTOK:native-calendar-34-TIKTOK": 84166.03686523438,
+      "FACEBOOK:native-calendar-34-FACEBOOK": 86636.353515625,
+      "LINKEDIN:native-calendar-34-LINKEDIN": 88123.1171875,
+      "X:native-calendar-34-X": 81310.32763671875,
+      "INSTAGRAM:native-calendar-35-INSTAGRAM": 77227.13452148438,
+      "TIKTOK:native-calendar-35-TIKTOK": 89364.54296875,
+      "FACEBOOK:native-calendar-35-FACEBOOK": 88108.61206054688,
+      "LINKEDIN:native-calendar-35-LINKEDIN": 93506.39013671875,
+      "X:native-calendar-35-X": 86660.97387695312,
+      "INSTAGRAM:native-calendar-36-INSTAGRAM": 81435.92236328125,
+      "TIKTOK:native-calendar-36-TIKTOK": 90820.93310546875,
+      "FACEBOOK:native-calendar-36-FACEBOOK": 95999.44653320312,
+      "LINKEDIN:native-calendar-36-LINKEDIN": 96012.013671875,
+      "X:native-calendar-36-X": 88139.36962890625,
+      "INSTAGRAM:native-calendar-37-INSTAGRAM": 86634.90258789062,
+      "TIKTOK:native-calendar-37-TIKTOK": 93369.453125,
+      "FACEBOOK:native-calendar-37-FACEBOOK": 97526.90795898438,
+      "LINKEDIN:native-calendar-37-LINKEDIN": 97538.537109375,
+      "X:native-calendar-37-X": 90684.89453125,
+      "INSTAGRAM:native-calendar-38-INSTAGRAM": 88108.4599609375,
+      "TIKTOK:native-calendar-38-TIKTOK": 98760.81616210938,
+      "FACEBOOK:native-calendar-38-FACEBOOK": 126894.380859375,
+      "LINKEDIN:native-calendar-38-LINKEDIN": 132193.619140625,
+      "X:native-calendar-38-X": 121620.7138671875,
+      "INSTAGRAM:native-calendar-39-INSTAGRAM": 90660.86206054688,
+      "TIKTOK:native-calendar-39-TIKTOK": 101729.22216796875,
+      "FACEBOOK:native-calendar-39-FACEBOOK": 132184.84912109375,
+      "LINKEDIN:native-calendar-39-LINKEDIN": 132225.80908203125,
+      "X:native-calendar-39-X": 126853.74487304688,
+      "INSTAGRAM:native-calendar-40-INSTAGRAM": 95999.64013671875,
+      "TIKTOK:native-calendar-40-TIKTOK": 105393.19360351562,
+      "FACEBOOK:native-calendar-40-FACEBOOK": 132205.2919921875,
+      "LINKEDIN:native-calendar-40-LINKEDIN": 140163.08325195312,
+      "X:native-calendar-40-X": 126917.84204101562,
+      "INSTAGRAM:native-calendar-41-INSTAGRAM": 97526.68994140625,
+      "TIKTOK:native-calendar-41-TIKTOK": 106947.19702148438,
+      "FACEBOOK:native-calendar-41-FACEBOOK": 140150.646484375,
+      "LINKEDIN:native-calendar-41-LINKEDIN": 144232.44750976562,
+      "X:native-calendar-41-X": 132210.32690429688,
+      "INSTAGRAM:native-calendar-42-INSTAGRAM": 104241.353515625,
+      "TIKTOK:native-calendar-42-TIKTOK": 114953.60864257812,
+      "FACEBOOK:native-calendar-42-FACEBOOK": 144224.24731445312,
+      "LINKEDIN:native-calendar-42-LINKEDIN": 146907.201171875,
+      "X:native-calendar-42-X": 132233.36865234375,
+      "INSTAGRAM:native-calendar-43-INSTAGRAM": 108059.43725585938,
+      "TIKTOK:native-calendar-43-TIKTOK": 118792.2216796875,
+      "FACEBOOK:native-calendar-43-FACEBOOK": 146894.49487304688,
+      "LINKEDIN:native-calendar-43-LINKEDIN": 148258.3896484375,
+      "X:native-calendar-43-X": 137656.30639648438,
+      "INSTAGRAM:native-calendar-44-INSTAGRAM": 112238.82299804688,
+      "TIKTOK:native-calendar-44-TIKTOK": 121588.16772460938,
+      "FACEBOOK:native-calendar-44-FACEBOOK": 148222.82641601562,
+      "LINKEDIN:native-calendar-44-LINKEDIN": 153697.60717773438,
+      "X:native-calendar-44-X": 140164.46459960938,
+      "INSTAGRAM:native-calendar-45-INSTAGRAM": 112080.26684570312,
+      "TIKTOK:native-calendar-45-TIKTOK": 124140.14599609375,
+      "FACEBOOK:native-calendar-45-FACEBOOK": 153688.90014648438,
+      "LINKEDIN:native-calendar-45-LINKEDIN": 157857.34643554688,
+      "X:native-calendar-45-X": 144249.37841796875,
+      "INSTAGRAM:native-calendar-46-INSTAGRAM": 116083.39819335938,
+      "TIKTOK:native-calendar-46-TIKTOK": 124307.40795898438,
+      "FACEBOOK:native-calendar-46-FACEBOOK": 157693.64038085938,
+      "LINKEDIN:native-calendar-46-LINKEDIN": 157863.20678710938,
+      "X:native-calendar-46-X": 146923.17407226562,
+      "INSTAGRAM:native-calendar-47-INSTAGRAM": 117548.60595703125,
+      "TIKTOK:native-calendar-47-TIKTOK": 129537.64672851562,
+      "FACEBOOK:native-calendar-47-FACEBOOK": 157860.17504882812,
+      "LINKEDIN:native-calendar-47-LINKEDIN": 161930.35009765625,
+      "X:native-calendar-47-X": 148265.18505859375,
+      "INSTAGRAM:native-calendar-48-INSTAGRAM": 121435.84741210938,
+      "TIKTOK:native-calendar-48-TIKTOK": 129630.0673828125,
+      "FACEBOOK:native-calendar-48-FACEBOOK": 161901.7314453125,
+      "LINKEDIN:native-calendar-48-LINKEDIN": 165794.09326171875,
+      "X:native-calendar-48-X": 152371.22119140625,
+      "INSTAGRAM:native-calendar-49-INSTAGRAM": 121592.88403320312,
+      "TIKTOK:native-calendar-49-TIKTOK": 134995.80151367188,
+      "FACEBOOK:native-calendar-49-FACEBOOK": 165793.82885742188,
+      "LINKEDIN:native-calendar-49-LINKEDIN": 167254.66772460938,
+      "X:native-calendar-49-X": 157863.11450195312
+    },
+    "transactionMs": {
+      "p50": 1402.2733279999811,
+      "p95": 1426.4054919999908,
+      "max": 1551.3032520000124,
+      "count": 549
+    },
+    "success": true,
+    "label": "250 warm",
+    "applicationSqlStatements": 12015,
+    "applicationSqlPerPost": 48.06,
+    "localEntryWaitMs": 604274,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 678.1954449999994
+      },
+      "scheduledWorkExists": {
+        "calls": 13,
+        "wallMs": 4360.400391000128
+      },
+      "reconciliationJobs": {
+        "calls": 72,
+        "wallMs": 23341.73644600012
+      },
+      "recoverExpired": {
+        "calls": 461,
+        "wallMs": 299646.8060619985
+      },
+      "leader": {
+        "calls": 3,
+        "wallMs": 986.8601070000022
+      },
+      "reportingJobs": {
+        "calls": 72,
+        "wallMs": 23475.07253200007
+      },
+      "recoverAccountLeases": {
+        "calls": 461,
+        "wallMs": 149376.15656900065
+      },
+      "readyFairAccounts": {
+        "calls": 529,
+        "wallMs": 173157.9292379989
+      },
+      "admit": {
+        "calls": 19,
+        "wallMs": 35639.665758
+      },
+      "findJobs": {
+        "calls": 73,
+        "wallMs": 23613.920657000017
+      },
+      "prepareMany": {
+        "calls": 73,
+        "wallMs": 23784.702912
+      },
+      "localEntryWait": {
+        "calls": 532,
+        "wallMs": 604274
+      },
+      "budget": {
+        "calls": 645,
+        "wallMs": 1129616.9979229975
+      },
+      "capacityBackoff": {
+        "calls": 113,
+        "wallMs": 113088
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 50,
+        "wallMs": 11.808454000034544
+      },
+      "TIKTOK.preflight": {
+        "calls": 50,
+        "wallMs": 9.516539999993256
+      },
+      "acquireAccount": {
+        "calls": 250,
+        "wallMs": 81508.49294800012
+      },
+      "readLiveAuthorization": {
+        "calls": 250,
+        "wallMs": 81433.64582700032
+      },
+      "beginExternal": {
+        "calls": 250,
+        "wallMs": 81433.66613300006
+      },
+      "assertPublication": {
+        "calls": 250,
+        "wallMs": 82368.43043799992
+      },
+      "unknown": {
+        "calls": 200,
+        "wallMs": 64848.58870899985
+      },
+      "INSTAGRAM.publish": {
+        "calls": 50,
+        "wallMs": 66339.94554400002
+      },
+      "releasePrepared": {
+        "calls": 250,
+        "wallMs": 80884.7464979997
+      },
+      "releaseAccount": {
+        "calls": 250,
+        "wallMs": 80973.49598200007
+      },
+      "reserveTikTokRate": {
+        "calls": 200,
+        "wallMs": 65147.14134500002
+      },
+      "accept": {
+        "calls": 50,
+        "wallMs": 16238.430715000053
+      },
+      "TIKTOK.publish": {
+        "calls": 50,
+        "wallMs": 215538.63437800005
+      },
+      "claimReconciliation": {
+        "calls": 300,
+        "wallMs": 98400.02919300001
+      },
+      "renewConsumer": {
+        "calls": 94,
+        "wallMs": 30499.256466999952
+      },
+      "releaseLeader": {
+        "calls": 2,
+        "wallMs": 645.0682029999953
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 50,
+        "wallMs": 188907.569677
+      },
+      "finish": {
+        "calls": 250,
+        "wallMs": 81397.39517200016
+      },
+      "findJob": {
+        "calls": 250,
+        "wallMs": 80987.82983199968
+      },
+      "releaseReconciliation": {
+        "calls": 300,
+        "wallMs": 97378.54302100043
+      },
+      "FACEBOOK.preflight": {
+        "calls": 50,
+        "wallMs": 11.578359000155615
+      },
+      "LINKEDIN.preflight": {
+        "calls": 50,
+        "wallMs": 11.188441999984207
+      },
+      "X.preflight": {
+        "calls": 50,
+        "wallMs": 9.872650000026624
+      },
+      "FACEBOOK.publish": {
+        "calls": 50,
+        "wallMs": 65837.03317400001
+      },
+      "LINKEDIN.publish": {
+        "calls": 50,
+        "wallMs": 66492.37665100003
+      },
+      "X.publish": {
+        "calls": 50,
+        "wallMs": 67329.9345849999
+      },
+      "TIKTOK.reconcile": {
+        "calls": 100,
+        "wallMs": 574280.4288669997
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 50,
+        "wallMs": 200415.1919349999
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 50,
+        "wallMs": 207521.65109299976
+      },
+      "X.reconcile": {
+        "calls": 50,
+        "wallMs": 237857.99285000013
+      },
+      "recoverAdmission": {
+        "calls": 2,
+        "wallMs": 644.4503940000141
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.19284000003244728
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.1446170000126585,
+      "p95": 5.274084999997285,
+      "max": 65.89134199998807
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.09312500001396984,
+      "p95": 1.9642029999522492,
+      "max": 80.69627399998717
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "ca07282c-8c1e-480a-a8d6-b5ca56915066",
+    "count": 250,
+    "admissionMs": 68760.06259399999,
+    "firstAttemptMs": 8251.845893000002,
+    "maximumAttemptDelayMs": 221264.95239257812,
+    "totalPublishingMs": 853545.712553,
+    "confirmed": 250,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 215386.8671875,
+      "TIKTOK": 210027.50439453125,
+      "FACEBOOK": 215388.3310546875,
+      "LINKEDIN": 219783.17846679688,
+      "X": 221264.95239257812
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 10927.41357421875,
+      "TIKTOK:native-calendar-0-TIKTOK": 14195.408203125,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 102758.81030273438,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 102776.66479492188,
+      "X:native-calendar-0-X": 102788.11767578125,
+      "INSTAGRAM:native-calendar-1-INSTAGRAM": 178887.20068359375,
+      "TIKTOK:native-calendar-1-TIKTOK": 181855.98559570312,
+      "FACEBOOK:native-calendar-1-FACEBOOK": 190401.37841796875,
+      "LINKEDIN:native-calendar-1-LINKEDIN": 190612.85107421875,
+      "X:native-calendar-1-X": 190624.32592773438,
+      "INSTAGRAM:native-calendar-2-INSTAGRAM": 8269.845947265625,
+      "TIKTOK:native-calendar-2-TIKTOK": 26681.815673828125,
+      "FACEBOOK:native-calendar-2-FACEBOOK": 23424.37109375,
+      "LINKEDIN:native-calendar-2-LINKEDIN": 23432.6865234375,
+      "X:native-calendar-2-X": 16469.889404296875,
+      "INSTAGRAM:native-calendar-3-INSTAGRAM": 57506.63671875,
+      "TIKTOK:native-calendar-3-TIKTOK": 68736.0791015625,
+      "FACEBOOK:native-calendar-3-FACEBOOK": 16438.8369140625,
+      "LINKEDIN:native-calendar-3-LINKEDIN": 16452.818603515625,
+      "X:native-calendar-3-X": 21745.631103515625,
+      "INSTAGRAM:native-calendar-4-INSTAGRAM": 110020.79174804688,
+      "TIKTOK:native-calendar-4-TIKTOK": 115873.6640625,
+      "FACEBOOK:native-calendar-4-FACEBOOK": 104126.59643554688,
+      "LINKEDIN:native-calendar-4-LINKEDIN": 104136.19775390625,
+      "X:native-calendar-4-X": 104144.60083007812,
+      "INSTAGRAM:native-calendar-5-INSTAGRAM": 155398.60668945312,
+      "TIKTOK:native-calendar-5-TIKTOK": 148221.06616210938,
+      "FACEBOOK:native-calendar-5-FACEBOOK": 112620.52197265625,
+      "LINKEDIN:native-calendar-5-LINKEDIN": 112631.82885742188,
+      "X:native-calendar-5-X": 110049.35546875,
+      "INSTAGRAM:native-calendar-6-INSTAGRAM": 165685.7978515625,
+      "TIKTOK:native-calendar-6-TIKTOK": 155836.53442382812,
+      "FACEBOOK:native-calendar-6-FACEBOOK": 115913.81591796875,
+      "LINKEDIN:native-calendar-6-LINKEDIN": 115920.98046875,
+      "X:native-calendar-6-X": 117218.64477539062,
+      "INSTAGRAM:native-calendar-7-INSTAGRAM": 171361.91333007812,
+      "TIKTOK:native-calendar-7-TIKTOK": 158655.7001953125,
+      "FACEBOOK:native-calendar-7-FACEBOOK": 117198.39672851562,
+      "LINKEDIN:native-calendar-7-LINKEDIN": 117203.46533203125,
+      "X:native-calendar-7-X": 125806.96484375,
+      "INSTAGRAM:native-calendar-8-INSTAGRAM": 174224.3603515625,
+      "TIKTOK:native-calendar-8-TIKTOK": 164733.22729492188,
+      "FACEBOOK:native-calendar-8-FACEBOOK": 125783.14013671875,
+      "LINKEDIN:native-calendar-8-LINKEDIN": 125793.27758789062,
+      "X:native-calendar-8-X": 123073.19140625,
+      "INSTAGRAM:native-calendar-9-INSTAGRAM": 175948.89868164062,
+      "TIKTOK:native-calendar-9-TIKTOK": 168942.38525390625,
+      "FACEBOOK:native-calendar-9-FACEBOOK": 128957.21508789062,
+      "LINKEDIN:native-calendar-9-LINKEDIN": 123055.2861328125,
+      "X:native-calendar-9-X": 128986.24926757812,
+      "INSTAGRAM:native-calendar-10-INSTAGRAM": 181861.3623046875,
+      "TIKTOK:native-calendar-10-TIKTOK": 174612.89208984375,
+      "FACEBOOK:native-calendar-10-FACEBOOK": 131679.13256835938,
+      "LINKEDIN:native-calendar-10-LINKEDIN": 128980.08251953125,
+      "X:native-calendar-10-X": 131702.19750976562,
+      "INSTAGRAM:native-calendar-11-INSTAGRAM": 190602.66259765625,
+      "TIKTOK:native-calendar-11-TIKTOK": 177495.40283203125,
+      "FACEBOOK:native-calendar-11-FACEBOOK": 190602.52856445312,
+      "LINKEDIN:native-calendar-11-LINKEDIN": 196324.5927734375,
+      "X:native-calendar-11-X": 196334.84375,
+      "INSTAGRAM:native-calendar-12-INSTAGRAM": 196313.81860351562,
+      "TIKTOK:native-calendar-12-TIKTOK": 184825.31005859375,
+      "FACEBOOK:native-calendar-12-FACEBOOK": 196314.0166015625,
+      "LINKEDIN:native-calendar-12-LINKEDIN": 199130.62841796875,
+      "X:native-calendar-12-X": 199137.2890625,
+      "INSTAGRAM:native-calendar-13-INSTAGRAM": 199116.86865234375,
+      "TIKTOK:native-calendar-13-TIKTOK": 187775.11254882812,
+      "FACEBOOK:native-calendar-13-FACEBOOK": 199117.15673828125,
+      "LINKEDIN:native-calendar-13-LINKEDIN": 202230.64428710938,
+      "X:native-calendar-13-X": 202244.45727539062,
+      "INSTAGRAM:native-calendar-14-INSTAGRAM": 202218.41772460938,
+      "TIKTOK:native-calendar-14-TIKTOK": 187959.84619140625,
+      "FACEBOOK:native-calendar-14-FACEBOOK": 203684.49194335938,
+      "LINKEDIN:native-calendar-14-LINKEDIN": 206786.51318359375,
+      "X:native-calendar-14-X": 206790.37329101562,
+      "INSTAGRAM:native-calendar-15-INSTAGRAM": 203683.2138671875,
+      "TIKTOK:native-calendar-15-TIKTOK": 193675.90063476562,
+      "FACEBOOK:native-calendar-15-FACEBOOK": 206781.03002929688,
+      "LINKEDIN:native-calendar-15-LINKEDIN": 208288.5791015625,
+      "X:native-calendar-15-X": 208288.46655273438,
+      "INSTAGRAM:native-calendar-16-INSTAGRAM": 206785.59692382812,
+      "TIKTOK:native-calendar-16-TIKTOK": 200911.47265625,
+      "FACEBOOK:native-calendar-16-FACEBOOK": 208285.77978515625,
+      "LINKEDIN:native-calendar-16-LINKEDIN": 212682.54663085938,
+      "X:native-calendar-16-X": 215527.30981445312,
+      "INSTAGRAM:native-calendar-17-INSTAGRAM": 208267.61181640625,
+      "TIKTOK:native-calendar-17-TIKTOK": 202388.505859375,
+      "FACEBOOK:native-calendar-17-FACEBOOK": 208285.8857421875,
+      "LINKEDIN:native-calendar-17-LINKEDIN": 215508.52099609375,
+      "X:native-calendar-17-X": 219785.85498046875,
+      "INSTAGRAM:native-calendar-18-INSTAGRAM": 212665.7822265625,
+      "TIKTOK:native-calendar-18-TIKTOK": 206953.16162109375,
+      "FACEBOOK:native-calendar-18-FACEBOOK": 212668.568359375,
+      "LINKEDIN:native-calendar-18-LINKEDIN": 215508.4189453125,
+      "X:native-calendar-18-X": 219788.43701171875,
+      "INSTAGRAM:native-calendar-19-INSTAGRAM": 215386.8671875,
+      "TIKTOK:native-calendar-19-TIKTOK": 210027.50439453125,
+      "FACEBOOK:native-calendar-19-FACEBOOK": 215388.3310546875,
+      "LINKEDIN:native-calendar-19-LINKEDIN": 219783.17846679688,
+      "X:native-calendar-19-X": 221264.95239257812,
+      "INSTAGRAM:native-calendar-20-INSTAGRAM": 23418.333740234375,
+      "TIKTOK:native-calendar-20-TIKTOK": 19481.400634765625,
+      "FACEBOOK:native-calendar-20-FACEBOOK": 25362.88134765625,
+      "LINKEDIN:native-calendar-20-LINKEDIN": 21733.66943359375,
+      "X:native-calendar-20-X": 25378.54931640625,
+      "INSTAGRAM:native-calendar-21-INSTAGRAM": 16437.37353515625,
+      "TIKTOK:native-calendar-21-TIKTOK": 26681.6787109375,
+      "FACEBOOK:native-calendar-21-FACEBOOK": 28928.160888671875,
+      "LINKEDIN:native-calendar-21-LINKEDIN": 25373.1259765625,
+      "X:native-calendar-21-X": 28950.89697265625,
+      "INSTAGRAM:native-calendar-22-INSTAGRAM": 25362.640625,
+      "TIKTOK:native-calendar-22-TIKTOK": 21028.444580078125,
+      "FACEBOOK:native-calendar-22-FACEBOOK": 31264.036376953125,
+      "LINKEDIN:native-calendar-22-LINKEDIN": 28938.814697265625,
+      "X:native-calendar-22-X": 33911.00927734375,
+      "INSTAGRAM:native-calendar-23-INSTAGRAM": 31262.06396484375,
+      "TIKTOK:native-calendar-23-TIKTOK": 29951.798828125,
+      "FACEBOOK:native-calendar-23-FACEBOOK": 33886.471435546875,
+      "LINKEDIN:native-calendar-23-LINKEDIN": 33897.991943359375,
+      "X:native-calendar-23-X": 35860.1708984375,
+      "INSTAGRAM:native-calendar-24-INSTAGRAM": 33886.3369140625,
+      "TIKTOK:native-calendar-24-TIKTOK": 38518.25537109375,
+      "FACEBOOK:native-calendar-24-FACEBOOK": 35833.275146484375,
+      "LINKEDIN:native-calendar-24-LINKEDIN": 35848.300537109375,
+      "X:native-calendar-24-X": 39850.38720703125,
+      "INSTAGRAM:native-calendar-25-INSTAGRAM": 35833.18408203125,
+      "TIKTOK:native-calendar-25-TIKTOK": 37240.296142578125,
+      "FACEBOOK:native-calendar-25-FACEBOOK": 40762.94873046875,
+      "LINKEDIN:native-calendar-25-LINKEDIN": 40773.43310546875,
+      "X:native-calendar-25-X": 44410.6953125,
+      "INSTAGRAM:native-calendar-26-INSTAGRAM": 39823.225830078125,
+      "TIKTOK:native-calendar-26-TIKTOK": 40436.529052734375,
+      "FACEBOOK:native-calendar-26-FACEBOOK": 44386.7236328125,
+      "LINKEDIN:native-calendar-26-LINKEDIN": 44400.50048828125,
+      "X:native-calendar-26-X": 45713.800537109375,
+      "INSTAGRAM:native-calendar-27-INSTAGRAM": 44384.084228515625,
+      "TIKTOK:native-calendar-27-TIKTOK": 43084.14892578125,
+      "FACEBOOK:native-calendar-27-FACEBOOK": 45686.39501953125,
+      "LINKEDIN:native-calendar-27-LINKEDIN": 45700.57470703125,
+      "X:native-calendar-27-X": 54283.19921875,
+      "INSTAGRAM:native-calendar-28-INSTAGRAM": 45683.86181640625,
+      "TIKTOK:native-calendar-28-TIKTOK": 51632.4091796875,
+      "FACEBOOK:native-calendar-28-FACEBOOK": 52919.6318359375,
+      "LINKEDIN:native-calendar-28-LINKEDIN": 52930.400146484375,
+      "X:native-calendar-28-X": 52941.30224609375,
+      "INSTAGRAM:native-calendar-29-INSTAGRAM": 54259.434326171875,
+      "TIKTOK:native-calendar-29-TIKTOK": 48954.201171875,
+      "FACEBOOK:native-calendar-29-FACEBOOK": 57506.922119140625,
+      "LINKEDIN:native-calendar-29-LINKEDIN": 57520.566162109375,
+      "X:native-calendar-29-X": 57532.722900390625,
+      "INSTAGRAM:native-calendar-30-INSTAGRAM": 60173.126953125,
+      "TIKTOK:native-calendar-30-TIKTOK": 57524.594970703125,
+      "FACEBOOK:native-calendar-30-FACEBOOK": 60173.24169921875,
+      "LINKEDIN:native-calendar-30-LINKEDIN": 60175.598876953125,
+      "X:native-calendar-30-X": 60188.441162109375,
+      "INSTAGRAM:native-calendar-31-INSTAGRAM": 62078.42333984375,
+      "TIKTOK:native-calendar-31-TIKTOK": 63408.79443359375,
+      "FACEBOOK:native-calendar-31-FACEBOOK": 66070.30004882812,
+      "LINKEDIN:native-calendar-31-LINKEDIN": 66084.00463867188,
+      "X:native-calendar-31-X": 62104.159912109375,
+      "INSTAGRAM:native-calendar-32-INSTAGRAM": 74605.9638671875,
+      "TIKTOK:native-calendar-32-TIKTOK": 73295.58081054688,
+      "FACEBOOK:native-calendar-32-FACEBOOK": 74606.08569335938,
+      "LINKEDIN:native-calendar-32-LINKEDIN": 74619.94140625,
+      "X:native-calendar-32-X": 80445.82275390625,
+      "INSTAGRAM:native-calendar-33-INSTAGRAM": 80423.13037109375,
+      "TIKTOK:native-calendar-33-TIKTOK": 73300.30908203125,
+      "FACEBOOK:native-calendar-33-FACEBOOK": 80423.337890625,
+      "LINKEDIN:native-calendar-33-LINKEDIN": 80436.080078125,
+      "X:native-calendar-33-X": 85018.84375,
+      "INSTAGRAM:native-calendar-34-INSTAGRAM": 86362.04150390625,
+      "TIKTOK:native-calendar-34-TIKTOK": 77968.83764648438,
+      "FACEBOOK:native-calendar-34-FACEBOOK": 84992.02612304688,
+      "LINKEDIN:native-calendar-34-LINKEDIN": 85004.60717773438,
+      "X:native-calendar-34-X": 89574.51342773438,
+      "INSTAGRAM:native-calendar-35-INSTAGRAM": 89547.13525390625,
+      "TIKTOK:native-calendar-35-TIKTOK": 83677.95776367188,
+      "FACEBOOK:native-calendar-35-FACEBOOK": 89548.43627929688,
+      "LINKEDIN:native-calendar-35-LINKEDIN": 89565.9072265625,
+      "X:native-calendar-35-X": 90977.85815429688,
+      "INSTAGRAM:native-calendar-36-INSTAGRAM": 90951.03930664062,
+      "TIKTOK:native-calendar-36-TIKTOK": 89625.7490234375,
+      "FACEBOOK:native-calendar-36-FACEBOOK": 90951.17407226562,
+      "LINKEDIN:native-calendar-36-LINKEDIN": 90967.54736328125,
+      "X:native-calendar-36-X": 98133.37963867188,
+      "INSTAGRAM:native-calendar-37-INSTAGRAM": 98099.83642578125,
+      "TIKTOK:native-calendar-37-TIKTOK": 92795.02124023438,
+      "FACEBOOK:native-calendar-37-FACEBOOK": 99451.0244140625,
+      "LINKEDIN:native-calendar-37-LINKEDIN": 99453.56494140625,
+      "X:native-calendar-37-X": 99463.34619140625,
+      "INSTAGRAM:native-calendar-38-INSTAGRAM": 102756.18872070312,
+      "TIKTOK:native-calendar-38-TIKTOK": 95525.66333007812,
+      "FACEBOOK:native-calendar-38-FACEBOOK": 133555.31713867188,
+      "LINKEDIN:native-calendar-38-LINKEDIN": 131686.7802734375,
+      "X:native-calendar-38-X": 136313.76977539062,
+      "INSTAGRAM:native-calendar-39-INSTAGRAM": 104126.49389648438,
+      "TIKTOK:native-calendar-39-TIKTOK": 101569.96362304688,
+      "FACEBOOK:native-calendar-39-FACEBOOK": 142187.6845703125,
+      "LINKEDIN:native-calendar-39-LINKEDIN": 136293.3388671875,
+      "X:native-calendar-39-X": 142283.38842773438,
+      "INSTAGRAM:native-calendar-40-INSTAGRAM": 115910.40161132812,
+      "TIKTOK:native-calendar-40-TIKTOK": 107345.23754882812,
+      "FACEBOOK:native-calendar-40-FACEBOOK": 144912.80053710938,
+      "LINKEDIN:native-calendar-40-LINKEDIN": 142275.40893554688,
+      "X:native-calendar-40-X": 144938.03149414062,
+      "INSTAGRAM:native-calendar-41-INSTAGRAM": 117197.20361328125,
+      "TIKTOK:native-calendar-41-TIKTOK": 110047.66796875,
+      "FACEBOOK:native-calendar-41-FACEBOOK": 152569.5888671875,
+      "LINKEDIN:native-calendar-41-LINKEDIN": 152573.95703125,
+      "X:native-calendar-41-X": 152668.771484375,
+      "INSTAGRAM:native-calendar-42-INSTAGRAM": 123049.45092773438,
+      "TIKTOK:native-calendar-42-TIKTOK": 113267.75903320312,
+      "FACEBOOK:native-calendar-42-FACEBOOK": 155402.82568359375,
+      "LINKEDIN:native-calendar-42-LINKEDIN": 155415.94384765625,
+      "X:native-calendar-42-X": 155427.89453125,
+      "INSTAGRAM:native-calendar-43-INSTAGRAM": 128956.99609375,
+      "TIKTOK:native-calendar-43-TIKTOK": 119169.71752929688,
+      "FACEBOOK:native-calendar-43-FACEBOOK": 161102.7978515625,
+      "LINKEDIN:native-calendar-43-LINKEDIN": 161113.63647460938,
+      "X:native-calendar-43-X": 161123.92553710938,
+      "INSTAGRAM:native-calendar-44-INSTAGRAM": 131678.97045898438,
+      "TIKTOK:native-calendar-44-TIKTOK": 120469.30029296875,
+      "FACEBOOK:native-calendar-44-FACEBOOK": 161481.12377929688,
+      "LINKEDIN:native-calendar-44-LINKEDIN": 161485.6875,
+      "X:native-calendar-44-X": 165712.103515625,
+      "INSTAGRAM:native-calendar-45-INSTAGRAM": 133555.04711914062,
+      "TIKTOK:native-calendar-45-TIKTOK": 129071.10083007812,
+      "FACEBOOK:native-calendar-45-FACEBOOK": 165687.244140625,
+      "LINKEDIN:native-calendar-45-LINKEDIN": 165698.7158203125,
+      "X:native-calendar-45-X": 171399.46411132812,
+      "INSTAGRAM:native-calendar-46-INSTAGRAM": 136285.61303710938,
+      "TIKTOK:native-calendar-46-TIKTOK": 132205.06811523438,
+      "FACEBOOK:native-calendar-46-FACEBOOK": 171362.07202148438,
+      "LINKEDIN:native-calendar-46-LINKEDIN": 171382.69482421875,
+      "X:native-calendar-46-X": 174248.58764648438,
+      "INSTAGRAM:native-calendar-47-INSTAGRAM": 142178.95483398438,
+      "TIKTOK:native-calendar-47-TIKTOK": 136807.63330078125,
+      "FACEBOOK:native-calendar-47-FACEBOOK": 178889.78247070312,
+      "LINKEDIN:native-calendar-47-LINKEDIN": 178898.4951171875,
+      "X:native-calendar-47-X": 175998.73559570312,
+      "INSTAGRAM:native-calendar-48-INSTAGRAM": 144914.3388671875,
+      "TIKTOK:native-calendar-48-TIKTOK": 139571.755859375,
+      "FACEBOOK:native-calendar-48-FACEBOOK": 181861.44189453125,
+      "LINKEDIN:native-calendar-48-LINKEDIN": 181872.06713867188,
+      "X:native-calendar-48-X": 178920.32202148438,
+      "INSTAGRAM:native-calendar-49-INSTAGRAM": 152569.4462890625,
+      "TIKTOK:native-calendar-49-TIKTOK": 145447.12182617188,
+      "FACEBOOK:native-calendar-49-FACEBOOK": 184721.23388671875,
+      "LINKEDIN:native-calendar-49-LINKEDIN": 184724.08349609375,
+      "X:native-calendar-49-X": 181899.06982421875
+    },
+    "transactionMs": {
+      "p50": 1945.5046790000051,
+      "p95": 1968.4993269999977,
+      "max": 2076.074953000003,
+      "count": 543
+    },
+    "success": true,
+    "label": "250 tail",
+    "applicationSqlStatements": 12357,
+    "applicationSqlPerPost": 49.428,
+    "localEntryWaitMs": 772172,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 674.3580700000002
+      },
+      "scheduledWorkExists": {
+        "calls": 16,
+        "wallMs": 5347.574466000015
+      },
+      "reconciliationJobs": {
+        "calls": 75,
+        "wallMs": 24379.10663999967
+      },
+      "recoverExpired": {
+        "calls": 558,
+        "wallMs": 362085.13571700006
+      },
+      "leader": {
+        "calls": 3,
+        "wallMs": 985.1255219999948
+      },
+      "reportingJobs": {
+        "calls": 75,
+        "wallMs": 24700.26309699988
+      },
+      "recoverAccountLeases": {
+        "calls": 558,
+        "wallMs": 180624.42917499924
+      },
+      "readyFairAccounts": {
+        "calls": 622,
+        "wallMs": 203229.35502799935
+      },
+      "admit": {
+        "calls": 17,
+        "wallMs": 39751.14150999999
+      },
+      "findJobs": {
+        "calls": 69,
+        "wallMs": 22405.30724200003
+      },
+      "prepareMany": {
+        "calls": 69,
+        "wallMs": 22456.640972999965
+      },
+      "localEntryWait": {
+        "calls": 528,
+        "wallMs": 772172
+      },
+      "budget": {
+        "calls": 678,
+        "wallMs": 1420325.4352950007
+      },
+      "capacityBackoff": {
+        "calls": 150,
+        "wallMs": 150193
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 50,
+        "wallMs": 9.796902000036425
+      },
+      "acquireAccount": {
+        "calls": 250,
+        "wallMs": 81565.848179
+      },
+      "readLiveAuthorization": {
+        "calls": 250,
+        "wallMs": 81337.04939599984
+      },
+      "beginExternal": {
+        "calls": 250,
+        "wallMs": 81762.44397500025
+      },
+      "assertPublication": {
+        "calls": 250,
+        "wallMs": 81532.68568100044
+      },
+      "unknown": {
+        "calls": 200,
+        "wallMs": 65342.346591000074
+      },
+      "INSTAGRAM.publish": {
+        "calls": 50,
+        "wallMs": 66203.63162999993
+      },
+      "releasePrepared": {
+        "calls": 250,
+        "wallMs": 80665.2979609999
+      },
+      "releaseAccount": {
+        "calls": 250,
+        "wallMs": 80717.03649800026
+      },
+      "TIKTOK.preflight": {
+        "calls": 50,
+        "wallMs": 8.653613999918889
+      },
+      "reserveTikTokRate": {
+        "calls": 200,
+        "wallMs": 65065.288414999304
+      },
+      "accept": {
+        "calls": 50,
+        "wallMs": 16230.385708000038
+      },
+      "TIKTOK.publish": {
+        "calls": 50,
+        "wallMs": 281010.1223849999
+      },
+      "renewConsumer": {
+        "calls": 112,
+        "wallMs": 36295.975363000114
+      },
+      "FACEBOOK.preflight": {
+        "calls": 50,
+        "wallMs": 9.330450000030396
+      },
+      "LINKEDIN.preflight": {
+        "calls": 50,
+        "wallMs": 10.284866999885708
+      },
+      "X.preflight": {
+        "calls": 50,
+        "wallMs": 9.907930999968812
+      },
+      "releaseLeader": {
+        "calls": 2,
+        "wallMs": 647.459336999993
+      },
+      "FACEBOOK.publish": {
+        "calls": 50,
+        "wallMs": 65871.59019600012
+      },
+      "LINKEDIN.publish": {
+        "calls": 50,
+        "wallMs": 66641.33983500006
+      },
+      "X.publish": {
+        "calls": 50,
+        "wallMs": 67215.48358300004
+      },
+      "claimReconciliation": {
+        "calls": 300,
+        "wallMs": 98252.25233999982
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 50,
+        "wallMs": 238985.15212799984
+      },
+      "finish": {
+        "calls": 250,
+        "wallMs": 81491.85860199944
+      },
+      "findJob": {
+        "calls": 250,
+        "wallMs": 80934.47939900105
+      },
+      "releaseReconciliation": {
+        "calls": 300,
+        "wallMs": 97164.7445850001
+      },
+      "TIKTOK.reconcile": {
+        "calls": 100,
+        "wallMs": 697539.1615210001
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 50,
+        "wallMs": 276790.539157
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 50,
+        "wallMs": 253361.096602
+      },
+      "X.reconcile": {
+        "calls": 50,
+        "wallMs": 279449.5158700001
+      },
+      "recoverAdmission": {
+        "calls": 2,
+        "wallMs": 646.8883229999919
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.22554700006730855
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.2462030000024242,
+      "p95": 4.759543999913149,
+      "max": 42.957350999931805
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.09371700001065619,
+      "p95": 1.6972399999503978,
+      "max": 40.679825999977766
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "ca6dab50-332f-46e7-87e3-9d9ca7bbb692",
+    "count": 50,
+    "admissionMs": 7143.4353550000005,
+    "firstAttemptMs": 7651.503446,
+    "maximumAttemptDelayMs": 103565.8642578125,
+    "totalPublishingMs": 204353.67149799998,
+    "confirmed": 50,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 45802.9560546875,
+      "TIKTOK": 103565.8642578125,
+      "FACEBOOK": 45802.798095703125,
+      "LINKEDIN": 45818.24951171875,
+      "X": 53657.0966796875
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 45802.9560546875,
+      "TIKTOK:native-calendar-0-TIKTOK": 103565.8642578125,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 45802.798095703125,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 45818.24951171875,
+      "X:native-calendar-0-X": 53657.0966796875
+    },
+    "transactionMs": {
+      "p50": 1403.5117800000007,
+      "p95": 1416.7149149999987,
+      "max": 1430.7445929999994,
+      "count": 139
+    },
+    "success": true,
+    "label": "50 shared accounts",
+    "applicationSqlStatements": 2903,
+    "applicationSqlPerPost": 58.06,
+    "localEntryWaitMs": 105697,
+    "pacingMs": 15938,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 682.3725440000007
+      },
+      "scheduledWorkExists": {
+        "calls": 5,
+        "wallMs": 1684.87454899999
+      },
+      "reconciliationJobs": {
+        "calls": 37,
+        "wallMs": 12011.964785000004
+      },
+      "recoverExpired": {
+        "calls": 107,
+        "wallMs": 69405.5955870001
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 646.6526649999996
+      },
+      "reportingJobs": {
+        "calls": 37,
+        "wallMs": 11973.360672000104
+      },
+      "recoverAccountLeases": {
+        "calls": 107,
+        "wallMs": 34741.86087500006
+      },
+      "readyFairAccounts": {
+        "calls": 170,
+        "wallMs": 55461.53249399994
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 10250.494520999999
+      },
+      "findJobs": {
+        "calls": 35,
+        "wallMs": 11313.048713999975
+      },
+      "prepareMany": {
+        "calls": 35,
+        "wallMs": 11425.690286999987
+      },
+      "localEntryWait": {
+        "calls": 128,
+        "wallMs": 105697
+      },
+      "budget": {
+        "calls": 147,
+        "wallMs": 273368.61140399997
+      },
+      "TIKTOK.preflight": {
+        "calls": 19,
+        "wallMs": 3.3456109999988257
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 11,
+        "wallMs": 1.9041529999922204
+      },
+      "acquireAccount": {
+        "calls": 61,
+        "wallMs": 19867.250686000025
+      },
+      "readLiveAuthorization": {
+        "calls": 50,
+        "wallMs": 16345.352818000041
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 322.6510699999999
+      },
+      "beginExternal": {
+        "calls": 50,
+        "wallMs": 16281.553477999974
+      },
+      "assertPublication": {
+        "calls": 50,
+        "wallMs": 16270.103359000035
+      },
+      "capacityBackoff": {
+        "calls": 19,
+        "wallMs": 19013
+      },
+      "unknown": {
+        "calls": 40,
+        "wallMs": 12947.654745000018
+      },
+      "INSTAGRAM.publish": {
+        "calls": 10,
+        "wallMs": 13239.399950999998
+      },
+      "FACEBOOK.preflight": {
+        "calls": 10,
+        "wallMs": 4.374061000004076
+      },
+      "LINKEDIN.preflight": {
+        "calls": 10,
+        "wallMs": 3.4166220000097383
+      },
+      "releasePrepared": {
+        "calls": 61,
+        "wallMs": 19768.995256999995
+      },
+      "releaseAccount": {
+        "calls": 50,
+        "wallMs": 16187.987732000007
+      },
+      "FACEBOOK.publish": {
+        "calls": 10,
+        "wallMs": 13147.618272999998
+      },
+      "LINKEDIN.publish": {
+        "calls": 10,
+        "wallMs": 13280.939357
+      },
+      "reserveTikTokRate": {
+        "calls": 40,
+        "wallMs": 12982.47452399983
+      },
+      "X.preflight": {
+        "calls": 11,
+        "wallMs": 3.8139899999987392
+      },
+      "claimReconciliation": {
+        "calls": 60,
+        "wallMs": 19543.19751900006
+      },
+      "X.publish": {
+        "calls": 10,
+        "wallMs": 13360.103306000008
+      },
+      "accept": {
+        "calls": 10,
+        "wallMs": 3232.5730760000224
+      },
+      "TIKTOK.publish": {
+        "calls": 10,
+        "wallMs": 58521.59250299998
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 10,
+        "wallMs": 32144.722086
+      },
+      "finish": {
+        "calls": 50,
+        "wallMs": 16269.161266999905
+      },
+      "findJob": {
+        "calls": 50,
+        "wallMs": 16179.456325999996
+      },
+      "releaseReconciliation": {
+        "calls": 60,
+        "wallMs": 19449.99440700002
+      },
+      "renewConsumer": {
+        "calls": 26,
+        "wallMs": 8446.727975000016
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 10,
+        "wallMs": 42248.38408999999
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 10,
+        "wallMs": 36831.229047
+      },
+      "X.reconcile": {
+        "calls": 10,
+        "wallMs": 45206.36860600002
+      },
+      "TIKTOK.reconcile": {
+        "calls": 20,
+        "wallMs": 119208.14830100004
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.17607099999440834
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.435823000007076,
+      "p95": 10.359719000000041,
+      "max": 28.64388500000132
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.1316240000014659,
+      "p95": 0.6886970000050496,
+      "max": 20.142052999999578
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "11e95163-a553-4d30-87ae-1b4ab988f67c",
+    "count": 5,
+    "admissionMs": 7131.194955,
+    "firstAttemptMs": 7632.443071999999,
+    "maximumAttemptDelayMs": 13011.92041015625,
+    "totalPublishingMs": 90345.803194,
+    "confirmed": 5,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 4,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 7637.443115234375,
+      "TIKTOK": 13011.92041015625,
+      "FACEBOOK": 11684.816162109375,
+      "LINKEDIN": 11702.682861328125,
+      "X": 11713.4521484375
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 7637.443115234375,
+      "TIKTOK:native-calendar-0-TIKTOK": 13011.92041015625,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 11684.816162109375,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 11702.682861328125,
+      "X:native-calendar-0-X": 11713.4521484375
+    },
+    "transactionMs": {
+      "p50": 1402.7931719999979,
+      "p95": 1413.3324360000006,
+      "max": 1413.3324360000006,
+      "count": 19
+    },
+    "success": true,
+    "label": "5 normal",
+    "applicationSqlStatements": 675,
+    "applicationSqlPerPost": 135,
+    "localEntryWaitMs": 4100,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 675.8800509999992
+      },
+      "scheduledWorkExists": {
+        "calls": 3,
+        "wallMs": 1016.405453000004
+      },
+      "reconciliationJobs": {
+        "calls": 44,
+        "wallMs": 14257.26556000002
+      },
+      "recoverExpired": {
+        "calls": 71,
+        "wallMs": 46040.152999
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 645.6618050000006
+      },
+      "reportingJobs": {
+        "calls": 44,
+        "wallMs": 14212.443506000029
+      },
+      "recoverAccountLeases": {
+        "calls": 71,
+        "wallMs": 23006.49825900003
+      },
+      "readyFairAccounts": {
+        "calls": 77,
+        "wallMs": 25143.37992499998
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 10241.979705999998
+      },
+      "findJobs": {
+        "calls": 3,
+        "wallMs": 980.9385600000005
+      },
+      "prepareMany": {
+        "calls": 3,
+        "wallMs": 979.327341000002
+      },
+      "localEntryWait": {
+        "calls": 14,
+        "wallMs": 4100
+      },
+      "budget": {
+        "calls": 16,
+        "wallMs": 29340.284272
+      },
+      "capacityBackoff": {
+        "calls": 2,
+        "wallMs": 2002
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 1,
+        "wallMs": 1.1015300000017305
+      },
+      "acquireAccount": {
+        "calls": 5,
+        "wallMs": 1629.4420059999975
+      },
+      "readLiveAuthorization": {
+        "calls": 5,
+        "wallMs": 1628.7861990000056
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 323.7324609999996
+      },
+      "beginExternal": {
+        "calls": 5,
+        "wallMs": 1626.866635999997
+      },
+      "assertPublication": {
+        "calls": 5,
+        "wallMs": 1626.5612670000028
+      },
+      "unknown": {
+        "calls": 4,
+        "wallMs": 1298.2208899999969
+      },
+      "INSTAGRAM.publish": {
+        "calls": 1,
+        "wallMs": 1334.4007810000003
+      },
+      "releasePrepared": {
+        "calls": 5,
+        "wallMs": 1614.541022999998
+      },
+      "releaseAccount": {
+        "calls": 5,
+        "wallMs": 1621.778499999993
+      },
+      "TIKTOK.preflight": {
+        "calls": 1,
+        "wallMs": 0.326069999999163
+      },
+      "FACEBOOK.preflight": {
+        "calls": 1,
+        "wallMs": 1.3611139999993611
+      },
+      "LINKEDIN.preflight": {
+        "calls": 1,
+        "wallMs": 1.1484549999986484
+      },
+      "X.preflight": {
+        "calls": 1,
+        "wallMs": 1.0843510000013339
+      },
+      "claimReconciliation": {
+        "calls": 6,
+        "wallMs": 1938.205757000007
+      },
+      "reserveTikTokRate": {
+        "calls": 4,
+        "wallMs": 1294.8036330000068
+      },
+      "FACEBOOK.publish": {
+        "calls": 1,
+        "wallMs": 1316.8792150000008
+      },
+      "LINKEDIN.publish": {
+        "calls": 1,
+        "wallMs": 1330.120543000001
+      },
+      "X.publish": {
+        "calls": 1,
+        "wallMs": 1340.6267600000028
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 1,
+        "wallMs": 2053.5161789999984
+      },
+      "finish": {
+        "calls": 5,
+        "wallMs": 1619.3966959999962
+      },
+      "accept": {
+        "calls": 1,
+        "wallMs": 323.3141340000002
+      },
+      "TIKTOK.publish": {
+        "calls": 1,
+        "wallMs": 4051.883698999998
+      },
+      "findJob": {
+        "calls": 5,
+        "wallMs": 1619.153797999992
+      },
+      "releaseReconciliation": {
+        "calls": 6,
+        "wallMs": 1937.6754869999968
+      },
+      "renewConsumer": {
+        "calls": 12,
+        "wallMs": 3889.969277999997
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 1,
+        "wallMs": 2050.6950990000005
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 1,
+        "wallMs": 2052.1744910000016
+      },
+      "X.reconcile": {
+        "calls": 1,
+        "wallMs": 4090.5725490000004
+      },
+      "TIKTOK.reconcile": {
+        "calls": 2,
+        "wallMs": 8841.965370999991
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.21709599999303464
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 1.8893859999989218,
+      "p95": 18.744375999999647,
+      "max": 18.744375999999647
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.14115700000547804,
+      "p95": 0.40771400000085123,
+      "max": 18.560490000000755
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  },
+  {
+    "runId": "7a4de828-d21f-4d43-bbe2-4b1c99236ed1",
+    "count": 50,
+    "admissionMs": 16708.451523,
+    "firstAttemptMs": 27026.968927,
+    "maximumAttemptDelayMs": 120298.08984375,
+    "totalPublishingMs": 387032.84816,
+    "confirmed": 50,
+    "duplicateAttempts": 0,
+    "errors": [],
+    "transactionErrors": [],
+    "backendPeak": 5,
+    "dataPeak": 3,
+    "attemptDelayByPlatform": {
+      "INSTAGRAM": 120272.0947265625,
+      "TIKTOK": 119751.02783203125,
+      "FACEBOOK": 112793.52954101562,
+      "LINKEDIN": 110949.18041992188,
+      "X": 120298.08984375
+    },
+    "attemptDelayByAccount": {
+      "INSTAGRAM:native-calendar-0-INSTAGRAM": 27032.968994140625,
+      "TIKTOK:native-calendar-0-TIKTOK": 34015.41796875,
+      "FACEBOOK:native-calendar-0-FACEBOOK": 27033.2861328125,
+      "LINKEDIN:native-calendar-0-LINKEDIN": 27048.80078125,
+      "X:native-calendar-0-X": 34039.0859375,
+      "INSTAGRAM:native-calendar-1-INSTAGRAM": 120272.0947265625,
+      "TIKTOK:native-calendar-1-TIKTOK": 119751.02783203125,
+      "FACEBOOK:native-calendar-1-FACEBOOK": 34004.3359375,
+      "LINKEDIN:native-calendar-1-LINKEDIN": 34017.588623046875,
+      "X:native-calendar-1-X": 41542.853271484375,
+      "INSTAGRAM:native-calendar-2-INSTAGRAM": 27034.799072265625,
+      "TIKTOK:native-calendar-2-TIKTOK": 31633.21044921875,
+      "FACEBOOK:native-calendar-2-FACEBOOK": 41527.491455078125,
+      "LINKEDIN:native-calendar-2-LINKEDIN": 41535.138671875,
+      "X:native-calendar-2-X": 48518.076904296875,
+      "INSTAGRAM:native-calendar-3-INSTAGRAM": 34001.899658203125,
+      "TIKTOK:native-calendar-3-TIKTOK": 40985.993408203125,
+      "FACEBOOK:native-calendar-3-FACEBOOK": 50859.91845703125,
+      "LINKEDIN:native-calendar-3-LINKEDIN": 50860.017822265625,
+      "X:native-calendar-3-X": 57857.49462890625,
+      "INSTAGRAM:native-calendar-4-INSTAGRAM": 48491.911376953125,
+      "TIKTOK:native-calendar-4-TIKTOK": 55526.81591796875,
+      "FACEBOOK:native-calendar-4-FACEBOOK": 57835.68994140625,
+      "LINKEDIN:native-calendar-4-LINKEDIN": 57841.5693359375,
+      "X:native-calendar-4-X": 64746.349853515625,
+      "INSTAGRAM:native-calendar-5-INSTAGRAM": 57828.3740234375,
+      "TIKTOK:native-calendar-5-TIKTOK": 64786.11083984375,
+      "FACEBOOK:native-calendar-5-FACEBOOK": 64717.04248046875,
+      "LINKEDIN:native-calendar-5-LINKEDIN": 64745.00439453125,
+      "X:native-calendar-5-X": 96508.25561523438,
+      "INSTAGRAM:native-calendar-6-INSTAGRAM": 64716.809326171875,
+      "TIKTOK:native-calendar-6-TIKTOK": 71701.06469726562,
+      "FACEBOOK:native-calendar-6-FACEBOOK": 74057.84130859375,
+      "LINKEDIN:native-calendar-6-LINKEDIN": 74074.47705078125,
+      "X:native-calendar-6-X": 103493.19409179688,
+      "INSTAGRAM:native-calendar-7-INSTAGRAM": 96466.71850585938,
+      "TIKTOK:native-calendar-7-TIKTOK": 80990.38110351562,
+      "FACEBOOK:native-calendar-7-FACEBOOK": 96467.07055664062,
+      "LINKEDIN:native-calendar-7-LINKEDIN": 96481.22680664062,
+      "X:native-calendar-7-X": 110963.35302734375,
+      "INSTAGRAM:native-calendar-8-INSTAGRAM": 103457.22314453125,
+      "TIKTOK:native-calendar-8-TIKTOK": 103422.2470703125,
+      "FACEBOOK:native-calendar-8-FACEBOOK": 103459.7265625,
+      "LINKEDIN:native-calendar-8-LINKEDIN": 103481.51733398438,
+      "X:native-calendar-8-X": 120297.68627929688,
+      "INSTAGRAM:native-calendar-9-INSTAGRAM": 110947.740234375,
+      "TIKTOK:native-calendar-9-TIKTOK": 110432.92260742188,
+      "FACEBOOK:native-calendar-9-FACEBOOK": 112793.52954101562,
+      "LINKEDIN:native-calendar-9-LINKEDIN": 110949.18041992188,
+      "X:native-calendar-9-X": 120298.08984375
+    },
+    "transactionMs": {
+      "p50": 1404.224778999982,
+      "p95": 1417.7116409999999,
+      "max": 1479.5756299999994,
+      "count": 114
+    },
+    "success": true,
+    "label": "50 slow coordinator",
+    "applicationSqlStatements": 2480,
+    "applicationSqlPerPost": 49.58,
+    "localEntryWaitMs": 216562,
+    "pacingMs": 0,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 2799.2122820000004
+      },
+      "scheduledWorkExists": {
+        "calls": 8,
+        "wallMs": 11172.505822999963
+      },
+      "reconciliationJobs": {
+        "calls": 24,
+        "wallMs": 33238.57124
+      },
+      "recoverExpired": {
+        "calls": 86,
+        "wallMs": 238304.254519
+      },
+      "leader": {
+        "calls": 2,
+        "wallMs": 2772.1278660000007
+      },
+      "reportingJobs": {
+        "calls": 24,
+        "wallMs": 33216.42275799997
+      },
+      "recoverAccountLeases": {
+        "calls": 86,
+        "wallMs": 119021.41368000003
+      },
+      "readyFairAccounts": {
+        "calls": 114,
+        "wallMs": 158064.58534499985
+      },
+      "admit": {
+        "calls": 5,
+        "wallMs": 20884.150153
+      },
+      "findJobs": {
+        "calls": 21,
+        "wallMs": 29066.362215
+      },
+      "prepareMany": {
+        "calls": 21,
+        "wallMs": 29139.757383999975
+      },
+      "localEntryWait": {
+        "calls": 109,
+        "wallMs": 216562
+      },
+      "renewConsumer": {
+        "calls": 51,
+        "wallMs": 70624.87513199986
+      },
+      "budget": {
+        "calls": 115,
+        "wallMs": 463445.4211650001
+      },
+      "releaseLeader": {
+        "calls": 1,
+        "wallMs": 1382.638766
+      },
+      "capacityBackoff": {
+        "calls": 6,
+        "wallMs": 6002
+      },
+      "TIKTOK.preflight": {
+        "calls": 10,
+        "wallMs": 5.071959000029892
+      },
+      "acquireAccount": {
+        "calls": 50,
+        "wallMs": 69403.18349600003
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 10,
+        "wallMs": 5.622026000019105
+      },
+      "FACEBOOK.preflight": {
+        "calls": 10,
+        "wallMs": 5.960641999983636
+      },
+      "LINKEDIN.preflight": {
+        "calls": 10,
+        "wallMs": 5.092987999989418
+      },
+      "readLiveAuthorization": {
+        "calls": 50,
+        "wallMs": 69304.17481999999
+      },
+      "beginExternal": {
+        "calls": 50,
+        "wallMs": 69285.315471
+      },
+      "reserveTikTokRate": {
+        "calls": 40,
+        "wallMs": 55391.146882000015
+      },
+      "assertPublication": {
+        "calls": 50,
+        "wallMs": 69224.16645
+      },
+      "unknown": {
+        "calls": 40,
+        "wallMs": 55351.352761
+      },
+      "FACEBOOK.publish": {
+        "calls": 10,
+        "wallMs": 55555.204414999986
+      },
+      "INSTAGRAM.publish": {
+        "calls": 10,
+        "wallMs": 55620.244521000015
+      },
+      "LINKEDIN.publish": {
+        "calls": 10,
+        "wallMs": 55648.39640899999
+      },
+      "X.preflight": {
+        "calls": 10,
+        "wallMs": 2.8110199999864562
+      },
+      "releasePrepared": {
+        "calls": 50,
+        "wallMs": 69150.955306
+      },
+      "releaseAccount": {
+        "calls": 50,
+        "wallMs": 69340.73123700004
+      },
+      "accept": {
+        "calls": 10,
+        "wallMs": 13908.16415099999
+      },
+      "TIKTOK.publish": {
+        "calls": 10,
+        "wallMs": 125357.443868
+      },
+      "X.publish": {
+        "calls": 10,
+        "wallMs": 55775.98921599999
+      },
+      "claimReconciliation": {
+        "calls": 60,
+        "wallMs": 83770.33915000004
+      },
+      "INSTAGRAM.reconcile": {
+        "calls": 10,
+        "wallMs": 75185.40236400004
+      },
+      "FACEBOOK.reconcile": {
+        "calls": 10,
+        "wallMs": 70941.63798600005
+      },
+      "finish": {
+        "calls": 50,
+        "wallMs": 69331.41965400007
+      },
+      "findJob": {
+        "calls": 50,
+        "wallMs": 69192.47319299998
+      },
+      "releaseReconciliation": {
+        "calls": 60,
+        "wallMs": 83072.5638179997
+      },
+      "LINKEDIN.reconcile": {
+        "calls": 10,
+        "wallMs": 109113.57142900003
+      },
+      "TIKTOK.reconcile": {
+        "calls": 20,
+        "wallMs": 217687.00692100005
+      },
+      "X.reconcile": {
+        "calls": 10,
+        "wallMs": 73363.888697
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.30859799997415394
+      }
+    },
+    "transactionWaitMs": {
+      "p50": 2.453830000013113,
+      "p95": 15.468142000027001,
+      "max": 25.108446000000185
+    },
+    "coordinatorCheckoutMs": {
+      "p50": 0.14606300000014016,
+      "p95": 2.134928999992553,
+      "max": 21.48102900000049
+    },
+    "sourceHashesMatch": {
+      "lib/publishing/reliableStore.ts": true,
+      "lib/publishing/reliableWorker.ts": true,
+      "lib/publishing/reliableConsumer.ts": true,
+      "lib/publishing/platformIntegration.ts": true,
+      "lib/publishing/budgetedDatabase.ts": true,
+      "lib/tiktokPublishing.ts": true,
+      "scripts/publishing-reliability/lifecycle-performance.cjs": true
+    }
+  }
+]

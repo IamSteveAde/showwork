@@ -1,3 +1,4 @@
+import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 export async function providerJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(url, { ...init, cache: "no-store", signal: init.signal ?? AbortSignal.timeout(60_000) });
   const data = await response.json().catch(() => ({}));

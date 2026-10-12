@@ -2,12 +2,16 @@ import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 import { refreshTikTokAccessToken, queryTikTokCreatorInfo } from "@/lib/tiktok";
 import { requireScopes } from "@/lib/socialTokens";
+import { PublishingDeferred } from "@/lib/publishing/errors";
 
 // Transaction-scoped advisory locks serialize refresh rotation across processes
 // and calendars. No tokens or app credentials are returned to the client.
-export async function freshTikTokConnection(connection: SocialConnection): Promise<SocialConnection> {
-  return db.$transaction(async tx => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`tiktok-refresh:${connection.platformAccountId}`}))`;
+export async function freshTikTokConnection(connection: SocialConnection, database: typeof db = db, tryLock = false): Promise<SocialConnection> {
+  return database.$transaction(async tx => {
+    if (tryLock) {
+      const rows = await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`tiktok-refresh:${connection.platformAccountId}`})) AS locked`;
+      if (!rows[0]?.locked) throw new PublishingDeferred("TikTok refresh account lock busy");
+    } else await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`tiktok-refresh:${connection.platformAccountId}`}))`;
     const current = await tx.socialConnection.findUniqueOrThrow({ where: { id: connection.id } });
     if (current.status !== "CONNECTED" || !current.accessToken) throw new Error("Reconnect TikTok before continuing.");
     if (current.accessTokenExpiresAt && current.accessTokenExpiresAt.getTime() > Date.now() + 60_000) return current;
@@ -33,11 +37,14 @@ export class TikTokRequestBusyError extends Error {
   }
 }
 
-export async function reserveTikTokRequest(accountId: string, kind: "creator" | "init" | "status") {
+export async function reserveTikTokRequest(accountId: string, kind: "creator" | "init" | "status", database: typeof db = db, tryLock = false) {
   const field = kind === "creator" ? "creatorNextAt" : kind === "init" ? "initNextAt" : "statusNextAt";
   const interval = kind === "creator" ? 3100 : kind === "init" ? 10_100 : 2100;
-  const waitMs = await db.$transaction(async tx => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`tiktok-rate:${accountId}`}))`;
+  const waitMs = await database.$transaction(async tx => {
+    if (tryLock) {
+      const rows = await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`tiktok-rate:${accountId}`})) AS locked`;
+      if (!rows[0]?.locked) throw new PublishingDeferred("TikTok request account lock busy");
+    } else await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`tiktok-rate:${accountId}`}))`;
     const row = await tx.tikTokAccountRuntime.upsert({ where: { accountId }, create: { accountId }, update: {} });
     const next = row[field];
     const now = Date.now();

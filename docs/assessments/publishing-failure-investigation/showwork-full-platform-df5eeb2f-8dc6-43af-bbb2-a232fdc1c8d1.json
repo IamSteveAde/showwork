@@ -1,0 +1,517 @@
+{
+  "runId": "df5eeb2f-8dc6-43af-bbb2-a232fdc1c8d1",
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "count": 250,
+  "injectedTransactionMs": 1923,
+  "controlLatencyMs": 320,
+  "backendCap": 5,
+  "errors": [
+    "P2028",
+    "P2028"
+  ],
+  "platformFailures": {
+    "0": 0,
+    "1": 0
+  },
+  "backendPeak": 5,
+  "dataPeak": 3,
+  "modelCalls": {
+    "calendarPost.findUniqueOrThrow": 37,
+    "socialCalendar.findUnique": 25,
+    "socialConnection.findFirst": 5,
+    "socialConnection.findUniqueOrThrow": 11,
+    "tikTokAccountRuntime.upsert": 14,
+    "tikTokAccountRuntime.update": 14,
+    "calendarPost.update": 26,
+    "socialConnection.findUnique": 24,
+    "publishedSocialPost.upsert": 24
+  },
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 3,
+      "durationMs": 16636.153963,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 2,
+      "durationMs": 10748.27145,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.5143519999983,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "transactionErrors": [
+    {
+      "kind": "data",
+      "code": "P2028",
+      "name": "PrismaClientKnownRequestError",
+      "message": "Transaction API error: Transaction already closed: A commit cannot be executed on an expired transaction. The timeout for this transaction was 2500 ms, however 3267 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.",
+      "elapsedMs": 3270.677882,
+      "trace": [
+        "$executeRaw:",
+        "$queryRaw:SELECT pg_try_advisory_xact_lock(19370421,$1::integer) AND EXISTS(\n          SELECT 1 FROM \"PublishingBudget\" WHERE id=$2 AND owner=$3 AND \"leaseUntil\">clock_ti",
+        "$queryRaw:SELECT id FROM \"PublishingConsumerLease\" WHERE id=$1 AND owner=$2 AND epoch=$3 AND \"leaseUntil\">clock_timestamp() FOR SHARE",
+        "$queryRaw:WITH requested AS (SELECT * FROM jsonb_to_recordset($1::jsonb) AS r(id text,token text))\n      UPDATE \"PublishingJob\" j SET phase='PREPARED',\"workerToken\"=r.tok"
+      ]
+    },
+    {
+      "kind": "data",
+      "code": "P2028",
+      "name": "PrismaClientKnownRequestError",
+      "message": "Transaction API error: Transaction already closed: A commit cannot be executed on an expired transaction. The timeout for this transaction was 2500 ms, however 2926 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.",
+      "elapsedMs": 2930.5878660000017,
+      "trace": [
+        "$executeRaw:",
+        "$queryRaw:SELECT pg_try_advisory_xact_lock(19370421,$1::integer) AND EXISTS(\n          SELECT 1 FROM \"PublishingBudget\" WHERE id=$2 AND owner=$3 AND \"leaseUntil\">clock_ti",
+        "$queryRaw:SELECT id FROM \"PublishingConsumerLease\" WHERE id=$1 AND owner=$2 AND epoch=$3 AND \"leaseUntil\">clock_timestamp() FOR SHARE",
+        "$queryRaw:WITH requested AS (SELECT * FROM jsonb_to_recordset($1::jsonb) AS r(id text,token text))\n      UPDATE \"PublishingJob\" j SET phase='PREPARED',\"workerToken\"=r.tok"
+      ]
+    }
+  ],
+  "consumerRounds": [
+    {
+      "consumer": 1,
+      "durationMs": 1000.3783729999996,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 1000.8205249999992,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 987.446003,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 992.8607380000003,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 107646.78794000001,
+      "rounds": 19,
+      "outcomes": {
+        "outcome-unknown": 3,
+        "confirmed": 4,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 8,
+        "TIKTOK": 2,
+        "FACEBOOK": 13,
+        "LINKEDIN": 11,
+        "X": 10
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 108007.163731,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 6,
+        "outcome-unknown": 1,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 7,
+        "TIKTOK": 6,
+        "FACEBOOK": 9,
+        "LINKEDIN": 6,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 42092.83257900001,
+      "rounds": 5,
+      "outcomes": {
+        "outcome-unknown": 4,
+        "rejected": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 1,
+        "TIKTOK": 1,
+        "FACEBOOK": 5,
+        "LINKEDIN": 4,
+        "X": 1
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 42089.62996399999,
+      "rounds": 5,
+      "outcomes": {
+        "confirmed": 2,
+        "rejected": 4
+      },
+      "opportunities": {
+        "INSTAGRAM": 2,
+        "TIKTOK": 2,
+        "FACEBOOK": 5,
+        "LINKEDIN": 2,
+        "X": 2
+      },
+      "errors": 0
+    }
+  ],
+  "acceptanceChecks": [
+    {
+      "name": "published",
+      "passed": false
+    },
+    {
+      "name": "confirmed",
+      "passed": false
+    },
+    {
+      "name": "reporting",
+      "passed": false
+    },
+    {
+      "name": "duplicates",
+      "passed": true
+    },
+    {
+      "name": "dataBudget",
+      "passed": true
+    },
+    {
+      "name": "backendBudget",
+      "passed": true
+    },
+    {
+      "name": "databaseErrors",
+      "passed": false
+    }
+  ],
+  "backpressure": 0,
+  "lastCheckpoint": {
+    "elapsedMs": 150007.723622,
+    "states": [
+      {
+        "phase": "READY",
+        "n": 222
+      },
+      {
+        "phase": "EXTERNAL_PENDING",
+        "n": 3
+      },
+      {
+        "phase": "PROVIDER_PENDING",
+        "n": 2
+      },
+      {
+        "phase": "OUTCOME_UNKNOWN",
+        "n": 2
+      },
+      {
+        "phase": "CONFIRMED",
+        "n": 15
+      },
+      {
+        "phase": "PREPARED",
+        "n": 6
+      }
+    ]
+  },
+  "duplicateAttempts": 0,
+  "admissionMs": 70752.123047,
+  "published": [
+    {
+      "platform": "INSTAGRAM",
+      "n": 4,
+      "maximumDelayMs": 117989
+    },
+    {
+      "platform": "TIKTOK",
+      "n": 1,
+      "maximumDelayMs": 112815
+    },
+    {
+      "platform": "FACEBOOK",
+      "n": 6,
+      "maximumDelayMs": 152872
+    },
+    {
+      "platform": "X",
+      "n": 2,
+      "maximumDelayMs": 78606
+    },
+    {
+      "platform": "LINKEDIN",
+      "n": 5,
+      "maximumDelayMs": 158070
+    }
+  ],
+  "confirmed": 16,
+  "reportingRows": 18,
+  "maximumPublishingDelayMs": 158070,
+  "tikTokConvertedImages": 5,
+  "refreshRequests": 0,
+  "transactionMs": {
+    "p50": 1943.5995709999988,
+    "p95": 1955.5025870000027,
+    "max": 3271.0396790000013,
+    "count": 167
+  },
+  "success": false,
+  "finalStates": [
+    {
+      "platform": "FACEBOOK",
+      "phase": "PREPARED",
+      "n": 2
+    },
+    {
+      "platform": "X",
+      "phase": "EXTERNAL_PENDING",
+      "n": 1
+    },
+    {
+      "platform": "INSTAGRAM",
+      "phase": "READY",
+      "n": 44
+    },
+    {
+      "platform": "INSTAGRAM",
+      "phase": "PREPARED",
+      "n": 1
+    },
+    {
+      "platform": "FACEBOOK",
+      "phase": "READY",
+      "n": 42
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "PREPARED",
+      "n": 1
+    },
+    {
+      "platform": "FACEBOOK",
+      "phase": "CONFIRMED",
+      "n": 5
+    },
+    {
+      "platform": "X",
+      "phase": "PREPARED",
+      "n": 1
+    },
+    {
+      "platform": "X",
+      "phase": "CONFIRMED",
+      "n": 2
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "PREPARED",
+      "n": 1
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "CONFIRMED",
+      "n": 1
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "READY",
+      "n": 44
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "EXTERNAL_PENDING",
+      "n": 1
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "OUTCOME_UNKNOWN",
+      "n": 1
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "PROVIDER_PENDING",
+      "n": 2
+    },
+    {
+      "platform": "INSTAGRAM",
+      "phase": "CONFIRMED",
+      "n": 4
+    },
+    {
+      "platform": "INSTAGRAM",
+      "phase": "EXTERNAL_PENDING",
+      "n": 1
+    },
+    {
+      "platform": "X",
+      "phase": "READY",
+      "n": 46
+    },
+    {
+      "platform": "FACEBOOK",
+      "phase": "OUTCOME_UNKNOWN",
+      "n": 1
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "READY",
+      "n": 45
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "CONFIRMED",
+      "n": 4
+    }
+  ],
+  "clusterRemoved": true,
+  "interrupted": true,
+  "sourceArtifact": "showwork-full-platform-df5eeb2f-8dc6-43af-bbb2-a232fdc1c8d1.json"
+}

@@ -1,0 +1,40 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "checks": [
+    "All five native publishers save timestamps, IDs/permalinks and reporting; TikTok acceptance remains pending until PUBLISH_COMPLETE",
+    "Changed TikTok consent, missing X write scopes and expired workspace access prevent publishing",
+    "Actual LinkedIn and X refresh helpers rotate synthetic tokens and then publish once",
+    "Overlapping TikTok refresh rotates once per account; posting rate reservations remain shared across workers",
+    "Lost final native COMMIT acknowledgement restores SDK-confirmed metadata from durable proof without republishing",
+    "Actual reporting FK failure rolls back only its savepoint; publication stays PUBLISHED and reporting repair creates no second post",
+    "Cancellation/rescheduling invalidate exact old claims before a platform request",
+    "Explicit known-rejection retry retires the old intent; unknown outcomes cannot be cleared by this authorization"
+  ],
+  "rotation": {
+    "outcomes": [
+      "provider-pending",
+      "provider-pending"
+    ],
+    "refreshOperations": [
+      {
+        "kind": "refresh",
+        "platform": "open.tiktokapis.com",
+        "postId": "rotation-1"
+      }
+    ],
+    "errors": [
+      {
+        "tikTokPublishError": null
+      },
+      {
+        "tikTokPublishError": null
+      }
+    ],
+    "currentTokenValid": true
+  },
+  "realImageConversions": 3,
+  "success": true,
+  "clusterRemoved": true
+}

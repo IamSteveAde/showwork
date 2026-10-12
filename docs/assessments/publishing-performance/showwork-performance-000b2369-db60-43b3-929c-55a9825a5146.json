@@ -1,0 +1,3133 @@
+{
+  "profile": {
+    "sqlStatements": 19207,
+    "sqlExecutionMs": 24689.349854001906,
+    "sqlKinds": {
+      "BEGIN": 1392,
+      "DEALLOCATE ALL": 1392,
+      "SELECT 1": 246,
+      "COMMIT": 1392,
+      "WITH free": 2,
+      "UPDATE \"public\".\"CalendarPost\"": 351,
+      "UPDATE \"PublishingJob\"": 738,
+      "SELECT EXISTS(SELECT": 267,
+      "SELECT id,\"postId\",platform,lease,phase,\"workerToken\",\"remoteId\",\"accountId\",\"confirmation\"": 280,
+      "WITH stale": 38,
+      "UPDATE \"PublishingLeader\"": 5,
+      "SELECT j.*": 954,
+      "WITH candidate": 2017,
+      "SET LOCAL": 1267,
+      "SELECT pg_try_advisory_xact_lock(19370421,$1::integer)": 1267,
+      "SELECT id": 17,
+      "WITH operation": 17,
+      "UPDATE \"PublishingBudget\"": 1267,
+      "SELECT id,\"postId\",platform,lease,phase,\"workerToken\"": 203,
+      "WITH requested": 200,
+      "SELECT \"public\".\"CalendarPost\".\"id\",": 400,
+      "SELECT \"public\".\"CalendarPostAsset\".\"id\",": 350,
+      "SELECT \"public\".\"SocialCalendar\".\"id\",": 600,
+      "SELECT \"public\".\"SocialConnection\".\"id\",": 550,
+      "SELECT \"public\".\"Creator\".\"id\",": 250,
+      "WITH locked": 250,
+      "UPDATE \"PublishingConsumerLease\"": 122,
+      "SELECT count(DISTINCT": 52,
+      "SELECT j.id": 650,
+      "SAVEPOINT publishing_reporting": 300,
+      "SELECT \"public\".\"SocialConnection\".\"id\"": 300,
+      "INSERT INTO": 350,
+      "RELEASE SAVEPOINT": 300,
+      "WITH saved": 300,
+      "SELECT pg_try_advisory_xact_lock(hashtext($1))": 300,
+      "SELECT \"public\".\"TikTokAccountRuntime\".\"accountId\"": 200,
+      "SELECT \"public\".\"TikTokAccountRuntime\".\"accountId\",": 350,
+      "UPDATE \"public\".\"TikTokAccountRuntime\"": 200,
+      "SELECT phase,count(*)::int": 30,
+      "SELECT count(*)::int": 37,
+      "SELECT p.platform,count(*)::int": 1,
+      "SELECT COUNT(*)": 2,
+      "SELECT platform,phase,count(*)::int": 1
+    },
+    "applicationSqlStatements": 18677,
+    "harnessSqlStatements": 530,
+    "modelCallsByPost": {
+      "native-1": 21,
+      "native-10": 5,
+      "native-0": 5,
+      "native-101": 21,
+      "native-18": 5,
+      "native-17": 5,
+      "native-13": 5,
+      "native-12": 5,
+      "native-19": 5,
+      "native-14": 5,
+      "native-100": 5,
+      "native-105": 5,
+      "native-108": 5,
+      "native-103": 5,
+      "native-102": 5,
+      "native-107": 5,
+      "native-104": 5,
+      "native-109": 5,
+      "native-113": 5,
+      "native-110": 5,
+      "native-118": 5,
+      "native-115": 5,
+      "native-112": 5,
+      "native-114": 5,
+      "native-117": 5,
+      "native-119": 5,
+      "native-120": 5,
+      "native-128": 5,
+      "native-122": 5,
+      "native-125": 5,
+      "native-124": 5,
+      "native-123": 5,
+      "native-11": 21,
+      "native-127": 5,
+      "native-106": 21,
+      "native-130": 5,
+      "native-129": 5,
+      "native-111": 21,
+      "native-116": 21,
+      "native-133": 5,
+      "native-135": 5,
+      "native-132": 5,
+      "native-134": 5,
+      "native-137": 5,
+      "native-138": 5,
+      "native-140": 5,
+      "native-143": 5,
+      "native-139": 5,
+      "native-145": 5,
+      "native-147": 5,
+      "native-142": 5,
+      "native-144": 5,
+      "native-148": 5,
+      "native-15": 5,
+      "native-149": 5,
+      "native-152": 5,
+      "native-153": 5,
+      "native-157": 5,
+      "native-150": 5,
+      "native-158": 5,
+      "native-155": 5,
+      "native-162": 5,
+      "native-154": 5,
+      "native-163": 5,
+      "native-159": 5,
+      "native-160": 5,
+      "native-167": 5,
+      "native-165": 5,
+      "native-164": 5,
+      "native-168": 5,
+      "native-172": 5,
+      "native-121": 21,
+      "native-126": 21,
+      "native-177": 5,
+      "native-170": 5,
+      "native-173": 5,
+      "native-169": 5,
+      "native-182": 5,
+      "native-175": 5,
+      "native-131": 21,
+      "native-187": 5,
+      "native-180": 5,
+      "native-183": 5,
+      "native-178": 5,
+      "native-179": 5,
+      "native-185": 5,
+      "native-174": 5,
+      "native-22": 5,
+      "native-190": 5,
+      "native-188": 5,
+      "native-2": 5,
+      "native-184": 5,
+      "native-189": 5,
+      "native-3": 5,
+      "native-195": 5,
+      "native-27": 5,
+      "native-20": 5,
+      "native-32": 5,
+      "native-4": 5,
+      "native-24": 5,
+      "native-28": 5,
+      "native-136": 21,
+      "native-23": 5,
+      "native-37": 5,
+      "native-200": 5,
+      "native-29": 5,
+      "native-33": 5,
+      "native-42": 5,
+      "native-205": 5,
+      "native-141": 21,
+      "native-34": 5,
+      "native-47": 5,
+      "native-210": 5,
+      "native-38": 5,
+      "native-39": 5,
+      "native-44": 5,
+      "native-220": 5,
+      "native-215": 5,
+      "native-146": 21,
+      "native-192": 5,
+      "native-48": 5,
+      "native-225": 5,
+      "native-52": 5,
+      "native-43": 5,
+      "native-54": 5,
+      "native-49": 5,
+      "native-197": 5,
+      "native-53": 5,
+      "native-230": 5,
+      "native-194": 5,
+      "native-235": 5,
+      "native-199": 5,
+      "native-202": 5,
+      "native-193": 5,
+      "native-240": 5,
+      "native-204": 5,
+      "native-207": 5,
+      "native-198": 5,
+      "native-245": 5,
+      "native-209": 5,
+      "native-212": 5,
+      "native-203": 5,
+      "native-25": 5,
+      "native-151": 21,
+      "native-214": 5,
+      "native-156": 21,
+      "native-219": 5,
+      "native-30": 5,
+      "native-217": 5,
+      "native-208": 5,
+      "native-224": 5,
+      "native-35": 5,
+      "native-16": 21,
+      "native-222": 5,
+      "native-218": 5,
+      "native-40": 5,
+      "native-45": 5,
+      "native-229": 5,
+      "native-227": 5,
+      "native-232": 5,
+      "native-234": 5,
+      "native-213": 5,
+      "native-50": 5,
+      "native-5": 5,
+      "native-239": 5,
+      "native-223": 5,
+      "native-237": 5,
+      "native-242": 5,
+      "native-161": 21,
+      "native-244": 5,
+      "native-228": 5,
+      "native-60": 5,
+      "native-55": 5,
+      "native-249": 5,
+      "native-233": 5,
+      "native-7": 5,
+      "native-9": 5,
+      "native-247": 5,
+      "native-238": 5,
+      "native-65": 5,
+      "native-70": 5,
+      "native-59": 5,
+      "native-57": 5,
+      "native-166": 21,
+      "native-171": 21,
+      "native-243": 5,
+      "native-75": 5,
+      "native-62": 5,
+      "native-64": 5,
+      "native-248": 5,
+      "native-80": 5,
+      "native-85": 5,
+      "native-72": 5,
+      "native-67": 5,
+      "native-176": 21,
+      "native-58": 5,
+      "native-8": 5,
+      "native-74": 5,
+      "native-69": 5,
+      "native-95": 5,
+      "native-82": 5,
+      "native-90": 5,
+      "native-77": 5,
+      "native-79": 5,
+      "native-84": 5,
+      "native-63": 5,
+      "native-68": 5,
+      "native-87": 5,
+      "native-89": 5,
+      "native-92": 5,
+      "native-181": 21,
+      "native-97": 5,
+      "native-73": 5,
+      "native-94": 5,
+      "native-99": 5,
+      "native-186": 21,
+      "native-78": 5,
+      "native-191": 21,
+      "native-83": 5,
+      "native-88": 5,
+      "native-93": 5,
+      "native-196": 21,
+      "native-98": 5,
+      "native-201": 21,
+      "native-206": 21,
+      "native-21": 21,
+      "native-211": 21,
+      "native-216": 21,
+      "native-221": 21,
+      "native-226": 21,
+      "native-231": 21,
+      "native-236": 21,
+      "native-241": 21,
+      "native-246": 21,
+      "native-26": 21,
+      "native-31": 21,
+      "native-36": 21,
+      "native-41": 21,
+      "native-46": 21,
+      "native-51": 21,
+      "native-56": 21,
+      "native-6": 21,
+      "native-61": 21,
+      "native-66": 21,
+      "native-71": 21,
+      "native-76": 21,
+      "native-81": 21,
+      "native-86": 21,
+      "native-91": 21,
+      "native-96": 21
+    },
+    "perPostPhases": {
+      "native-1": {
+        "preflight": 2104.193802,
+        "publish": 52734.69661,
+        "reconcile": 14243.505972999992
+      },
+      "native-10": {
+        "preflight": 2152.7400179999986,
+        "publish": 12687.324635999998
+      },
+      "native-0": {
+        "preflight": 6059.564892,
+        "publish": 10045.517813999999
+      },
+      "native-101": {
+        "preflight": 6065.268273,
+        "publish": 46760.73128400001,
+        "reconcile": 14252.177805
+      },
+      "native-18": {
+        "preflight": 6055.765885000001,
+        "publish": 6086.507559999998
+      },
+      "native-17": {
+        "preflight": 8053.913773,
+        "publish": 6076.7453220000025
+      },
+      "native-13": {
+        "preflight": 12146.245445,
+        "publish": 6064.019490000002
+      },
+      "native-12": {
+        "preflight": 12797.032239999999,
+        "publish": 6081.929942999996
+      },
+      "native-19": {
+        "preflight": 3440.2731390000044,
+        "publish": 4746.940125999994
+      },
+      "native-14": {
+        "preflight": 4759.0298729999995,
+        "publish": 4092.598137999994
+      },
+      "native-100": {
+        "preflight": 5168.299397999999,
+        "publish": 6072.637037
+      },
+      "native-105": {
+        "preflight": 3442.111162000001,
+        "publish": 6737.116655000005
+      },
+      "native-108": {
+        "preflight": 4527.098825000001,
+        "publish": 4084.5113379999966
+      },
+      "native-103": {
+        "preflight": 8124.707128000002,
+        "publish": 5414.947064
+      },
+      "native-102": {
+        "preflight": 4757.500427000006,
+        "publish": 6107.357499999998
+      },
+      "native-107": {
+        "preflight": 5423.853196999997,
+        "publish": 8092.648796000001
+      },
+      "native-104": {
+        "preflight": 4786.129933000004,
+        "publish": 4106.514552999994
+      },
+      "native-109": {
+        "preflight": 3472.328075000005,
+        "publish": 6101.387956000006
+      },
+      "native-113": {
+        "preflight": 4485.781128999995,
+        "publish": 6092.680156000002
+      },
+      "native-110": {
+        "preflight": 4113.535058000001,
+        "publish": 4115.723099000003
+      },
+      "native-118": {
+        "preflight": 6112.438958999999,
+        "publish": 4108.916606999999
+      },
+      "native-115": {
+        "preflight": 3461.5288230000006,
+        "publish": 6142.618907999997
+      },
+      "native-112": {
+        "preflight": 5441.481794000007,
+        "publish": 6767.006247000005
+      },
+      "native-114": {
+        "preflight": 4784.780133,
+        "publish": 6099.803915999997
+      },
+      "native-117": {
+        "preflight": 6531.618340000001,
+        "publish": 4153.923926999996
+      },
+      "native-119": {
+        "preflight": 5528.204909,
+        "publish": 8111.233519999994
+      },
+      "native-120": {
+        "preflight": 5450.491765000006,
+        "publish": 4118.551313999997
+      },
+      "native-128": {
+        "preflight": 3470.1391659999936,
+        "publish": 17389.612771999993
+      },
+      "native-122": {
+        "preflight": 3445.5643750000017,
+        "publish": 16036.771002999987
+      },
+      "native-125": {
+        "preflight": 13401.932421000005,
+        "publish": 10084.503368999998
+      },
+      "native-124": {
+        "preflight": 11082.576123000006,
+        "publish": 8072.226232000001
+      },
+      "native-123": {
+        "preflight": 17439.488436000007,
+        "publish": 6097.153474999999
+      },
+      "native-11": {
+        "preflight": 12430.329023999991,
+        "publish": 27223.34245299999,
+        "reconcile": 11605.160478000005
+      },
+      "native-127": {
+        "preflight": 17064.969299999997,
+        "publish": 6105.228348999997
+      },
+      "native-106": {
+        "preflight": 16732.621841999993,
+        "publish": 23188.169786,
+        "reconcile": 30159.95644600001
+      },
+      "native-130": {
+        "preflight": 3465.4991299999965,
+        "publish": 4058.7134129999904
+      },
+      "native-129": {
+        "preflight": 8118.915859000001,
+        "publish": 2760.1679150000127
+      },
+      "native-111": {
+        "preflight": 2059.1923890000035,
+        "publish": 50116.466743,
+        "reconcile": 10267.673366000003
+      },
+      "native-116": {
+        "preflight": 2058.009023000006,
+        "publish": 54226.456017000004,
+        "reconcile": 11571.831379999989
+      },
+      "native-133": {
+        "preflight": 4120.81882700001,
+        "publish": 5440.587265000009
+      },
+      "native-135": {
+        "preflight": 6036.625898000013,
+        "publish": 6096.893515000003
+      },
+      "native-132": {
+        "preflight": 6037.422930999994,
+        "publish": 5434.838033000007
+      },
+      "native-134": {
+        "preflight": 6183.806266,
+        "publish": 5438.082767
+      },
+      "native-137": {
+        "preflight": 6128.114131999988,
+        "publish": 7414.366819000003
+      },
+      "native-138": {
+        "preflight": 8100.5001550000015,
+        "publish": 6110.725680999996
+      },
+      "native-140": {
+        "preflight": 3468.9781199999998,
+        "publish": 6024.379599999986
+      },
+      "native-143": {
+        "preflight": 3466.9424819999986,
+        "publish": 8815.740345000013
+      },
+      "native-139": {
+        "preflight": 4789.272694000014,
+        "publish": 4780.273715999996
+      },
+      "native-145": {
+        "preflight": 3461.239192000008,
+        "publish": 6760.772454999998
+      },
+      "native-147": {
+        "preflight": 3224.0583310000075,
+        "publish": 5441.454786999995
+      },
+      "native-142": {
+        "preflight": 10586.216207999998,
+        "publish": 4110.544007999997
+      },
+      "native-144": {
+        "preflight": 7433.947184999997,
+        "publish": 8094.05571299998
+      },
+      "native-148": {
+        "preflight": 6761.048651999998,
+        "publish": 6112.864733999973
+      },
+      "native-15": {
+        "preflight": 4784.754377000005,
+        "publish": 8094.357088999997
+      },
+      "native-149": {
+        "preflight": 5436.913169999985,
+        "publish": 8766.97269700002
+      },
+      "native-152": {
+        "preflight": 5127.962449999992,
+        "publish": 6090.348660000018
+      },
+      "native-153": {
+        "preflight": 6098.630823999993,
+        "publish": 5446.185566
+      },
+      "native-157": {
+        "preflight": 3456.229950000008,
+        "publish": 8818.693161000003
+      },
+      "native-150": {
+        "preflight": 5433.158368000004,
+        "publish": 4874.2022029999935
+      },
+      "native-158": {
+        "preflight": 4791.341470999992,
+        "publish": 4108.420175000007
+      },
+      "native-155": {
+        "preflight": 3461.0379250000115,
+        "publish": 6011.123227000004
+      },
+      "native-162": {
+        "preflight": 3451.989155999996,
+        "publish": 9508.397282999998
+      },
+      "native-154": {
+        "preflight": 7426.7511740000045,
+        "publish": 6171.060956000001
+      },
+      "native-163": {
+        "preflight": 4764.275665000023,
+        "publish": 8091.361676
+      },
+      "native-159": {
+        "preflight": 7394.507902999991,
+        "publish": 8081.479128000006
+      },
+      "native-160": {
+        "preflight": 7464.520080999995,
+        "publish": 8095.232854000002
+      },
+      "native-167": {
+        "preflight": 6122.461538999982,
+        "publish": 8093.671046000003
+      },
+      "native-165": {
+        "preflight": 6098.354477999994,
+        "publish": 8090.667927000002
+      },
+      "native-164": {
+        "preflight": 6562.641971999983,
+        "publish": 8094.092833999981
+      },
+      "native-168": {
+        "preflight": 6113.394170999993,
+        "publish": 5440.793085999991
+      },
+      "native-172": {
+        "preflight": 7124.481112000009,
+        "publish": 4061.3242420000024
+      },
+      "native-121": {
+        "preflight": 6211.899778999999,
+        "publish": 19154.395539999998,
+        "reconcile": 24811.413885999995
+      },
+      "native-126": {
+        "preflight": 2055.9527940000116,
+        "publish": 54781.72493200001,
+        "reconcile": 11532.530419999996
+      },
+      "native-177": {
+        "preflight": 4112.731345000007,
+        "publish": 6018.614766999992
+      },
+      "native-170": {
+        "preflight": 6029.248049999995,
+        "publish": 7492.75569000002
+      },
+      "native-173": {
+        "preflight": 8811.29323900002,
+        "publish": 6764.547758999979
+      },
+      "native-169": {
+        "preflight": 7441.910617999994,
+        "publish": 4107.446411000012
+      },
+      "native-182": {
+        "preflight": 5506.810651000007,
+        "publish": 6032.164940999995
+      },
+      "native-175": {
+        "preflight": 4052.3074199999974,
+        "publish": 4832.647441000008
+      },
+      "native-131": {
+        "preflight": 3384.1765069999965,
+        "publish": 56170.84679800001,
+        "reconcile": 16838.582018000016
+      },
+      "native-187": {
+        "preflight": 5432.202695999993,
+        "publish": 4695.724297000008
+      },
+      "native-180": {
+        "preflight": 6026.219163000002,
+        "publish": 4843.803583000001
+      },
+      "native-183": {
+        "preflight": 8816.055132000009,
+        "publish": 6752.068173000007
+      },
+      "native-178": {
+        "preflight": 6826.060494000005,
+        "publish": 9415.254366999987
+      },
+      "native-179": {
+        "preflight": 5379.94841099999,
+        "publish": 6752.6338460000115
+      },
+      "native-185": {
+        "preflight": 5129.372915999993,
+        "publish": 8075.343380000006
+      },
+      "native-174": {
+        "preflight": 3458.312283999985,
+        "publish": 4105.7402209999855
+      },
+      "native-22": {
+        "preflight": 4531.170314999996,
+        "publish": 4116.5475790000055
+      },
+      "native-190": {
+        "preflight": 6099.382427000004,
+        "publish": 6166.107034999994
+      },
+      "native-188": {
+        "preflight": 5373.219175000006,
+        "publish": 10157.552007999999
+      },
+      "native-2": {
+        "preflight": 4767.072278000007,
+        "publish": 5450.562291000009
+      },
+      "native-184": {
+        "preflight": 5369.163123000006,
+        "publish": 6035.538671999995
+      },
+      "native-189": {
+        "preflight": 4773.296709999995,
+        "publish": 6169.791507000016
+      },
+      "native-3": {
+        "preflight": 5855.962605000008,
+        "publish": 4696.739989000023
+      },
+      "native-195": {
+        "preflight": 4053.802316999994,
+        "publish": 4143.498607999994
+      },
+      "native-27": {
+        "preflight": 7434.995470999973,
+        "publish": 4106.282340000005
+      },
+      "native-20": {
+        "preflight": 3458.9573819999932,
+        "publish": 6151.061226999998
+      },
+      "native-32": {
+        "preflight": 4079.5678180000104,
+        "publish": 9415.65883500001
+      },
+      "native-4": {
+        "preflight": 3453.864402999985,
+        "publish": 6006.621920999984
+      },
+      "native-24": {
+        "preflight": 4465.329312999995,
+        "publish": 10112.395730000018
+      },
+      "native-28": {
+        "preflight": 3121.574336999998,
+        "publish": 10046.754075000004
+      },
+      "native-136": {
+        "preflight": 4137.217613999994,
+        "publish": 29068.224680000014,
+        "reconcile": 14162.459765999985
+      },
+      "native-23": {
+        "preflight": 5359.2836209999805,
+        "publish": 6809.168512000004
+      },
+      "native-37": {
+        "preflight": 5356.35606999998,
+        "publish": 6144.930420999997
+      },
+      "native-200": {
+        "preflight": 5493.878349000006,
+        "publish": 6090.645692999999
+      },
+      "native-29": {
+        "preflight": 4770.771480999974,
+        "publish": 4090.6707400000305
+      },
+      "native-33": {
+        "preflight": 5432.692127000017,
+        "publish": 4097.300594999979
+      },
+      "native-42": {
+        "preflight": 4101.283602999989,
+        "publish": 4105.501642999996
+      },
+      "native-205": {
+        "preflight": 3132.9408070000354,
+        "publish": 3431.235578999971
+      },
+      "native-34": {
+        "preflight": 2052.9433309999877,
+        "publish": 4134.053309000039
+      },
+      "native-141": {
+        "preflight": 2053.614995000011,
+        "publish": 48108.01474499999,
+        "reconcile": 11533.644313000026
+      },
+      "native-210": {
+        "preflight": 4105.355509000015,
+        "publish": 4126.7454259999795
+      },
+      "native-47": {
+        "preflight": 4105.724823000026,
+        "publish": 4096.840712999983
+      },
+      "native-38": {
+        "preflight": 3440.8187560000224,
+        "publish": 4085.175815000024
+      },
+      "native-39": {
+        "preflight": 3363.9680020000087,
+        "publish": 9990.085174000007
+      },
+      "native-44": {
+        "preflight": 3450.436448000022,
+        "publish": 4106.246411999979
+      },
+      "native-220": {
+        "preflight": 2535.021603000001,
+        "publish": 4074.9187329999986
+      },
+      "native-215": {
+        "preflight": 5405.865091999993,
+        "publish": 9992.557109999994
+      },
+      "native-146": {
+        "preflight": 11308.736612999986,
+        "publish": 53395.553706999985,
+        "reconcile": 18154.46510999999
+      },
+      "native-192": {
+        "preflight": 3449.5529269999824,
+        "publish": 5415.460233999998
+      },
+      "native-48": {
+        "preflight": 3436.3910670000478,
+        "publish": 5442.519280000008
+      },
+      "native-225": {
+        "preflight": 2805.9148950000526,
+        "publish": 7468.377286000003
+      },
+      "native-52": {
+        "preflight": 15386.655591999996,
+        "publish": 9392.538738999981
+      },
+      "native-43": {
+        "preflight": 4763.035577999952,
+        "publish": 10081.64429200004
+      },
+      "native-54": {
+        "preflight": 4744.439404000004,
+        "publish": 6044.203364000015
+      },
+      "native-49": {
+        "preflight": 5335.663456999988,
+        "publish": 5402.599676999962
+      },
+      "native-197": {
+        "preflight": 4772.1091189999715,
+        "publish": 5407.711661999987
+      },
+      "native-53": {
+        "preflight": 4755.8031210000045,
+        "publish": 5418.43466899998
+      },
+      "native-230": {
+        "preflight": 5469.155181999959,
+        "publish": 4721.242946000013
+      },
+      "native-194": {
+        "preflight": 4082.4938969999785,
+        "publish": 4122.684634000005
+      },
+      "native-235": {
+        "preflight": 4948.55348599999,
+        "publish": 5232.099289999984
+      },
+      "native-199": {
+        "preflight": 4606.282653000031,
+        "publish": 6131.249028999999
+      },
+      "native-202": {
+        "preflight": 8116.106963999977,
+        "publish": 4087.4990749999997
+      },
+      "native-193": {
+        "preflight": 3475.647161000001,
+        "publish": 8067.163565999945
+      },
+      "native-240": {
+        "preflight": 3438.485564999981,
+        "publish": 7402.775001000031
+      },
+      "native-204": {
+        "preflight": 3431.881403000036,
+        "publish": 6099.492460999987
+      },
+      "native-207": {
+        "preflight": 11397.175798000011,
+        "publish": 8069.036682999984
+      },
+      "native-198": {
+        "preflight": 5481.854082000034,
+        "publish": 8078.667373000004
+      },
+      "native-245": {
+        "preflight": 4108.054100999958,
+        "publish": 8079.044525000034
+      },
+      "native-209": {
+        "preflight": 3129.279426000023,
+        "publish": 8072.851458999969
+      },
+      "native-212": {
+        "preflight": 7429.084656000021,
+        "publish": 4092.5245080000022
+      },
+      "native-203": {
+        "preflight": 7421.142625000037,
+        "publish": 6109.455560999981
+      },
+      "native-25": {
+        "preflight": 7125.484794999997,
+        "publish": 4739.507171000005
+      },
+      "native-151": {
+        "preflight": 6103.251838999975,
+        "publish": 23046.165293,
+        "reconcile": 28808.463014999987
+      },
+      "native-214": {
+        "preflight": 4796.137961999979,
+        "publish": 2734.4677239999874
+      },
+      "native-156": {
+        "preflight": 2047.8365359999589,
+        "publish": 40102.145449,
+        "reconcile": 27409.463075000036
+      },
+      "native-219": {
+        "preflight": 2047.8078339999774,
+        "publish": 4103.507249000017
+      },
+      "native-30": {
+        "preflight": 4094.3698659999645,
+        "publish": 4114.086608999991
+      },
+      "native-217": {
+        "preflight": 4094.5864980000188,
+        "publish": 4113.801932999981
+      },
+      "native-208": {
+        "preflight": 3443.840876000002,
+        "publish": 4097.170433999971
+      },
+      "native-35": {
+        "preflight": 2547.507513999997,
+        "publish": 4092.93239599996
+      },
+      "native-224": {
+        "preflight": 3445.3347280000453,
+        "publish": 5424.641009000014
+      },
+      "native-16": {
+        "preflight": 2047.6027529999847,
+        "publish": 53318.969086,
+        "reconcile": 28791.378032999986
+      },
+      "native-222": {
+        "preflight": 4773.214516000007,
+        "publish": 4095.6165219999966
+      },
+      "native-218": {
+        "preflight": 3445.866871999984,
+        "publish": 4086.2849099999876
+      },
+      "native-40": {
+        "preflight": 6745.326691999973,
+        "publish": 6032.176383999991
+      },
+      "native-45": {
+        "preflight": 3447.115017999953,
+        "publish": 4102.561058999971
+      },
+      "native-229": {
+        "preflight": 8676.350785999966,
+        "publish": 6148.337318000034
+      },
+      "native-227": {
+        "preflight": 12777.261138000002,
+        "publish": 5418.8726359999855
+      },
+      "native-232": {
+        "preflight": 4703.305092000053,
+        "publish": 4710.844189000025
+      },
+      "native-234": {
+        "preflight": 6099.604730000021,
+        "publish": 6131.249741000007
+      },
+      "native-213": {
+        "preflight": 3444.4274399999995,
+        "publish": 8068.787430000026
+      },
+      "native-50": {
+        "preflight": 4767.824240000045,
+        "publish": 6746.626859000011
+      },
+      "native-5": {
+        "preflight": 7427.94744899997,
+        "publish": 8071.423805999977
+      },
+      "native-239": {
+        "preflight": 6087.998175999965,
+        "publish": 8161.499402999994
+      },
+      "native-223": {
+        "preflight": 4762.188184000028,
+        "publish": 4703.288514000014
+      },
+      "native-237": {
+        "preflight": 4778.216514999978,
+        "publish": 4797.962614000018
+      },
+      "native-242": {
+        "preflight": 9523.249121,
+        "publish": 5980.447144999984
+      },
+      "native-161": {
+        "preflight": 4888.040202000004,
+        "publish": 34420.64593900001,
+        "reconcile": 28790.835430999985
+      },
+      "native-244": {
+        "preflight": 7718.262523000012,
+        "publish": 4107.717714999977
+      },
+      "native-228": {
+        "preflight": 9464.034494000021,
+        "publish": 6134.318137999973
+      },
+      "native-60": {
+        "preflight": 5579.116153000039,
+        "publish": 5955.014783999999
+      },
+      "native-55": {
+        "preflight": 5392.807828000048,
+        "publish": 10098.282559000014
+      },
+      "native-249": {
+        "preflight": 9359.170088999963,
+        "publish": 6119.476979000028
+      },
+      "native-233": {
+        "preflight": 5497.561166999978,
+        "publish": 4082.651130000013
+      },
+      "native-7": {
+        "preflight": 3500.055938000034,
+        "publish": 8058.206420000002
+      },
+      "native-9": {
+        "preflight": 3497.7687319999677,
+        "publish": 10031.850625000021
+      },
+      "native-247": {
+        "preflight": 5381.45354300004,
+        "publish": 4078.371395999973
+      },
+      "native-238": {
+        "preflight": 3436.631599000015,
+        "publish": 8056.515242000052
+      },
+      "native-65": {
+        "preflight": 5430.273798999959,
+        "publish": 4019.6810789999436
+      },
+      "native-70": {
+        "preflight": 3444.794607000018,
+        "publish": 4081.174303000036
+      },
+      "native-59": {
+        "preflight": 3430.7372259999975,
+        "publish": 6016.034286999959
+      },
+      "native-57": {
+        "preflight": 5169.305373999989,
+        "publish": 3971.467317999981
+      },
+      "native-166": {
+        "preflight": 7413.1873479999485,
+        "publish": 19056.051188000012,
+        "reconcile": 26122.909544000053
+      },
+      "native-171": {
+        "preflight": 2041.1285129999742,
+        "publish": 47384.377531999955,
+        "reconcile": 27455.476135000004
+      },
+      "native-243": {
+        "preflight": 4084.8418780000065,
+        "publish": 4104.897835000011
+      },
+      "native-75": {
+        "preflight": 4690.442528999993,
+        "publish": 4080.964081000013
+      },
+      "native-62": {
+        "preflight": 6130.296739999962,
+        "publish": 4700.457832999993
+      },
+      "native-64": {
+        "preflight": 3453.8593999999575,
+        "publish": 8083.260179999983
+      },
+      "native-248": {
+        "preflight": 3061.5759989999933,
+        "publish": 4115.515661000041
+      },
+      "native-80": {
+        "preflight": 3133.621572999982,
+        "publish": 6174.033844999969
+      },
+      "native-85": {
+        "preflight": 3381.929356000037,
+        "publish": 4705.31094299996
+      },
+      "native-72": {
+        "preflight": 5435.5461829999695,
+        "publish": 8084.310735999956
+      },
+      "native-67": {
+        "preflight": 4795.283694999991,
+        "publish": 8081.010808999999
+      },
+      "native-176": {
+        "preflight": 6023.973479999986,
+        "publish": 50784.091762,
+        "reconcile": 10225.261579999933
+      },
+      "native-58": {
+        "preflight": 7430.119585999986,
+        "publish": 10725.813949999982
+      },
+      "native-8": {
+        "preflight": 11460.384668999992,
+        "publish": 4694.810664999997
+      },
+      "native-74": {
+        "preflight": 7431.129584999988,
+        "publish": 8070.847630999982
+      },
+      "native-69": {
+        "preflight": 9477.721623999998,
+        "publish": 6141.425768999965
+      },
+      "native-95": {
+        "preflight": 6082.071328000049,
+        "publish": 6048.322145999991
+      },
+      "native-82": {
+        "preflight": 7132.600676000002,
+        "publish": 4108.488718000008
+      },
+      "native-90": {
+        "preflight": 12115.730091000034,
+        "publish": 4107.288143999991
+      },
+      "native-77": {
+        "preflight": 5397.056424000009,
+        "publish": 4102.438573000021
+      },
+      "native-79": {
+        "preflight": 5496.269657000026,
+        "publish": 4122.595592000056
+      },
+      "native-84": {
+        "preflight": 5495.756124000007,
+        "publish": 8094.005984999996
+      },
+      "native-63": {
+        "preflight": 9377.53245400003,
+        "publish": 4097.635486999992
+      },
+      "native-68": {
+        "preflight": 3444.159354000003,
+        "publish": 8086.099904000002
+      },
+      "native-87": {
+        "preflight": 4508.432200000039,
+        "publish": 6049.795845000015
+      },
+      "native-89": {
+        "preflight": 2554.4691599999787,
+        "publish": 6030.615241000021
+      },
+      "native-92": {
+        "preflight": 6471.770734999969,
+        "publish": 6149.3292580000125
+      },
+      "native-181": {
+        "preflight": 4567.947136999981,
+        "publish": 25144.042905999988,
+        "reconcile": 11562.394786000019
+      },
+      "native-97": {
+        "preflight": 2744.2953860000125,
+        "publish": 4086.7336900000228
+      },
+      "native-73": {
+        "preflight": 6657.386453000014,
+        "publish": 4101.846522999986
+      },
+      "native-94": {
+        "preflight": 4790.564786000003,
+        "publish": 4092.4592640000046
+      },
+      "native-99": {
+        "preflight": 2476.904061999987,
+        "publish": 4093.358558000007
+      },
+      "native-186": {
+        "preflight": 2158.4026360000134,
+        "publish": 23104.847345000075,
+        "reconcile": 12874.823765999987
+      },
+      "native-78": {
+        "preflight": 8670.686770999979,
+        "publish": 6791.440242000041
+      },
+      "native-191": {
+        "preflight": 2044.698466999922,
+        "publish": 27067.650250000064,
+        "reconcile": 11551.414944999968
+      },
+      "native-83": {
+        "preflight": 6024.881800999981,
+        "publish": 4046.4681329999585
+      },
+      "native-88": {
+        "preflight": 10002.144379999954,
+        "publish": 2724.0244559999555
+      },
+      "native-93": {
+        "preflight": 4697.814399000024,
+        "publish": 5374.215998
+      },
+      "native-196": {
+        "preflight": 6020.54816799995,
+        "publish": 25707.501040999894,
+        "reconcile": 12847.076239999966
+      },
+      "native-98": {
+        "preflight": 4699.812643000041,
+        "publish": 5374.516847999999
+      },
+      "native-201": {
+        "preflight": 2057.04926,
+        "publish": 21716.50965100003,
+        "reconcile": 14164.260784000042
+      },
+      "native-206": {
+        "preflight": 2045.0702880000463,
+        "publish": 21700.658570999978,
+        "reconcile": 10262.259672000073
+      },
+      "native-21": {
+        "preflight": 2045.4924830000382,
+        "publish": 23064.755119000096,
+        "reconcile": 11588.577593999915
+      },
+      "native-211": {
+        "preflight": 2053.8390430000145,
+        "publish": 24474.71048999997,
+        "reconcile": 10315.630116999964
+      },
+      "native-216": {
+        "preflight": 2052.5579229999566,
+        "publish": 21811.775414000032,
+        "reconcile": 10243.224629000062
+      },
+      "native-221": {
+        "preflight": 2060.093493000022,
+        "publish": 19177.332263999968,
+        "reconcile": 10245.092519000056
+      },
+      "native-226": {
+        "preflight": 2184.2957129999995,
+        "publish": 19287.59917199996,
+        "reconcile": 11594.807604000089
+      },
+      "native-231": {
+        "preflight": 2052.023112999974,
+        "publish": 21818.589740000083,
+        "reconcile": 18193.168986000004
+      },
+      "native-236": {
+        "preflight": 2056.8594409999205,
+        "publish": 24508.860977999982,
+        "reconcile": 14289.588164999965
+      },
+      "native-241": {
+        "preflight": 2061.6293920000317,
+        "publish": 20506.198230999988,
+        "reconcile": 15490.757878000033
+      },
+      "native-246": {
+        "preflight": 2053.1819260000484,
+        "publish": 19150.294128000038,
+        "reconcile": 12860.327445999952
+      },
+      "native-26": {
+        "preflight": 2044.1158920000307,
+        "publish": 19046.49569500005,
+        "reconcile": 14198.947210000013
+      },
+      "native-31": {
+        "preflight": 2044.4225330000045,
+        "publish": 21687.903923999984,
+        "reconcile": 12878.42348499992
+      },
+      "native-36": {
+        "preflight": 2047.6041620000033,
+        "publish": 21715.824836999993,
+        "reconcile": 10233.887151999981
+      },
+      "native-41": {
+        "preflight": 2046.1812700000592,
+        "publish": 19089.043512000004,
+        "reconcile": 11563.469236999983
+      },
+      "native-46": {
+        "preflight": 3377.1725129999686,
+        "publish": 21724.107839999953,
+        "reconcile": 14185.591321000014
+      },
+      "native-51": {
+        "preflight": 2047.0150860000867,
+        "publish": 24430.938826999976,
+        "reconcile": 16860.89798999997
+      },
+      "native-56": {
+        "preflight": 2057.908297999995,
+        "publish": 20442.62402499991,
+        "reconcile": 12881.717212999938
+      },
+      "native-6": {
+        "preflight": 2049.052265000064,
+        "publish": 20430.12180199998,
+        "reconcile": 11549.309971999959
+      },
+      "native-61": {
+        "preflight": 2056.2183609999483,
+        "publish": 23074.160514999996,
+        "reconcile": 11562.401138999965
+      },
+      "native-66": {
+        "preflight": 2052.3054540000157,
+        "publish": 21757.367621999932,
+        "reconcile": 14208.65614700003
+      },
+      "native-71": {
+        "preflight": 2050.39437600004,
+        "publish": 23073.636974999914,
+        "reconcile": 10200.03459200007
+      },
+      "native-76": {
+        "preflight": 2047.4346290000249,
+        "publish": 21728.308178999927,
+        "reconcile": 14181.718850000063
+      },
+      "native-81": {
+        "preflight": 2043.282770000049,
+        "publish": 20365.54176400008,
+        "reconcile": 10197.126195000019
+      },
+      "native-86": {
+        "preflight": 2043.8803590000607,
+        "publish": 23025.472557,
+        "reconcile": 14203.377777000074
+      },
+      "native-91": {
+        "preflight": 2044.3801039999817,
+        "publish": 23041.881195999915,
+        "reconcile": 10211.374337000074
+      },
+      "native-96": {
+        "preflight": 2042.4138549999334,
+        "publish": 21694.75570900005,
+        "reconcile": 10211.34680900001
+      }
+    },
+    "apiMs": 6260.2179859998,
+    "apiCalls": 1050,
+    "phases": {
+      "acquireConsumer": {
+        "calls": 2,
+        "wallMs": 701.3471879999997
+      },
+      "scheduledWorkExists": {
+        "calls": 17,
+        "wallMs": 5710.858127000067
+      },
+      "reconciliationJobs": {
+        "calls": 90,
+        "wallMs": 29172.217355999783
+      },
+      "recoverExpired": {
+        "calls": 38,
+        "wallMs": 24652.845448000167
+      },
+      "leader": {
+        "calls": 3,
+        "wallMs": 977.0821520000045
+      },
+      "reportingJobs": {
+        "calls": 90,
+        "wallMs": 29190.862946999823
+      },
+      "readyFair": {
+        "calls": 954,
+        "wallMs": 309403.9230769982
+      },
+      "admit": {
+        "calls": 20,
+        "wallMs": 35954.973514
+      },
+      "findJobs": {
+        "calls": 200,
+        "wallMs": 64648.70641299919
+      },
+      "prepareMany": {
+        "calls": 200,
+        "wallMs": 65409.929892999266
+      },
+      "localEntryWait": {
+        "calls": 1250,
+        "wallMs": 1272875
+      },
+      "budget": {
+        "calls": 1997,
+        "wallMs": 2802823.787484994
+      },
+      "capacityBackoff": {
+        "calls": 747,
+        "wallMs": 747737
+      },
+      "TIKTOK.preflight": {
+        "calls": 50,
+        "wallMs": 172773.01098300004
+      },
+      "INSTAGRAM.preflight": {
+        "calls": 50,
+        "wallMs": 248622.886841
+      },
+      "beginExternal": {
+        "calls": 250,
+        "wallMs": 81318.15516399991
+      },
+      "assertPublication": {
+        "calls": 250,
+        "wallMs": 81434.99928999985
+      },
+      "LINKEDIN.preflight": {
+        "calls": 50,
+        "wallMs": 302055.03213999985
+      },
+      "renewConsumer": {
+        "calls": 122,
+        "wallMs": 39574.67681299956
+      },
+      "releaseLeader": {
+        "calls": 2,
+        "wallMs": 647.1020670000071
+      },
+      "FACEBOOK.preflight": {
+        "calls": 50,
+        "wallMs": 312069.12416999997
+      },
+      "INSTAGRAM.publish": {
+        "calls": 50,
+        "wallMs": 307604.4130609998
+      },
+      "LINKEDIN.publish": {
+        "calls": 50,
+        "wallMs": 314393.631824
+      },
+      "finish": {
+        "calls": 250,
+        "wallMs": 81185.5950870004
+      },
+      "releasePrepared": {
+        "calls": 250,
+        "wallMs": 80825.97758800013
+      },
+      "FACEBOOK.publish": {
+        "calls": 50,
+        "wallMs": 299630.8729640001
+      },
+      "X.preflight": {
+        "calls": 50,
+        "wallMs": 260845.39099599977
+      },
+      "X.publish": {
+        "calls": 50,
+        "wallMs": 302708.42707800004
+      },
+      "TIKTOK.publish": {
+        "calls": 50,
+        "wallMs": 1467610.3818299994
+      },
+      "accept": {
+        "calls": 50,
+        "wallMs": 16240.879101999875
+      },
+      "findJob": {
+        "calls": 100,
+        "wallMs": 32287.76171399979
+      },
+      "claimReconciliation": {
+        "calls": 50,
+        "wallMs": 16313.034086000058
+      },
+      "recoverAdmission": {
+        "calls": 3,
+        "wallMs": 974.3657419999945
+      },
+      "TIKTOK.reconcile": {
+        "calls": 50,
+        "wallMs": 754148.610927
+      },
+      "releaseReconciliation": {
+        "calls": 50,
+        "wallMs": 16162.843541000024
+      },
+      "markReported": {
+        "calls": 50,
+        "wallMs": 16167.875845999893
+      },
+      "releaseConsumer": {
+        "calls": 2,
+        "wallMs": 0.15614199999254197
+      }
+    },
+    "lockSamples": 0,
+    "lockPeak": 0,
+    "sqlPerPost": 76.748,
+    "applicationSqlPerPost": 74.708
+  },
+  "baseline": false,
+  "runId": "000b2369-db60-43b3-929c-55a9825a5146",
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "count": 250,
+  "injectedTransactionMs": 1380,
+  "controlLatencyMs": 320,
+  "backendCap": 5,
+  "reconciliationTimeoutMs": 120000,
+  "errors": [],
+  "platformFailures": {
+    "0": 0,
+    "1": 0
+  },
+  "backendPeak": 5,
+  "dataPeak": 3,
+  "modelCalls": {
+    "calendarPost.findUniqueOrThrow": 400,
+    "socialCalendar.findUnique": 250,
+    "socialConnection.findFirst": 50,
+    "calendarPost.update": 350,
+    "socialConnection.findUnique": 300,
+    "publishedSocialPost.upsert": 300,
+    "socialConnection.findUniqueOrThrow": 150,
+    "tikTokAccountRuntime.upsert": 200,
+    "tikTokAccountRuntime.update": 200
+  },
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 4,
+      "durationMs": 15394.241963999999,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 50,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 40,
+          "errors": 0,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 2,
+      "durationMs": 8465.587875000012,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 10,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 10,
+          "errors": 1,
+          "deferred": true,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 335.5222059999942,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 333.87193600001046,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 329.45368599999347,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.3761209999793,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 332.19814100000076,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.8028339999728,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 333.8926870000432,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 330.36073399998713,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 333.69875500001945,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 335.28028900001664,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 328.68441200000234,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 329.055888999952,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 331.23507599998266,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    },
+    {
+      "leader": false,
+      "skipped": true,
+      "rounds": 0,
+      "durationMs": 327.2556849999819,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 0,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "transactionErrors": [],
+  "consumerRounds": [
+    {
+      "consumer": 1,
+      "durationMs": 997.4649069999996,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 997.9583249999996,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 100724.806694,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 16,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 5,
+        "TIKTOK": 3,
+        "FACEBOOK": 4,
+        "LINKEDIN": 4,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 100725.30589300001,
+      "rounds": 17,
+      "outcomes": {
+        "confirmed": 17,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 5,
+        "TIKTOK": 3,
+        "FACEBOOK": 5,
+        "LINKEDIN": 5,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 72696.99238900002,
+      "rounds": 14,
+      "outcomes": {
+        "confirmed": 16,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 4,
+        "TIKTOK": 2,
+        "FACEBOOK": 6,
+        "LINKEDIN": 5,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 90922.92889799998,
+      "rounds": 14,
+      "outcomes": {
+        "confirmed": 16,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 5,
+        "TIKTOK": 2,
+        "FACEBOOK": 4,
+        "LINKEDIN": 4,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 69369.714821,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 18,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 5,
+        "TIKTOK": 1,
+        "FACEBOOK": 5,
+        "LINKEDIN": 4,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 94646.59671899996,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 16,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 4,
+        "TIKTOK": 2,
+        "FACEBOOK": 4,
+        "LINKEDIN": 5,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 70418.85239399999,
+      "rounds": 12,
+      "outcomes": {
+        "confirmed": 15,
+        "provider-pending": 1
+      },
+      "opportunities": {
+        "INSTAGRAM": 4,
+        "TIKTOK": 1,
+        "FACEBOOK": 3,
+        "LINKEDIN": 3,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 91290.73201100004,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 18,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 5,
+        "TIKTOK": 2,
+        "FACEBOOK": 4,
+        "LINKEDIN": 4,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 85990.096724,
+      "rounds": 15,
+      "outcomes": {
+        "confirmed": 20,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 6,
+        "TIKTOK": 2,
+        "FACEBOOK": 5,
+        "LINKEDIN": 4,
+        "X": 5
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 89160.42084599996,
+      "rounds": 13,
+      "outcomes": {
+        "confirmed": 15,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 4,
+        "TIKTOK": 2,
+        "FACEBOOK": 4,
+        "LINKEDIN": 3,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 85246.95798900002,
+      "rounds": 13,
+      "outcomes": {
+        "confirmed": 15,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 3,
+        "TIKTOK": 2,
+        "FACEBOOK": 4,
+        "LINKEDIN": 4,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 86604.91302799998,
+      "rounds": 11,
+      "outcomes": {
+        "confirmed": 14,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 2,
+        "TIKTOK": 2,
+        "FACEBOOK": 5,
+        "LINKEDIN": 4,
+        "X": 4
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 60009.265278000035,
+      "rounds": 2,
+      "outcomes": {
+        "confirmed": 1,
+        "provider-pending": 2
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 2,
+        "FACEBOOK": 0,
+        "LINKEDIN": 1,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 84465.51542999997,
+      "rounds": 5,
+      "outcomes": {
+        "confirmed": 3,
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 3,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 78144.7679460001,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 78156.448859,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 73925.747753,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 72550.45751400001,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 79213.03649199998,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 79244.61340600008,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 79086.59484799998,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 969.2465950000333,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 970.0566739999922,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 79055.94792399998,
+      "rounds": 3,
+      "outcomes": {
+        "provider-pending": 3
+      },
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 3,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 970.4449709999608,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 968.2686930000782,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 971.2844340000302,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 973.1389229999622,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 974.6516899999697,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 973.310026000021,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 971.7130949998973,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 970.8558910000138,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 967.6772909999127,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 969.8515279999701,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 1,
+      "durationMs": 966.612936999998,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    },
+    {
+      "consumer": 0,
+      "durationMs": 972.1447290000506,
+      "rounds": 0,
+      "outcomes": {},
+      "opportunities": {
+        "INSTAGRAM": 0,
+        "TIKTOK": 0,
+        "FACEBOOK": 0,
+        "LINKEDIN": 0,
+        "X": 0
+      },
+      "errors": 0
+    }
+  ],
+  "acceptanceChecks": [
+    {
+      "name": "published",
+      "passed": true
+    },
+    {
+      "name": "confirmed",
+      "passed": true
+    },
+    {
+      "name": "reporting",
+      "passed": true
+    },
+    {
+      "name": "duplicates",
+      "passed": true
+    },
+    {
+      "name": "dataBudget",
+      "passed": true
+    },
+    {
+      "name": "backendBudget",
+      "passed": true
+    },
+    {
+      "name": "databaseErrors",
+      "passed": true
+    }
+  ],
+  "backpressure": 0,
+  "lastCheckpoint": {
+    "elapsedMs": 900019.5371389999,
+    "states": [
+      {
+        "phase": "CONFIRMED",
+        "n": 248
+      },
+      {
+        "phase": "EXTERNAL_PENDING",
+        "n": 2
+      }
+    ]
+  },
+  "duplicateAttempts": 0,
+  "admissionMs": 68473.88155800001,
+  "totalPublishingMs": 918379.624615,
+  "firstAttemptMs": 8443.628417999998,
+  "allAttemptsStartedMs": 898170.44633,
+  "attemptDelaysMs": {
+    "native-10": 8461.62841796875,
+    "native-0": 10369.985595703125,
+    "native-18": 14397.47314453125,
+    "native-17": 16380.185791015625,
+    "native-13": 18435.35498046875,
+    "native-12": 19072.9443359375,
+    "native-19": 24525.01220703125,
+    "native-14": 26552.82568359375,
+    "native-100": 27197.071044921875,
+    "native-105": 28574.55126953125,
+    "native-108": 30571.574951171875,
+    "native-103": 31241.275634765625,
+    "native-102": 34650.574951171875,
+    "native-107": 36698.96337890625,
+    "native-104": 38738.20068359375,
+    "native-109": 38793.50927734375,
+    "native-101": 39352.796875,
+    "native-113": 40769.05029296875,
+    "native-110": 41405.47119140625,
+    "native-1": 42793.33447265625,
+    "native-118": 47539.245361328125,
+    "native-115": 48905.74365234375,
+    "native-112": 48906.047119140625,
+    "native-114": 50987.532958984375,
+    "native-117": 52973.8994140625,
+    "native-119": 53089.99951171875,
+    "native-120": 57734.443115234375,
+    "native-128": 59804.623779296875,
+    "native-122": 61153.43701171875,
+    "native-125": 71160.32763671875,
+    "native-124": 71200.93530273438,
+    "native-123": 73155.486328125,
+    "native-127": 77185.90551757812,
+    "native-130": 81292.82641601562,
+    "native-129": 88034.73388671875,
+    "native-11": 93512.45239257812,
+    "native-106": 93512.84497070312,
+    "native-133": 109384.4384765625,
+    "native-135": 111282.8505859375,
+    "native-132": 111284.6474609375,
+    "native-134": 111456.439453125,
+    "native-137": 113390.99438476562,
+    "native-138": 115339.59130859375,
+    "native-140": 118927.44482421875,
+    "native-143": 120850.43286132812,
+    "native-139": 122860.65771484375,
+    "native-145": 124880.1376953125,
+    "native-147": 125550.814453125,
+    "native-142": 128934.14282226562,
+    "native-144": 133063.92529296875,
+    "native-148": 135034.20874023438,
+    "native-15": 135090.5986328125,
+    "native-149": 137102.1943359375,
+    "native-152": 137745.12548828125,
+    "native-111": 139059.5556640625,
+    "native-153": 139809.4072265625,
+    "native-116": 141767.92456054688,
+    "native-157": 145242.9248046875,
+    "native-150": 147216.46313476562,
+    "native-158": 149288.08813476562,
+    "native-155": 149353.02685546875,
+    "native-162": 150023.38403320312,
+    "native-154": 151287.44287109375,
+    "native-163": 159481.95971679688,
+    "native-159": 160164.16577148438,
+    "native-160": 161504.03857421875,
+    "native-167": 162143.75024414062,
+    "native-165": 164182.11279296875,
+    "native-164": 165549.02587890625,
+    "native-168": 166225.14892578125,
+    "native-172": 171613.83740234375,
+    "native-177": 182275.93481445312,
+    "native-170": 184210.17041015625,
+    "native-121": 184704.22314453125,
+    "native-173": 186987.22875976562,
+    "native-169": 196412.09008789062,
+    "native-182": 197842.4638671875,
+    "native-175": 198437.71801757812,
+    "native-187": 201816.67163085938,
+    "native-180": 202411.84350585938,
+    "native-183": 205214.4833984375,
+    "native-126": 205914.60668945312,
+    "native-178": 207980.17553710938,
+    "native-179": 209319.73754882812,
+    "native-185": 210026.23193359375,
+    "native-174": 210647.90185546875,
+    "native-22": 212670.1787109375,
+    "native-190": 218695.9404296875,
+    "native-188": 220760.53149414062,
+    "native-2": 221468.02026367188,
+    "native-184": 222832.08227539062,
+    "native-189": 222832.40747070312,
+    "native-3": 224868.45361328125,
+    "native-131": 230889.08666992188,
+    "native-195": 231618.68774414062,
+    "native-20": 232958.37060546875,
+    "native-27": 232958.52807617188,
+    "native-32": 233699.56958007812,
+    "native-4": 235026.3251953125,
+    "native-24": 237065.6142578125,
+    "native-28": 239100.673828125,
+    "native-23": 243066.86791992188,
+    "native-37": 245100.8232421875,
+    "native-200": 247150.45263671875,
+    "native-29": 255303.978515625,
+    "native-33": 257342.56005859375,
+    "native-42": 257989.55737304688,
+    "native-205": 260041.5087890625,
+    "native-136": 260046.38671875,
+    "native-34": 268028.1682128906,
+    "native-210": 270052.1740722656,
+    "native-47": 270052.2795410156,
+    "native-38": 276233.0417480469,
+    "native-39": 276395.3435058594,
+    "native-220": 278259.18603515625,
+    "native-44": 278265.568359375,
+    "native-215": 278409.3864746094,
+    "native-192": 284396.7326660156,
+    "native-48": 286429.8525390625,
+    "native-225": 286440.81201171875,
+    "native-52": 288391.3317871094,
+    "native-43": 291772.1083984375,
+    "native-141": 293743.6442871094,
+    "native-54": 293811.001953125,
+    "native-49": 295816.87939453125,
+    "native-197": 297275.37060546875,
+    "native-53": 299328.3889160156,
+    "native-230": 303896.22314453125,
+    "native-194": 306604.1838378906,
+    "native-235": 306794.03662109375,
+    "native-199": 307963.3420410156,
+    "native-202": 308595.36474609375,
+    "native-193": 312756.3796386719,
+    "native-146": 314709.6520996094,
+    "native-240": 314783.2841796875,
+    "native-207": 316781.9792480469,
+    "native-204": 316783.2028808594,
+    "native-198": 318160.7023925781,
+    "native-245": 318825.0993652344,
+    "native-209": 320233.0451660156,
+    "native-212": 328888.90283203125,
+    "native-203": 330260.4931640625,
+    "native-25": 330923.73681640625,
+    "native-214": 338441.8186035156,
+    "native-151": 343159.2998046875,
+    "native-219": 345694.9895019531,
+    "native-30": 347716.7888183594,
+    "native-217": 347717.0593261719,
+    "native-208": 353889.802734375,
+    "native-35": 355921.58349609375,
+    "native-224": 355950.30224609375,
+    "native-222": 363396.5207519531,
+    "native-218": 364119.9509277344,
+    "native-40": 364190.3068847656,
+    "native-45": 365444.4333496094,
+    "native-156": 366137.87646484375,
+    "native-229": 366139.72998046875,
+    "native-227": 370216.267578125,
+    "native-232": 373617.0280761719,
+    "native-234": 374261.1708984375,
+    "native-213": 374323.734375,
+    "native-50": 377682.61328125,
+    "native-5": 378309.384765625,
+    "native-239": 382396.73095703125,
+    "native-223": 383745.58642578125,
+    "native-237": 387806.2829589844,
+    "native-16": 389883.05615234375,
+    "native-242": 390544.7038574219,
+    "native-244": 394485.60595703125,
+    "native-228": 394552.50439453125,
+    "native-60": 394660.33447265625,
+    "native-55": 396596.5888671875,
+    "native-249": 402633.1845703125,
+    "native-233": 402670.9602050781,
+    "native-7": 402715.5031738281,
+    "native-9": 404783.05517578125,
+    "native-247": 406700.9484863281,
+    "native-238": 410780.58154296875,
+    "native-65": 412816.1682128906,
+    "native-70": 412818.7824707031,
+    "native-59": 414876.8439941406,
+    "native-161": 416885.59326171875,
+    "native-57": 418943.5959472656,
+    "native-243": 433913.5725097656,
+    "native-75": 434508.0993652344,
+    "native-166": 435175.1552734375,
+    "native-62": 435950.853515625,
+    "native-64": 442134.73681640625,
+    "native-248": 442706.9931640625,
+    "native-80": 444742.69873046875,
+    "native-85": 450195.14306640625,
+    "native-72": 452251.0400390625,
+    "native-67": 452251.1550292969,
+    "native-171": 456933.63134765625,
+    "native-8": 458288.2238769531,
+    "native-58": 458288.4626464844,
+    "native-74": 459021.69677734375,
+    "native-69": 465050.966796875,
+    "native-95": 467060.580078125,
+    "native-82": 471062.40087890625,
+    "native-90": 473097.9123535156,
+    "native-77": 473109.466796875,
+    "native-79": 475167.5236816406,
+    "native-84": 479283.9404296875,
+    "native-63": 481210.6806640625,
+    "native-87": 481299.271484375,
+    "native-68": 481307.2741699219,
+    "native-176": 483233.4599609375,
+    "native-89": 483380.2878417969,
+    "native-92": 485292.9611816406,
+    "native-97": 491440.58056640625,
+    "native-73": 493392.1770019531,
+    "native-94": 493513.2082519531,
+    "native-181": 499651.48388671875,
+    "native-99": 501607.6716308594,
+    "native-78": 507881.1467285156,
+    "native-186": 520650.748046875,
+    "native-83": 521323.41455078125,
+    "native-191": 528921.2438964844,
+    "native-88": 536988.9782714844,
+    "native-93": 538346.833984375,
+    "native-98": 546033.2958984375,
+    "native-196": 551234.5458984375,
+    "native-201": 561286.265625,
+    "native-206": 579574.5236816406,
+    "native-21": 588297.2404785156,
+    "native-211": 611538.1606445312,
+    "native-216": 614961.3266601562,
+    "native-221": 634705.3579101562,
+    "native-226": 638379.0014648438,
+    "native-231": 657862.5751953125,
+    "native-236": 661347.8981933594,
+    "native-241": 684559.5471191406,
+    "native-246": 690688.5986328125,
+    "native-26": 709003.8684082031,
+    "native-31": 713736.7060546875,
+    "native-36": 732045.3601074219,
+    "native-41": 739444.236328125,
+    "native-46": 759947.8928222656,
+    "native-51": 767374.4611816406,
+    "native-56": 785705.9870605469,
+    "native-6": 791810.6606445312,
+    "native-61": 810122.0061035156,
+    "native-66": 817570.9846191406,
+    "native-71": 842029.2780761719,
+    "native-76": 845473.6782226562,
+    "native-81": 866405.8488769531,
+    "native-86": 872499.3173828125,
+    "native-91": 893427.2365722656,
+    "native-96": 898188.4462890625
+  },
+  "maximumAttemptDelayMs": 898188.4462890625,
+  "attemptTargetMs": 300000,
+  "attemptTargetPassed": false,
+  "published": [
+    {
+      "platform": "INSTAGRAM",
+      "n": 50,
+      "maximumDelayMs": 475353
+    },
+    {
+      "platform": "TIKTOK",
+      "n": 50,
+      "maximumDelayMs": 913947
+    },
+    {
+      "platform": "FACEBOOK",
+      "n": 50,
+      "maximumDelayMs": 491561
+    },
+    {
+      "platform": "X",
+      "n": 50,
+      "maximumDelayMs": 501728
+    },
+    {
+      "platform": "LINKEDIN",
+      "n": 50,
+      "maximumDelayMs": 546153
+    }
+  ],
+  "confirmed": 250,
+  "reportingRows": 250,
+  "maximumPublishingDelayMs": 913947,
+  "tikTokConvertedImages": 50,
+  "refreshRequests": 0,
+  "transactionMs": {
+    "p50": 1399.3033069999656,
+    "p95": 1411.4738709999947,
+    "max": 1524.8404370000353,
+    "count": 1267
+  },
+  "success": true,
+  "finalStates": [
+    {
+      "platform": "FACEBOOK",
+      "phase": "CONFIRMED",
+      "n": 50
+    },
+    {
+      "platform": "X",
+      "phase": "CONFIRMED",
+      "n": 50
+    },
+    {
+      "platform": "TIKTOK",
+      "phase": "CONFIRMED",
+      "n": 50
+    },
+    {
+      "platform": "INSTAGRAM",
+      "phase": "CONFIRMED",
+      "n": 50
+    },
+    {
+      "platform": "LINKEDIN",
+      "phase": "CONFIRMED",
+      "n": 50
+    }
+  ],
+  "clusterRemoved": true,
+  "interrupted": false,
+  "sourceArtifact": "showwork-performance-000b2369-db60-43b3-929c-55a9825a5146.json"
+}

@@ -1,4 +1,5 @@
-import { db } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
+import { db as defaultDb } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
 import {
@@ -49,8 +50,12 @@ function buildCaption(post: {
  * own separate error-handling — the post record itself is always the
  * source of truth for what happened.
  */
-export async function publishPostToInstagram(postId: string): Promise<void> {
-  const post = await db.calendarPost.findUnique({
+/** Explicit database port for isolated/staged workers; the default export path is unchanged. */
+export function createInstagramPublisher(database: typeof defaultDb, reporting: typeof recordPublishedSocialPost = recordPublishedSocialPost, preload?: (id: string) => Promise<Prisma.CalendarPostGetPayload<{ include: { assets: true; calendar: { include: { socialConnections: true } } } }> | null>, complete: (operation: () => Promise<void>) => Promise<void> = operation => operation(), onConfirmed?: (data: Record<string, string>) => void) {
+  const db = database;
+  const reportPublished = reporting;
+  return async function publishPostToInstagram(postId: string): Promise<void> {
+  const post = preload ? await preload(postId) : await db.calendarPost.findUnique({
     where: { id: postId },
     include: {
       assets: { orderBy: { displayOrder: "asc" } },
@@ -140,6 +145,8 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
 
     const permalink = await getMediaPermalink(mediaId, instagramAccessToken);
 
+    onConfirmed?.({ instagramPublishStatus: "PUBLISHED", instagramPublishedAt: new Date().toISOString(), instagramMediaId: mediaId, ...(permalink ? { instagramPermalink: permalink } : {}) });
+    await complete(async () => {
     await db.calendarPost.update({
       where: { id: postId },
       data: {
@@ -151,7 +158,7 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
       },
     });
     try {
-      await recordPublishedSocialPost({
+      await reportPublished({
         calendarId: post.calendarId,
         calendarPostId: post.id,
         platform: "INSTAGRAM",
@@ -166,9 +173,15 @@ export async function publishPostToInstagram(postId: string): Promise<void> {
       // platform post into a false publishing failure.
       console.error(`Could not link Instagram post ${postId} to reporting:`, reportingError);
     }
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to publish to Instagram";
     console.error(`Instagram publish failed for post ${postId}:`, err);
     await fail(message);
   }
+  };
+}
+
+export async function publishPostToInstagram(postId: string): Promise<void> {
+  return createInstagramPublisher(defaultDb)(postId);
 }

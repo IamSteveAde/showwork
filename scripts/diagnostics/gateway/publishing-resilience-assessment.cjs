@@ -1,0 +1,46 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks');
+const {Prisma}=require('@prisma/client');
+const {startCluster}=require('../../../tests/helpers/isolated-postgres.cjs'),{load}=require('../../../tests/helpers/load-typescript.cjs');
+const {schema,fixtures}=require('./staging-assessment.cjs');
+const {PLATFORMS}=require('./profiles.cjs');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const result={productionConnected:false,hostedMeasurements:false,syntheticProviderOnly:true,databasePool:5,checks:[]};let cluster;
+async function main(){
+  cluster=await startCluster();const db=cluster.stage;await schema(db);
+  const {runPublishingBatchScheduler}=load('lib/publishing/batchScheduler.ts');
+  const {createPublishingRuntime}=load('lib/publishing/runtime.ts');
+  const {createDurablePublishingTransport,executePublishingEnvelope}=load('lib/publishing/transports.ts');
+  async function remaining(){return (await db.$queryRawUnsafe(`SELECT count(*)::int AS n FROM "CalendarPost" WHERE CASE WHEN platform='INSTAGRAM' THEN "instagramPublishStatus"::text WHEN platform='TIKTOK' THEN "tikTokPublishStatus"::text ELSE "publishStatus"::text END='SCHEDULED'`))[0].n;}
+  async function worker(job,done){const field=job.platform==='INSTAGRAM'?'instagramPublishStatus':job.platform==='TIKTOK'?'tikTokPublishStatus':'publishStatus';const claimed=await db.calendarPost.updateMany({where:{id:job.postId,platform:job.platform,updatedAt:new Date(job.dispatchedAt),publishWorkerStartedAt:null,[field]:'PUBLISHING',approvalStatus:'APPROVED',isAiDraft:false},data:{publishWorkerStartedAt:new Date()}});if(!claimed.count)return;assert.ok(!done.has(job.postId));done.add(job.postId);await db.$executeRawUnsafe(`UPDATE "CalendarPost" SET "${field}"='PUBLISHED' WHERE id=$1`,job.postId);}
+  function dispatch(done,ack=0){return async c=>{await sleep(ack);return worker({postId:c.id,platform:c.platform,dispatchedAt:c.dispatchedAt.toISOString()},done);};}
+  // Durable SQL queue is a synthetic transport fixture, not a production migration.
+  await db.$executeRawUnsafe(`CREATE TABLE fixture_queue(key text PRIMARY KEY,payload jsonb NOT NULL)`);await fixtures(db,50,'durable');let releases=0;
+  const queue=()=>({enqueue:async(payload,key)=>{await db.$executeRawUnsafe(`INSERT INTO fixture_queue VALUES ($1,$2::jsonb) ON CONFLICT DO NOTHING`,key,JSON.stringify(payload));return {durable:true,idempotencyKey:key};},close:async()=>{}});
+  const runtime=createPublishingRuntime({database:db,transport:createDurablePublishingTransport(queue()),leadership:{acquire:async()=>async()=>{releases++;}}});
+  const admitted=await runtime.tick();await runtime.close();assert.equal(releases,1);assert.equal(Object.values(admitted.platforms).reduce((n,p)=>n+p.dispatched,0),50);
+  const saved=await db.$queryRawUnsafe('SELECT payload FROM fixture_queue ORDER BY key'),done=new Set();const restarted=createDurablePublishingTransport(queue());
+  for(const {payload}of saved){await restarted.dispatch({id:payload.postId,platform:payload.platform,dispatchedAt:new Date(payload.dispatchedAt)});for(let delivery=0;delivery<2;delivery++)await executePublishingEnvelope(payload,async(id,platform,date)=>worker({postId:id,platform,dispatchedAt:date.toISOString()},done));}
+  assert.equal((await db.$queryRawUnsafe('SELECT count(*)::int AS n FROM fixture_queue'))[0].n,50);assert.equal(done.size,50);result.durableQueue={committedJobs:50,recreatedTransport:true,redeliveries:100,workerStarts:50,duplicateWorkerStarts:0};
+  result.checks.push('Portable runtime persists committed leases before acknowledgement; recreated transport and duplicate delivery preserve one worker start');
+  // Overlapping invocation pressure at the conservative tail profile.
+  function latencyAdapter(values){let requested=0,executing=0,peakRequested=0,peakExecuting=0,index=0;const times=[],errorCodes=[];return {get metrics(){return {peakRequested,peakExecuting,times,errorCodes};},$transaction:async(cb,options)=>{const latency=values[index++%values.length],started=performance.now();requested++;peakRequested=Math.max(peakRequested,requested);try{return await db.$transaction(async tx=>{executing++;peakExecuting=Math.max(peakExecuting,executing);try{await sleep(latency*.3);const value=await cb({$executeRaw:async(...a)=>{await sleep(latency*.28);return tx.$executeRaw(...a);},$queryRaw:async(...a)=>{await sleep(latency*.28);return tx.$queryRaw(...a);}});await sleep(latency*.14);return value;}finally{executing--;}} ,options);}catch(error){errorCodes.push(error.code||error.name);throw error;}finally{requested--;times.push(performance.now()-started);}}};}
+  await db.$executeRawUnsafe('TRUNCATE "CalendarPost"');await fixtures(db,250,'overlap-tail');const overlapDone=new Set(),a=latencyAdapter([1923]);const started=performance.now();const runs=await Promise.all([1,2].map(()=>runPublishingBatchScheduler({database:a,dispatch:dispatch(overlapDone,100)})));const recovery=[];
+  for(let tick=0;tick<5&&await remaining();tick++)recovery.push(await runPublishingBatchScheduler({database:a,dispatch:dispatch(overlapDone,100)}));assert.equal(overlapDone.size,250);assert.equal(await remaining(),0);assert.ok(a.metrics.peakExecuting<=5);result.overlap={injectedTransactionMs:1923,runs,recovery,elapsedMs:performance.now()-started,...a.metrics,duplicates:0};
+  // Arrivals occur while admission is running, with a real five-connection pool.
+  await db.$executeRawUnsafe('TRUNCATE "CalendarPost"');await fixtures(db,250,'hot','INSTAGRAM');await fixtures(db,25,'initial');const arrivalsDone=new Set(),mixed=latencyAdapter([1300,1380,1600,1923]),cycles=[];
+  const arrivalLoop=(async()=>{for(let i=0;i<20;i++){await sleep(750);await fixtures(db,5,'arriving-'+i);}})();
+  for(let tick=0;tick<5;tick++){const value=await runPublishingBatchScheduler({database:mixed,dispatch:dispatch(arrivalsDone,100)});cycles.push(value);if(tick===0)assert.ok(PLATFORMS.every(p=>value.platforms[p].dispatched>=5));if(tick>=1&&arrivalsDone.size===375)break;}
+  await arrivalLoop;for(let tick=0;tick<3&&await remaining();tick++)cycles.push(await runPublishingBatchScheduler({database:mixed,dispatch:dispatch(arrivalsDone,100)}));assert.equal(arrivalsDone.size,375);assert.equal(await remaining(),0);result.arrivals={hotInstagramInitial:250,initialBalanced:25,arrivals:100,arrivalIntervalMs:750,cycles,duplicates:0,...mixed.metrics};
+  result.checks.push('In-flight mixed-platform arrivals under 1.3–1.923 s injected latency drain without starvation or duplicate worker starts');
+  // Isolate a platform database failure; healthy platforms continue, failed due
+  // rows remain scheduled and recover in a subsequent cycle.
+  await db.$executeRawUnsafe('TRUNCATE "CalendarPost"');await fixtures(db,50,'isolation');const recovered=new Set();
+  const failedDb={$transaction:(cb,options)=>db.$transaction(tx=>cb({$executeRaw:(...args)=>tx.$executeRaw(...args),$queryRaw:async sql=>{if(sql.values.includes('INSTAGRAM'))throw new Error('Synthetic platform failure');return tx.$queryRaw(sql);}}),options)};
+  const failed=await runPublishingBatchScheduler({database:failedDb,dispatch:dispatch(recovered)});assert.equal(failed.platforms.INSTAGRAM.claimed,0);assert.ok(PLATFORMS.slice(1).every(p=>failed.platforms[p].dispatched===10));await runPublishingBatchScheduler({database:db,dispatch:dispatch(recovered)});assert.equal(recovered.size,50);result.platformFailure={healthyFirstCycle:40,recoveredNextCycle:10,duplicates:0};
+  // A lost COMMIT acknowledgement must not cause blind dispatch or republishing.
+  await db.$executeRawUnsafe('TRUNCATE "CalendarPost"');await fixtures(db,5,'uncertain');const uncertain={$transaction:async(cb,options)=>{await db.$transaction(cb,options);throw new Error('Synthetic committed transaction with lost acknowledgement');}};const unknown=await runPublishingBatchScheduler({database:uncertain,dispatch:()=>assert.fail('Unconfirmed claim dispatched')});assert.ok(Object.values(unknown.platforms).every(p=>p.claimed===0));const rows=await db.$queryRawUnsafe(`SELECT count(*)::int AS n FROM "CalendarPost" WHERE CASE WHEN platform='INSTAGRAM' THEN "instagramPublishStatus"::text WHEN platform='TIKTOK' THEN "tikTokPublishStatus"::text ELSE "publishStatus"::text END='PUBLISHING'`);assert.equal(rows[0].n,5);
+  await db.$executeRawUnsafe(`UPDATE "CalendarPost" SET "updatedAt"=CURRENT_TIMESTAMP-interval '20 minutes'`);const stale=await runPublishingBatchScheduler({database:db,dispatch:()=>assert.fail('Unknown provider result retried')});assert.equal(Object.values(stale.platforms).reduce((n,p)=>n+p.stale,0),5);result.ambiguousCommit={unconfirmedClaims:5,blindDispatches:0,staleFailures:5,manualReconciliationRequired:true};
+  result.success=true;
+}
+main().catch(error=>{result.success=false;result.error={code:error.code||error.name,message:'RESILIENCE_ASSESSMENT_FAILED'};process.exitCode=1;}).finally(async()=>{await cluster?.close();result.clusterRemoved=cluster?!fs.existsSync(cluster.directory):false;fs.writeFileSync('/tmp/showwork-publishing-resilience-results.json',JSON.stringify(result,null,2));console.log(JSON.stringify({success:result.success,file:'/tmp/showwork-publishing-resilience-results.json',clusterRemoved:result.clusterRemoved}));});

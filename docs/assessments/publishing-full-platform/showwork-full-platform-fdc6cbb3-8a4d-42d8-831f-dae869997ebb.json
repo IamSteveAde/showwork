@@ -1,0 +1,114 @@
+{
+  "runId": "fdc6cbb3-8a4d-42d8-831f-dae869997ebb",
+  "productionAccess": false,
+  "realPublishing": false,
+  "hostedMeasurement": false,
+  "count": 10,
+  "injectedTransactionMs": 0,
+  "controlLatencyMs": 0,
+  "backendCap": 5,
+  "errors": [],
+  "platformFailures": {
+    "0": 0,
+    "1": 0
+  },
+  "backendPeak": 5,
+  "dataPeak": 3,
+  "modelCalls": {
+    "calendarPost.findUniqueOrThrow": 16,
+    "socialCalendar.findUnique": 10,
+    "socialConnection.findFirst": 2,
+    "socialConnection.findUniqueOrThrow": 6,
+    "calendarPost.update": 14,
+    "socialConnection.findUnique": 12,
+    "publishedSocialPost.upsert": 12,
+    "tikTokAccountRuntime.upsert": 8,
+    "tikTokAccountRuntime.update": 8
+  },
+  "ticks": [
+    {
+      "leader": true,
+      "skipped": false,
+      "rounds": 1,
+      "durationMs": 107.97252200000003,
+      "controlErrors": 0,
+      "platforms": {
+        "INSTAGRAM": {
+          "claimed": 2,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "TIKTOK": {
+          "claimed": 2,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "FACEBOOK": {
+          "claimed": 2,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "LINKEDIN": {
+          "claimed": 2,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        },
+        "X": {
+          "claimed": 2,
+          "errors": 0,
+          "deferred": false,
+          "recoveredCommits": 0
+        }
+      }
+    }
+  ],
+  "admissionMs": 110.5747280000005,
+  "totalPublishingMs": 3811.8387359999997,
+  "published": [
+    {
+      "platform": "INSTAGRAM",
+      "n": 2,
+      "maximumDelayMs": 11653
+    },
+    {
+      "platform": "TIKTOK",
+      "n": 2,
+      "maximumDelayMs": 14669
+    },
+    {
+      "platform": "FACEBOOK",
+      "n": 2,
+      "maximumDelayMs": 12648
+    },
+    {
+      "platform": "X",
+      "n": 2,
+      "maximumDelayMs": 11811
+    },
+    {
+      "platform": "LINKEDIN",
+      "n": 2,
+      "maximumDelayMs": 11773
+    }
+  ],
+  "confirmed": 10,
+  "reportingRows": 10,
+  "maximumPublishingDelayMs": 14669,
+  "duplicateAttempts": 0,
+  "tikTokConvertedImages": 2,
+  "refreshRequests": 0,
+  "transactionMs": {
+    "p50": 12.90391400000044,
+    "p95": 27.918974000000162,
+    "max": 31.714883999999984,
+    "count": 82
+  },
+  "success": true,
+  "clusterRemoved": true,
+  "interrupted": false,
+  "sourceArtifact": "showwork-full-platform-fdc6cbb3-8a4d-42d8-831f-dae869997ebb.json"
+}

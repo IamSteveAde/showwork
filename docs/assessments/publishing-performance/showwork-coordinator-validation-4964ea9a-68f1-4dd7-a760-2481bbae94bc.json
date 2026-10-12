@@ -1,0 +1,11 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "checks": [
+    "Actual parameterized coordinator returns UTC lease dates and bigint epochs",
+    "Lost committed PREPARED, EXTERNAL_PENDING, CONFIRMED and PROVIDER_PENDING replies recover by reading durable state, with one create per post"
+  ],
+  "success": true,
+  "clusterRemoved": true,
+  "sourceArtifact": "showwork-coordinator-validation-4964ea9a-68f1-4dd7-a760-2481bbae94bc.json"
+}

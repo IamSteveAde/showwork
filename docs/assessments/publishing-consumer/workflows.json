@@ -1,0 +1,14 @@
+{
+  "productionAccess": false,
+  "realPublishing": false,
+  "transactionPoolerBackendCap": 5,
+  "checks": [
+    "All five platforms: cancellation before external boundary produces zero publish requests",
+    "Reschedule: old lease never publishes, future date not admitted, new due lease publishes once per platform",
+    "Manual repost as a new post ID publishes once; same-ID status reset cannot bypass confirmed-job deduplication",
+    "TikTok accepted operation remains PUBLISHING, is not reinitialized/cancelled, and confirms only after existing-result lookup",
+    "Uncertain outcome cannot be cancelled/requeued/status-reset into a second publish attempt",
+    "Temporary database outage preserves READY job and publishes exactly once on recovery"
+  ],
+  "success": true
+}
