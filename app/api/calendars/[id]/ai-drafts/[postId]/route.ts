@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { requirePostPlatform } from "@/lib/calendarPosts";
   import { NextRequest, NextResponse } from "next/server";
@@ -188,6 +189,8 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       params: Promise<{ id: string; postId: string }>;
     }
   ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/ai-drafts/[postId]/route.ts#POST@183",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
     const creator = await getCurrentCreator();
 
     if (!creator) {
@@ -572,6 +575,8 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       params: Promise<{ id: string; postId: string }>;
     }
   ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/ai-drafts/[postId]/route.ts#PATCH@567",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
     const creator = await getCurrentCreator();
 
     if (!creator) {
@@ -714,6 +719,8 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       params: Promise<{ id: string; postId: string }>;
     }
   ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/ai-drafts/[postId]/route.ts#DELETE@709",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
     const creator = await getCurrentCreator();
 
     if (!creator) {

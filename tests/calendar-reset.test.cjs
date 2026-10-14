@@ -12,6 +12,7 @@ function route({ creator = { id: 'owner' }, owner = 'owner', confirmation = 'RES
     socialCalendar: { update: async (args) => calls.push(['plan', args]) },
   };
   const mocks = {
+    '@/lib/publishing/applicationBoundary': require('./helpers/load-typescript.cjs').load('lib/publishing/applicationBoundary.ts'),
     '@/lib/calendarPermissions': { canAccessCalendarById: async () => active },
     'next/server': { NextResponse: { json: (body, options) => ({ body, status: options?.status || 200 }) } },
     '@/lib/auth': { getCurrentCreator: async () => creator },

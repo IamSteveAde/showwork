@@ -1,5 +1,6 @@
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { Resend } from "resend";
+import {nativeApplicationContext} from '@/lib/publishing/nativeApplicationContext';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -23,7 +24,9 @@ type EmailPayload = Parameters<typeof resend.emails.send>[0];
  * Brand images are referenced through absolute HTTPS URLs from the public site.
  */
 async function sendEmail(input: EmailPayload, idempotencyKey?: string) {
-  const { data, error } = await resend.emails.send(input, idempotencyKey ? { idempotencyKey } : undefined);
+  const scoped=nativeApplicationContext();
+  if(scoped&&!scoped.notify)throw Error('EXPLICIT_NOTIFICATION_PORT_REQUIRED');
+  const { data, error } = scoped?await scoped.notify!(input as unknown as Record<string,unknown>,idempotencyKey):await resend.emails.send(input, idempotencyKey ? { idempotencyKey } : undefined);
 
   if (error) {
     console.error("[Showwork email] Resend send failed", {

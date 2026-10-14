@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useEffect, useState } from "react";
 import { consumeReportingRecommendation, REPORTING_RECOMMENDATION_EVENT } from "@/lib/reporting/recommendationHandoff";
@@ -165,7 +166,7 @@ const togglePlatform = (platform: string) => {
     setBillingBlocked(false);
 
     try {
-     const res = await fetch(
+     const res = await calendarMutationFetch(
   `/api/calendars/${encodeURIComponent(calendarId)}/ai-generate`,
   {
         method: "POST",

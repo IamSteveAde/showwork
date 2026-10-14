@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import { useEffect, useState } from "react";
 type Privacy = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 const labels: Record<Privacy, string> = { PUBLIC_TO_EVERYONE: "Public", MUTUAL_FOLLOW_FRIENDS: "Friends", FOLLOWER_OF_CREATOR: "Followers", SELF_ONLY: "Only me" };
@@ -11,7 +12,7 @@ export default function TikTokPrivacySelect({ calendarId, value, onChange }: { c
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError(""); setOptions([]); setAccount("");
-    fetch(`/api/calendars/${calendarId}/tiktok/creator-info`, { signal: controller.signal }).then(async response => {
+    calendarMutationFetch(`/api/calendars/${calendarId}/tiktok/creator-info`, { signal: controller.signal }).then(async response => {
       const data = await response.json(); if (!response.ok) throw new Error(data.error);
       setOptions(data.privacyOptions.filter((option: string) => option in labels)); setAccount(data.accountName);
     }).catch(error => { if (!controller.signal.aborted) setError(error.message); })

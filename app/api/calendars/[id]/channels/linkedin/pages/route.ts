@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import { NextRequest, NextResponse } from "next/server";
@@ -20,6 +21,7 @@ async function account(context: Context) {
 }
 const json = (value: unknown, status = 200) => NextResponse.json(value, { status, headers: { "Cache-Control": "no-store" } });
 export async function GET(req: NextRequest, context: Context) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/channels/linkedin/pages/route.ts#GETcanonical',Array.from(arguments)); } /* end-canonical-integration-boundary */
   try {
     const connection = await account(context);
     if (req.nextUrl.searchParams.get("capabilities") === "true") {
@@ -35,6 +37,8 @@ export async function GET(req: NextRequest, context: Context) {
   catch (error) { return json({ error: error instanceof Error ? error.message : "Could not load LinkedIn Pages." }, 400); }
 }
 export async function POST(req: NextRequest, context: Context) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/channels/linkedin/pages/route.ts#POST@37",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   if (req.headers.get("origin") !== req.nextUrl.origin) return json({ error: "Invalid request origin." }, 403);
   try {
     const connection = await account(context);

@@ -1,3 +1,5 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
+import {nativeApplicationContext} from '@/lib/publishing/nativeApplicationContext';
 import {
   S3Client,
   PutObjectCommand,
@@ -117,6 +119,10 @@ export async function completeMultipartUpload(
   uploadId: string,
   parts: { partNumber: number; etag: string }[]
 ): Promise<void> {
+/* canonical-only-helper */
+  const applicationScope=nativeApplicationContext();
+  if(applicationScope){if(!applicationScope.completeMultipartUpload)throw Error('EXPLICIT_MULTIPART_PORT_REQUIRED');await applicationScope.completeMultipartUpload(key,uploadId,parts.map(part=>({PartNumber:part.partNumber,ETag:part.etag})));return;}
+/* end-canonical-only-helper */
   const requestedPartNumbers = [...new Set(parts.map((part) => part.partNumber))].sort((a, b) => a - b);
   if (
     requestedPartNumbers.length !== parts.length ||
@@ -203,6 +209,11 @@ export function isTikTokPreparedKey(key: string) {
 }
 
 export async function cleanupTikTokPreparedFiles() {
+/* canonical-only-helper */
+  // The intended VPS release retires age-only deletion even in standalone
+  // Netlify storage functions, which do not install the Next composition.
+  return {deleted:0,retired:true};
+/* end-canonical-only-helper */
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
   let deleted = 0;
   // New copies stay alongside originals to retain verified URL prefixes.
@@ -262,5 +273,7 @@ export async function getObjectSize(key: string): Promise<number> {
  * clean it up rather than leaving it as dead storage.
  */
 export async function deleteObject(key: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { const scoped=nativeApplicationContext();if(scoped?.deleteObject)return scoped.deleteObject(key);await assertLegacyPublishingAllowed("lib/r2.ts#deleteObject@264"); } /* end-canonical-integration-boundary */
+
   await r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
 }

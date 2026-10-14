@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -23,7 +24,7 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const response = await calendarMutationFetch(endpoint, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not load WhatsApp connection.");
       setConfigured(data.configured);
@@ -39,7 +40,7 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
     event.preventDefault();
     setBusy(true); setError(""); setNotice("");
     try {
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" },
+      const response = await calendarMutationFetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ businessAccountId, phoneNumberId, accessToken }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not connect WhatsApp.");
@@ -51,7 +52,7 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
   async function disconnect() {
     setBusy(true); setError("");
     try {
-      const response = await fetch(endpoint, { method: "DELETE" });
+      const response = await calendarMutationFetch(endpoint, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not disconnect WhatsApp.");
       setConnection(null); setConfirming(false); setEditing(false); setAccessToken("");

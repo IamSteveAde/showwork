@@ -1,0 +1,15 @@
+{
+  "changedRefs": [
+    "refs/heads/development/vps-publishing"
+  ],
+  "main": {
+    "before": "6272c5a5e83e5c150b65dd78d1e83e7eff51f0cb",
+    "after": "6272c5a5e83e5c150b65dd78d1e83e7eff51f0cb"
+  },
+  "originMain": {
+    "before": "6fa631cac883d87fceabb5613a457550f61ceea8",
+    "after": "6fa631cac883d87fceabb5613a457550f61ceea8"
+  },
+  "allOtherRefsUnchanged": true,
+  "networkUsed": false
+}

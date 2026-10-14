@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { Prisma, type SocialPlatform } from "@prisma/client";
 import { PUBLISHING_PLATFORMS } from "./state";
 
@@ -21,6 +22,8 @@ function identifiers(platform: SocialPlatform) {
 /** One atomic statement per platform. Locks are skipped rather than waited on.
  * Only returned, committed rows are eligible for worker dispatch. */
 export async function claimPublishingBatch(transaction: Prisma.TransactionClient, platform: SocialPlatform, now: Date, limit: number, recoverStale: boolean, excludedIds: string[] = []) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/batchClaims.ts#claimPublishingBatch@23"); } /* end-canonical-integration-boundary */
+
   const { status, error } = identifiers(platform);
   const staleBefore = new Date(now.getTime() - 16 * 60_000);
   const acceptedTikTok = platform === "TIKTOK"
@@ -71,6 +74,8 @@ export async function claimPublishingBatch(transaction: Prisma.TransactionClient
 /** Compare the exact dispatch lease; never overwrite a newer claim or a worker
  * that already started, including when an HTTP acknowledgement was lost. */
 export async function failPublishingDispatchBatch(transaction: Prisma.TransactionClient, platform: SocialPlatform, claims: PublishingClaim[]) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/batchClaims.ts#failPublishingDispatchBatch@73"); } /* end-canonical-integration-boundary */
+
   if (!claims.length) return 0;
   const { status, error, statusType } = identifiers(platform);
   const values = Prisma.join(claims.map(claim => Prisma.sql`(${claim.id}, (${claim.dispatchedAt}::timestamptz AT TIME ZONE 'UTC'), ${claim.recoveringTikTok})`));

@@ -1,0 +1,28 @@
+{
+  "branch": "development/vps-publishing",
+  "head": "19d3a66d407514f80a14137d50d5224f9823e301",
+  "commitsScanned": 277,
+  "uniqueBlobsScanned": 2776,
+  "diagnosticJsonAndLogFilesScanned": 70,
+  "commitMetadataFindings": [],
+  "originMatchesRequestedRepository": true,
+  "networkRemoteVerified": false,
+  "historyRewritten": false,
+  "productionAccess": false,
+  "vpsAccess": false,
+  "pushed": false,
+  "tests": {
+    "targetedPassed": 32,
+    "regressionPassed": 137,
+    "typecheckPassed": true
+  },
+  "historyBlocksPush": true,
+  "realCredentialValuesPrinted": false,
+  "finalWorkingTreeScan": {
+    "textFilesScanned": 1066,
+    "binaryFilesHandledBySupplementalScan": 42,
+    "findings": 0,
+    "valuesPrinted": false
+  },
+  "supplementalHighConfidenceFindings": 0
+}

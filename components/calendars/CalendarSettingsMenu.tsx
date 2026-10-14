@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -133,7 +134,7 @@ export default function CalendarSettingsMenu({
     setNameError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${calendarId}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -164,7 +165,7 @@ export default function CalendarSettingsMenu({
     setDeleteError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${calendarId}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}`, {
         method: "DELETE",
       });
 

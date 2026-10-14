@@ -1,0 +1,31 @@
+{
+  "oldHead": "19d3a66d407514f80a14137d50d5224f9823e301",
+  "newHead": "78484da7afe53deec8b359c3294c41f97b8350ed",
+  "commitsPreserved": 277,
+  "commitsRewritten": 168,
+  "allowedPaths": [
+    "public/images/del.html",
+    "docs/publishing-diagnostic-final-permissions.md",
+    "tests/publishing-gateway.test.cjs",
+    "tests/publishing-hardening.test.cjs"
+  ],
+  "allOtherTreesPreserved": true,
+  "allWorkingFilesPreserved": true,
+  "allOtherRefsUnchanged": true,
+  "indexMatchesCleanHead": true,
+  "signatureHeadersRemoved": 0,
+  "backupDirectory": "/Users/dolikin/.local/share/showwork-security-backups/2026-10-12T18-55-58-616Z",
+  "commitMapFile": "/Users/dolikin/.local/share/showwork-security-backups/2026-10-12T18-55-58-616Z/commit-map.json",
+  "networkUsed": false,
+  "pushed": false,
+  "regressionTests": {
+    "passed": 137,
+    "failed": 0
+  },
+  "typecheckPassed": true,
+  "workerStarted": false,
+  "productionAccess": false,
+  "cleanedHistoryScanPassed": true,
+  "workingTreeScanPassed": true,
+  "unresolvedHistoryFindings": 0
+}

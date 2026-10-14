@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import LinkedInPagePicker from "./LinkedInPagePicker";
@@ -64,7 +65,7 @@ export default function AdditionalChannelCard({
     setDisconnecting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/channels/${channel}/disconnect`, {
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/channels/${channel}/disconnect`, {
         method: "POST",
       });
       const data = await response.json().catch(() => ({}));

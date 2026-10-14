@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, assertLegacyFactoryNotRetired } from "@/lib/publishing/applicationBoundary";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { runReliableAdmission } from "./reliableAdmission";
@@ -19,6 +20,9 @@ export function createPortablePublishingRuntime(input: {
     close: () => void;
   };
 }) {
+/* canonical-only-helper */
+  assertLegacyFactoryNotRetired("lib/publishing/portableRuntime.ts#createPortablePublishingRuntime");
+/* end-canonical-only-helper */
   const active = new Set<Promise<unknown>>(), stop = new AbortController();
   async function deliver() {
     const owner = randomUUID(), wake = await input.store.takeWake(owner);
@@ -27,6 +31,8 @@ export function createPortablePublishingRuntime(input: {
     finally { await input.store.dispatchedWake(owner); }
   }
   async function tick() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/portableRuntime.ts#tick@29"); } /* end-canonical-integration-boundary */
+
     if (stop.signal.aborted) throw new Error("Runtime stopping");
     const admission = await runReliableAdmission(input.store);
     await input.store.recoverExpired();
@@ -35,6 +41,8 @@ export function createPortablePublishingRuntime(input: {
     return admission;
   }
   async function consume(generation: string, durationMs = 10 * 60_000) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/portableRuntime.ts#consume@37"); } /* end-canonical-integration-boundary */
+
     if (!/^\d{1,18}$/.test(generation) || !Number.isInteger(durationMs) || durationMs < 1 || durationMs > 10 * 60_000) throw new Error("Invalid bounded consumer hint");
     if (stop.signal.aborted) return { state: "stopping" };
     const task = (async () => {

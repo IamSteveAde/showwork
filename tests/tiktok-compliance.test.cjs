@@ -124,7 +124,7 @@ function nodes(node, match) { if(Array.isArray(node))return node.flatMap(n=>node
 function text(node) {if(Array.isArray(node))return node.map(text).join('');if(React.isValidElement(node))return text(node.props.children);return typeof node==='string'?node:'';}
 function ui(info=creator,p=post()) {
   const values=[];let cursor=0;
-  const react={...React,useState(initial){const index=cursor++;if(!(index in values))values[index]=index===1?info:index===2?false:typeof initial==='function'?initial():initial;return[values[index],value=>{values[index]=typeof value==='function'?value(values[index]):value;}];},useEffect(){},useCallback:f=>f};
+  const react={...React,useState(initial){const index=cursor++;if(!(index in values))values[index]=index===1?info:index===2?{protocol:'legacy'}:index===3?false:typeof initial==='function'?initial():initial;return[values[index],value=>{values[index]=typeof value==='function'?value(values[index]):value;}];},useEffect(){},useCallback:f=>f};
   const mod=load('components/calendars/TikTokPublishing.tsx',{react,'next/navigation':{useRouter:()=>({refresh(){}})}});
   return{render(){cursor=0;return mod.default({calendarId:'calendar',post:p});}};
 }

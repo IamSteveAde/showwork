@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -357,7 +358,7 @@ useEffect(() => {
   const activeAsset = post.assets[activeAssetIdx] ?? post.assets[0] ?? null;
 
   const addComment = async (commentNote: string, timestampSeconds: number) => {
-    const res = await fetch(`/api/social-calendar/${slug}/posts/${post.id}/video-comments`, {
+    const res = await calendarMutationFetch(`/api/social-calendar/${slug}/posts/${post.id}/video-comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ note: commentNote, videoTimestampSeconds: timestampSeconds }),
@@ -376,7 +377,7 @@ useEffect(() => {
   setError(null);
 
   try {
-    const res = await fetch(
+    const res = await calendarMutationFetch(
       `/api/social-calendar/${slug}/posts/${post.id}/review`,
       {
         method: "POST",
@@ -1305,7 +1306,7 @@ export default function ClientCalendarView({
     setError(null);
 
     try {
-      const res = await fetch(`/api/social-calendar/${slug}/respond`, {
+      const res = await calendarMutationFetch(`/api/social-calendar/${slug}/respond`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, note: planNote }),

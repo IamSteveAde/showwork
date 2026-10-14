@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -25,6 +26,8 @@ import { subscribeMetaMessagingAccount } from "@/lib/socialMessaging/meta";
 // picker step is a reasonable follow-up but isn't built yet — most
 // managers only have one Page, so this covers the common case.
 export async function GET(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/instagram/callback/route.ts#GET@27",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const calendarId = req.nextUrl.searchParams.get("state");
   const code = req.nextUrl.searchParams.get("code");
   const oauthError = req.nextUrl.searchParams.get("error");

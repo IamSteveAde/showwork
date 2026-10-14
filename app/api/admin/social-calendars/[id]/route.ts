@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
@@ -21,6 +22,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/social-calendars/[id]/route.ts#PATCH@20")) { return await invokePublishingEntrypoint<never>("app/api/admin/social-calendars/[id]/route.ts#PATCH@20",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const admin = await requireAdmin();
 
   if (!admin) {

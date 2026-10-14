@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {publishingIntegrationInstalled,invokePublishingEntrypoint} from '@/lib/publishing/applicationBoundary';
 import { getCurrentCreator } from '@/lib/auth';
 import { editTeammate, removeTeammate, teamErrorResponse } from '@/lib/calendarTeamService';
 type Context = { params: Promise<{ id: string; collaboratorId: string }> };
 async function action(req: NextRequest, { params }: Context, remove: boolean) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/collaborators/[collaboratorId]/route.ts#actioncanonical',[req,{params}]); } /* end-canonical-integration-boundary */
   const actor = await getCurrentCreator();
   if (!actor) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {

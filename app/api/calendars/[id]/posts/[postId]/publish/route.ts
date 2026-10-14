@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
@@ -5,7 +6,16 @@ import { db } from "@/lib/db";
 import { buildCaption, publishingStatus, statusUpdate, statusWhere, validatePublishContent } from "@/lib/publishing/state";
 import { authorizeTikTokPost } from "@/lib/tiktokAuthorization";
 
+/* canonical-only-reader */
+export async function GET(req: NextRequest, context: {params:Promise<{id:string;postId:string}>}) {
+  if (!publishingIntegrationInstalled()) return NextResponse.json({protocol:'legacy'},{headers:{'Cache-Control':'no-store'}});
+  return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/posts/[postId]/publish/route.ts#GETcanonical', [req,context]);
+}
+/* end-canonical-only-reader */
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; postId: string }> }) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/posts/[postId]/publish/route.ts#POST@8",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id, postId } = await params;

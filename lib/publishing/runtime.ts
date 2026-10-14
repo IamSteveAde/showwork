@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, assertLegacyFactoryNotRetired } from "@/lib/publishing/applicationBoundary";
 import { runPublishingBatchScheduler, type PublishingBatchDatabase } from "./batchScheduler";
 import type { PublishingClaim } from "./batchClaims";
 
@@ -25,6 +26,9 @@ type RuntimeOptions = {
 /** Adds service lifecycle around the same one-minute admission core without
  * changing the deployed Netlify handler. No timer starts on import. */
 export function createPublishingRuntime(options: RuntimeOptions) {
+/* canonical-only-helper */
+  assertLegacyFactoryNotRetired("lib/publishing/runtime.ts#createPublishingRuntime");
+/* end-canonical-only-helper */
   const clock = options.clock ?? Date.now;
   let stopping = false;
   let active: Promise<unknown> | undefined;
@@ -32,6 +36,8 @@ export function createPublishingRuntime(options: RuntimeOptions) {
   let closing: Promise<void> | undefined;
 
   async function tick() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/runtime.ts#tick@34"); } /* end-canonical-integration-boundary */
+
     if (stopping) return { skipped: "stopping" as const };
     if (active) return { skipped: "busy" as const };
     const startedAt = clock();

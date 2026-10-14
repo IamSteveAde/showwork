@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import {publishingIntegrationInstalled,invokePublishingEntrypoint} from '@/lib/publishing/applicationBoundary';
 import { importAccess } from "@/lib/calendarImport/access";
 import { confirmImport, ImportError } from "@/lib/calendarImport/confirmation";
 
@@ -7,6 +8,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/imports/confirm/route.ts#POSTcanonical',Array.from(arguments)); } /* end-canonical-integration-boundary */
   const { id } = await params;
   const access = await importAccess(id);
   if (access.error) return access.error;

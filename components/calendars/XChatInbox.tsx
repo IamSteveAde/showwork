@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useEffect, useRef, useState } from "react";
 import type { UnifiedInboxConversation } from "@/lib/xChat/inbox";
@@ -72,7 +73,7 @@ export default function XChatInbox({ calendarId, connectionId, activeConversatio
   }, [unlocked]);
 
   async function request<T>(action: string, params: Record<string, string> = {}, body?: unknown): Promise<T> {
-    const response = await fetch(`${base}&${new URLSearchParams({ action, ...params })}`, {
+    const response = await calendarMutationFetch(`${base}&${new URLSearchParams({ action, ...params })}`, {
       cache: "no-store", method: body === undefined ? "GET" : "POST",
       ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
     });

@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ export default function CalendarRowActions({
     setError(null);
 
     try {
-      const res = await fetch(`/api/admin/social-calendars/${calendarId}`, {
+      const res = await calendarMutationFetch(`/api/admin/social-calendars/${calendarId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

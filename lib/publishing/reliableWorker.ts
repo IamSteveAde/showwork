@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, assertLegacyFactoryNotRetired } from "@/lib/publishing/applicationBoundary";
 import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import type { DurableJob, ReliablePublishingStore, PublicationProof } from "./reliableStore";
@@ -7,6 +8,9 @@ import { PublishingDatabaseGate } from "./batchScheduler";
  * validation and all existing provider behavior. No production worker imports this. */
 export type PublishingProviderResult = string | { state: "published"; reference: string; reportingComplete: boolean } | { state: "finalization-pending"; reference: string } | { state: "accepted"; durable?: boolean; reference: string } | { state: "rejected"; reason: string; resetTikTokInit?: boolean } | { state: "retryable"; reason: string; resetTikTokInit?: boolean };
 export function createReliableWorker(store: ReliablePublishingStore, external: (job: DurableJob, signal: AbortSignal) => Promise<PublishingProviderResult>, options: { externalTimeoutMs?: number; shutdownGraceMs?: number; concurrency?: number; lateBoundary?: boolean; accountAware?: boolean; preflightMany?: (jobs: DurableJob[]) => Promise<void>; preflight?: (job: DurableJob, signal: AbortSignal) => Promise<void | { accountId: string }>; afterJob?: (job: DurableJob) => void; abortOutcome?: (job: DurableJob) => PublishingProviderResult | undefined; knownProof?: (job: DurableJob) => PublicationProof | undefined; knownReference?: (job: DurableJob) => string | undefined } = {}) {
+/* canonical-only-helper */
+  assertLegacyFactoryNotRetired("lib/publishing/reliableWorker.ts#createReliableWorker");
+/* end-canonical-only-helper */
   let stopping = false;
   const active = new Set<Promise<unknown>>();
   const concurrency = options.concurrency ?? 2;
@@ -19,6 +23,8 @@ export function createReliableWorker(store: ReliablePublishingStore, external: (
   const shutdownGraceMs = options.shutdownGraceMs ?? 5000;
   if (!Number.isInteger(externalTimeoutMs) || externalTimeoutMs < 1 || externalTimeoutMs > 12 * 60_000 || !Number.isInteger(shutdownGraceMs) || shutdownGraceMs < 1 || shutdownGraceMs > 10_000) throw new Error("Invalid worker deadline");
   async function execute(job: DurableJob, ownedToken?: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableWorker.ts#execute@21"); } /* end-canonical-integration-boundary */
+
     // An owned token is created privately by runBatch in this live worker. Queue
     // retries never resume a database token; they must claim with a new UUID.
     const token = ownedToken ?? randomUUID();

@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, assertLegacyFactoryNotRetired } from "@/lib/publishing/applicationBoundary";
 import { Prisma, type PrismaClient, type SocialPlatform } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PUBLISHING_PLATFORMS } from "./state";
@@ -18,6 +19,9 @@ function field(platform: SocialPlatform) {
 }
 
 export function createReliablePublishingStore(database: Database, options: { dataSlots?: 3 | 4; coordination?: "autocommit" | "budgeted" } = {}) {
+/* canonical-only-helper */
+  assertLegacyFactoryNotRetired("lib/publishing/reliableStore.ts#createReliablePublishingStore");
+/* end-canonical-only-helper */
   const dataSlots = options.dataSlots ?? 3;
   if (![3, 4].includes(dataSlots)) throw new Error("Invalid global data budget");
   const query = <T,>(sql: Prisma.Sql) => database.$queryRaw<T>(sql);
@@ -31,6 +35,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return options.coordination === "budgeted" ? budget("worker", tx => tx.$queryRaw<T>(sql), undefined, undefined, consumer) : query<T>(sql);
   }
   async function leader(owner: string): Promise<Leader | null> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#leader@33"); } /* end-canonical-integration-boundary */
+
     const rows = await query<Leader[]>(Prisma.sql`UPDATE "PublishingLeader" SET owner=${owner},epoch=epoch+1,
       "leaseUntil"=clock_timestamp()+interval '30 seconds',"lastMinute"=floor(extract(epoch FROM clock_timestamp())/60)::bigint
       WHERE id=1 AND (owner IS NULL OR "leaseUntil"<=clock_timestamp())
@@ -43,6 +49,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return !!rows[0]?.needed;
   }
   async function releaseLeader(l: Leader) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#releaseLeader@45"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`UPDATE "PublishingLeader" SET owner=NULL,"leaseUntil"=NULL WHERE id=1 AND owner=${l.owner} AND epoch=${l.epoch}`);
   }
   async function recoverLeader(owner: string) {
@@ -58,6 +66,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return query<DurableJob[]>(Prisma.sql`SELECT id,"postId",platform,lease,phase,"workerToken" FROM "PublishingJob" WHERE id IN (${Prisma.join(ids)}) ORDER BY "createdAt",id`);
   }
   async function prepareMany(requests: { id: string; token: string }[], consumer?: ConsumerLease) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#prepareMany@60"); } /* end-canonical-integration-boundary */
+
     if (!requests.length || requests.length > 5) throw new Error("Invalid preparation batch");
     return transition<DurableJob[]>(Prisma.sql`WITH requested AS (SELECT * FROM jsonb_to_recordset(${JSON.stringify(requests)}::jsonb) AS r(id text,token text)),
       unlocked AS MATERIALIZED (SELECT j.id FROM "PublishingJob" j JOIN requested r ON r.id=j.id FOR UPDATE OF j SKIP LOCKED)
@@ -72,6 +82,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return query<DurableJob[]>(Prisma.sql`SELECT id,"postId",platform,lease,phase,"workerToken" FROM "PublishingJob" WHERE "workerToken" IN (${Prisma.join(tokens)}) AND phase='PREPARED' AND "workerUntil">clock_timestamp()`);
   }
   async function releasePrepared(id: string, token: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#releasePrepared@74"); } /* end-canonical-integration-boundary */
+
     // The caller has stopped its private actor. PREPARED proves that no external
     // boundary committed; pending/unknown outcomes must never use this path.
     return query(Prisma.sql`UPDATE "PublishingJob" SET "workerUntil"=clock_timestamp(),
@@ -79,6 +91,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       WHERE id=${id} AND "workerToken"=${token} AND phase='PREPARED'`);
   }
   async function budget<T>(lane: "admission" | "worker", action: (tx: Prisma.TransactionClient) => Promise<T>, l?: Leader, limits?: { timeout?: number; maxWait?: number }, consumer?: ConsumerLease) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#budget@81"); } /* end-canonical-integration-boundary */
+
     const timeout = limits?.timeout ?? 5000;
     if (!Number.isInteger(timeout) || timeout < 1 || timeout > 40_000) throw new Error("Invalid publishing transaction limit");
     const leaseSeconds = Math.max(10, Math.ceil(timeout / 1000) + 5);
@@ -119,6 +133,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     }
   }
   async function admit(l: Leader | undefined, platform: SocialPlatform, admissionId: string, now: Date, limit = 20, onlyPostId?: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#admit@121"); } /* end-canonical-integration-boundary */
+
     if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error("Invalid batch size");
     const status = field(platform);
     return budget(l ? "admission" : "worker", async tx => tx.$queryRaw<DurableJob[]>(Prisma.sql`
@@ -197,6 +213,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return rows[0].wait;
   }
   async function acquireAccount(job: DurableJob, token: string, account: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#acquireAccount@199"); } /* end-canonical-integration-boundary */
+
     const rows = await query<{ token: string }[]>(Prisma.sql`INSERT INTO "PublishingAccountLease"(platform,"accountId","jobId",token,"leaseUntil")
       SELECT ${job.platform}::"SocialPlatform",${account},${job.id},${token},clock_timestamp()+interval '14 minutes'
       WHERE EXISTS(SELECT 1 FROM "PublishingJob" WHERE id=${job.id} AND "workerToken"=${token} AND phase='PREPARED' AND "workerUntil">clock_timestamp())
@@ -205,9 +223,13 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return rows.length === 1;
   }
   async function releaseAccount(job: DurableJob, token: string, account: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#releaseAccount@207"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`DELETE FROM "PublishingAccountLease" WHERE platform=${job.platform}::"SocialPlatform" AND "accountId"=${account} AND "jobId"=${job.id} AND token=${token}`);
   }
   async function recoverAccountLeases() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#recoverAccountLeases@210"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`DELETE FROM "PublishingAccountLease" a USING "PublishingJob" j WHERE a."jobId"=j.id AND a.token=j."workerToken"
       AND (j.phase IN ('CONFIRMED','PROVIDER_PENDING','CANCELLED','REJECTED') OR j.phase='OUTCOME_UNKNOWN' AND j.confirmation IS NOT NULL
         OR j.phase='PREPARED' AND j."workerUntil"<=clock_timestamp() AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id=j."consumerSlot" AND c.owner=j."consumerOwner" AND c.epoch=j."consumerEpoch" AND c."leaseUntil">clock_timestamp()))`);
@@ -241,6 +263,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return prepareMany([{ id: job.id, token }], consumer);
   }
   async function beginExternal(job: DurableJob, token: string, consumer?: ConsumerLease, accountId?: string, tikTokInit = false) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#beginExternal@243"); } /* end-canonical-integration-boundary */
+
     const status = field(job.platform);
     return transition<{ id: string }[]>(Prisma.sql`WITH locked AS MATERIALIZED (SELECT * FROM "PublishingJob" WHERE id=${job.id} FOR UPDATE),
       stamp AS (SELECT date_trunc('milliseconds',clock_timestamp() AT TIME ZONE 'UTC') AS started),marked AS (
@@ -252,6 +276,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       WHERE id=${job.id} AND "workerToken"=${token} AND EXISTS(SELECT 1 FROM marked) RETURNING id`, consumer);
   }
   async function finish(job: DurableJob, token: string, remoteId: string, reportingComplete = false) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#finish@254"); } /* end-canonical-integration-boundary */
+
     if (!remoteId) throw new Error("Provider confirmation required");
     const status = field(job.platform);
     return transition(Prisma.sql`WITH saved AS (UPDATE "PublishingJob" SET phase='CONFIRMED',"remoteId"=${remoteId},"reportingPending"=NOT ${reportingComplete},"updatedAt"=clock_timestamp()
@@ -262,6 +288,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       SELECT s.id FROM saved s WHERE EXISTS(SELECT 1 FROM changed) OR EXISTS(SELECT 1 FROM "CalendarPost" p WHERE p.id=s."postId" AND p.platform=s.platform AND p.${status}='PUBLISHED')`);
   }
   async function failProvider(job: DurableJob, reference: string, reason: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#failProvider@264"); } /* end-canonical-integration-boundary */
+
     if(job.platform!=="TIKTOK" || !reference || !job.workerToken) throw new Error("Known TikTok operation required");
     // Definitive provider failure is terminal, not a retry. Retain the operation
     // ID so the existing authorization flow requires a NEW approved post.
@@ -271,6 +299,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       WHERE p.id=s."postId" AND p."tikTokPublishId"=${reference} AND p."tikTokPublishStatus"='PUBLISHING' RETURNING s.id`);
   }
   async function accept(job: DurableJob, token: string, reference: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#accept@273"); } /* end-canonical-integration-boundary */
+
     if (!reference) throw new Error("Provider reference required");
     return transition<{ id: string }[]>(Prisma.sql`WITH saved AS (UPDATE "PublishingJob" SET phase='PROVIDER_PENDING',"remoteId"=${reference},"updatedAt"=clock_timestamp()
       WHERE id=${job.id} AND "workerToken"=${token} AND phase IN ('EXTERNAL_PENDING','PREPARED') RETURNING id,"postId",platform),
@@ -278,6 +308,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       SELECT id FROM saved`);
   }
   async function unknown(job: DurableJob, token: string, reference?: string | null, proof?: PublicationProof) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#unknown@280"); } /* end-canonical-integration-boundary */
+
     const status = field(job.platform);
     // One bounded autocommit CTE uses the reserved coordination lane even when
     // every heavy data slot is busy, preserving known references for recovery.
@@ -285,6 +317,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
       UPDATE "CalendarPost" p SET ${status}='PUBLISHING' FROM held h WHERE p.id=h."postId" AND p.platform=h.platform AND p."publishWorkerStartedAt" IS NOT DISTINCT FROM h."startedAt" AND p.${status}<>'PUBLISHED' RETURNING p.id`);
   }
   async function reject(job: DurableJob, token: string, message: string, retry = false, resetTikTokInit = false) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#reject@287"); } /* end-canonical-integration-boundary */
+
     const status = field(job.platform);
     // Known-no-send / definite rejection is a short durable coordination write.
     // It must remain available when all heavy slots are busy; otherwise native
@@ -306,12 +340,16 @@ export function createReliablePublishingStore(database: Database, options: { dat
         AND ("reconcileOwner" IS NULL OR "reconcileUntil"<=clock_timestamp()) ORDER BY "updatedAt",id LIMIT ${limit}`);
   }
   async function claimReconciliation(id: string, owner: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#claimReconciliation@308"); } /* end-canonical-integration-boundary */
+
     const rows = await query<DurableJob[]>(Prisma.sql`UPDATE "PublishingJob" SET "reconcileOwner"=${owner},"reconcileUntil"=clock_timestamp()+interval '3 minutes'
       WHERE id=${id} AND phase IN ('PROVIDER_PENDING','OUTCOME_UNKNOWN') AND "availableAt"<=clock_timestamp()
         AND ("reconcileOwner" IS NULL OR "reconcileUntil"<=clock_timestamp()) RETURNING id,"postId",platform,lease,phase,"workerToken","remoteId","accountId","confirmation"`);
     return rows[0] ?? null;
   }
   async function releaseReconciliation(id: string, owner: string, resolved: boolean) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#releaseReconciliation@314"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`UPDATE "PublishingJob" SET "reconcileOwner"=NULL,"reconcileUntil"=NULL,"availableAt"=CASE WHEN ${resolved} THEN "availableAt" WHEN phase='OUTCOME_UNKNOWN' AND "remoteId" IS NULL THEN clock_timestamp()+interval '15 minutes' ELSE clock_timestamp()+interval '1 minute' END
       WHERE id=${id} AND "reconcileOwner"=${owner}`);
   }
@@ -319,8 +357,12 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return query<DurableJob[]>(Prisma.sql`SELECT id,"postId",platform,lease,phase,"workerToken","remoteId","accountId","confirmation" FROM "PublishingJob"
       WHERE phase='CONFIRMED' AND "reportingPending" AND "availableAt"<=clock_timestamp() ORDER BY "updatedAt",id LIMIT ${limit}`);
   }
-  async function markReported(id: string) { await query(Prisma.sql`UPDATE "PublishingJob" SET "reportingPending"=false WHERE id=${id} AND phase='CONFIRMED'`); }
-  async function deferReporting(id: string) { await query(Prisma.sql`UPDATE "PublishingJob" SET "availableAt"=clock_timestamp()+interval '5 minutes' WHERE id=${id} AND phase='CONFIRMED' AND "reportingPending"`); }
+  async function markReported(id: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#markReported@322"); } /* end-canonical-integration-boundary */
+ await query(Prisma.sql`UPDATE "PublishingJob" SET "reportingPending"=false WHERE id=${id} AND phase='CONFIRMED'`); }
+  async function deferReporting(id: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#deferReporting@323"); } /* end-canonical-integration-boundary */
+ await query(Prisma.sql`UPDATE "PublishingJob" SET "availableAt"=clock_timestamp()+interval '5 minutes' WHERE id=${id} AND phase='CONFIRMED' AND "reportingPending"`); }
   async function assertPublication(job: DurableJob, account: string, consumer?: ConsumerLease, requireAccountLease = false) {
     const rows = await query<{ valid: boolean }[]>(Prisma.sql`SELECT EXISTS(SELECT 1 FROM "PublishingJob" j JOIN "CalendarPost" p ON p.id=j."postId"
       JOIN "SocialCalendar" c ON c.id=p."calendarId" WHERE j.id=${job.id} AND j."workerToken"=${job.workerToken} AND j.phase='EXTERNAL_PENDING'
@@ -330,6 +372,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     if (!rows[0]?.valid) throw new PublishingDeferred("Publishing permission or account changed", "PUBLISHING_FENCED");
   }
   async function acquireConsumer(owner: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#acquireConsumer@332"); } /* end-canonical-integration-boundary */
+
     const rows = await query<ConsumerLease[]>(Prisma.sql`WITH free AS (SELECT id FROM "PublishingConsumerLease" WHERE owner IS NULL OR "leaseUntil"<=clock_timestamp() ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED)
       UPDATE "PublishingConsumerLease" c SET owner=${owner},epoch=epoch+1,"leaseUntil"=clock_timestamp()+interval '90 seconds' FROM free f WHERE c.id=f.id RETURNING c.id,c.owner,c.epoch`);
     return rows[0] ?? null;
@@ -339,10 +383,14 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return !!rows[0]?.valid;
   }
   async function renewConsumer(lease: ConsumerLease) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#renewConsumer@341"); } /* end-canonical-integration-boundary */
+
     const rows = await query(Prisma.sql`UPDATE "PublishingConsumerLease" SET "leaseUntil"=clock_timestamp()+interval '90 seconds' WHERE id=${lease.id} AND owner=${lease.owner} AND epoch=${lease.epoch} AND "leaseUntil">clock_timestamp() RETURNING id`);
     return (rows as unknown[]).length === 1;
   }
   async function releaseConsumer(lease: ConsumerLease) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#releaseConsumer@345"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`UPDATE "PublishingConsumerLease" SET owner=NULL,"leaseUntil"=NULL WHERE id=${lease.id} AND owner=${lease.owner} AND epoch=${lease.epoch}`);
   }
   async function wakeNeeded() {
@@ -350,22 +398,32 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return !!rows[0]?.needed;
   }
   async function requestWake() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#requestWake@352"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`UPDATE "PublishingWake" SET pending=true,generation=generation+1 WHERE id=1`);
   }
   async function takeWake(owner: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#takeWake@355"); } /* end-canonical-integration-boundary */
+
     const rows = await query<{ generation: bigint }[]>(Prisma.sql`UPDATE "PublishingWake" SET "deliveryOwner"=${owner},"deliveryUntil"=clock_timestamp()+interval '10 seconds'
       WHERE id=1 AND pending AND "sendAt"<=clock_timestamp() AND ("deliveryOwner" IS NULL OR "deliveryUntil"<=clock_timestamp()) RETURNING generation`);
     return rows[0] ?? null;
   }
   async function dispatchedWake(owner: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#dispatchedWake@360"); } /* end-canonical-integration-boundary */
+
     // HTTP acknowledgement is not proof that a worker ran. Keep pending until
     // an actual admitted consumer acknowledges that generation.
     await query(Prisma.sql`UPDATE "PublishingWake" SET "deliveryOwner"=NULL,"deliveryUntil"=NULL,"sendAt"=clock_timestamp()+interval '1 minute',attempts=attempts+1 WHERE id=1 AND "deliveryOwner"=${owner}`);
   }
   async function acknowledgeWake(generation: bigint) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#acknowledgeWake@365"); } /* end-canonical-integration-boundary */
+
     await query(Prisma.sql`UPDATE "PublishingWake" SET pending=false WHERE id=1 AND generation=${generation}`);
   }
   async function cancelBeforeExternal(id: string, rescheduleAt?: Date) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#cancelBeforeExternal@368"); } /* end-canonical-integration-boundary */
+
     if (rescheduleAt && (!Number.isFinite(rescheduleAt.getTime()) || rescheduleAt.getTime() <= Date.now())) throw new Error("Future schedule required");
     // Resolve canonical platform first, then serialize on the same job row used
     // by beginExternal. Once the external boundary commits cancellation is unsafe.
@@ -385,6 +443,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return rows.length === 1;
   }
   async function recoverExpired() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#recoverExpired@387"); } /* end-canonical-integration-boundary */
+
     // PREPARED is safe to resume: protocol forbids any provider call in that state.
     // EXTERNAL_PENDING is never returned to READY, even after a process crashes.
     await query(Prisma.sql`UPDATE "PublishingJob" SET phase='OUTCOME_UNKNOWN',"updatedAt"=clock_timestamp() WHERE phase='EXTERNAL_PENDING' AND "workerUntil"<=clock_timestamp()`);
@@ -400,6 +460,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
         "publishStatus"=CASE WHEN p.platform NOT IN ('INSTAGRAM','TIKTOK') AND p."publishStatus"='PUBLISHING' THEN 'SCHEDULED'::"InstagramPublishStatus" ELSE p."publishStatus" END FROM revised r WHERE p.id=r.id`);
   }
   async function authorizeKnownRejectedRetry(postId: string, actor: string) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#authorizeKnownRejectedRetry@402"); } /* end-canonical-integration-boundary */
+
     if (!actor || actor.length > 200) throw new Error("Authenticated retry actor required");
     // Only a definitive/preflight rejection can become a new intent. Neither a
     // pending operation nor an uncertain outcome can be cleared by a checkbox.

@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { useEffect, useRef, useState } from "react";
@@ -61,7 +62,7 @@ export default function ReplyDraftAssistant({
     setError("");
     setSuggestion(null);
     try {
-      const response = await fetch(
+      const response = await calendarMutationFetch(
         `${endpoint}/${encodeURIComponent(conversationId)}/draft`,
         {
           method: "POST",

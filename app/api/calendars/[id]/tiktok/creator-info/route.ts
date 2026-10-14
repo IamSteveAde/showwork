@@ -1,8 +1,10 @@
 import { getTikTokCreator, TikTokRequestBusyError } from "@/lib/tiktokConnection";
+import {publishingIntegrationInstalled,invokePublishingEntrypoint} from '@/lib/publishing/applicationBoundary';
 import { NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/tiktok/creator-info/route.ts#GETcanonical',Array.from(arguments)); } /* end-canonical-integration-boundary */
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;

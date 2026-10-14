@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 export type PublishingChannel = "facebook" | "linkedin" | "x";
-export type OAuthChannel = PublishingChannel | "tiktok-messaging" | "tiktok";
+export type OAuthChannel = PublishingChannel | "tiktok-messaging" | "tiktok" | "instagram";
 
 type OAuthStatePayload = {
   channel: OAuthChannel;
@@ -79,7 +79,7 @@ export function channelOAuthCookieOptions(channel: OAuthChannel, maxAge: number)
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
-    path: channel === "tiktok" ? "/api/calendars/tiktok/callback" : `/api/calendars/channels/${channel}/callback`,
+    path: channel === "tiktok" ? "/api/calendars/tiktok/callback" : channel==='instagram'?'/api/calendars/instagram/callback':`/api/calendars/channels/${channel}/callback`,
     maxAge,
   };
 }

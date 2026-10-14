@@ -1,0 +1,1198 @@
+{
+  "productionGo": false,
+  "basis": "Reviewed prior enforcement ledger and current dispatcher. Fencing is not completed integration.",
+  "boundaries": [
+    {
+      "entrypoint": "app/[slug]/page.tsx#SlugPage@63",
+      "file": "app/[slug]/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/admin/accounts/page.tsx#AdminPage@147",
+      "file": "app/admin/accounts/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/admin/creators/[id]/page.tsx#CreatorDetailPage@219",
+      "file": "app/admin/creators/[id]/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/admin/social-calendars/[id]/route.ts#PATCH@22",
+      "file": "app/admin/social-calendars/[id]/route.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/account/deactivate/route.ts#POST@9",
+      "file": "app/api/account/deactivate/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/account/route.ts#DELETE@44",
+      "file": "app/api/account/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/complimentary/route.ts#POST@9",
+      "file": "app/api/admin/creators/[id]/complimentary/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/route.ts#PATCH@12",
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/route.ts#DELETE@48",
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/admin/partners/[id]/route.ts#PATCH@55",
+      "file": "app/api/admin/partners/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/admin/social-calendars/[id]/route.ts#PATCH@20",
+      "file": "app/api/admin/social-calendars/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts#POST@6",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#POST@183",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#PATCH@567",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#DELETE@709",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/route.ts#DELETE@62",
+      "file": "app/api/calendars/[id]/ai-drafts/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-generate/route.ts#POST@21",
+      "file": "app/api/calendars/[id]/ai-generate/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/[documentId]/route.ts#DELETE@14",
+      "file": "app/api/calendars/[id]/business-documents/[documentId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/upload-complete/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/business-documents/upload-complete/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/website/route.ts#POST@14",
+      "file": "app/api/calendars/[id]/business-documents/website/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts#POST@10",
+      "file": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/facebook/select-page/route.ts#POST@16",
+      "file": "app/api/calendars/[id]/channels/facebook/select-page/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts#POST@11",
+      "file": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/linkedin/pages/route.ts#POST@37",
+      "file": "app/api/calendars/[id]/channels/linkedin/pages/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#POST@30",
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#DELETE@69",
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/instagram/disconnect/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/instagram/disconnect/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts#DELETE@7",
+      "file": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts#POST@9",
+      "file": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/publish/route.ts#POST@8",
+      "file": "app/api/calendars/[id]/posts/[postId]/publish/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts#POST@8",
+      "file": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/route.ts#PATCH@17",
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/route.ts#DELETE@181",
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/route.ts#POST@106",
+      "file": "app/api/calendars/[id]/posts/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/reset/route.ts#POST@7",
+      "file": "app/api/calendars/[id]/reset/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/retry-payment/route.ts#POST@38",
+      "file": "app/api/calendars/[id]/retry-payment/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/route.ts#PATCH@24",
+      "file": "app/api/calendars/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/route.ts#DELETE@574",
+      "file": "app/api/calendars/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/tiktok/disconnect/route.ts#POST@10",
+      "file": "app/api/calendars/[id]/tiktok/disconnect/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/tiktok/messaging/route.ts#POST@24",
+      "file": "app/api/calendars/[id]/tiktok/messaging/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/verify-subscription/route.ts#POST@24",
+      "file": "app/api/calendars/[id]/verify-subscription/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/cancel-subscription/route.ts#POST@16",
+      "file": "app/api/calendars/cancel-subscription/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/channels/[channel]/callback/route.ts#GET@34",
+      "file": "app/api/calendars/channels/[channel]/callback/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/channels/tiktok-messaging/callback/route.ts#GET@11",
+      "file": "app/api/calendars/channels/tiktok-messaging/callback/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/downgrade-to-individual/route.ts#POST@32",
+      "file": "app/api/calendars/downgrade-to-individual/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/instagram/callback/route.ts#GET@27",
+      "file": "app/api/calendars/instagram/callback/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/route.ts#POST@122",
+      "file": "app/api/calendars/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/subscribe/route.ts#POST@46",
+      "file": "app/api/calendars/subscribe/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/tiktok/callback/route.ts#GET@14",
+      "file": "app/api/calendars/tiktok/callback/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/upgrade-to-company/route.ts#POST@39",
+      "file": "app/api/calendars/upgrade-to-company/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/calendars/verify-subscription/route.ts#POST@23",
+      "file": "app/api/calendars/verify-subscription/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/cron/instagram-publish/route.ts#POST@12",
+      "file": "app/api/cron/instagram-publish/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/cron/social-publish/route.ts#POST@3",
+      "file": "app/api/cron/social-publish/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/cron/tiktok-publish/route.ts#POST@11",
+      "file": "app/api/cron/tiktok-publish/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts#DELETE@7",
+      "file": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/replace/complete/route.ts#POST@11",
+      "file": "app/api/media/[mediaId]/replace/complete/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/replace/multipart-complete/route.ts#POST@16",
+      "file": "app/api/media/[mediaId]/replace/multipart-complete/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/route.ts#DELETE@17",
+      "file": "app/api/media/[mediaId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/route.ts#PATCH@48",
+      "file": "app/api/media/[mediaId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/payments/webhook/route.ts#POST@115",
+      "file": "app/api/payments/webhook/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/portfolio/media/[mediaId]/route.ts#DELETE@8",
+      "file": "app/api/portfolio/media/[mediaId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/portfolio/sections/[sectionId]/route.ts#DELETE@52",
+      "file": "app/api/portfolio/sections/[sectionId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/add-files-batch/route.ts#POST@11",
+      "file": "app/api/projects/[id]/add-files-batch/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/sections/[sectionId]/route.ts#PATCH@9",
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/sections/[sectionId]/route.ts#DELETE@43",
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts#POST@13",
+      "file": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/social-calendar/[slug]/respond/route.ts#POST@10",
+      "file": "app/api/social-calendar/[slug]/respond/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/dashboard/[projectId]/page.tsx#ProjectDetailPage@528",
+      "file": "app/dashboard/[projectId]/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/dashboard/billing/page.tsx#BillingPage@23",
+      "file": "app/dashboard/billing/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/dashboard/profile/page.tsx#ProfilePage@350",
+      "file": "app/dashboard/profile/page.tsx",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/aiResearchScheduler.ts#runScheduledAiBusinessResearch@26",
+      "file": "lib/aiResearchScheduler.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/calendarImport/confirmation.ts#confirmImport@126",
+      "file": "lib/calendarImport/confirmation.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#editTeammate@96",
+      "file": "lib/calendarTeamService.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#removeTeammate@114",
+      "file": "lib/calendarTeamService.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#acceptTeamInvite@141",
+      "file": "lib/calendarTeamService.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/calendarTrialEmails.ts#runCalendarTrialEmailCheck@22",
+      "file": "lib/calendarTrialEmails.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/instagram.ts#publishContainer@537",
+      "file": "lib/instagram.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/instagramPublishing.ts#publishPostToInstagram@57",
+      "file": "lib/instagramPublishing.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/batchClaims.ts#claimPublishingBatch@23",
+      "file": "lib/publishing/batchClaims.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/batchClaims.ts#failPublishingDispatchBatch@73",
+      "file": "lib/publishing/batchClaims.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/budgetedDatabase.ts#transaction:callback@88",
+      "file": "lib/publishing/budgetedDatabase.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/legacyRecoveryBridge.ts#importLegacyPublishingRecovery@10",
+      "file": "lib/publishing/legacyRecoveryBridge.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/platformIntegration.ts#publish@72",
+      "file": "lib/publishing/platformIntegration.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/platformIntegration.ts#reconcile@190",
+      "file": "lib/publishing/platformIntegration.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/portableRuntime.ts#tick@29",
+      "file": "lib/publishing/portableRuntime.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/portableRuntime.ts#consume@37",
+      "file": "lib/publishing/portableRuntime.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishFacebook@12",
+      "file": "lib/publishing/providers.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishX@94",
+      "file": "lib/publishing/providers.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishLinkedIn@142",
+      "file": "lib/publishing/providers.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableConsumer.ts#drainReliablePublishing@10",
+      "file": "lib/publishing/reliableConsumer.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#leader@33",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseLeader@45",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#prepareMany@60",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releasePrepared@74",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#budget@81",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#admit@121",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acquireAccount@199",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseAccount@207",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#recoverAccountLeases@210",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#beginExternal@243",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#finish@254",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#failProvider@264",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#accept@273",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#unknown@280",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#reject@287",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#claimReconciliation@308",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseReconciliation@314",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#markReported@322",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#deferReporting@323",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acquireConsumer@332",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#renewConsumer@341",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseConsumer@345",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#requestWake@352",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#takeWake@355",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#dispatchedWake@360",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acknowledgeWake@365",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#cancelBeforeExternal@368",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#recoverExpired@387",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#authorizeKnownRejectedRetry@402",
+      "file": "lib/publishing/reliableStore.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/reliableWorker.ts#execute@21",
+      "file": "lib/publishing/reliableWorker.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/runtime.ts#tick@34",
+      "file": "lib/publishing/runtime.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/scheduler.ts#runScheduledPublishing@5",
+      "file": "lib/publishing/scheduler.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/publishing/worker.ts#runPublishJob@11",
+      "file": "lib/publishing/worker.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/r2.ts#deleteObject@264",
+      "file": "lib/r2.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/reporting/adapters/tiktok.ts#apiPost@26",
+      "file": "lib/reporting/adapters/tiktok.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/reporting/sync.ts#syncConnection@44",
+      "file": "lib/reporting/sync.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#freshTikTokMessagingConnection@18",
+      "file": "lib/socialMessaging/tiktok.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#syncTikTokInbox@104",
+      "file": "lib/socialMessaging/tiktok.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialMessaging/whatsapp.ts#sendWhatsAppMessage@139",
+      "file": "lib/socialMessaging/whatsapp.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncXInbox@58",
+      "file": "lib/socialMessaging/x.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncSocialInboxes@173",
+      "file": "lib/socialMessaging/x.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialReporting.ts#database.$transaction:callback@24",
+      "file": "lib/socialReporting.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/socialTokens.ts#freshConnection@10",
+      "file": "lib/socialTokens.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/syncContentWorkspaceRenewal.ts#syncContentWorkspaceRenewal@5",
+      "file": "lib/syncContentWorkspaceRenewal.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/tiktok.ts#apiPost@100",
+      "file": "lib/tiktok.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/tiktokAuthorization.ts#authorizeTikTokPost@11",
+      "file": "lib/tiktokAuthorization.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/tiktokConnection.ts#freshTikTokConnection@9",
+      "file": "lib/tiktokConnection.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "lib/tiktokPublishing.ts#publishPostToTikTok@17",
+      "file": "lib/tiktokPublishing.ts",
+      "enforcement": "legacy-function",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "netlify/functions/publish-post-background.ts#handler@6",
+      "file": "netlify/functions/publish-post-background.ts",
+      "enforcement": "netlify",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "netlify/functions/social-publish-cron.ts#schedule:callback@6",
+      "file": "netlify/functions/social-publish-cron.ts",
+      "enforcement": "netlify",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    },
+    {
+      "entrypoint": "app/api/payments/initialize/route.ts#POST@10",
+      "file": "app/api/payments/initialize/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#GET@35",
+      "file": "app/api/projects/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#PATCH@60",
+      "file": "app/api/projects/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#DELETE@143",
+      "file": "app/api/projects/[id]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#GET@24",
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#POST@55",
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/[inviteId]/route.ts#DELETE@8",
+      "file": "app/api/projects/[id]/invites/[inviteId]/route.ts",
+      "enforcement": "route",
+      "status": "FENCED_ONLY",
+      "productionComplete": false,
+      "blocker": "Canonical specialized mutation/native host adapter remains unported"
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts#DELETE@9",
+      "file": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts",
+      "enforcement": "route",
+      "status": "PARTIAL_CANONICAL_PORT",
+      "productionComplete": false,
+      "blocker": "Existing response/frontend/authenticated composition not fully integrated"
+    }
+  ]
+}

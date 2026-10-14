@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -18,6 +19,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; postId: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/posts/[postId]/route.ts#PATCH@17",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const creator = await getCurrentCreator();
   if (!creator) {
     return NextResponse.json(
@@ -182,6 +185,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; postId: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/posts/[postId]/route.ts#DELETE@181",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const creator = await getCurrentCreator();
 
   if (!creator) {

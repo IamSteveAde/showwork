@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 
@@ -10,7 +11,7 @@ export default function RetryCalendarPaymentButton({ calendarId }: { calendarId:
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/retry-payment`, { method: "POST" });
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/retry-payment`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
         window.location.href = data.authorizationUrl;

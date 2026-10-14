@@ -48,6 +48,7 @@ function harness() {
   const request = async url => ({ ok: true, json: async () => url.endsWith('/preview')
     ? { items: [row], mapping: {}, existing: [], filename: 'plan.csv' }
     : url.endsWith('/confirm') ? { postIds: ['post-1'], skipped: [], firstDate: '2026-10-01T08:00:00Z' } : { posts: [row] } });
+  mocks['@/lib/publishing/clientRequests']={calendarMutationFetch:request};
   new Function('require', 'module', 'exports', 'window', 'CustomEvent', 'fetch', source)(
     name => mocks[name] ?? require(name), mod, mod.exports, browser,
     class { constructor(type, init) { this.type = type; this.detail = init.detail; } }, request,

@@ -58,7 +58,7 @@ test('unreadable proprietary or corrupt image returns an actionable error withou
  await assert.rejects(media().prepareTikTokImage(Buffer.from('not image bytes')),/could not be decoded/);
 });
 
-test('temporary media storage and cleanup target only generated names and preserve originals',async()=>{
+test('temporary media storage accepts generated names while automatic cleanup stays retired for evidence retention',async()=>{
  const prefix='calendars/calendar/post/',uuid='a1234567-1234-1234-1234-123456789abc';const expired=new Date(Date.now()-8*86400000),recent=new Date();const sent=[];
  class Command{constructor(input){this.input=input;}}
  class Client{async send(command){sent.push(command.input);if(command.input.Prefix==='calendars/')return{Contents:[{Key:prefix+'original.png',LastModified:expired},{Key:prefix+'tiktok-prepared-'+uuid+'.jpg',LastModified:expired},{Key:prefix+'tiktok-prepared-'+uuid+'.mp4',LastModified:recent},{Key:prefix+'tiktok-prepared-not-a-uuid.jpg',LastModified:expired}]};if(command.input.Prefix==='tiktok-prepared/')return{Contents:[]};return{};}}
@@ -66,8 +66,8 @@ test('temporary media storage and cleanup target only generated names and preser
  const m=load('lib/r2.ts',{'@aws-sdk/client-s3':sdk,'@aws-sdk/s3-request-presigner':{getSignedUrl(){}}});
  await assert.rejects(m.putTikTokPreparedFile(prefix+'original.png',Buffer.from('x'),'image/jpeg',1),/Invalid prepared/);
  await m.putTikTokPreparedFile(prefix+'tiktok-prepared-'+uuid+'.jpg',Buffer.from('x'),'image/jpeg',1);
- assert.equal((await m.cleanupTikTokPreparedFiles()).deleted,1);
- const removal=sent.find(input=>input.Delete);assert.deepEqual(removal.Delete.Objects,[{Key:prefix+'tiktok-prepared-'+uuid+'.jpg'}]);
+ assert.deepEqual(await m.cleanupTikTokPreparedFiles(),{deleted:0,retired:true});
+ assert.equal(sent.some(input=>input.Delete||input.Prefix),false);
 });
 
 test('HEIC files use a portable decoder when the native image build cannot read them',async()=>{

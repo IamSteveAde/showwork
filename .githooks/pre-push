@@ -1,0 +1,4 @@
+#!/bin/sh
+# Preparation-phase fail-closed guard. Remove only after explicit history/push review.
+echo 'SHOWWORK_PUSH_BLOCKED: history remediation and deployment-trigger review require approval.' >&2
+exit 1

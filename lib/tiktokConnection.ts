@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, publishingRetentionRequired } from "@/lib/publishing/applicationBoundary";
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
 import { refreshTikTokAccessToken, queryTikTokCreatorInfo } from "@/lib/tiktok";
@@ -7,6 +8,8 @@ import { PublishingDeferred } from "@/lib/publishing/errors";
 // Transaction-scoped advisory locks serialize refresh rotation across processes
 // and calendars. No tokens or app credentials are returned to the client.
 export async function freshTikTokConnection(connection: SocialConnection, database: typeof db = db, tryLock = false): Promise<SocialConnection> {
+  /* canonical-integration-boundary */ if (publishingRetentionRequired()) { return await freshCanonicalAuxiliaryConnection(connection); } /* end-canonical-integration-boundary */
+
   return database.$transaction(async tx => {
     if (tryLock) {
       const rows = await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtext(${`tiktok-refresh:${connection.platformAccountId}`})) AS locked`;
@@ -68,3 +71,6 @@ export async function getTikTokCreator(calendarId: string) {
   const info = await queryTikTokCreatorInfo(connection.accessToken!);
   return { connection, info };
 }
+/* canonical-only-helper */
+import {freshCanonicalAuxiliaryConnection} from "./publishing/auxiliaryAccountHost";
+/* end-canonical-only-helper */

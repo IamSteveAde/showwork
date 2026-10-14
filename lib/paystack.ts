@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import {nativeBillingFetch as fetch} from './publishing/nativeApplicationContext';
 
 function paystackSecretKey(): string {
   const key = process.env.PAYSTACK_SECRET_KEY?.trim();
@@ -238,14 +239,14 @@ export function verifyWebhookSignature(
   rawBody: string,
   signatureHeader: string | null
 ): boolean {
-  if (!signatureHeader) return false;
+  if (!signatureHeader||!/^[a-f0-9]{128}$/.test(signatureHeader)) return false;
 
   const hash = crypto
     .createHmac("sha512", paystackSecretKey())
     .update(rawBody)
     .digest("hex");
 
-  return hash === signatureHeader;
+  return crypto.timingSafeEqual(Buffer.from(hash,'hex'),Buffer.from(signatureHeader,'hex'));
 }
 
 /**

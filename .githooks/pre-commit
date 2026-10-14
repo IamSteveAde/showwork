@@ -1,0 +1,4 @@
+#!/bin/sh
+# Optional local hook. Not installed automatically; scans values without printing them.
+set -eu
+npm run security:scan

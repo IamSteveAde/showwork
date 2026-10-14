@@ -16,6 +16,12 @@ export async function verifyPassword(plain: string, hash: string) {
 }
 
 // ── Session management for creators (dashboard login) ──
+/** Receipt-only verification for a former principal. Does not authorize access
+ * to an account, workspace or publishing operation; caller must bind a durable
+ * previously committed receipt and verify the original password confirmation. */
+export function verifyCreatorSessionClaims(token:string):{creatorId:string}|null {
+  try {const payload=jwt.verify(token,JWT_SECRET) as {creatorId?:unknown;exp?:unknown};return typeof payload.creatorId==='string'&&typeof payload.exp==='number'&&payload.exp*1000>Date.now()?{creatorId:payload.creatorId}:null;}catch{return null;}
+}
 export function createSessionToken(creatorId: string) {
   return jwt.sign({ creatorId }, JWT_SECRET, { expiresIn: "30d" });
 }
@@ -95,4 +101,13 @@ export function verifyViewerToken(
   } catch {
     return null;
   }
+}
+
+/** Same viewer JWT authority as verifyViewerToken, retaining its expiry for a
+ * bounded transactional eligibility witness. No creator permission is implied. */
+export function verifyViewerTokenClaims(token:string,projectId:string):{email:string;name:string|null;expiresAt:Date}|null {
+ try {const payload=jwt.verify(token,JWT_SECRET) as {projectId:string;email:string;name?:string|null;exp?:number};
+  if(payload.projectId!==projectId||typeof payload.email!=='string'||!payload.exp)return null;
+  return {email:payload.email,name:payload.name??null,expiresAt:new Date(payload.exp*1000)};
+ }catch{return null;}
 }

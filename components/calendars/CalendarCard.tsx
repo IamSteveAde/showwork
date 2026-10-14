@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { X, CalendarDays } from "lucide-react";
 import styles from "./CalendarDashboard.module.css";
@@ -130,7 +131,7 @@ export default function CalendarCard({
     setError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${id}`, {
         method: "DELETE",
       });
 

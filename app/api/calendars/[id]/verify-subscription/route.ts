@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { extractPaystackPlanCode } from "@/lib/paystackPlan";
 import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
@@ -25,6 +26,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/[id]/verify-subscription/route.ts#POST@24")) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/verify-subscription/route.ts#POST@24",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {

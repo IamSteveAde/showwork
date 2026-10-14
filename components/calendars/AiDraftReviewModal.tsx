@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
@@ -91,7 +92,7 @@ export default function AiDraftReviewModal({
   async function loadDrafts() {
     try {
       setError(null);
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts`, {
         cache: "no-store",
       });
       const data = await readJson(res);
@@ -107,7 +108,7 @@ export default function AiDraftReviewModal({
   async function loadGenerations(postId: string) {
     try {
       setError(null);
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${postId}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${postId}`, {
         cache: "no-store",
       });
       const data = await readJson(res);
@@ -157,7 +158,7 @@ export default function AiDraftReviewModal({
     if (!selected) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
        body: JSON.stringify({
@@ -187,7 +188,7 @@ export default function AiDraftReviewModal({
     setError(null);
 
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instruction }),
@@ -230,7 +231,7 @@ export default function AiDraftReviewModal({
     if (!selected || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${selected.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ generationId: generation.id }),
@@ -250,7 +251,7 @@ export default function AiDraftReviewModal({
     if (!selected || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/ai-drafts/${selected.id}/restore`,
         {
           method: "POST",
@@ -280,7 +281,7 @@ export default function AiDraftReviewModal({
       const draft = drafts?.find((item) => item.id === id);
       if (!draft) return;
 
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
        body: JSON.stringify({
@@ -314,7 +315,7 @@ export default function AiDraftReviewModal({
   async function discardDraft(id: string) {
     setSaving(true);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${id}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${id}`, {
         method: "DELETE",
       });
       const data = await readJson(res);
@@ -349,7 +350,7 @@ export default function AiDraftReviewModal({
   setError(null);
 
   try {
-    const res = await fetch(`/api/calendars/${calendarId}/ai-drafts`, {
+    const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts`, {
       method: "DELETE",
     });
 
@@ -382,7 +383,7 @@ export default function AiDraftReviewModal({
     setSaving(true);
     try {
       for (const draft of drafts) {
-        const res = await fetch(`/api/calendars/${calendarId}/ai-drafts/${draft.id}`, {
+        const res = await calendarMutationFetch(`/api/calendars/${calendarId}/ai-drafts/${draft.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
        body: JSON.stringify({

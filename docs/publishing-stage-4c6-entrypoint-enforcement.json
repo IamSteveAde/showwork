@@ -1,0 +1,898 @@
+{
+  "boundaries": [
+    {
+      "file": "app/[slug]/page.tsx",
+      "id": "app/[slug]/page.tsx#SlugPage@63",
+      "kind": "legacy-function",
+      "bodyHash": "385f130750929d5e1dc5bf6072836bd41a40b9ee5b5da3b8c0d07d3c943de83f"
+    },
+    {
+      "file": "app/admin/accounts/page.tsx",
+      "id": "app/admin/accounts/page.tsx#AdminPage@147",
+      "kind": "legacy-function",
+      "bodyHash": "c5c75a719dca8d35214e247dbceebe82b0317d76fae9ad21f36790d494d07098"
+    },
+    {
+      "file": "app/admin/creators/[id]/page.tsx",
+      "id": "app/admin/creators/[id]/page.tsx#CreatorDetailPage@219",
+      "kind": "legacy-function",
+      "bodyHash": "a398e9237f4c965a3ee0f486d77bdaf7403ae4ca3e04661ec7a8224bca4b3e94"
+    },
+    {
+      "file": "app/admin/social-calendars/[id]/route.ts",
+      "id": "app/admin/social-calendars/[id]/route.ts#PATCH@22",
+      "kind": "legacy-function",
+      "bodyHash": "b0b6a1b122e3ad5ef20630f6bd1d2c1a8207a787e25e6074538d77f63e4f4fa8"
+    },
+    {
+      "file": "app/api/account/deactivate/route.ts",
+      "id": "app/api/account/deactivate/route.ts#POST@9",
+      "kind": "route",
+      "bodyHash": "c571b4e47625031c7136497359063b3f42533e04de8cd96370794ab108f52c49"
+    },
+    {
+      "file": "app/api/account/route.ts",
+      "id": "app/api/account/route.ts#DELETE@44",
+      "kind": "route",
+      "bodyHash": "4e72abcb7bf3561dd423e6dc1675e5153cf5ff3ffa80f32bbbeacf8dc411902c"
+    },
+    {
+      "file": "app/api/admin/creators/[id]/complimentary/route.ts",
+      "id": "app/api/admin/creators/[id]/complimentary/route.ts#POST@9",
+      "kind": "route",
+      "bodyHash": "787a374134913aba057ae5114f0c63231878df17ef8bc979c1c98887c0701baa"
+    },
+    {
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "id": "app/api/admin/creators/[id]/route.ts#PATCH@12",
+      "kind": "route",
+      "bodyHash": "e181a9593c3c817015682adf5666b2b85a814736acf6476880a9297c9c3d1eb5"
+    },
+    {
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "id": "app/api/admin/creators/[id]/route.ts#DELETE@48",
+      "kind": "route",
+      "bodyHash": "1e97956cdb3cd271abb8c0bad8d04530f83966a782ac4417e6591681c0e8a5bd"
+    },
+    {
+      "file": "app/api/admin/partners/[id]/route.ts",
+      "id": "app/api/admin/partners/[id]/route.ts#PATCH@55",
+      "kind": "route",
+      "bodyHash": "b8bf9ded5987c9c22c12468b973a0fa2fcdd53533ac5be536b4bee34302d06ba"
+    },
+    {
+      "file": "app/api/admin/social-calendars/[id]/route.ts",
+      "id": "app/api/admin/social-calendars/[id]/route.ts#PATCH@20",
+      "kind": "route",
+      "bodyHash": "db315d0dd8aaf05a40a95c511744f31f5b68d1449fcab19adcee7a7dd784297d"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts",
+      "id": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts#POST@6",
+      "kind": "route",
+      "bodyHash": "958e638acb36125c7db94a45fd09cbd36f56d91d75b5c59da945ae57360bc4cc"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "id": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#POST@183",
+      "kind": "route",
+      "bodyHash": "f3af3ef4338b00c2dbced28c168cddf27f19bbd1c8534ed4580e514068b8d52c"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "id": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#PATCH@567",
+      "kind": "route",
+      "bodyHash": "ad34160d19bdec1f562bf66800022c04f5491e29dc786c58067183c623f19083"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "id": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#DELETE@709",
+      "kind": "route",
+      "bodyHash": "d80b90953bc9e12e906e1035ea28604cda30b3b6cbd3960bf54bc3aec5e03432"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-drafts/route.ts",
+      "id": "app/api/calendars/[id]/ai-drafts/route.ts#DELETE@62",
+      "kind": "route",
+      "bodyHash": "2da0c8bbea16814779050a6143355ac8443f831107bd7d8f7596d9e203c5e18a"
+    },
+    {
+      "file": "app/api/calendars/[id]/ai-generate/route.ts",
+      "id": "app/api/calendars/[id]/ai-generate/route.ts#POST@21",
+      "kind": "route",
+      "bodyHash": "3973d86552dcbe7eb17f0c84025152bc075c84ec7588cc3c5599e77a7b7e893a"
+    },
+    {
+      "file": "app/api/calendars/[id]/business-documents/[documentId]/route.ts",
+      "id": "app/api/calendars/[id]/business-documents/[documentId]/route.ts#DELETE@14",
+      "kind": "route",
+      "bodyHash": "0b9377876b895f97b4b3bda9d19940299453d6d3e9634784ccd9fd5c8106e6c9"
+    },
+    {
+      "file": "app/api/calendars/[id]/business-documents/upload-complete/route.ts",
+      "id": "app/api/calendars/[id]/business-documents/upload-complete/route.ts#POST@12",
+      "kind": "route",
+      "bodyHash": "24284529ffa277ff81dbafa37abce10c83c70a0c452d6fccbbbaccf528788809"
+    },
+    {
+      "file": "app/api/calendars/[id]/business-documents/website/route.ts",
+      "id": "app/api/calendars/[id]/business-documents/website/route.ts#POST@14",
+      "kind": "route",
+      "bodyHash": "e47bb7749e28b3763335f15dda2c60381e71b37698f94a67d9ab17120fc0df28"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts",
+      "id": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts#POST@10",
+      "kind": "route",
+      "bodyHash": "fb510f08fb84f1c03478c749b39df93b2ffe49ac6073bb7497e57d6125f137f4"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/facebook/select-page/route.ts",
+      "id": "app/api/calendars/[id]/channels/facebook/select-page/route.ts#POST@16",
+      "kind": "route",
+      "bodyHash": "4b959ebbd5483ed0641694a42e5f44fc48451d1c434499d457f11c70b77c2cf8"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts",
+      "id": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts#POST@11",
+      "kind": "route",
+      "bodyHash": "57932ef525c492b82faa49d62513d14178d380dab9eb35a0a5675e352147f71c"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/linkedin/pages/route.ts",
+      "id": "app/api/calendars/[id]/channels/linkedin/pages/route.ts#POST@37",
+      "kind": "route",
+      "bodyHash": "d4f617b94045101db055655e1895c9f9ab848bf0a28b58a099ab67b6cd39f822"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "id": "app/api/calendars/[id]/channels/whatsapp/route.ts#POST@30",
+      "kind": "route",
+      "bodyHash": "24da3eb3840405524ecd3accd5a74fb5921b6d1dcd1d9c77d6d6bdb40c79d730"
+    },
+    {
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "id": "app/api/calendars/[id]/channels/whatsapp/route.ts#DELETE@69",
+      "kind": "route",
+      "bodyHash": "f29ff92e57faa03bd6bec3e7dfc8142ede7e179de91c39824b1fc4d0a582aced"
+    },
+    {
+      "file": "app/api/calendars/[id]/instagram/disconnect/route.ts",
+      "id": "app/api/calendars/[id]/instagram/disconnect/route.ts#POST@12",
+      "kind": "route",
+      "bodyHash": "e6b853ae041a27e926662730f644694dfb670b1aa3ade7ff82616b962fc7b896"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts#DELETE@7",
+      "kind": "route",
+      "bodyHash": "e49d1a318dc109e7542debf3a7464990cceece4fc11fc7134f328c53a1fdee2d"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts#POST@9",
+      "kind": "route",
+      "bodyHash": "f554042f3c98322e885fe00bdb5ca848e6abe60163047d70b7fcdaff669b9dfc"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/publish/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/publish/route.ts#POST@8",
+      "kind": "route",
+      "bodyHash": "4edd9c4de2d23fad3aab3c54f542ee8ad25c1b73bbb39304811e455ee5354142"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts#POST@8",
+      "kind": "route",
+      "bodyHash": "bcbe3682aa498540ae8f88340704996693caf70261812415d0d4bb31cbc3a820"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/route.ts#PATCH@17",
+      "kind": "route",
+      "bodyHash": "842f380e1a0c03a5273650122f61f5de514cbb071fda257efed2f0c86837f4d4"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/route.ts#DELETE@181",
+      "kind": "route",
+      "bodyHash": "de9d13a4a295132d23eee467695d0f89f40776e05f2c3e1b0a7c71a6737829ea"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts",
+      "id": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts#POST@12",
+      "kind": "route",
+      "bodyHash": "30b971d9b6a3de7e0e7df4540216e019b2bf10b682cfabd5dfacbd5acc2aaa48"
+    },
+    {
+      "file": "app/api/calendars/[id]/posts/route.ts",
+      "id": "app/api/calendars/[id]/posts/route.ts#POST@106",
+      "kind": "route",
+      "bodyHash": "c5f53862e627943d138be0edda6a9ae57ac815a7bf605bc4b24a79608c326867"
+    },
+    {
+      "file": "app/api/calendars/[id]/reset/route.ts",
+      "id": "app/api/calendars/[id]/reset/route.ts#POST@7",
+      "kind": "route",
+      "bodyHash": "169103881620c0837ed54ae89a660c6aea329aa1a8a407b40900fdbb977eed2b"
+    },
+    {
+      "file": "app/api/calendars/[id]/retry-payment/route.ts",
+      "id": "app/api/calendars/[id]/retry-payment/route.ts#POST@38",
+      "kind": "route",
+      "bodyHash": "21f5fcc8468fe04c3711334c00e5442d6067a9b43c07b6e462944a8d0297641b"
+    },
+    {
+      "file": "app/api/calendars/[id]/route.ts",
+      "id": "app/api/calendars/[id]/route.ts#PATCH@24",
+      "kind": "route",
+      "bodyHash": "82772bf4ba0d8106e631fb928330f1949b9fba00262a203b1b20e41da2a54f01"
+    },
+    {
+      "file": "app/api/calendars/[id]/route.ts",
+      "id": "app/api/calendars/[id]/route.ts#DELETE@574",
+      "kind": "route",
+      "bodyHash": "bf0be07e8cc1119c62ffe25c771449f475c5e39074e962f935edd663541e7cf7"
+    },
+    {
+      "file": "app/api/calendars/[id]/tiktok/disconnect/route.ts",
+      "id": "app/api/calendars/[id]/tiktok/disconnect/route.ts#POST@10",
+      "kind": "route",
+      "bodyHash": "82fa54080ff4dae4ce70d778008dcd02ec8764db5734010c0ed8b8d17564bdbe"
+    },
+    {
+      "file": "app/api/calendars/[id]/tiktok/messaging/route.ts",
+      "id": "app/api/calendars/[id]/tiktok/messaging/route.ts#POST@24",
+      "kind": "route",
+      "bodyHash": "475644ba6e8bf0cb66af0f39aef03d362d7a16634a3925a060698df63d9965e2"
+    },
+    {
+      "file": "app/api/calendars/[id]/verify-subscription/route.ts",
+      "id": "app/api/calendars/[id]/verify-subscription/route.ts#POST@24",
+      "kind": "route",
+      "bodyHash": "c1f952f76dcdb8ae9987d704923f914f7df0eda824ddeb035263517e8053ff7f"
+    },
+    {
+      "file": "app/api/calendars/cancel-subscription/route.ts",
+      "id": "app/api/calendars/cancel-subscription/route.ts#POST@16",
+      "kind": "route",
+      "bodyHash": "4dbb30dfde07912373102b9d69a72ef6f808d107830bcf4e2da178304ab06277"
+    },
+    {
+      "file": "app/api/calendars/channels/[channel]/callback/route.ts",
+      "id": "app/api/calendars/channels/[channel]/callback/route.ts#GET@34",
+      "kind": "route",
+      "bodyHash": "d3dbccb3b32b4c0308ec172f737f26ec26a24cdf49c811311744431a5ae4ba77"
+    },
+    {
+      "file": "app/api/calendars/channels/tiktok-messaging/callback/route.ts",
+      "id": "app/api/calendars/channels/tiktok-messaging/callback/route.ts#GET@11",
+      "kind": "route",
+      "bodyHash": "139d172a5752b3c516b8960afbe8fe9a968a0b29d3f92be457d174761ed16370"
+    },
+    {
+      "file": "app/api/calendars/downgrade-to-individual/route.ts",
+      "id": "app/api/calendars/downgrade-to-individual/route.ts#POST@32",
+      "kind": "route",
+      "bodyHash": "02e855b47b5ba2e77b23ac8c281723d79159353e5dfb175d66a01d0ed50a91f4"
+    },
+    {
+      "file": "app/api/calendars/instagram/callback/route.ts",
+      "id": "app/api/calendars/instagram/callback/route.ts#GET@27",
+      "kind": "route",
+      "bodyHash": "89b7c136e16ae2b440e5ed2565b03b1e92934c675669cac9f316c60a23263aed"
+    },
+    {
+      "file": "app/api/calendars/route.ts",
+      "id": "app/api/calendars/route.ts#POST@122",
+      "kind": "route",
+      "bodyHash": "505dda57734a96f84fea51f839834bd58b1f23c81eebb20e071160f3b2f29506"
+    },
+    {
+      "file": "app/api/calendars/subscribe/route.ts",
+      "id": "app/api/calendars/subscribe/route.ts#POST@46",
+      "kind": "route",
+      "bodyHash": "33fa753dcfa26ab3f7d587863646073e3b6af7ce335623dcc113606831424649"
+    },
+    {
+      "file": "app/api/calendars/tiktok/callback/route.ts",
+      "id": "app/api/calendars/tiktok/callback/route.ts#GET@14",
+      "kind": "route",
+      "bodyHash": "29f99694efa04501aabcd2741d70c13c7aa130a007745b6537561c38ef4f635a"
+    },
+    {
+      "file": "app/api/calendars/upgrade-to-company/route.ts",
+      "id": "app/api/calendars/upgrade-to-company/route.ts#POST@39",
+      "kind": "route",
+      "bodyHash": "84057384ac5f07cd9638abca6b064b9340f6c83b7ac141db7f39b4e94e29e7cb"
+    },
+    {
+      "file": "app/api/calendars/verify-subscription/route.ts",
+      "id": "app/api/calendars/verify-subscription/route.ts#POST@23",
+      "kind": "route",
+      "bodyHash": "64f93a3ad52f2437aa1af09e9456e9d93284ebf71a45e63fae658dc9bed73ed6"
+    },
+    {
+      "file": "app/api/cron/instagram-publish/route.ts",
+      "id": "app/api/cron/instagram-publish/route.ts#POST@12",
+      "kind": "route",
+      "bodyHash": "a94c80a1705549147f80f285c47287e90ceb738988b2b846a2824dec7af4a92c"
+    },
+    {
+      "file": "app/api/cron/social-publish/route.ts",
+      "id": "app/api/cron/social-publish/route.ts#POST@3",
+      "kind": "route",
+      "bodyHash": "f38c5a9f1b1a6a7516edac0952c8f88ac02ad37f9ed70b7dc7891329ca32ed34"
+    },
+    {
+      "file": "app/api/cron/tiktok-publish/route.ts",
+      "id": "app/api/cron/tiktok-publish/route.ts#POST@11",
+      "kind": "route",
+      "bodyHash": "268dde6a1714d244cf0f5c1be8de84a176019fa11cc567ebfcb64aa48db69342"
+    },
+    {
+      "file": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts",
+      "id": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts#DELETE@7",
+      "kind": "route",
+      "bodyHash": "1459ca91494c236f2afb67a45940fee9483421076fe7838eb68bb5c1dae70b30"
+    },
+    {
+      "file": "app/api/media/[mediaId]/replace/complete/route.ts",
+      "id": "app/api/media/[mediaId]/replace/complete/route.ts#POST@11",
+      "kind": "route",
+      "bodyHash": "661b2c6f10515b3c5f139adbcfa89fbf97840fbbd384140644bca91ba2b333a7"
+    },
+    {
+      "file": "app/api/media/[mediaId]/replace/multipart-complete/route.ts",
+      "id": "app/api/media/[mediaId]/replace/multipart-complete/route.ts#POST@16",
+      "kind": "route",
+      "bodyHash": "1b95d7f503d3793a598456a6eecc05edf06a9b34f054f042b6e33debb4deef26"
+    },
+    {
+      "file": "app/api/media/[mediaId]/route.ts",
+      "id": "app/api/media/[mediaId]/route.ts#DELETE@17",
+      "kind": "route",
+      "bodyHash": "24632124b7c4955c5fe2632777acaed59bb9561d5ed743eb369439ef4beff8ec"
+    },
+    {
+      "file": "app/api/media/[mediaId]/route.ts",
+      "id": "app/api/media/[mediaId]/route.ts#PATCH@48",
+      "kind": "route",
+      "bodyHash": "c9b8cbeb553746eb2f656826cb77155f9bdd169ff448dc8d3b074d6b48fe8da5"
+    },
+    {
+      "file": "app/api/payments/webhook/route.ts",
+      "id": "app/api/payments/webhook/route.ts#POST@115",
+      "kind": "route",
+      "bodyHash": "1bfe9e574f79a3a80472759c1f8301d563c88241b4aa61386165542b29889c0c"
+    },
+    {
+      "file": "app/api/portfolio/media/[mediaId]/route.ts",
+      "id": "app/api/portfolio/media/[mediaId]/route.ts#DELETE@8",
+      "kind": "route",
+      "bodyHash": "d93a4ad38236a2e71468b584df72e8b8b19b315a9f6d1e1c832708a4af2ee9b1"
+    },
+    {
+      "file": "app/api/portfolio/sections/[sectionId]/route.ts",
+      "id": "app/api/portfolio/sections/[sectionId]/route.ts#DELETE@52",
+      "kind": "route",
+      "bodyHash": "a626b28f2d2582f89f2b60de996ec9d9b4d971f610022e8157459e2b8bb97d61"
+    },
+    {
+      "file": "app/api/projects/[id]/add-files-batch/route.ts",
+      "id": "app/api/projects/[id]/add-files-batch/route.ts#POST@11",
+      "kind": "route",
+      "bodyHash": "42ed67fbbca9e31c440eefcb3c0483ab1a0053b808019ea64461c5c641d84052"
+    },
+    {
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "id": "app/api/sections/[sectionId]/route.ts#PATCH@9",
+      "kind": "route",
+      "bodyHash": "204a4a74a4b637045befc8242960dab9c0d524b5bb8fa99c615a65958f73ddcb"
+    },
+    {
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "id": "app/api/sections/[sectionId]/route.ts#DELETE@43",
+      "kind": "route",
+      "bodyHash": "879ee2d1d431cbd94a12ca10796b2a6cd2cf2a735090548614f5bb15107233e5"
+    },
+    {
+      "file": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts",
+      "id": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts#POST@13",
+      "kind": "route",
+      "bodyHash": "5a13c37ebc3cc75e97bd88de154e2e21c9108cd5d19958285927229b6aa9be50"
+    },
+    {
+      "file": "app/api/social-calendar/[slug]/respond/route.ts",
+      "id": "app/api/social-calendar/[slug]/respond/route.ts#POST@10",
+      "kind": "route",
+      "bodyHash": "56d9a254e1ed3e57115ee4f338dd072a29f4901bdc536840d801cf9745aabfdc"
+    },
+    {
+      "file": "app/dashboard/[projectId]/page.tsx",
+      "id": "app/dashboard/[projectId]/page.tsx#ProjectDetailPage@528",
+      "kind": "legacy-function",
+      "bodyHash": "cc4a5fd4357bcdbbca2804d01377fd727cf78088eb81fd797ba93ccf8c798fa5"
+    },
+    {
+      "file": "app/dashboard/billing/page.tsx",
+      "id": "app/dashboard/billing/page.tsx#BillingPage@23",
+      "kind": "legacy-function",
+      "bodyHash": "f2e3534239b36cb0197be58813fb11c8e3591976c3ea00c2d82fd3ef2784ba36"
+    },
+    {
+      "file": "app/dashboard/profile/page.tsx",
+      "id": "app/dashboard/profile/page.tsx#ProfilePage@350",
+      "kind": "legacy-function",
+      "bodyHash": "76410545c8893de3bceeea1e8366a0fe33f1fba2f384987919ac9861851f9319"
+    },
+    {
+      "file": "lib/aiResearchScheduler.ts",
+      "id": "lib/aiResearchScheduler.ts#runScheduledAiBusinessResearch@26",
+      "kind": "legacy-function",
+      "bodyHash": "0b88075bf8ca802d24d8f77de2332c4eb40760e40ec0a7443f0090111f8d5fd4"
+    },
+    {
+      "file": "lib/calendarImport/confirmation.ts",
+      "id": "lib/calendarImport/confirmation.ts#confirmImport@126",
+      "kind": "legacy-function",
+      "bodyHash": "363d08fb27f007264adf3c80466fd3b136ced1b61861214cf0ddbdd39a0edd64"
+    },
+    {
+      "file": "lib/calendarTeamService.ts",
+      "id": "lib/calendarTeamService.ts#editTeammate@96",
+      "kind": "legacy-function",
+      "bodyHash": "b45483bb134a39d000d1c78a991e91dce0e4f1686e0f1b19c9162d2ef9c30a77"
+    },
+    {
+      "file": "lib/calendarTeamService.ts",
+      "id": "lib/calendarTeamService.ts#removeTeammate@114",
+      "kind": "legacy-function",
+      "bodyHash": "2fd6f12aee37a5233d4be6f5ff238aaa4f479aa32cdd76967947655dcdae6567"
+    },
+    {
+      "file": "lib/calendarTeamService.ts",
+      "id": "lib/calendarTeamService.ts#acceptTeamInvite@141",
+      "kind": "legacy-function",
+      "bodyHash": "bfa85fc6ac030b8e61f2ed5a1b9ab40b663a2edbab0652989996212065159833"
+    },
+    {
+      "file": "lib/calendarTrialEmails.ts",
+      "id": "lib/calendarTrialEmails.ts#runCalendarTrialEmailCheck@22",
+      "kind": "legacy-function",
+      "bodyHash": "e1c234b5ce3da3f11a21d72bd3b45656d28b23b5405f5a6e1bc2ccef1f1b75a1"
+    },
+    {
+      "file": "lib/instagram.ts",
+      "id": "lib/instagram.ts#publishContainer@537",
+      "kind": "legacy-function",
+      "bodyHash": "da4d1796efb4e54c5243e5f1ed847997aa3d235232bb0ca2268936da42c0b1d9"
+    },
+    {
+      "file": "lib/instagramPublishing.ts",
+      "id": "lib/instagramPublishing.ts#publishPostToInstagram@57",
+      "kind": "legacy-function",
+      "bodyHash": "7ce3fde879b23f17a2af993005987a829c79fa6064b327b8a0f869e65d461970"
+    },
+    {
+      "file": "lib/publishing/batchClaims.ts",
+      "id": "lib/publishing/batchClaims.ts#claimPublishingBatch@23",
+      "kind": "legacy-function",
+      "bodyHash": "ef75ce9b672310edc0baea08edc7fa47b79c5761b73c3551ac833c0bff1cefd1"
+    },
+    {
+      "file": "lib/publishing/batchClaims.ts",
+      "id": "lib/publishing/batchClaims.ts#failPublishingDispatchBatch@73",
+      "kind": "legacy-function",
+      "bodyHash": "49bc6332d6ff0a0d9529cc21c8446efbac27511cbdf9d7ae5d3cf7ea792ebe5d"
+    },
+    {
+      "file": "lib/publishing/budgetedDatabase.ts",
+      "id": "lib/publishing/budgetedDatabase.ts#transaction:callback@88",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/legacyRecoveryBridge.ts",
+      "id": "lib/publishing/legacyRecoveryBridge.ts#importLegacyPublishingRecovery@10",
+      "kind": "legacy-function",
+      "bodyHash": "f17b5407f78a830e7e0e2a8c39c0b3ec8e1935bcfa70d2667d506618a1641294"
+    },
+    {
+      "file": "lib/publishing/platformIntegration.ts",
+      "id": "lib/publishing/platformIntegration.ts#publish@72",
+      "kind": "legacy-function",
+      "bodyHash": "5c19491c2eddfc0f7d45d0debeba7ef86f81a765bf605dcaabdf658f91b98e66"
+    },
+    {
+      "file": "lib/publishing/platformIntegration.ts",
+      "id": "lib/publishing/platformIntegration.ts#reconcile@190",
+      "kind": "legacy-function",
+      "bodyHash": "2e84e7bda897c64e79b3a4a4b7b147b5986535df21d0581bdb917105ee2ff03f"
+    },
+    {
+      "file": "lib/publishing/portableRuntime.ts",
+      "id": "lib/publishing/portableRuntime.ts#tick@29",
+      "kind": "legacy-function",
+      "bodyHash": "138624ffc12a284e0878373b9944b06fd8d05336ff248205a2576d2f9db2ebf5"
+    },
+    {
+      "file": "lib/publishing/portableRuntime.ts",
+      "id": "lib/publishing/portableRuntime.ts#consume@37",
+      "kind": "legacy-function",
+      "bodyHash": "d39b36ebe8f00561d0993a4c9c167e06cde14235485d45f9b15a225eefd39be8"
+    },
+    {
+      "file": "lib/publishing/providers.ts",
+      "id": "lib/publishing/providers.ts#publishFacebook@12",
+      "kind": "legacy-function",
+      "bodyHash": "fbf535bacfca769ca98573ffa9b90fe40d2f8509d3764f3443256ffe4f6f2ea3"
+    },
+    {
+      "file": "lib/publishing/providers.ts",
+      "id": "lib/publishing/providers.ts#publishX@94",
+      "kind": "legacy-function",
+      "bodyHash": "a93375b38c629451c50eaabd34c3c1fb8f38f436bbfd046f985ed4072b905ee2"
+    },
+    {
+      "file": "lib/publishing/providers.ts",
+      "id": "lib/publishing/providers.ts#publishLinkedIn@142",
+      "kind": "legacy-function",
+      "bodyHash": "b60eb4a479a8105f4ef5a194195d127319b7bb16fae956644d0913e572a281e6"
+    },
+    {
+      "file": "lib/publishing/reliableConsumer.ts",
+      "id": "lib/publishing/reliableConsumer.ts#drainReliablePublishing@10",
+      "kind": "legacy-function",
+      "bodyHash": "89b6feaf56950b4f15e89524099459d1a4ef02ebf1a6ebbbd1f3659590b69b29"
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#leader@33",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#releaseLeader@45",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#prepareMany@60",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#releasePrepared@74",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#budget@81",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#admit@121",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#acquireAccount@199",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#releaseAccount@207",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#recoverAccountLeases@210",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#beginExternal@243",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#finish@254",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#failProvider@264",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#accept@273",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#unknown@280",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#reject@287",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#claimReconciliation@308",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#releaseReconciliation@314",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#markReported@322",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#deferReporting@323",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#acquireConsumer@332",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#renewConsumer@341",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#releaseConsumer@345",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#requestWake@352",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#takeWake@355",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#dispatchedWake@360",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#acknowledgeWake@365",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#cancelBeforeExternal@368",
+      "kind": "legacy-function",
+      "bodyHash": "a7836a84a49016549cf4825a749b95fa8f60957b7d1178642afe07076859eefd"
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#recoverExpired@387",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableStore.ts",
+      "id": "lib/publishing/reliableStore.ts#authorizeKnownRejectedRetry@402",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/publishing/reliableWorker.ts",
+      "id": "lib/publishing/reliableWorker.ts#execute@21",
+      "kind": "legacy-function",
+      "bodyHash": "e05271361127b61683099f5816054238489d7132439141c5f54fe07406f96779"
+    },
+    {
+      "file": "lib/publishing/runtime.ts",
+      "id": "lib/publishing/runtime.ts#tick@34",
+      "kind": "legacy-function",
+      "bodyHash": "4898f9f9c38fda74c9fa82ac1e230262d59c2cd721f4941c0daf63a262e8bcb0"
+    },
+    {
+      "file": "lib/publishing/scheduler.ts",
+      "id": "lib/publishing/scheduler.ts#runScheduledPublishing@5",
+      "kind": "legacy-function",
+      "bodyHash": "192b306b5e6df3fb5fa04636734515a578d1284a069903e3208723a0e193cada"
+    },
+    {
+      "file": "lib/publishing/worker.ts",
+      "id": "lib/publishing/worker.ts#runPublishJob@11",
+      "kind": "legacy-function",
+      "bodyHash": "c3c97da18628b3b5f610d22312169fd0204912fb808ad6ab202ce7a8db825cbe"
+    },
+    {
+      "file": "lib/r2.ts",
+      "id": "lib/r2.ts#deleteObject@264",
+      "kind": "legacy-function",
+      "bodyHash": "7ac713dfbee98c3a91ac87a574275ff1eecba2c2788d3987681bee078dada717"
+    },
+    {
+      "file": "lib/reporting/adapters/tiktok.ts",
+      "id": "lib/reporting/adapters/tiktok.ts#apiPost@26",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/reporting/sync.ts",
+      "id": "lib/reporting/sync.ts#syncConnection@44",
+      "kind": "legacy-function",
+      "bodyHash": "8cb419e591d03885c6f96b05301af4dc94f6da20eaf5c6e89bc4bbb78ec5c6c9"
+    },
+    {
+      "file": "lib/socialMessaging/tiktok.ts",
+      "id": "lib/socialMessaging/tiktok.ts#freshTikTokMessagingConnection@18",
+      "kind": "legacy-function",
+      "bodyHash": "295da17066b0f15db0e95a5f4af6ecd94a222b6982adf2a9a41643a6b13c1c85"
+    },
+    {
+      "file": "lib/socialMessaging/tiktok.ts",
+      "id": "lib/socialMessaging/tiktok.ts#syncTikTokInbox@104",
+      "kind": "legacy-function",
+      "bodyHash": "efd74ba369379900816637df53660fd5d489c4b7ff39340504e3c8d8b5f96cdb"
+    },
+    {
+      "file": "lib/socialMessaging/whatsapp.ts",
+      "id": "lib/socialMessaging/whatsapp.ts#sendWhatsAppMessage@139",
+      "kind": "legacy-function",
+      "bodyHash": "c6b05c927f65ad9383ad6f7f9f47965974142429cf8859b1dc349335eadc5fcc"
+    },
+    {
+      "file": "lib/socialMessaging/x.ts",
+      "id": "lib/socialMessaging/x.ts#syncXInbox@58",
+      "kind": "legacy-function",
+      "bodyHash": "e400d9b006e14ab9b64a104b1040dbbad5fc2c890fe1cfb17f7ab09d3eb846ed"
+    },
+    {
+      "file": "lib/socialMessaging/x.ts",
+      "id": "lib/socialMessaging/x.ts#syncSocialInboxes@173",
+      "kind": "legacy-function",
+      "bodyHash": "a0e03b86e3809c6c8073184839ee2e9f5157d2f57544a84f0eacdfa52e57267c"
+    },
+    {
+      "file": "lib/socialReporting.ts",
+      "id": "lib/socialReporting.ts#database.$transaction:callback@24",
+      "kind": "legacy-function",
+      "bodyHash": "2766d1fa68aa2ad6d0fd2bcc08dd6650687f37a01a90d6015f3aeb6d71133e5a"
+    },
+    {
+      "file": "lib/socialTokens.ts",
+      "id": "lib/socialTokens.ts#freshConnection@10",
+      "kind": "legacy-function",
+      "bodyHash": "573e7ec6a5fe5b4cef9aca07f9fcc828a0034be477bcb58a5c380965bf74e1c6"
+    },
+    {
+      "file": "lib/syncContentWorkspaceRenewal.ts",
+      "id": "lib/syncContentWorkspaceRenewal.ts#syncContentWorkspaceRenewal@5",
+      "kind": "legacy-function",
+      "bodyHash": "633bc42a94bd8b5139249f80e04759014cfbd4bebbda9131e8cb8d4c44928457"
+    },
+    {
+      "file": "lib/tiktok.ts",
+      "id": "lib/tiktok.ts#apiPost@100",
+      "kind": "legacy-function",
+      "bodyHash": null
+    },
+    {
+      "file": "lib/tiktokAuthorization.ts",
+      "id": "lib/tiktokAuthorization.ts#authorizeTikTokPost@11",
+      "kind": "legacy-function",
+      "bodyHash": "3efeb6a0773ea9087f304d01e409e6a7f8b7980794a74ba15b369600d55d50b0"
+    },
+    {
+      "file": "lib/tiktokConnection.ts",
+      "id": "lib/tiktokConnection.ts#freshTikTokConnection@9",
+      "kind": "legacy-function",
+      "bodyHash": "439aee52f02def9013e2c0712196586d017bedeff9cef70d20a43b5b97430e44"
+    },
+    {
+      "file": "lib/tiktokPublishing.ts",
+      "id": "lib/tiktokPublishing.ts#publishPostToTikTok@17",
+      "kind": "legacy-function",
+      "bodyHash": "abc1334fb53319e285f166d32176ffb4b9e3a42c663d1fc50693a8f1c021b313"
+    },
+    {
+      "file": "netlify/functions/publish-post-background.ts",
+      "id": "netlify/functions/publish-post-background.ts#handler@6",
+      "kind": "netlify",
+      "bodyHash": "0fa7db7278b48956c6f44144a42990df47c664eb7573ae09ea8e01b3056e015d"
+    },
+    {
+      "file": "netlify/functions/social-publish-cron.ts",
+      "id": "netlify/functions/social-publish-cron.ts#schedule:callback@6",
+      "kind": "netlify",
+      "bodyHash": "84e4c84a9f022b7dc1cc0f91abc579502d40c5c89d94f476899d43a2c320186d"
+    },
+    {
+      "file": "app/api/payments/initialize/route.ts",
+      "id": "app/api/payments/initialize/route.ts#POST@10",
+      "kind": "route",
+      "bodyHash": "dc7a0722be6dc9df290e054b5080ef4a56957cec3fada974d8ff644ae06f68df"
+    },
+    {
+      "file": "app/api/projects/[id]/route.ts",
+      "id": "app/api/projects/[id]/route.ts#GET@35",
+      "kind": "route",
+      "bodyHash": "b3d9f518281caaa0ab31096d2d0e882e60d3e961d3f246322b6db9b5c3f1f052"
+    },
+    {
+      "file": "app/api/projects/[id]/route.ts",
+      "id": "app/api/projects/[id]/route.ts#PATCH@60",
+      "kind": "route",
+      "bodyHash": "5581f93e87cdf3d8f2f49373d6399d8cd00b1daa7bc60bd3f4d868050d974797"
+    },
+    {
+      "file": "app/api/projects/[id]/route.ts",
+      "id": "app/api/projects/[id]/route.ts#DELETE@143",
+      "kind": "route",
+      "bodyHash": "6af78aa0e57195545aa7365a1f4740066789f7cd4e56e290438b7efaada7e3bf"
+    },
+    {
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "id": "app/api/projects/[id]/invites/route.ts#GET@24",
+      "kind": "route",
+      "bodyHash": "2df1274980aa784096781a287c570359d3611a491b777a185bc6af3c22ee6ad8"
+    },
+    {
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "id": "app/api/projects/[id]/invites/route.ts#POST@55",
+      "kind": "route",
+      "bodyHash": "34a0f583ce055ababfee8554cf35f06a600d23982e0fc0f27c33b39f0df7987c"
+    },
+    {
+      "file": "app/api/projects/[id]/invites/[inviteId]/route.ts",
+      "id": "app/api/projects/[id]/invites/[inviteId]/route.ts#DELETE@8",
+      "kind": "route",
+      "bodyHash": "2f89e0b56e82d0c0884cffb1c53c77623da6a459643b3590cd83fb200cb34c7b"
+    },
+    {
+      "file": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts",
+      "id": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts#DELETE@9",
+      "kind": "route",
+      "bodyHash": "73d4f35bee8cc5d72d6d0720eef0add27f66add54d120b202c7427b43262816e"
+    }
+  ]
+}

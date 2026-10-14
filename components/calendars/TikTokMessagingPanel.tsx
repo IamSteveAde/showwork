@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useCallback, useEffect, useState } from "react";
 
@@ -10,7 +11,7 @@ export default function TikTokMessagingPanel({ calendarId }: { calendarId: strin
   const endpoint = `/api/calendars/${encodeURIComponent(calendarId)}/tiktok/messaging`;
   const load = useCallback(async () => {
     try {
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const response = await calendarMutationFetch(endpoint, { cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not check TikTok messaging access.");
       setAccess(result);
@@ -20,7 +21,7 @@ export default function TikTokMessagingPanel({ calendarId }: { calendarId: strin
   async function sync() {
     setBusy(true); setError(""); setNotice("");
     try {
-      const response = await fetch(endpoint, { method: "POST" });
+      const response = await calendarMutationFetch(endpoint, { method: "POST" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not sync TikTok DMs.");
       setNotice(`Imported ${result.imported} messages. ${result.warnings?.join(" ") || ""}`);

@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
 import { initializeOfferSubscription, offerQuote } from "@/lib/billingOffers";
 import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
@@ -44,6 +45,8 @@ function resolveBillingCycle(
 //
 // AI is included in all plans.
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/subscribe/route.ts#POST@46")) { return await invokePublishingEntrypoint<never>("app/api/calendars/subscribe/route.ts#POST@46",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {

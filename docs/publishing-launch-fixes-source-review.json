@@ -1,0 +1,6 @@
+{
+  "lib/reporting/sync.ts": {
+    "sourceHash": "8dbb9861809c8778f2fc5c13e356c8b3dcb5bb524dc70b82ee60e8536b0153c8",
+    "change": "Remove irrelevant publication guard from analytics sync. Success and failure status projections now use connectedAt/accessToken/status CAS so delayed analytics cannot reconnect a disconnected or replaced account."
+  }
+}

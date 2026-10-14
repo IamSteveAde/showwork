@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -14,6 +15,8 @@ export async function POST(
     params: Promise<{ id: string; postId: string }>;
   }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts#POST@9",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const creator = await getCurrentCreator();
 
   if (!creator) {

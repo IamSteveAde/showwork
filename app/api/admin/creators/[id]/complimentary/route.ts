@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
@@ -7,6 +8,8 @@ import { queueOfferEmails, scheduleBenefitEmailDelivery } from "@/lib/billingBen
 
 // Stop only this user's complimentary grants; other recipients and paid plans retain their terms.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/creators/[id]/complimentary/route.ts#POST@9")) { return await invokePublishingEntrypoint<never>("app/api/admin/creators/[id]/complimentary/route.ts#POST@9",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const admin = await getCurrentCreator();
   if (!admin || !isAdminEmail(admin.email)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;

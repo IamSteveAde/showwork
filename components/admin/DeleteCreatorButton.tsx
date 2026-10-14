@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +19,7 @@ export default function DeleteCreatorButton({
   const handleDelete = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/admin/creators/${creatorId}`, { method: "DELETE" });
+    const res = await calendarMutationFetch(`/api/admin/creators/${creatorId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json();
       setError(data.error ?? "Failed to delete");

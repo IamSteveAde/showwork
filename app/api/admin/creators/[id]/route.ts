@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
@@ -10,6 +11,8 @@ async function requireAdmin() {
 // New financial benefits require scoped terms in the Billing Benefits API.
 // This compatibility endpoint only removes legacy flags or changes Free quotas.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/creators/[id]/route.ts#PATCH@12")) { return await invokePublishingEntrypoint<never>("app/api/admin/creators/[id]/route.ts#PATCH@12",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
@@ -49,6 +52,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/admin/creators/[id]/route.ts#DELETE@48",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

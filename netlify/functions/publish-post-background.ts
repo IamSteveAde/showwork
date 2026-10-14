@@ -1,9 +1,12 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "../../lib/publishing/applicationBoundary";
 import type { Handler } from "@netlify/functions";
 import type { SocialPlatform } from "@prisma/client";
 import { PUBLISHING_PLATFORMS } from "../../lib/publishing/state";
 import { runPublishJob } from "../../lib/publishing/worker";
 
 export const handler: Handler = async event => {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("netlify/functions/publish-post-background.ts#handler@6",[event]); } /* end-canonical-integration-boundary */
+
   if (!process.env.CRON_SECRET || event.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) return { statusCode: 401, body: "Unauthorized" };
   let body: { postId?: unknown; platform?: unknown; dispatchedAt?: unknown };
   try { body = JSON.parse(event.body || "{}"); } catch { return { statusCode: 400, body: "Invalid request" }; }

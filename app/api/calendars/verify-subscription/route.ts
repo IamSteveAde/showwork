@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { extractPaystackPlanCode } from "@/lib/paystackPlan";
 import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { resolveWorkspacePlan, recordOfferPayment, offerSubscriptionId } from "@/lib/billingOffers";
@@ -21,6 +22,8 @@ import {
 // This direct verification is a fallback for the case where Paystack
 // has confirmed payment but the webhook has not reached us yet.
 export async function POST() {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/verify-subscription/route.ts#POST@23")) { return await invokePublishingEntrypoint<never>("app/api/calendars/verify-subscription/route.ts#POST@23",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {

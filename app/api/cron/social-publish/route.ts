@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { runScheduledPublishing } from "@/lib/publishing/scheduler";
-export async function POST(req: NextRequest) {
-  if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json(await runScheduledPublishing(["FACEBOOK", "LINKEDIN", "X"]));
+/** Retired in the intended VPS release. External schedules must also be removed
+ * after approval. This route performs no admission, database or provider I/O. */
+import { NextResponse } from "next/server";
+export async function POST() {
+  return NextResponse.json({ error: "Publishing cron retired; canonical VPS ownership required", code: "PUBLISHING_HOST_RETIRED" }, { status: 410 });
 }

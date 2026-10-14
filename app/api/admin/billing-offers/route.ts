@@ -1,3 +1,4 @@
+import {publishingIntegrationInstalled,invokePublishingEntrypoint,nativePolicyExecutionAllowed} from "@/lib/publishing/applicationBoundary";
 import { queueOfferEmails, scheduleBenefitEmailDelivery } from "@/lib/billingBenefitNotifications";
 import { complimentaryAccessSelect, deliveryComplimentaryTier, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
 import { createHash } from "crypto";
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
     selectedCreator: selectedCreator ? decorate(selectedCreator) : null, emailStates });
 }
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/billing-offers/route.ts#POST@42")) { return await invokePublishingEntrypoint<never>("app/api/admin/billing-offers/route.ts#POST@42",Array.from(arguments)); } } /* end-canonical-integration-boundary */
   const admin = await adminAccount();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let input, requestId: string;
@@ -96,6 +98,7 @@ export async function POST(req: NextRequest) {
   }
 }
 export async function PATCH(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/billing-offers/route.ts#PATCH@98")) { return await invokePublishingEntrypoint<never>("app/api/admin/billing-offers/route.ts#PATCH@98",Array.from(arguments)); } } /* end-canonical-integration-boundary */
   const admin = await adminAccount();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let id: string;
@@ -134,6 +137,7 @@ export async function PATCH(req: NextRequest) {
 
 
 export async function PUT(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/billing-offers/route.ts#PUT@136")) { return await invokePublishingEntrypoint<never>("app/api/admin/billing-offers/route.ts#PUT@136",Array.from(arguments)); } } /* end-canonical-integration-boundary */
   const admin = await adminAccount();
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body;

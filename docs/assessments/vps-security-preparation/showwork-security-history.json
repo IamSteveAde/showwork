@@ -1,0 +1,193 @@
+{
+  "scope": "HEAD",
+  "objectsScanned": 2776,
+  "findings": [
+    {
+      "object": "4a4459d1e0cb14284d34c9e9cb87f0d099540956",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "4a4459d1e0cb14284d34c9e9cb87f0d099540956",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 32
+    },
+    {
+      "object": "b128f0ab0a1d580d1f8014f909433c8df3b12b3c",
+      "path": "public/images/del.html",
+      "kind": "jwt",
+      "line": 818
+    },
+    {
+      "object": "b128f0ab0a1d580d1f8014f909433c8df3b12b3c",
+      "path": "public/images/del.html",
+      "kind": "literal-secret",
+      "line": 818
+    },
+    {
+      "object": "65be9c8288511af22d5afc81da259e0fa519263a",
+      "path": "scripts/publishing-reliability/performance-safety-validation.cjs",
+      "kind": "literal-secret",
+      "line": 25
+    },
+    {
+      "object": "974da0695e4d1a4cb46a790435d6289c0cdba68c",
+      "path": "tests/facebook-reporting-permissions.test.cjs",
+      "kind": "literal-secret",
+      "line": 6
+    },
+    {
+      "object": "19097e26a341e86beff2fc20194a6c498c6e4f64",
+      "path": "tests/helpers/full-publishing-stage.cjs",
+      "kind": "literal-secret",
+      "line": 20
+    },
+    {
+      "object": "19097e26a341e86beff2fc20194a6c498c6e4f64",
+      "path": "tests/helpers/full-publishing-stage.cjs",
+      "kind": "literal-secret",
+      "line": 20
+    },
+    {
+      "object": "7dfb4f94654d7ab521f0c03493a3ffa80aaab83d",
+      "path": "tests/publishing-gateway.test.cjs",
+      "kind": "credential-url",
+      "line": 99
+    },
+    {
+      "object": "bedb11eba6eed1f8f4a6897a379241847c7f66bc",
+      "path": "tests/publishing-hardening.test.cjs",
+      "kind": "credential-url",
+      "line": 6
+    },
+    {
+      "object": "570abab264037aa305356097a3295b27e2de96c8",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 685
+    },
+    {
+      "object": "570abab264037aa305356097a3295b27e2de96c8",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 778
+    },
+    {
+      "object": "b4f54ca75b4f4bf5fdbe77e4fc6ed5344f4a806e",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 684
+    },
+    {
+      "object": "b4f54ca75b4f4bf5fdbe77e4fc6ed5344f4a806e",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 777
+    },
+    {
+      "object": "00b00f4c6cdc4dd747b559605e7fc49a4f439e0f",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 684
+    },
+    {
+      "object": "00b00f4c6cdc4dd747b559605e7fc49a4f439e0f",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 777
+    },
+    {
+      "object": "9a1c87187fd8f17961c3eb0a9ccdbba4a24fff32",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 684
+    },
+    {
+      "object": "9a1c87187fd8f17961c3eb0a9ccdbba4a24fff32",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 777
+    },
+    {
+      "object": "2c9442064056ef0e4657573b8bd56dda12342bdb",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "2c9442064056ef0e4657573b8bd56dda12342bdb",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 32
+    },
+    {
+      "object": "4816a6b42fb15115ac664ede3ec165649b6c2264",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "4816a6b42fb15115ac664ede3ec165649b6c2264",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 32
+    },
+    {
+      "object": "a231d02be10ebd2e194a9f2b10be36200f2ca413",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "a231d02be10ebd2e194a9f2b10be36200f2ca413",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 32
+    },
+    {
+      "object": "afe6a84eb6c7eeaa28bb225fac8bcfc6903ab1a1",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "afe6a84eb6c7eeaa28bb225fac8bcfc6903ab1a1",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 26
+    },
+    {
+      "object": "5b33414c5f007b2378e8376ae4b49cc10b0fe2df",
+      "path": "tests/social-integrations.test.cjs",
+      "kind": "literal-secret",
+      "line": 647
+    },
+    {
+      "object": "9591a3a65bf401dcd6bcd3831c5409647fd4f6ef",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "9591a3a65bf401dcd6bcd3831c5409647fd4f6ef",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 16
+    },
+    {
+      "object": "267cfaf0dbfd7815bf67ae5f023d87ad66b04fb6",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "267cfaf0dbfd7815bf67ae5f023d87ad66b04fb6",
+      "path": ".env.example",
+      "kind": "literal-secret",
+      "line": 13
+    }
+  ],
+  "redacted": true
+}

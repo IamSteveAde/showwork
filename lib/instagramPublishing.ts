@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import type { Prisma } from "@prisma/client";
 import { db as defaultDb } from "@/lib/db";
 import { publicUrlFor } from "@/lib/r2";
@@ -55,6 +56,8 @@ export function createInstagramPublisher(database: typeof defaultDb, reporting: 
   const db = database;
   const reportPublished = reporting;
   return async function publishPostToInstagram(postId: string): Promise<void> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/instagramPublishing.ts#publishPostToInstagram@57"); } /* end-canonical-integration-boundary */
+
   const post = preload ? await preload(postId) : await db.calendarPost.findUnique({
     where: { id: postId },
     include: {

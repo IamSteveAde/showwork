@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 import { useEffect, useRef, useState } from "react";
 import { TIERS, type PaidTier, type BillingCycle } from "@/lib/subscriptionTiers";
 import { CONTENT_WORKSPACE_PLANS, type ContentWorkspacePlan } from "@/lib/contentWorkspaceEntitlements";
@@ -15,7 +16,7 @@ export default function SubscriptionCheckoutButton({ product, plan, cycle, label
   async function preview() {
     setLoading(true); setError(null);
     try {
-      const response = await fetch(`/api/billing/quote?product=${product}&plan=${plan}&cycle=${cycle}`, { cache: "no-store" });
+      const response = await calendarMutationFetch(`/api/billing/quote?product=${product}&plan=${plan}&cycle=${cycle}`, { cache: "no-store" });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not confirm your price");
       setQuote(result);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not confirm your price"); }
@@ -25,7 +26,7 @@ export default function SubscriptionCheckoutButton({ product, plan, cycle, label
     if (!quote) return;
     setLoading(true); setError(null);
     try {
-      const response = await fetch(product === "DELIVERY" ? "/api/subscription/initialize" : "/api/calendars/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...(product === "DELIVERY" ? { tier: plan, cycle } : { plan, billingCycle: cycle, activateOffer: !!quote.offer }), expectedQuote: { amountNgn: quote.amountNgn, offerId: quote.offer?.id ?? null } }) });
+      const response = await calendarMutationFetch(product === "DELIVERY" ? "/api/subscription/initialize" : "/api/calendars/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...(product === "DELIVERY" ? { tier: plan, cycle } : { plan, billingCycle: cycle, activateOffer: !!quote.offer }), expectedQuote: { amountNgn: quote.amountNgn, offerId: quote.offer?.id ?? null } }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Failed to start subscription");
       window.location.href = result.authorizationUrl;
     } catch (e) { setError(e instanceof Error ? e.message : "Failed to start subscription"); setLoading(false); }

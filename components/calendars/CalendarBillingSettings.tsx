@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { getContentWorkspaceFeatureList } from "@/lib/contentWorkspaceEntitlements";
 
@@ -357,7 +358,7 @@ export default function CalendarBillingSettings({
         : "/api/calendars/downgrade-to-individual";
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await calendarMutationFetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -406,7 +407,7 @@ export default function CalendarBillingSettings({
     if (!pendingSwitch) return;
     const controller = new AbortController();
     setOfferQuote(null); setQuoteError(null); setQuoteLoading(true);
-    fetch(`/api/billing/quote?product=CONTENT_WORKSPACE&plan=${selectedPlan}&cycle=${switchBillingCycle}`, { cache: "no-store", signal: controller.signal })
+    calendarMutationFetch(`/api/billing/quote?product=CONTENT_WORKSPACE&plan=${selectedPlan}&cycle=${switchBillingCycle}`, { cache: "no-store", signal: controller.signal })
       .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not confirm your price"); return result; })
       .then(setOfferQuote).catch(e => { if (e.name !== "AbortError") setQuoteError(e.message); })
       .finally(() => { if (!controller.signal.aborted) setQuoteLoading(false); });
@@ -418,7 +419,7 @@ export default function CalendarBillingSettings({
     setError(null);
 
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         "/api/calendars/cancel-subscription",
         {
           method: "POST",

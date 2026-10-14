@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import styles from "./SocialLeadInbox.module.css";
@@ -77,7 +78,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
       if (status) query.set("status", status);
       if (search.trim()) query.set("q", search.trim());
       if (unreadOnly) query.set("unread", "true");
-      const response = await fetch(`${endpoint}?${query}`, { cache: "no-store", signal: controller.signal });
+      const response = await calendarMutationFetch(`${endpoint}?${query}`, { cache: "no-store", signal: controller.signal });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load the inbox.");
       if (controller.signal.aborted) return;
@@ -150,7 +151,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
   async function markRead(conversation: Conversation) {
     if (conversation.encrypted || !inboxAccess || !canReplyFromWorkspace || clientMode || !calendarId || conversation.unreadCount === 0) return;
     try {
-      const response = await fetch(`${endpoint}/${encodeURIComponent(conversation.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markRead: true }) });
+      const response = await calendarMutationFetch(`${endpoint}/${encodeURIComponent(conversation.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markRead: true }) });
       if (response.ok) void latestLoadRef.current(true);
     } catch { /* Keep the open chat usable if marking read briefly fails. */ }
   }
@@ -158,7 +159,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
   async function updateLeadStatus(value: string) {
     if (!inboxAccess || !canManageLeads || !calendarId || !selected || selected.id.startsWith("xchat:")) return;
     try {
-      const response = await fetch(`${endpoint}/${encodeURIComponent(selected.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ leadStatus: value }) });
+      const response = await calendarMutationFetch(`${endpoint}/${encodeURIComponent(selected.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ leadStatus: value }) });
       if (!response.ok) { const result = await response.json().catch(() => ({})); setError(result.error || "Could not update lead status."); return; }
       setPinnedConversation(current => current?.id === selected.id ? { ...current, leadStatus: value } : current);
       void latestLoadRef.current(true);
@@ -174,7 +175,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
     }
     setSending(true); setError("");
     try {
-      const response = await fetch(`${endpoint}/${encodeURIComponent(selected.id)}/reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: draft.trim() }) });
+      const response = await calendarMutationFetch(`${endpoint}/${encodeURIComponent(selected.id)}/reply`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: draft.trim() }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not send reply.");
       setDraft(""); setSuccess("Reply sent to the platform.");
@@ -189,7 +190,7 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
     setSavingSettings(true); setError("");
     const settings = { ...data.settings, ...patch, aiAutoReplyInstructions: patch.aiAutoReplyInstructions ?? data.settings.aiAutoReplyInstructions ?? "" };
     try {
-      const response = await fetch(`/api/calendars/${encodeURIComponent(calendarId)}/inbox/settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      const response = await calendarMutationFetch(`/api/calendars/${encodeURIComponent(calendarId)}/inbox/settings`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not save inbox settings.");
       setData(current => current ? { ...current, settings: result } : current); setSuccess("Inbox settings saved.");

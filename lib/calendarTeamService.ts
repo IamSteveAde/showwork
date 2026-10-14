@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { createHash, randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
@@ -94,6 +95,8 @@ export async function inviteTeammate(calendarId: string, actor: Actor, body: unk
   return { ok: true, inviteId: invite.id, role: selected.role };
 }
 export async function editTeammate(calendarId: string, memberId: string, actor: Actor, body: unknown) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<{ok:boolean}>("lib/calendarTeamService.ts#editTeammate@96",[calendarId,memberId,actor,body]); } /* end-canonical-integration-boundary */
+
   await teamAccess(actor.id, calendarId, true);
   if (!(await canAccessCalendarById(calendarId))) throw new TeamError('Restore workspace access before changing permissions. You can still remove a teammate.', 403);
   const selected = assignment(body);
@@ -112,6 +115,8 @@ export async function editTeammate(calendarId: string, memberId: string, actor: 
   });
 }
 export async function removeTeammate(calendarId: string, memberId: string, actor: Actor) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<{ok:boolean}>("lib/calendarTeamService.ts#removeTeammate@114",[calendarId,memberId,actor]); } /* end-canonical-integration-boundary */
+
   await teamAccess(actor.id, calendarId, true);
   const calendar = await db.socialCalendar.findUniqueOrThrow({ where: { id: calendarId }, select: { managerId: true } });
   return db.$transaction(async tx => {
@@ -139,6 +144,8 @@ export async function cancelTeamInvite(calendarId: string, inviteId: string, act
   });
 }
 export async function acceptTeamInvite(token: string, actor: Actor) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<{ok:boolean;calendarId:string;alreadyMember?:boolean}>("lib/calendarTeamService.ts#acceptTeamInvite@141",[token,actor]); } /* end-canonical-integration-boundary */
+
   const found = await db.calendarInvite.findUnique({ where: { tokenHash: inviteHash(token) }, include: { calendar: { select: { managerId: true } } } });
   if (!found) throw new TeamError('Invitation not found.', 404);
   if (actor.email.trim().toLowerCase() !== found.email.trim().toLowerCase()) throw new TeamError('Sign in with the email address this invitation was sent to.', 403);

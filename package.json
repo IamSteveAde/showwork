@@ -4,10 +4,28 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && next dev",
-    "build": "node scripts/package-media-binaries.cjs && prisma generate && next build",
+    "build": "node scripts/vps/prepare-netlify-handoff.mjs && node scripts/package-media-binaries.cjs && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "security:scan": "node scripts/security/secretlint-safe.cjs && python3 scripts/security/scan-repository.py --high-confidence",
+    "security:audit-history": "python3 scripts/security/scan-repository.py --history",
+    "worker:check": "node scripts/vps/worker.cjs --check",
+    "test:vps-preparation": "node --test tests/vps-preparation.test.cjs",
+    "worker:typecheck": "tsc --project tsconfig.worker.json",
+    "worker:build": "npm run worker:typecheck && node scripts/vps/build-worker.mjs",
+    "worker:check-built": "node dist-worker/main.cjs --check",
+    "test:worker-build": "node --test tests/worker-build.test.mjs",
+    "test:worker-lifecycle": "node --test tests/worker-lifecycle.test.mjs",
+    "test:publishing-ownership": "node --test tests/publishing-ownership.test.cjs",
+    "test:publishing-ownership-integration": "node --test tests/publishing-ownership.integration.test.cjs",
+    "typecheck:publishing-ownership": "tsc --project tsconfig.publishing-ownership.json",
+    "test:publishing-retry-policy": "node --test tests/publishing-retry-policy.test.cjs",
+    "test:publishing-ownership-process": "node --test tests/publishing-ownership-process.integration.test.cjs",
+    "worker:native:build": "node scripts/vps/build-native-worker.mjs",
+    "worker:native:check": "node dist-worker-native/run.cjs --check",
+    "worker:run": "node dist-worker-native/run.cjs --run",
+    "worker:native:package": "node scripts/vps/package-native-disabled.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.658.0",
@@ -46,6 +64,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.7",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.7.4",
@@ -55,8 +74,10 @@
     "@types/react-dom": "^18.3.0",
     "@types/word-extractor": "^1.0.6",
     "autoprefixer": "^10.4.20",
+    "esbuild": "0.25.12",
     "postcss": "^8.4.47",
     "prisma": "^5.20.0",
+    "secretlint": "13.0.7",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2"
   }

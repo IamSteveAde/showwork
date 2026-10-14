@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,7 @@ export default function ResetCalendarButton({ calendarId, onReset }: { calendarI
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/reset`, {
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/reset`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation }),
       });
       const data = await response.json();

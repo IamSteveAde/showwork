@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import type { Prisma, SocialConnection } from "@prisma/client";
 import { db as defaultDb } from "@/lib/db";
 import { recordPublishedSocialPost } from "@/lib/socialReporting";
@@ -15,6 +16,8 @@ export function createTikTokPublisher(database: typeof defaultDb, services: { fr
   const complete = services.complete ?? ((operation: () => Promise<void>) => operation());
   const { freshTikTokConnection, reserveTikTokRequest, recordPublishedSocialPost: reportPublished } = services;
   return async function publishPostToTikTok(postId: string): Promise<void> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/tiktokPublishing.ts#publishPostToTikTok@17"); } /* end-canonical-integration-boundary */
+
   const post = preload ? await preload(postId) : await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
   let publishId = post.tikTokPublishId;
   let attempted = !!post.tikTokInitStartedAt;

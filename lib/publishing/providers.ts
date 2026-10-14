@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 import type { CalendarPost, CalendarPostAsset, SocialConnection } from "@prisma/client";
 import { publicUrlFor } from "@/lib/r2";
@@ -10,6 +11,8 @@ type Result = { id: string; permalink?: string };
 type Checkpoint = (id: string) => Promise<void>;
 
 export async function publishFacebook(post: Post, connection: SocialConnection, checkpoint: Checkpoint = async () => {}): Promise<Result> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/providers.ts#publishFacebook@12"); } /* end-canonical-integration-boundary */
+
   requireScopes(connection, ["pages_manage_posts", "pages_read_engagement"]);
   const base = `https://graph.facebook.com/${process.env.META_GRAPH_API_VERSION || "v26.0"}`;
   const page = encodeURIComponent(connection.platformAccountId);
@@ -92,6 +95,8 @@ async function uploadXMedia(asset: CalendarPostAsset, token: string) {
   throw new Error("X media processing timed out. No post has been created.");
 }
 export async function publishX(post: Post, connection: SocialConnection): Promise<Result> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/providers.ts#publishX@94"); } /* end-canonical-integration-boundary */
+
   requireScopes(connection, ["tweet.write", ...(post.assets.length ? ["media.write"] : [])]);
   const text = buildCaption(post);
   validatePublishContent("X", post.assets, text, post.postType);
@@ -140,6 +145,8 @@ async function uploadLinkedIn(asset: CalendarPostAsset, author: string, token: s
   throw new Error("LinkedIn media processing timed out. No post has been created.");
 }
 export async function publishLinkedIn(post: Post, connection: SocialConnection): Promise<Result> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/providers.ts#publishLinkedIn@142"); } /* end-canonical-integration-boundary */
+
   const author = connection.platformAccountId.startsWith("urn:li:") ? connection.platformAccountId : `urn:li:person:${connection.platformAccountId}`;
   requireScopes(connection, [author.startsWith("urn:li:organization:") ? "w_organization_social" : "w_member_social"]);
   const commentary = buildCaption(post);

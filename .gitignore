@@ -12,3 +12,38 @@ backups/
 
 # Compressed media executables generated for deployment
 .media-bin/
+
+# Secret material and local worker/diagnostic runtime state
+.env.*
+!.env.example
+*.key
+*.p12
+*.pfx
+.secrets/
+.runtime/
+.local-security/
+.vps-build/
+*.tsbuildinfo
+# Raw diagnostic results may contain credentials; only reviewed/redacted reports belong in docs.
+scripts/diagnostics/**/config.local.json
+scripts/diagnostics/**/manifest.local.json
+scripts/diagnostics/**/results/
+scripts/publishing-reliability/results/
+*.pem
+*.credentials.json
+scripts/diagnostics/**/*.log
+scripts/publishing-reliability/**/*.log
+__pycache__/
+*.pyc
+
+# Standalone worker build artifacts
+/dist-worker/
+
+# Generated intended Netlify/VPS release inventory
+/netlify/functions-vps/
+/netlify/publishing-handoff-manifest.json
+/dist-vps-disabled/
+
+/dist-worker-native/
+
+dist-vps-native-disabled/

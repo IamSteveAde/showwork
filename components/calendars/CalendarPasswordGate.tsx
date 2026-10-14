@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ export default function CalendarPasswordGate({ slug, clientName }: { slug: strin
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/social-calendar/${slug}/unlock`, {
+    const res = await calendarMutationFetch(`/api/social-calendar/${slug}/unlock`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password, email, name }),

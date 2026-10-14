@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 // ─────────────────────────────────────────────────────────────
 // INSTAGRAM GRAPH API
@@ -539,6 +540,8 @@ export async function publishContainer(
   containerId: string,
   pageAccessToken: string
 ): Promise<string> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/instagram.ts#publishContainer@537"); } /* end-canonical-integration-boundary */
+
   const result = await graphPost<{ id: string }>(
     `/${igUserId}/media_publish`,
     {

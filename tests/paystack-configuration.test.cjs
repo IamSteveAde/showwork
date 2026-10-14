@@ -7,7 +7,7 @@ function load() {
   const code = ts.transpileModule(fs.readFileSync('lib/paystack.ts', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, esModuleInterop: true },
   }).outputText;
-  new Function('require', 'module', 'exports', code)(require, mod, mod.exports);
+  new Function('require', 'module', 'exports', code)(name=>name==='./publishing/nativeApplicationContext'?require('./helpers/load-typescript.cjs').load('lib/publishing/nativeApplicationContext.ts'):require(name), mod, mod.exports);
   return mod.exports;
 }
 test('subscription checkout uses the current API key after configuration reload', async () => {

@@ -10,7 +10,18 @@ function pure(file) {
 const access = pure('lib/complimentaryAccess.ts');
 const delivery = pure('lib/subscriptionTiers.ts');
 const workspace = pure('lib/contentWorkspaceEntitlements.ts');
+const {load}=require('./load-typescript.cjs');
+// Load the real extracted policy/request modules for legacy behavior tests.
+// Canonical installation/dispatch is covered separately by PostgreSQL handlers.
+const policy=load('lib/contentWorkspacePolicy.ts');
+const boundary=load('lib/publishing/applicationBoundary.ts');
+const requests=load('lib/publishing/clientRequests.ts');
 exports.withBillingDependencies = dependencies => ({
+  './contentWorkspacePolicy': policy,
+  './publishing/nativeApplicationContext': load('lib/publishing/nativeApplicationContext.ts'),
+  '@/lib/publishing/nativeApplicationContext': load('lib/publishing/nativeApplicationContext.ts'),
+  '@/lib/publishing/applicationBoundary': boundary,
+  '@/lib/publishing/clientRequests': requests,
   '@/lib/complimentaryAccess': access,
   '@/lib/calendarTeamPolicy': pure('lib/calendarTeamPolicy.ts'),
   '@/lib/paystackPlan': pure('lib/paystackPlan.ts'),

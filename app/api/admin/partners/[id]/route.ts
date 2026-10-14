@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { queuePartnerWelcomeBenefit, scheduleBenefitEmailDelivery } from "@/lib/billingBenefitNotifications";
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
@@ -56,6 +57,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/admin/partners/[id]/route.ts#PATCH@55")) { return await invokePublishingEntrypoint<never>("app/api/admin/partners/[id]/route.ts#PATCH@55",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const admin = await requireAdmin();
 
   if (!admin) {

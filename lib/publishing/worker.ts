@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { db } from "@/lib/db";
 import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { publishPostToInstagram } from "@/lib/instagramPublishing";
@@ -9,6 +10,8 @@ import { buildCaption, validatePublishContent, PUBLISHING_PLATFORMS, publishingS
 import type { SocialPlatform } from "@prisma/client";
 
 export async function runPublishJob(postId: string, platform: SocialPlatform, dispatchedAt: Date) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/worker.ts#runPublishJob@11"); } /* end-canonical-integration-boundary */
+
   if (!PUBLISHING_PLATFORMS.includes(platform)) throw new Error("Unsupported publishing channel.");
   const claimed = await db.calendarPost.updateMany({ where: {
     id: postId, ...statusWhere(platform, "PUBLISHING"), approvalStatus: "APPROVED", isAiDraft: false, publishWorkerStartedAt: null, updatedAt: dispatchedAt,

@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
 import { NextRequest, NextResponse } from "next/server";
@@ -30,6 +31,8 @@ function resolveBillingCycle(
 
 // POST — switches to any lower Content Workspace plan after checking its workspace limit.
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/downgrade-to-individual/route.ts#POST@32")) { return await invokePublishingEntrypoint<never>("app/api/calendars/downgrade-to-individual/route.ts#POST@32",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {

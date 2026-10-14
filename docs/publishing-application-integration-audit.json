@@ -1,0 +1,1458 @@
+{
+  "scope": "Every entry in the previous final integration coverage; no fenced-only entry counted as full.",
+  "productionGo": false,
+  "counts": {
+    "Intentionally excluded because it does not perform a relevant mutation": 16,
+    "Incomplete": 99,
+    "Fully integrated and tested": 28,
+    "Blocked by a specific external dependency or founder decision": 6
+  },
+  "boundaries": [
+    {
+      "entrypoint": "app/[slug]/page.tsx#SlugPage@63",
+      "file": "app/[slug]/page.tsx",
+      "function": "SlugPage",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Only Project lastViewedAt bookkeeping; no CalendarPost, publishing permission, destination or physical-media change.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/admin/accounts/page.tsx#AdminPage@147",
+      "file": "app/admin/accounts/page.tsx",
+      "function": "AdminPage",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Reads Creator accounts and billing analytics; creator.createdAt was a lexical false positive.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/admin/creators/[id]/page.tsx#CreatorDetailPage@219",
+      "file": "app/admin/creators/[id]/page.tsx",
+      "function": "CreatorDetailPage",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Reads account detail and usage; no relevant mutation.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/admin/social-calendars/[id]/route.ts#PATCH@22",
+      "file": "app/admin/social-calendars/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/account/deactivate/route.ts#POST@9",
+      "file": "app/api/account/deactivate/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "Actual self-deactivation clears the session and durably invalidates unsent scheduler eligibility.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual self-deactivation"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/account/route.ts#DELETE@44",
+      "file": "app/api/account/route.ts",
+      "function": "DELETE",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Approved privacy retention/erasure policy and full non-publishing cascades are required; a tombstone is not account deletion.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/complimentary/route.ts#POST@9",
+      "file": "app/api/admin/creators/[id]/complimentary/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/route.ts#PATCH@12",
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/admin/creators/[id]/route.ts#DELETE@48",
+      "file": "app/api/admin/creators/[id]/route.ts",
+      "function": "DELETE",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Admin erasure retention/authority and unresolved-evidence handling need a reviewed policy.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/admin/partners/[id]/route.ts#PATCH@55",
+      "file": "app/api/admin/partners/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/admin/social-calendars/[id]/route.ts#PATCH@20",
+      "file": "app/api/admin/social-calendars/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts#POST@6",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/restore/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "generation restoration retains isAiDraft and history",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: generation restoration retains isAiDraft and history"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#POST@183",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "function": "POST",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Regeneration, quota and snapshot/replay work; failed/uncertain generation compensation remains unresolved.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#PATCH@567",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "function": "PATCH",
+      "classification": "Fully integrated and tested",
+      "reason": "draft promotion returns PENDING post and preserves response",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: draft promotion returns PENDING post and preserves response"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts#DELETE@709",
+      "file": "app/api/calendars/[id]/ai-drafts/[postId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Canonical draft deletion is implemented through the shared dispatcher; this actual individual DELETE export still lacks direct handler test evidence.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-drafts/route.ts#DELETE@62",
+      "file": "app/api/calendars/[id]/ai-drafts/route.ts",
+      "function": "DELETE",
+      "classification": "Fully integrated and tested",
+      "reason": "atomic AI bulk deletion and durable receipt",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: atomic AI bulk deletion and durable receipt"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/ai-generate/route.ts#POST@21",
+      "file": "app/api/calendars/[id]/ai-generate/route.ts",
+      "function": "POST",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Normal generation, real owner quota and replay work; failed/uncertain generation compensation policy remains unresolved.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/[documentId]/route.ts#DELETE@14",
+      "file": "app/api/calendars/[id]/business-documents/[documentId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Knowledge ingestion/removal and storage/AI accounting at this actual entrypoint remain unadapted and untested; no canonical fallback calls the native path.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/upload-complete/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/business-documents/upload-complete/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Knowledge ingestion/removal and storage/AI accounting at this actual entrypoint remain unadapted and untested; no canonical fallback calls the native path.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/website/route.ts#POST@14",
+      "file": "app/api/calendars/[id]/business-documents/website/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Knowledge ingestion/removal and storage/AI accounting at this actual entrypoint remain unadapted and untested; no canonical fallback calls the native path.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts#POST@10",
+      "file": "app/api/calendars/[id]/channels/[channel]/disconnect/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "X disconnect clears native shadow fields and advances binding version",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: X disconnect clears native shadow fields and advances binding version"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/facebook/select-page/route.ts#POST@16",
+      "file": "app/api/calendars/[id]/channels/facebook/select-page/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "signed encrypted Page selection binds exact canonical destination",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed encrypted Page selection binds exact canonical destination"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts#POST@11",
+      "file": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/linkedin/pages/route.ts#POST@37",
+      "file": "app/api/calendars/[id]/channels/linkedin/pages/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "organization selection/version and replay preserve member identity",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: organization selection/version and replay preserve member identity"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#POST@30",
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#DELETE@69",
+      "file": "app/api/calendars/[id]/channels/whatsapp/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/instagram/disconnect/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/instagram/disconnect/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "Actual exported disconnection handler advances the exact account version, invalidates the predecessor and replays without repeating the mutation.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual Instagram and TikTok disconnection handlers invalidate exact destinations and replay"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts#DELETE@7",
+      "file": "app/api/calendars/[id]/posts/[postId]/assets/[assetId]/route.ts",
+      "function": "DELETE",
+      "classification": "Fully integrated and tested",
+      "reason": "asset removal preserves another post\u2019s shared source reference",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: asset removal preserves another post\u2019s shared source reference"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts#POST@9",
+      "file": "app/api/calendars/[id]/posts/[postId]/attach-asset/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "same-workspace attachment without duplicate storage charge",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: same-workspace attachment without duplicate storage charge"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/publish/route.ts#POST@8",
+      "file": "app/api/calendars/[id]/posts/[postId]/publish/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "scheduling, cancellation, stale revision, lost acknowledgement; TikTok exact-account consent and pending/confirmed outcome",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: scheduling, cancellation, stale revision, lost acknowledgement; TikTok exact-account consent and pending/confirmed outcome"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts#POST@8",
+      "file": "app/api/calendars/[id]/posts/[postId]/resubmit/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Canonical resubmission exists; actual-handler tests and existing viewer-notification follow-up compatibility remain incomplete.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/route.ts#PATCH@17",
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "function": "PATCH",
+      "classification": "Fully integrated and tested",
+      "reason": "creator edit returns post relations; approved mutation refusal",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: creator edit returns post relations; approved mutation refusal"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/route.ts#DELETE@181",
+      "file": "app/api/calendars/[id]/posts/[postId]/route.ts",
+      "function": "DELETE",
+      "classification": "Fully integrated and tested",
+      "reason": "planning deletion/replay and approved/attempted-work refusal",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: planning deletion/replay and approved/attempted-work refusal"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts#POST@12",
+      "file": "app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "upload reservation finalization/replay, physical proof and byte accounting",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: upload reservation finalization/replay, physical proof and byte accounting"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/posts/route.ts#POST@106",
+      "file": "app/api/calendars/[id]/posts/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "manual batch/custom fields response and replay",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: manual batch/custom fields response and replay"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/reset/route.ts#POST@7",
+      "file": "app/api/calendars/[id]/reset/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Owner-only transactional reset, cancellation, replay and attempted-evidence preservation are implemented and tested. Shared-object cleanup and storage reclamation remain incomplete; physical objects and charged storage are conservatively retained.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: reset is atomic, replayable, owner-only and preserves attempted publication evidence"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/retry-payment/route.ts#POST@38",
+      "file": "app/api/calendars/[id]/retry-payment/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/route.ts#PATCH@24",
+      "file": "app/api/calendars/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Incomplete",
+      "reason": "Actual plan submission, details, set-password and password-regeneration actions are implemented and tested using native password hashing. update_header reservation finalization, reference retirement and shared cleanup are still incomplete.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: plan submission and signed viewer plan response preserve calendar shape",
+        "tests/publishing-application-handlers.integration.test.cjs: workspace details and password actions preserve responses and replay with native password hashing"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/route.ts#DELETE@574",
+      "file": "app/api/calendars/[id]/route.ts",
+      "function": "DELETE",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Full workspace erasure requires reviewed shared-media/evidence retention and non-publishing cleanup.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/tiktok/disconnect/route.ts#POST@10",
+      "file": "app/api/calendars/[id]/tiktok/disconnect/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "Actual exported disconnection handler advances the exact account version, invalidates the predecessor and replays without repeating the mutation.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual Instagram and TikTok disconnection handlers invalidate exact destinations and replay"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/tiktok/messaging/route.ts#POST@24",
+      "file": "app/api/calendars/[id]/tiktok/messaging/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/verify-subscription/route.ts#POST@24",
+      "file": "app/api/calendars/[id]/verify-subscription/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/cancel-subscription/route.ts#POST@16",
+      "file": "app/api/calendars/cancel-subscription/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/channels/[channel]/callback/route.ts#GET@34",
+      "file": "app/api/calendars/channels/[channel]/callback/route.ts",
+      "function": "GET",
+      "classification": "Fully integrated and tested",
+      "reason": "signed X OAuth replay plus LinkedIn member destination",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed X OAuth replay plus LinkedIn member destination"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/channels/tiktok-messaging/callback/route.ts#GET@11",
+      "file": "app/api/calendars/channels/tiktok-messaging/callback/route.ts",
+      "function": "GET",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/downgrade-to-individual/route.ts#POST@32",
+      "file": "app/api/calendars/downgrade-to-individual/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/instagram/callback/route.ts#GET@27",
+      "file": "app/api/calendars/instagram/callback/route.ts",
+      "function": "GET",
+      "classification": "Fully integrated and tested",
+      "reason": "signed Instagram state, Page-token binding and parent Page identity",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed Instagram state, Page-token binding and parent Page identity"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/route.ts#POST@122",
+      "file": "app/api/calendars/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Workspace creation/trial/owner quota at the actual route still requires a canonical transaction adapter and actual-handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/subscribe/route.ts#POST@46",
+      "file": "app/api/calendars/subscribe/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "A specialized canonical adapter and/or actual exported-entrypoint test remains missing for this path. Fencing is recorded as incomplete, not integrated.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/tiktok/callback/route.ts#GET@14",
+      "file": "app/api/calendars/tiktok/callback/route.ts",
+      "function": "GET",
+      "classification": "Fully integrated and tested",
+      "reason": "signed state/PKCE and exact native TikTok destination",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed state/PKCE and exact native TikTok destination"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/upgrade-to-company/route.ts#POST@39",
+      "file": "app/api/calendars/upgrade-to-company/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/calendars/verify-subscription/route.ts#POST@23",
+      "file": "app/api/calendars/verify-subscription/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/cron/instagram-publish/route.ts#POST@12",
+      "file": "app/api/cron/instagram-publish/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "actual Next cron hint uses same canonical worker without duplicate attempt",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual Next cron hint uses same canonical worker without duplicate attempt"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/cron/social-publish/route.ts#POST@3",
+      "file": "app/api/cron/social-publish/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "actual Next cron executes canonical poll with one mocked external attempt",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual Next cron executes canonical poll with one mocked external attempt"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/cron/tiktok-publish/route.ts#POST@11",
+      "file": "app/api/cron/tiktok-publish/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "actual Next cron hint uses same canonical worker without duplicate attempt",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual Next cron hint uses same canonical worker without duplicate attempt"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts#DELETE@7",
+      "file": "app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/replace/complete/route.ts#POST@11",
+      "file": "app/api/media/[mediaId]/replace/complete/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/replace/multipart-complete/route.ts#POST@16",
+      "file": "app/api/media/[mediaId]/replace/multipart-complete/route.ts",
+      "function": "POST",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/route.ts#DELETE@17",
+      "file": "app/api/media/[mediaId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/route.ts#PATCH@48",
+      "file": "app/api/media/[mediaId]/route.ts",
+      "function": "PATCH",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Changes delivery Media caption only; independent from CalendarPost caption.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/payments/webhook/route.ts#POST@115",
+      "file": "app/api/payments/webhook/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "real signed native billing failure mutates entitlement and holds old publishing revisions",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: real signed native billing failure mutates entitlement and holds old publishing revisions"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/portfolio/media/[mediaId]/route.ts#DELETE@8",
+      "file": "app/api/portfolio/media/[mediaId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/portfolio/sections/[sectionId]/route.ts#DELETE@52",
+      "file": "app/api/portfolio/sections/[sectionId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/add-files-batch/route.ts#POST@11",
+      "file": "app/api/projects/[id]/add-files-batch/route.ts",
+      "function": "POST",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Increments delivery additionalUploadCount, without replacing/deleting physical objects.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/sections/[sectionId]/route.ts#PATCH@9",
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "function": "PATCH",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Changes a delivery section name only.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/sections/[sectionId]/route.ts#DELETE@43",
+      "file": "app/api/sections/[sectionId]/route.ts",
+      "function": "DELETE",
+      "classification": "Incomplete",
+      "reason": "Actual shared-media replacement/deletion lacks a completed reference-aware transaction, immutable publishing snapshot protection and storage-accounting/cleanup adapter with handler tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts#POST@13",
+      "file": "app/api/social-calendar/[slug]/posts/[postId]/review/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "signed viewer approval, separate creator permission, no implicit scheduling",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed viewer approval, separate creator permission, no implicit scheduling"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/social-calendar/[slug]/respond/route.ts#POST@10",
+      "file": "app/api/social-calendar/[slug]/respond/route.ts",
+      "function": "POST",
+      "classification": "Fully integrated and tested",
+      "reason": "signed viewer plan approval preserves calendar response",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: signed viewer plan approval preserves calendar response"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/dashboard/[projectId]/page.tsx#ProjectDetailPage@528",
+      "file": "app/dashboard/[projectId]/page.tsx",
+      "function": "ProjectDetailPage",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Delivery-project payment projection only; no publishing eligibility or media-key mutation.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/dashboard/billing/page.tsx#BillingPage@23",
+      "file": "app/dashboard/billing/page.tsx",
+      "function": "BillingPage",
+      "classification": "Incomplete",
+      "reason": "This actual billing/admin mutation has no completed transaction-aware application adapter and exported-handler synthetic test. Existing native policy rules must be reused with current eligibility witnesses; a generic billing proof or route fence is insufficient.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/dashboard/profile/page.tsx#ProfilePage@350",
+      "file": "app/dashboard/profile/page.tsx",
+      "function": "ProfilePage",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Reads profile/usage; no relevant mutation in this function.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/aiResearchScheduler.ts#runScheduledAiBusinessResearch@26",
+      "file": "lib/aiResearchScheduler.ts",
+      "function": "runScheduledAiBusinessResearch",
+      "classification": "Incomplete",
+      "reason": "Knowledge ingestion/removal and storage/AI accounting at this actual entrypoint remain unadapted and untested; no canonical fallback calls the native path.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/calendarImport/confirmation.ts#confirmImport@126",
+      "file": "lib/calendarImport/confirmation.ts",
+      "function": "confirmImport",
+      "classification": "Fully integrated and tested",
+      "reason": "existing import mapping, duplicate/approval validation and receipt replay",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: existing import mapping, duplicate/approval validation and receipt replay"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#editTeammate@96",
+      "file": "lib/calendarTeamService.ts",
+      "function": "editTeammate",
+      "classification": "Incomplete",
+      "reason": "Canonical delegation exists and the actual team route is tested; this exported server-service entrypoint still requires direct tests and complete legacy activity/response compatibility.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#removeTeammate@114",
+      "file": "lib/calendarTeamService.ts",
+      "function": "removeTeammate",
+      "classification": "Incomplete",
+      "reason": "Canonical delegation exists and the actual team route is tested; this exported server-service entrypoint still requires direct tests and complete legacy activity/response compatibility.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/calendarTeamService.ts#acceptTeamInvite@141",
+      "file": "lib/calendarTeamService.ts",
+      "function": "acceptTeamInvite",
+      "classification": "Incomplete",
+      "reason": "Canonical delegation exists and the actual team route is tested; this exported server-service entrypoint still requires direct tests and complete legacy activity/response compatibility.",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: listed implemented subset only"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/calendarTrialEmails.ts#runCalendarTrialEmailCheck@22",
+      "file": "lib/calendarTrialEmails.ts",
+      "function": "runCalendarTrialEmailCheck",
+      "classification": "Incomplete",
+      "reason": "A specialized canonical adapter and/or actual exported-entrypoint test remains missing for this path. Fencing is recorded as incomplete, not integrated.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/instagram.ts#publishContainer@537",
+      "file": "lib/instagram.ts",
+      "function": "publishContainer",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/instagramPublishing.ts#publishPostToInstagram@57",
+      "file": "lib/instagramPublishing.ts",
+      "function": "publishPostToInstagram",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/batchClaims.ts#claimPublishingBatch@23",
+      "file": "lib/publishing/batchClaims.ts",
+      "function": "claimPublishingBatch",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/batchClaims.ts#failPublishingDispatchBatch@73",
+      "file": "lib/publishing/batchClaims.ts",
+      "function": "failPublishingDispatchBatch",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/budgetedDatabase.ts#transaction:callback@88",
+      "file": "lib/publishing/budgetedDatabase.ts",
+      "function": "transaction:callback",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/legacyRecoveryBridge.ts#importLegacyPublishingRecovery@10",
+      "file": "lib/publishing/legacyRecoveryBridge.ts",
+      "function": "importLegacyPublishingRecovery",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/platformIntegration.ts#publish@72",
+      "file": "lib/publishing/platformIntegration.ts",
+      "function": "publish",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/platformIntegration.ts#reconcile@190",
+      "file": "lib/publishing/platformIntegration.ts",
+      "function": "reconcile",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/portableRuntime.ts#tick@29",
+      "file": "lib/publishing/portableRuntime.ts",
+      "function": "tick",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/portableRuntime.ts#consume@37",
+      "file": "lib/publishing/portableRuntime.ts",
+      "function": "consume",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishFacebook@12",
+      "file": "lib/publishing/providers.ts",
+      "function": "publishFacebook",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishX@94",
+      "file": "lib/publishing/providers.ts",
+      "function": "publishX",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/providers.ts#publishLinkedIn@142",
+      "file": "lib/publishing/providers.ts",
+      "function": "publishLinkedIn",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableConsumer.ts#drainReliablePublishing@10",
+      "file": "lib/publishing/reliableConsumer.ts",
+      "function": "drainReliablePublishing",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#leader@33",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "leader",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseLeader@45",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "releaseLeader",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#prepareMany@60",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "prepareMany",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releasePrepared@74",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "releasePrepared",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#budget@81",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "budget",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#admit@121",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "admit",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acquireAccount@199",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "acquireAccount",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseAccount@207",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "releaseAccount",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#recoverAccountLeases@210",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "recoverAccountLeases",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#beginExternal@243",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "beginExternal",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#finish@254",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "finish",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#failProvider@264",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "failProvider",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#accept@273",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "accept",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#unknown@280",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "unknown",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#reject@287",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "reject",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#claimReconciliation@308",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "claimReconciliation",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseReconciliation@314",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "releaseReconciliation",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#markReported@322",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "markReported",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#deferReporting@323",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "deferReporting",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acquireConsumer@332",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "acquireConsumer",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#renewConsumer@341",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "renewConsumer",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#releaseConsumer@345",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "releaseConsumer",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#requestWake@352",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "requestWake",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#takeWake@355",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "takeWake",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#dispatchedWake@360",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "dispatchedWake",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#acknowledgeWake@365",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "acknowledgeWake",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#cancelBeforeExternal@368",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "cancelBeforeExternal",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#recoverExpired@387",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "recoverExpired",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableStore.ts#authorizeKnownRejectedRetry@402",
+      "file": "lib/publishing/reliableStore.ts",
+      "function": "authorizeKnownRejectedRetry",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/reliableWorker.ts#execute@21",
+      "file": "lib/publishing/reliableWorker.ts",
+      "function": "execute",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/runtime.ts#tick@34",
+      "file": "lib/publishing/runtime.ts",
+      "function": "tick",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/scheduler.ts#runScheduledPublishing@5",
+      "file": "lib/publishing/scheduler.ts",
+      "function": "runScheduledPublishing",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/publishing/worker.ts#runPublishJob@11",
+      "file": "lib/publishing/worker.ts",
+      "function": "runPublishJob",
+      "classification": "Incomplete",
+      "reason": "Legacy durable runtime entrypoint has not been adapted to canonical revision/generation identity and capability execution. The disabled composition uses canonicalWorker instead; calling this original entrypoint remains fenced, which is not full integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/r2.ts#deleteObject@264",
+      "file": "lib/r2.ts",
+      "function": "deleteObject",
+      "classification": "Blocked by a specific external dependency or founder decision",
+      "reason": "Shared original/media journal purge authority and storage retention policy have not been approved; blanket deletion must not bypass evidence retention.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/reporting/adapters/tiktok.ts#apiPost@26",
+      "file": "lib/reporting/adapters/tiktok.ts",
+      "function": "apiPost",
+      "classification": "Incomplete",
+      "reason": "Exact-account refresh/read-only reconciliation exists in the new composition; this older lookup/refresh/reporting entrypoint still requires explicit canonical account-version/context adaptation and exported-entrypoint tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/reporting/sync.ts#syncConnection@44",
+      "file": "lib/reporting/sync.ts",
+      "function": "syncConnection",
+      "classification": "Incomplete",
+      "reason": "Exact-account refresh/read-only reconciliation exists in the new composition; this older lookup/refresh/reporting entrypoint still requires explicit canonical account-version/context adaptation and exported-entrypoint tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#freshTikTokMessagingConnection@18",
+      "file": "lib/socialMessaging/tiktok.ts",
+      "function": "freshTikTokMessagingConnection",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#syncTikTokInbox@104",
+      "file": "lib/socialMessaging/tiktok.ts",
+      "function": "syncTikTokInbox",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialMessaging/whatsapp.ts#sendWhatsAppMessage@139",
+      "file": "lib/socialMessaging/whatsapp.ts",
+      "function": "sendWhatsAppMessage",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncXInbox@58",
+      "file": "lib/socialMessaging/x.ts",
+      "function": "syncXInbox",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncSocialInboxes@173",
+      "file": "lib/socialMessaging/x.ts",
+      "function": "syncSocialInboxes",
+      "classification": "Incomplete",
+      "reason": "Messaging destination/token changes or shared-account synchronization are not joined to canonical account-version fencing at this actual entrypoint. Publishing adapters do not complete messaging integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialReporting.ts#database.$transaction:callback@24",
+      "file": "lib/socialReporting.ts",
+      "function": "database.$transaction:callback",
+      "classification": "Incomplete",
+      "reason": "Exact-account refresh/read-only reconciliation exists in the new composition; this older lookup/refresh/reporting entrypoint still requires explicit canonical account-version/context adaptation and exported-entrypoint tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/socialTokens.ts#freshConnection@10",
+      "file": "lib/socialTokens.ts",
+      "function": "freshConnection",
+      "classification": "Incomplete",
+      "reason": "Exact-account refresh/read-only reconciliation exists in the new composition; this older lookup/refresh/reporting entrypoint still requires explicit canonical account-version/context adaptation and exported-entrypoint tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/syncContentWorkspaceRenewal.ts#syncContentWorkspaceRenewal@5",
+      "file": "lib/syncContentWorkspaceRenewal.ts",
+      "function": "syncContentWorkspaceRenewal",
+      "classification": "Incomplete",
+      "reason": "The narrowly scoped native policy gate is implemented, but this exported renewal function has not yet been exercised through the registered composition against PostgreSQL fixtures.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/tiktok.ts#apiPost@100",
+      "file": "lib/tiktok.ts",
+      "function": "apiPost",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/tiktokAuthorization.ts#authorizeTikTokPost@11",
+      "file": "lib/tiktokAuthorization.ts",
+      "function": "authorizeTikTokPost",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/tiktokConnection.ts#freshTikTokConnection@9",
+      "file": "lib/tiktokConnection.ts",
+      "function": "freshTikTokConnection",
+      "classification": "Incomplete",
+      "reason": "Exact-account refresh/read-only reconciliation exists in the new composition; this older lookup/refresh/reporting entrypoint still requires explicit canonical account-version/context adaptation and exported-entrypoint tests.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "lib/tiktokPublishing.ts#publishPostToTikTok@17",
+      "file": "lib/tiktokPublishing.ts",
+      "function": "publishPostToTikTok",
+      "classification": "Incomplete",
+      "reason": "Canonical provider execution is implemented separately and mock-tested. This native/default export itself still lacks an exact canonical target/capability adapter; installed-composition fencing is not counted as integration.",
+      "testEvidence": [],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "netlify/functions/publish-post-background.ts#handler@6",
+      "file": "netlify/functions/publish-post-background.ts",
+      "function": "handler",
+      "classification": "Fully integrated and tested",
+      "reason": "actual background export ignores mutable lease authority and does not resend",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual background export ignores mutable lease authority and does not resend"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "netlify/functions/social-publish-cron.ts#schedule:callback@6",
+      "file": "netlify/functions/social-publish-cron.ts",
+      "function": "schedule:callback",
+      "classification": "Fully integrated and tested",
+      "reason": "actual scheduled export executes canonical poll in isolated authenticated rehearsal",
+      "testEvidence": [
+        "tests/publishing-application-handlers.integration.test.cjs: actual scheduled export executes canonical poll in isolated authenticated rehearsal"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/payments/initialize/route.ts#POST@10",
+      "file": "app/api/payments/initialize/route.ts",
+      "function": "POST",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Delivery-project payment initiation; no Content Workspace entitlement or publication mutation.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#GET@35",
+      "file": "app/api/projects/[id]/route.ts",
+      "function": "GET",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Read-only delivery project lookup; deletedAt was a lexical false positive.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#PATCH@60",
+      "file": "app/api/projects/[id]/route.ts",
+      "function": "PATCH",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Delivery-project metadata only; no canonical publishing fields or media keys.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#DELETE@143",
+      "file": "app/api/projects/[id]/route.ts",
+      "function": "DELETE",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Soft-deletes delivery Project only, preserving media objects; no CalendarPost cascade.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#GET@24",
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "function": "GET",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Reads delivery-project invitations; separate from CalendarCollaborator permissions.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#POST@55",
+      "file": "app/api/projects/[id]/invites/route.ts",
+      "function": "POST",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Delivery-project invitations only; separate from CalendarCollaborator publishing permissions.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/[inviteId]/route.ts#DELETE@8",
+      "file": "app/api/projects/[id]/invites/[inviteId]/route.ts",
+      "function": "DELETE",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Revokes a delivery-project invite only, not publishing authority.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts#DELETE@9",
+      "file": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts",
+      "function": "DELETE",
+      "classification": "Intentionally excluded because it does not perform a relevant mutation",
+      "reason": "Delivery-project membership only; no CalendarCollaborator change.",
+      "testEvidence": [
+        "tests/publishing-entrypoint-boundaries.test.cjs: reviewed exclusion and unchanged legacy body"
+      ],
+      "productionActive": false
+    }
+  ]
+}

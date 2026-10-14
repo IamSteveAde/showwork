@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 import PartnerTag from "@/components/admin/PartnerTag";
 import Link from "next/link";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -48,7 +49,7 @@ export default function BillingOfferManager() {
   const [message, setMessage] = useState("");
   const [confirmStop, setConfirmStop] = useState<string | null>(null);
   const load = useCallback(async (search = "", signal?: AbortSignal) => {
-    const response = await fetch(`/api/admin/billing-offers?q=${encodeURIComponent(search)}&recipients=${recipientFilter}${targetCreator ? `&creator=${encodeURIComponent(targetCreator)}` : ""}`, { cache: "no-store", signal });
+    const response = await calendarMutationFetch(`/api/admin/billing-offers?q=${encodeURIComponent(search)}&recipients=${recipientFilter}${targetCreator ? `&creator=${encodeURIComponent(targetCreator)}` : ""}`, { cache: "no-store", signal });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error ?? "Could not load offers");
     setOffers(result.offers); setAccounts(result.creators); setAttention(result.needsAttention); setEmailStates(result.emailStates ?? []); setLoaded(true);
@@ -65,7 +66,7 @@ export default function BillingOfferManager() {
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy("create"); setError(""); setMessage("");
     try {
-      const response = await fetch("/api/admin/billing-offers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      const response = await calendarMutationFetch("/api/admin/billing-offers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         requestId, recipientFilter: audience === "SELECTED" || kind === "COMPLIMENTARY" ? recipientFilter : "ALL", title, product, deliveryTier, workspacePlan, billingCycle: kind === "COMPLIMENTARY" ? "ANY" : cycle,
         audience: kind === "COMPLIMENTARY" ? "SELECTED" : audience, percent: kind === "COMPLIMENTARY" ? 100 : Number(percent),
         durationMonths: Number(months), creatorIds: selected.map(a => a.id),
@@ -82,7 +83,7 @@ export default function BillingOfferManager() {
   async function stop(id: string) {
     setBusy(id); setError("");
     try {
-      const response = await fetch("/api/admin/billing-offers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      const response = await calendarMutationFetch("/api/admin/billing-offers", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not stop offer");
       setConfirmStop(null); await load(query);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not stop offer"); }
@@ -91,7 +92,7 @@ export default function BillingOfferManager() {
   async function stopUser(account: Account) {
     setBusy(`user-${account.id}`); setError("");
     try {
-      const response = await fetch(`/api/admin/creators/${account.id}/complimentary`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId: crypto.randomUUID() }) });
+      const response = await calendarMutationFetch(`/api/admin/creators/${account.id}/complimentary`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId: crypto.randomUUID() }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not stop access");
       setStoppingUser(null); setMessage(result.stopped || result.legacyStopped ? `Complimentary access ended for ${account.email}. An email notification has been queued.` : `Complimentary access is already inactive for ${account.email}.`); await load(query);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not stop access"); }
@@ -100,7 +101,7 @@ export default function BillingOfferManager() {
   async function retryEmails(offerId: string) {
     setBusy(`email-${offerId}`);
     try {
-      const response = await fetch("/api/admin/billing-offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ offerId }) });
+      const response = await calendarMutationFetch("/api/admin/billing-offers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ offerId }) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not retry emails");
       setMessage("Email delivery has been scheduled. Refresh to see updated delivery status."); await load(query);
     } catch (e) { setError(e instanceof Error ? e.message : "Could not retry emails"); }

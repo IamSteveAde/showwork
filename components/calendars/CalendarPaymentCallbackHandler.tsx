@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -21,7 +22,7 @@ export default function CalendarPaymentCallbackHandler() {
 
     setStatus("checking");
 
-    fetch("/api/calendars/verify-subscription", {
+    calendarMutationFetch("/api/calendars/verify-subscription", {
       method: "POST",
     })
       .then((res) =>

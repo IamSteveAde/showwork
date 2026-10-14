@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { extractPaystackPlanCode } from "@/lib/paystackPlan";
 import {
@@ -113,6 +114,8 @@ function getContentWorkspaceCycleFromMetadata(
 }
 
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/payments/webhook/route.ts#POST@115")) { return await invokePublishingEntrypoint<never>("app/api/payments/webhook/route.ts#POST@115",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const rawBody = await req.text();
   const signature = req.headers.get("x-paystack-signature");
 

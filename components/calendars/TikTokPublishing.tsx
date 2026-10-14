@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
   const router = useRouter();
   const [settings, setSettings] = useState<TikTokSettings>(() => ({ ...emptyTikTokSettings, privacyLevel: post.tikTokPrivacyLevel || null, ...(post.tikTokSettings as Partial<TikTokSettings> || {}) }));
   const [creator, setCreator] = useState<Creator | null>(null);
+  const [publishing,setPublishing]=useState<Record<string,any>|null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,11 +34,15 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true); setConsent(false); setCreator(null); setError("");
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/tiktok/creator-info`, { cache: "no-store", signal });
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/tiktok/creator-info`, { cache: "no-store", signal });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load TikTok settings.");
+      const metadataResponse=await fetch(`/api/calendars/${calendarId}/posts/${post.id}/publish`,{cache:'no-store',signal}),metadata=await metadataResponse.json();
+      if(!metadataResponse.ok)throw Error(metadata.error||'Could not load the publishing revision.');
+      if(metadata.protocol==='canonical'&&(metadata.providerAccountId!==result.accountId||result.canonicalAccount&&(metadata.destination?.accountBindingId!==result.canonicalAccount.accountBindingId||metadata.destination?.accountVersion!==result.canonicalAccount.accountVersion)))throw Error('The connected TikTok account changed. Refresh account settings.');
       if (!signal?.aborted) {
         setCreator(result);
+        setPublishing(metadata);
         setSettings(current => ({ ...current,
           allowComment: result.comment_disabled ? false : current.allowComment,
           allowDuet: result.duet_disabled ? false : current.allowDuet,
@@ -71,10 +77,11 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
   async function act(action: string) {
     setBusy(true); setError(""); setSaved("");
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/posts/${post.id}/publish`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, settings: { ...settings, ...(!video ? { allowDuet: false, allowStitch: false } : {}) }, accountId: creator?.accountId, consent, confirmedNotPublished: confirmed }) });
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/posts/${post.id}/publish`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...(publishing?.protocol==='canonical'?publishing:{}),action, settings: { ...settings, ...(!video ? { allowDuet: false, allowStitch: false } : {}) }, accountId: creator?.accountId, consent, confirmedNotPublished: confirmed }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not update TikTok publishing.");
       setStatus(result.status); setConsent(false);
+      if(result.publishing)setPublishing(result.publishing);
       setSaved(action === "save" ? "TikTok settings saved. Publishing still requires approval and your authorization." : action === "cancel" ? "Publishing cancelled. Review and authorize again to schedule." : "TikTok publishing authorized. The result will update here.");
       window.dispatchEvent(new Event("showwork-calendar-posts-sync")); router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not update TikTok publishing."); setConsent(false); }
@@ -89,6 +96,7 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
     {loading && <p role="status">Loading TikTok account and available settings…</p>}
     {creator && <div className="flex items-center gap-3">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={creator.creator_avatar_url} alt="" className="h-10 w-10 rounded-full" /><div><p className="font-semibold">{creator.creator_nickname}</p><p className="opacity-70">@{creator.creator_username}</p></div></div>}
     <p>Publishing: {status.toLowerCase().replaceAll("_", " ")}</p>
+    {publishing?.phase==='OUTCOME_UNKNOWN'&&<p role="status">TikTok&apos;s publication outcome is uncertain. Reconciliation is required; do not submit it again.</p>}
     <p className="text-xs opacity-70">Your originals are preserved. Photos are prepared as JPEG; transparency uses a white background and animated images use their first frame. Videos that need conversion are prepared as MP4, with resizing or padding to fit TikTok. Videos keep their full duration and audio.</p>
     <div className="flex gap-3 overflow-x-auto">
       {post.assets?.map(asset => asset.mediaType === "VIDEO" ? <video key={asset.id} src={asset.contentUrl} controls playsInline preload="metadata" onLoadedMetadata={event => setDuration(event.currentTarget.duration)} className="max-h-64 max-w-full rounded-xl" /> : <img key={asset.id} src={asset.contentUrl} alt="Photo to publish" className="max-h-64 rounded-xl object-contain" />)}

@@ -190,8 +190,8 @@ async function syncConnection(initialConnection: SocialConnection & {
       });
     }
 
-    await db.socialConnection.update({
-      where: { id: connection.id },
+    await db.socialConnection.updateMany({
+      where: { id: connection.id, status: "CONNECTED", connectedAt: connection.connectedAt, accessToken: connection.accessToken },
       data: {
         status: "CONNECTED",
         lastSyncAt: new Date(),
@@ -204,8 +204,8 @@ async function syncConnection(initialConnection: SocialConnection & {
     return { connectionId: connection.id, status: "SYNCED" as const, postsUpdated: postMetrics.size };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Social reporting sync failed.";
-    await db.socialConnection.update({
-      where: { id: initialConnection.id },
+    await db.socialConnection.updateMany({
+      where: { id: initialConnection.id, status: "CONNECTED", connectedAt: initialConnection.connectedAt, accessToken: initialConnection.accessToken },
       data: {
         status: needsReauthorization(error) ? "NEEDS_REAUTH" : initialConnection.status,
         lastSyncError: message.slice(0, 2000),

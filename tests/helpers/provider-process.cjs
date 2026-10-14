@@ -1,0 +1,12 @@
+'use strict';
+const fs=require('node:fs'),{Pool}=require('pg'),{load}=require('./load-typescript.cjs'),{mock}=require('./provider-mocks.cjs');
+const c=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+const pool=new Pool({host:c.socket,user:'synthetic_owner',database:'postgres',max:2});
+const database=load('lib/publishing/transactionDatabase.ts').createPublishingTransactionDatabase(pool,{schema:c.schema});
+const validation=load('lib/publishing/validationAdapters.ts').createPublishingValidationAdapters({database,verifyViewer:async()=>{throw Error('unused');},verifyRetryEvidence:async()=>{throw Error('unused');}});
+const authorization=load('lib/publishing/externalAuthorization.ts').createExternalPublicationAuthorization({database,validation});
+const io=mock();
+const pause=async()=>{process.send({checkpoint:c.mode});await new Promise(()=>{});};
+const submit=io.submit;io.submit=async(...args)=>{if(c.mode==='before-submit')await pause();const fd=fs.openSync(c.trace,'w',0o600);fs.writeSync(fd,'synthetic external effect');fs.fsyncSync(fd);fs.closeSync(fd);if(c.mode==='after-submit')await pause();return submit(...args);};
+io.lookup=async()=>{if(c.mode==='after-journal')await pause();return {status:200,body:{verified:true}};};
+(async()=>{const spool=await load('lib/publishing/providerSpool.ts').createSyntheticProviderSpool(c.spool);const input={...c.input,epoch:BigInt(c.input.epoch)};const r=await authorization.authorize(input);const {operationId,actor,owner,epoch,workerToken,...target}=input;const layer=load('lib/publishing/capabilityProviders.ts').createCapabilityProviderIntegration({environment:'isolated-mock',database,validation,authorization,spool,io});await layer.publish({target,capability:r.capability});await pool.end();})().catch(e=>{console.error(e);process.exit(1);});

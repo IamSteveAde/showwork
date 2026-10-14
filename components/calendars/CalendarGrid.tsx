@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 
 import { MEDIA_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
@@ -1126,7 +1127,7 @@ function AddPostPanel({
     ): Promise<CalendarPostData> => {
       uploadedBytesByFile[index] = 0;
       updateOverallProgress();
-      const presignRes = await fetch(
+      const presignRes = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts/${postId}/upload-presign`,
         {
           method: "POST",
@@ -1163,7 +1164,7 @@ function AddPostPanel({
         ? "VIDEO"
         : "PHOTO";
 
-      const completeRes = await fetch(
+      const completeRes = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts/${postId}/upload-complete`,
         {
           method: "POST",
@@ -1234,7 +1235,7 @@ function AddPostPanel({
     destinationPostId: string,
     fileKey: string
   ): Promise<CalendarPostData> => {
-    const response = await fetch(
+    const response = await calendarMutationFetch(
       `/api/calendars/${calendarId}/posts/${destinationPostId}/attach-asset`,
       {
         method: "POST",
@@ -1292,7 +1293,7 @@ function AddPostPanel({
     fullDate.setHours(hours || 0, minutes || 0, 0, 0);
 
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts`,
         {
           method: "POST",
@@ -3126,7 +3127,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
   setAiEditError("");
 
   try {
-    const response = await fetch(
+    const response = await calendarMutationFetch(
       `/api/calendars/${calendarId}/ai-drafts/${post.id}`,
       {
         method: "POST",
@@ -3229,7 +3230,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
     setDetailsError(null);
 
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts/${post.id}`,
         {
           method: "PATCH",
@@ -3306,7 +3307,7 @@ caption: draftDetails.caption,
       );
     }
 
-    const presignRes = await fetch(
+    const presignRes = await calendarMutationFetch(
       `/api/calendars/${calendarId}/posts/${post.id}/upload-presign`,
       {
         method: "POST",
@@ -3341,7 +3342,7 @@ caption: draftDetails.caption,
         ? "VIDEO"
         : "PHOTO";
 
-    const completeRes = await fetch(
+    const completeRes = await calendarMutationFetch(
       `/api/calendars/${calendarId}/posts/${post.id}/upload-complete`,
       {
         method: "POST",
@@ -3419,7 +3420,7 @@ caption: draftDetails.caption,
 
     if (!canEdit) return;
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts/${post.id}/assets/${assetId}`,
         {
           method: "DELETE",
@@ -3458,7 +3459,7 @@ caption: draftDetails.caption,
     setResubmitting(true);
     setError(null);
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/posts/${post.id}/resubmit`,
         { method: "POST" }
       );
@@ -5626,7 +5627,7 @@ export default function CalendarGrid({
 
       inFlight = true;
       try {
-        const response = await fetch(`/api/calendars/${calendarId}/posts`, {
+        const response = await calendarMutationFetch(`/api/calendars/${calendarId}/posts`, {
           cache: "no-store",
         });
         if (!response.ok || cancelled) return;
@@ -5762,7 +5763,7 @@ export default function CalendarGrid({
   const handleDeletePost = async (
     postId: string
   ) => {
-    const res = await fetch(
+    const res = await calendarMutationFetch(
       `/api/calendars/${calendarId}/posts/${postId}`,
       { method: "DELETE" }
     );

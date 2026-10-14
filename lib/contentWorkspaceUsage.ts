@@ -72,79 +72,8 @@ export interface ContentWorkspaceUsage {
   cycleStart: Date | null;
 }
 
-export function isContentWorkspaceTrialActive(
-  account: Pick<
-    ContentWorkspaceAccount,
-    "contentWorkspaceBillingStatus" | "contentWorkspaceTrialEndsAt"
-  >
-): boolean {
-  return (
-    ["TRIAL", "ACTIVE"].includes(account.contentWorkspaceBillingStatus) &&
-    !!account.contentWorkspaceTrialEndsAt &&
-    account.contentWorkspaceTrialEndsAt.getTime() > Date.now()
-  );
-}
-
-export function isComplimentaryAccessActive(
-  account: Pick<ContentWorkspaceAccount, "isComped" | "compedUntil"> & ComplimentaryAccount
-): boolean {
-  return !!workspaceComplimentaryPlan(account);
-}
-
-
-export function canAccessContentWorkspace(
-  account: Pick<
-    ContentWorkspaceAccount,
-    | "contentWorkspaceBillingStatus"
-    | "contentWorkspaceTrialEndsAt"
-    | "contentWorkspacePlan"
-    | "isComped"
-    | "compedUntil"
-  > & ComplimentaryAccount
-): boolean {
-  if (isComplimentaryAccessActive(account)) {
-    return true;
-  }
-
-  if (
-    account.contentWorkspaceBillingStatus === "ACTIVE" &&
-    !!account.contentWorkspacePlan
-  ) {
-    return true;
-  }
-
-  if (
-    account.contentWorkspaceBillingStatus === "TRIAL" &&
-    !!account.contentWorkspacePlan
-  ) {
-    return isContentWorkspaceTrialActive(account);
-  }
-
-  return false;
-}
-export function getContentWorkspacePlan(
-  account: Pick<
-    ContentWorkspaceAccount,
-    "contentWorkspacePlan" | "isComped" | "compedUntil"
-    | "contentWorkspaceBillingStatus" | "contentWorkspaceTrialEndsAt"
-  > & ComplimentaryAccount
-): ContentWorkspacePlan | null {
-  if (isContentWorkspaceTrialActive(account)) return "UNLIMITED";
-
-  const complimentary = workspaceComplimentaryPlan(account);
-  if (complimentary) {
-    const order = ["CREATOR", "STUDIO", "UNLIMITED"];
-    return account.contentWorkspaceBillingStatus === "ACTIVE" && account.contentWorkspacePlan &&
-      order.indexOf(account.contentWorkspacePlan) > order.indexOf(complimentary)
-      ? account.contentWorkspacePlan : complimentary;
-  }
-
-  return account.contentWorkspacePlan;
-}
-/** Feature access always uses the owner's live billing state, never the caller's plan. */
-export function canUseContentWorkspaceFeature(account: ContentWorkspaceAccount, feature: ContentWorkspaceFeature): boolean {
-  return canAccessContentWorkspace(account) && planIncludesWorkspaceFeature(getContentWorkspacePlan(account), feature);
-}
+import {isContentWorkspaceTrialActive,isComplimentaryAccessActive,canAccessContentWorkspace,getContentWorkspacePlan,canUseContentWorkspaceFeature,currentAiCycleStart,validateCanonicalWorkspaceUsage} from "./contentWorkspacePolicy";
+export {isContentWorkspaceTrialActive,isComplimentaryAccessActive,canAccessContentWorkspace,getContentWorkspacePlan,canUseContentWorkspaceFeature,currentAiCycleStart,validateCanonicalWorkspaceUsage} from "./contentWorkspacePolicy";
 
 /**
  * Counts the creator's currently owned Content Workspaces.
@@ -175,20 +104,6 @@ export async function getCollaboratorCount(
 }
 
 /** Monthly AI allowances also reset for annual subscriptions; storage never resets. */
-export function currentAiCycleStart(anchor: Date, now = new Date()): Date {
-  let months = (now.getUTCFullYear() - anchor.getUTCFullYear()) * 12 + now.getUTCMonth() - anchor.getUTCMonth();
-  const boundary = (offset: number) => {
-    const date = new Date(anchor);
-    date.setUTCDate(1);
-    date.setUTCMonth(date.getUTCMonth() + offset);
-    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
-    date.setUTCDate(Math.min(anchor.getUTCDate(), lastDay));
-    return date;
-  };
-  if (boundary(months) > now) months--;
-  return months > 0 ? boundary(months) : anchor;
-}
-
 /**
  * Ensures the creator has a usage row.
  */

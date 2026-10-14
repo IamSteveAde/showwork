@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { verifyChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
 import { readTikTokVerifier, TIKTOK_PKCE_COOKIE } from "@/lib/tiktokOAuthPkce";
@@ -12,6 +13,8 @@ import { upsertSocialConnection } from "@/lib/socialReporting";
 // access on its authorization page. Signed state and a browser nonce
 // bind the request to its calendar; session ownership is checked too.
 export async function GET(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/tiktok/callback/route.ts#GET@14",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const calendarId = verifyChannelOAuthState("tiktok", req.nextUrl.searchParams.get("state"), req.cookies.get("showwork_tiktok_oauth_state")?.value);
   const code = req.nextUrl.searchParams.get("code");
   const oauthError = req.nextUrl.searchParams.get("error");

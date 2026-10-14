@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "executableProductionMigration": false,
+  "requires": "Approved read-only baseline, reviewed ALTER/data conversion for existing PublishingJob and constraints, application Prisma compatibility, role/tenant grants review, sanitized-clone rehearsal, signed migration approval",
+  "proposals": [
+    {
+      "source": "scripts/publishing-reliability/schema.sql",
+      "file": "01-schema.sql",
+      "sha256": "cc100f129b83cd6390f552a9d861c1d18eb23b5e15093f158d1fbfa7f8d0cf11"
+    },
+    {
+      "source": "scripts/publishing-reliability/ownership-schema.sql",
+      "file": "02-ownership-schema.sql",
+      "sha256": "fbba1ae35dff49aefc038cdf7cead7ce1e1e8fca4c0310a9beb5df93525f5ded"
+    },
+    {
+      "source": "scripts/publishing-reliability/intent-actions-schema.sql",
+      "file": "03-intent-actions-schema.sql",
+      "sha256": "d0f652420e1dd5978cd5090d3f822d4603d31b48a102a25be6903186574bdaca"
+    },
+    {
+      "source": "scripts/publishing-reliability/canonical-schema.sql",
+      "file": "04-canonical-schema.sql",
+      "sha256": "bf19981ecc82b0a7f4e8dcdf812f7288a3b6f52e05e046273e2a5d1f997ed151"
+    },
+    {
+      "source": "scripts/publishing-reliability/eligibility-schema.sql",
+      "file": "05-eligibility-schema.sql",
+      "sha256": "0cc2844d10daf9c5de3bb1173973d9388f7c87122d810638041cfbe231f146b7"
+    },
+    {
+      "source": "scripts/publishing-reliability/authorization-schema.sql",
+      "file": "06-authorization-schema.sql",
+      "sha256": "733136308afe9a82567636addc5e53542a4e40092f011f8420b9cd1b8bce0da9"
+    },
+    {
+      "source": "scripts/publishing-reliability/provider-schema.sql",
+      "file": "07-provider-schema.sql",
+      "sha256": "41c11aeeb6e57d05fd232ae983bbb6e4480ba78d36c43803adc02f82f27960df"
+    },
+    {
+      "source": "scripts/publishing-reliability/integration-schema.sql",
+      "file": "08-integration-schema.sql",
+      "sha256": "09c03bee527f2e703262608c9ea86ba82e91468a3fe17323346f42ae29ddbd69"
+    },
+    {
+      "source": "scripts/publishing-reliability/production-grants.proposal.sql",
+      "file": "09-production-grants.proposal.sql",
+      "sha256": "2c7273309fc13e6a4794159ff4cb37f158f18936373ce69713bbba4804bdaf50"
+    }
+  ]
+}

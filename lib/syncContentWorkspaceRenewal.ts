@@ -1,8 +1,11 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed, nativePolicyExecutionRoot } from "@/lib/publishing/applicationBoundary";
 import { db } from "@/lib/db";
 import { fetchCustomerSubscriptions } from "@/lib/paystack";
 
 // Recover missing or stale renewal dates from the account's exact subscription.
 export async function syncContentWorkspaceRenewal(creatorId: string): Promise<Date | null> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("lib/syncContentWorkspaceRenewal.ts#syncContentWorkspaceRenewal@5") || nativePolicyExecutionRoot()==="app/dashboard/billing/page.tsx#BillingPage@23") { return await invokePublishingEntrypoint<Date|null>("lib/syncContentWorkspaceRenewal.ts#syncContentWorkspaceRenewal@5",[creatorId]); } } /* end-canonical-integration-boundary */
+
   const account = await db.creator.findUnique({
     where: { id: creatorId },
     select: {

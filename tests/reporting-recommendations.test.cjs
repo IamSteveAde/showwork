@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const ts = require('typescript');
 const React = require('react');
 function load(file, deps = {}) {
+  deps={ '@/lib/publishing/clientRequests':require('./helpers/load-typescript.cjs').load('lib/publishing/clientRequests.ts'),...deps};
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
   new Function('require', 'module', 'exports', code)(name => name in deps ? deps[name] : require(name), mod, mod.exports);

@@ -1,0 +1,34 @@
+{
+  "scope": "Final integration cycle only; prior uncommitted work retained.",
+  "created": [
+    "lib/publishing/filesystemJournal.ts",
+    "lib/publishing/providerNormalization.ts",
+    "lib/publishing/nativeMediaPreparation.ts",
+    "lib/publishing/objectStorageAdapters.ts",
+    "lib/publishing/deploymentReadiness.ts",
+    "lib/publishing/publishingMonitoring.ts",
+    "scripts/publishing-reliability/safe-application-build.cjs",
+    "scripts/publishing-reliability/production-grants.proposal.sql",
+    "tests/publishing-final-adapters.test.cjs",
+    "tests/publishing-real-schema.integration.test.cjs",
+    "tests/publishing-final-refresh.integration.test.cjs",
+    "docs/publishing-cutover-runbook.md",
+    "docs/publishing-final-integration-coverage.json",
+    "docs/publishing-final-integration-files.json",
+    "docs/publishing-final-integration-readiness.md"
+  ],
+  "modified": [
+    "lib/publishing/providerHttpAdapter.ts",
+    "lib/publishing/tokenRefreshFence.ts",
+    "lib/publishing/authenticatedCallbacks.ts",
+    "lib/publishing/applicationComposition.ts",
+    "workers/publishing/main.ts",
+    "scripts/vps/build-worker.mjs",
+    "tests/worker-build.test.mjs",
+    "tsconfig.publishing-integration.json"
+  ],
+  "generatedArtifacts": [
+    "dist-worker/main.cjs",
+    "dist-worker/metafile.json"
+  ]
+}

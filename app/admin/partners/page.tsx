@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
@@ -96,7 +97,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
         setLoading(true);
         setError("");
 
-        const response = await fetch("/api/admin/partners", {
+        const response = await calendarMutationFetch("/api/admin/partners", {
           method: "GET",
           cache: "no-store",
         });
@@ -144,7 +145,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
       setProcessingId(partnerId);
       setError("");
 
-      const response = await fetch(`/api/admin/partners/${partnerId}`, {
+      const response = await calendarMutationFetch(`/api/admin/partners/${partnerId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -165,7 +166,7 @@ const [processingId, setProcessingId] = useState<string | null>(null);
         );
       }
 
-      const refreshResponse = await fetch("/api/admin/partners", {
+      const refreshResponse = await calendarMutationFetch("/api/admin/partners", {
         method: "GET",
         cache: "no-store",
       });

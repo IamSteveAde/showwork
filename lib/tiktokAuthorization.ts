@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { runScheduledPublishing } from "@/lib/publishing/scheduler";
 import { NextResponse } from "next/server";
 import type { CalendarPost, CalendarPostAsset, Prisma } from "@prisma/client";
@@ -9,6 +10,8 @@ import { validateTikTokMedia } from "@/lib/tiktokMedia";
 import { buildCaption, validatePublishContent } from "@/lib/publishing/state";
 
 export async function authorizeTikTokPost(post: CalendarPost & { assets: CalendarPostAsset[] }, actorId: string, body: Record<string, unknown>) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/tiktokAuthorization.ts#authorizeTikTokPost@11"); } /* end-canonical-integration-boundary */
+
   try {
     const action = body.action;
     if (!["save", "schedule", "publish", "cancel", "retry"].includes(String(action))) throw new Error("Choose a TikTok publishing action.");

@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -37,7 +38,7 @@ export default function WorkspaceTeamPanel({ calendarId }: { calendarId: string 
     requestRef.current?.abort(); const controller = new AbortController(); requestRef.current = controller;
     setLoading(true);
     try {
-      const response = await fetch(`${endpoint}/invites?activityPage=${activityPage}`, { cache: 'no-store', signal: controller.signal });
+      const response = await calendarMutationFetch(`${endpoint}/invites?activityPage=${activityPage}`, { cache: 'no-store', signal: controller.signal });
       const result = await response.json().catch(() => ({ error: 'Could not load the team. Please try again.' }));
       if (!response.ok || !result.owner || !Array.isArray(result.collaborators)) throw new Error(result.error || 'Could not load the team.');
       if (!controller.signal.aborted) setTeam(result);
@@ -58,7 +59,7 @@ export default function WorkspaceTeamPanel({ calendarId }: { calendarId: string 
     if (busy) return false;
     setBusy(path); setError(''); setNotice('');
     try {
-      const response = await fetch(`${endpoint}/${path}`, { method, ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) });
+      const response = await calendarMutationFetch(`${endpoint}/${path}`, { method, ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result.ok !== true) throw new Error(result.error || 'This action could not be completed.');
       setNotice(message || 'Team updated.');

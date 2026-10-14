@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +59,7 @@ export default function CalendarLeadsPanel({ calendarId, canEdit, featureLocked 
   const load = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
     try {
-      const response = await fetch(endpoint, { cache: "no-store" });
+      const response = await calendarMutationFetch(endpoint, { cache: "no-store" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load leads.");
       setLeads(result.leads);
@@ -94,7 +95,7 @@ export default function CalendarLeadsPanel({ calendarId, canEdit, featureLocked 
   async function saveLead(event: FormEvent) {
     event.preventDefault(); setSaving(true); setError(""); setNotice("");
     try {
-      const response = await fetch(editing ? `${endpoint}/${encodeURIComponent(editing.id)}` : endpoint, {
+      const response = await calendarMutationFetch(editing ? `${endpoint}/${encodeURIComponent(editing.id)}` : endpoint, {
         method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
       });
       const result = await response.json();
@@ -138,7 +139,7 @@ export default function CalendarLeadsPanel({ calendarId, canEdit, featureLocked 
         };
       }).filter((lead) => lead.name);
       if (!imported.length) throw new Error("No rows with a name were found.");
-      const response = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "IMPORT", leads: imported }) });
+      const response = await calendarMutationFetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "IMPORT", leads: imported }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not import leads.");
       setNotice(`${result.created} lead${result.created === 1 ? "" : "s"} imported${result.skipped ? `; ${result.skipped} duplicate email${result.skipped === 1 ? "" : "s"} skipped` : ""}.`);

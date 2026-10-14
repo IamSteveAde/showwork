@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { Prisma, type SocialPlatform } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { PUBLISHING_PLATFORMS, statusField } from "./state";
@@ -8,6 +9,8 @@ import type { ReliablePublishingStore, DurableJob } from "./reliableStore";
  * become uncertain; unstarted claims get a new exact lease that fences delayed
  * old background envelopes. Recent started workers are left to finish. */
 export async function importLegacyPublishingRecovery(store: ReliablePublishingStore) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/legacyRecoveryBridge.ts#importLegacyPublishingRecovery@10"); } /* end-canonical-integration-boundary */
+
   const imported: DurableJob[] = [];
   for (const platform of PUBLISHING_PLATFORMS) {
     const operation = randomUUID(), token = randomUUID(), status = Prisma.raw('"'+statusField(platform)+'"');

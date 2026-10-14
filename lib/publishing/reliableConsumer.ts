@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { performance } from "node:perf_hooks";
 import { PUBLISHING_PLATFORMS } from "./state";
 import type { ReliablePublishingStore } from "./reliableStore";
@@ -12,6 +13,8 @@ export async function drainReliablePublishing(
   worker: ReturnType<typeof createReliableWorker>,
   options: { durationMs: number; rotation?: number; signal?: AbortSignal; idleMs?: number },
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableConsumer.ts#drainReliablePublishing@10"); } /* end-canonical-integration-boundary */
+
   if (!Number.isInteger(options.durationMs) || options.durationMs < 1 || options.durationMs > 12 * 60_000) throw new Error("Invalid consumer deadline");
   const start = performance.now();
   const outcomes: Record<string, number> = {};

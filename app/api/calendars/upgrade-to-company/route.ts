@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { calendarPaymentReturn } from "@/lib/calendarPaymentReturn";
 import { NextRequest, NextResponse } from "next/server";
@@ -37,6 +38,8 @@ function resolveBillingCycle(
 // If the account is already paying, has an expired trial, is pending
 // setup, or is offline, a new Studio subscription checkout is required.
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/upgrade-to-company/route.ts#POST@39")) { return await invokePublishingEntrypoint<never>("app/api/calendars/upgrade-to-company/route.ts#POST@39",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {

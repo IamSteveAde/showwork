@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -221,7 +222,7 @@ export default function ImportCalendar({
     try {
       const form = new FormData();
       form.set("file", file);
-      const response = await fetch(
+      const response = await calendarMutationFetch(
         `/api/calendars/${calendarId}/imports/preview`,
         { method: "POST", body: form },
       );
@@ -260,7 +261,7 @@ export default function ImportCalendar({
     try {
       let saved = pendingRequest.current.saved;
       if (!saved) {
-        const response = await fetch(
+        const response = await calendarMutationFetch(
           `/api/calendars/${calendarId}/imports/confirm`,
           {
             method: "POST",
@@ -275,7 +276,7 @@ export default function ImportCalendar({
             pendingRequest.current = null;
             setRetryPending(false);
             if (response.status === 409) {
-              const latest = await fetch(`/api/calendars/${calendarId}/posts`, {
+              const latest = await calendarMutationFetch(`/api/calendars/${calendarId}/posts`, {
                 cache: "no-store",
               });
               if (latest.ok) {
@@ -294,7 +295,7 @@ export default function ImportCalendar({
         saved = data;
         pendingRequest.current!.saved = data;
       }
-      const response = await fetch(`/api/calendars/${calendarId}/posts`, {
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/posts`, {
         cache: "no-store",
       });
       if (!response.ok)

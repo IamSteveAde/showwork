@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 
@@ -22,6 +23,8 @@ export function upsertSocialConnection(input: SocialConnectionInput, database: t
   );
 
   return database.$transaction(async (tx) => {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/socialReporting.ts#database.$transaction:callback@24"); } /* end-canonical-integration-boundary */
+
     await tx.socialConnection.updateMany({
       where: {
         calendarId,

@@ -1,0 +1,58 @@
+{
+  "head": "78484da7afe53deec8b359c3294c41f97b8350ed",
+  "commitsScanned": 277,
+  "uniqueBlobsScanned": 2775,
+  "secretlintTextBlobsScanned": 2736,
+  "binaryBlobsCoveredBySupplementalScan": 39,
+  "secretlintFindings": [],
+  "supplementalFindings": [
+    {
+      "object": "4a4459d1e0cb14284d34c9e9cb87f0d099540956",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "2c9442064056ef0e4657573b8bd56dda12342bdb",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "4816a6b42fb15115ac664ede3ec165649b6c2264",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "a231d02be10ebd2e194a9f2b10be36200f2ca413",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "afe6a84eb6c7eeaa28bb225fac8bcfc6903ab1a1",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "9591a3a65bf401dcd6bcd3831c5409647fd4f6ef",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    },
+    {
+      "object": "267cfaf0dbfd7815bf67ae5f023d87ad66b04fb6",
+      "path": ".env.example",
+      "kind": "credential-url",
+      "line": 2
+    }
+  ],
+  "reviewedPlaceholderFindings": 7,
+  "unresolvedFindings": [],
+  "sensitiveBrowserBlobReachable": false,
+  "temporaryPlaintextRemoved": true,
+  "networkUsed": false,
+  "pass": true
+}

@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
 
@@ -71,7 +72,7 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
     setProgress(0);
     setError(null);
     try {
-      const presignRes = await fetch(`/api/calendars/${calendarId}/banner-upload-presign`, {
+      const presignRes = await calendarMutationFetch(`/api/calendars/${calendarId}/banner-upload-presign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +115,7 @@ if (variant === "desktop") {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}`, {
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
        body: JSON.stringify({
@@ -132,7 +133,7 @@ if (variant === "desktop") {
         throw new Error(data.error ?? "Failed to save");
       }
       if (publish) {
-        await fetch(`/api/calendars/${calendarId}`, {
+        await calendarMutationFetch(`/api/calendars/${calendarId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "publish" }),

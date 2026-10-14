@@ -1,4 +1,8 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
+/* canonical-only-helper */
+import { publishingAccountIOActive } from "@/lib/publishing/executionContext";
+/* end-canonical-only-helper */
 // ─────────────────────────────────────────────
 // TIKTOK CONTENT POSTING API — connection (standard OAuth 2.0) and
 // Direct Post publishing helpers.
@@ -98,6 +102,8 @@ export class TikTokApiError extends Error {
 }
 
 async function apiPost<T>(path: string, accessToken: string, body: Record<string, unknown>): Promise<T> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!publishingAccountIOActive()) { await assertLegacyPublishingAllowed("lib/tiktok.ts#apiPost@100"); } } /* end-canonical-integration-boundary */
+
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {

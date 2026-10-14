@@ -1,8 +1,11 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import type { SocialPlatform } from "@prisma/client";
 import { db } from "@/lib/db";
 import { statusUpdate, statusWhere } from "./state";
 
 export async function runScheduledPublishing(platforms: SocialPlatform[], postIds?: string[]) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/scheduler.ts#runScheduledPublishing@5"); } /* end-canonical-integration-boundary */
+
   const now = new Date();
   let stale = 0;
   for (const platform of postIds ? [] : platforms) {

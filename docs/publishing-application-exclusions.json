@@ -1,0 +1,132 @@
+{
+  "exclusions": [
+    {
+      "entrypoint": "app/[slug]/page.tsx#SlugPage@63",
+      "reason": "Only Project lastViewedAt bookkeeping; no CalendarPost, publishing permission, destination or physical-media change."
+    },
+    {
+      "entrypoint": "app/admin/accounts/page.tsx#AdminPage@147",
+      "reason": "Reads Creator accounts and billing analytics; creator.createdAt was a lexical false positive."
+    },
+    {
+      "entrypoint": "app/admin/creators/[id]/page.tsx#CreatorDetailPage@219",
+      "reason": "Reads account detail and usage; no relevant mutation."
+    },
+    {
+      "entrypoint": "app/dashboard/profile/page.tsx#ProfilePage@350",
+      "reason": "Reads profile/usage; no relevant mutation in this function."
+    },
+    {
+      "entrypoint": "app/dashboard/[projectId]/page.tsx#ProjectDetailPage@528",
+      "reason": "Delivery-project payment projection only; no publishing eligibility or media-key mutation."
+    },
+    {
+      "entrypoint": "app/api/payments/initialize/route.ts#POST@10",
+      "reason": "Delivery-project payment initiation; no Content Workspace entitlement or publication mutation."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#GET@35",
+      "reason": "Read-only delivery project lookup; deletedAt was a lexical false positive."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#PATCH@60",
+      "reason": "Delivery-project metadata only; no canonical publishing fields or media keys."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/route.ts#DELETE@143",
+      "reason": "Soft-deletes delivery Project only, preserving media objects; no CalendarPost cascade."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#GET@24",
+      "reason": "Reads delivery-project invitations; separate from CalendarCollaborator permissions."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/route.ts#POST@55",
+      "reason": "Delivery-project invitations only; separate from CalendarCollaborator publishing permissions."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/invites/[inviteId]/route.ts#DELETE@8",
+      "reason": "Revokes a delivery-project invite only, not publishing authority."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/collaborators/[collaboratorId]/route.ts#DELETE@9",
+      "reason": "Delivery-project membership only; no CalendarCollaborator change."
+    },
+    {
+      "entrypoint": "app/api/projects/[id]/add-files-batch/route.ts#POST@11",
+      "reason": "Increments delivery additionalUploadCount, without replacing/deleting physical objects."
+    },
+    {
+      "entrypoint": "app/api/sections/[sectionId]/route.ts#PATCH@9",
+      "reason": "Changes a delivery section name only."
+    },
+    {
+      "entrypoint": "app/api/media/[mediaId]/route.ts#PATCH@48",
+      "reason": "Changes delivery Media caption only; independent from CalendarPost caption."
+    },
+    {
+      "entrypoint": "lib/aiResearchScheduler.ts#runScheduledAiBusinessResearch@26",
+      "reason": "Research updates aiBusinessSummary, aiBusinessSummaryUpdatedAt and aiLastResearchedAt only; it does not generate CalendarPost records or alter any scheduled revision. Existing owner entitlement check is preserved."
+    },
+    {
+      "entrypoint": "lib/calendarTrialEmails.ts#runCalendarTrialEmailCheck@22",
+      "reason": "Sends existing trial reminder emails and updates four sent-at timestamps only. It reads but never changes trial expiry, subscription status or publishing entitlement."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/website/route.ts#POST@14",
+      "reason": "Authenticated knowledge.manage route writes website knowledge documents and AI summary fields only; zero-byte website records have no media object to delete and cannot mutate a scheduled publishing revision."
+    },
+    {
+      "entrypoint": "lib/reporting/adapters/tiktok.ts#apiPost@26",
+      "reason": "Private helper has exactly two call sites: video/query and video/list analytics reads. POST is required by TikTok for these reads; neither call can initialize or publish content."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#POST@30",
+      "reason": "Existing authenticated channels.manage and socialInbox entitlement checks bind a WHATSAPP-only messaging connection. WhatsApp is not one of the five canonical publishing destinations; no publishing account version or post is changed."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/whatsapp/route.ts#DELETE@69",
+      "reason": "Existing channels.manage route disconnects WHATSAPP-only rows and hands off queued DM replies. It cannot disconnect any of the five publishing platforms or cancel a publishing intent."
+    },
+    {
+      "entrypoint": "lib/socialMessaging/whatsapp.ts#sendWhatsAppMessage@139",
+      "reason": "Sends a WhatsApp conversational reply under existing workspace access, exact connection, inbound-conversation and 24-hour-window checks. This is not a feed publication and changes no publishing destination."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/tiktok/messaging/route.ts#POST@24",
+      "reason": "Existing inbox.reply and Studio entitlement route imports Business Messaging history, updating messagingSyncError only. Business Messaging uses separate credentials from TikTok publishing."
+    },
+    {
+      "entrypoint": "app/api/calendars/channels/tiktok-messaging/callback/route.ts#GET@11",
+      "reason": "Signed messaging OAuth state, channels.manage and entitlement checks preserved. CAS updates tikTokMessaging credentials and webhook metadata only; accessToken, tokenScopes and platformAccountId for publishing are untouched."
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#freshTikTokMessagingConnection@18",
+      "reason": "Refreshes separate tikTokMessaging tokens with business identity verification and connected-row/token CAS. Publishing accessToken, refreshToken, tokenScopes and account identity are untouched."
+    },
+    {
+      "entrypoint": "lib/socialMessaging/tiktok.ts#syncTikTokInbox@104",
+      "reason": "Imports bounded Business Messaging conversations with existing socialInbox entitlement checks and autoReplyEligible false; writes messaging sync metadata only, never public posts."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/business-documents/upload-complete/route.ts#POST@12",
+      "reason": "Existing knowledge.manage upload finalization verifies a dedicated business-documents key prefix, reservation, storage size and quota before writing knowledge records. It changes no CalendarPost asset, approval, account destination or immutable publishing snapshot."
+    },
+    {
+      "entrypoint": "app/dashboard/billing/page.tsx#BillingPage@23",
+      "reason": "Native payment callback changes Project Delivery billing fields only, after existing provider verification and owner-reference checks. Content Workspace renewal remains delegated to the canonical syncContentWorkspaceRenewal adapter; the page must not be made read-only because that breaks existing delivery checkout."
+    },
+    {
+      "entrypoint": "app/api/calendars/[id]/channels/linkedin/messaging/route.ts#POST@11",
+      "reason": "Page Messaging subscription changes webhook metadata only and keeps channels.manage, workspace entitlement, scope and token-CAS checks. Shared token refresh is now canonical. The partner provider remains explicitly null, so the established partner-approval response is preserved."
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncXInbox@58",
+      "reason": "Reads X DM history with existing socialInbox entitlement and workspace checks; imports inbox messages and writes messaging watermarks only. Shared token rotation now uses the canonical account fence, and read-only provider transport remains distinct from public tweet creation."
+    },
+    {
+      "entrypoint": "lib/socialMessaging/x.ts#syncSocialInboxes@173",
+      "reason": "Iterates connected X accounts for existing inbox sync and error reporting. No public post or account destination mutation occurs; token refresh is delegated to the fenced shared service."
+    }
+  ]
+}

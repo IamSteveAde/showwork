@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
 import { useRouter } from "next/navigation";
@@ -187,7 +188,7 @@ export default function BusinessKnowledgeCard({
      * Reserve the file's storage allowance and obtain the R2
      * presigned upload URL.
      */
-    const presignRes = await fetch(
+    const presignRes = await calendarMutationFetch(
       `/api/calendars/${calendarId}/business-documents/upload-presign`,
       {
         method: "POST",
@@ -261,7 +262,7 @@ if (presignContentType.includes("application/json")) {
      * The reservationId identifies the exact storage reservation
      * created during presign.
      */
-    const completeRes = await fetch(
+    const completeRes = await calendarMutationFetch(
       `/api/calendars/${calendarId}/business-documents/upload-complete`,
       {
         method: "POST",
@@ -328,7 +329,7 @@ if (presignContentType.includes("application/json")) {
     setAddingWebsite(true);
     setError(null);
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/business-documents/website`, {
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/business-documents/website`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: websiteUrl.trim() }),
@@ -360,7 +361,7 @@ if (presignContentType.includes("application/json")) {
     setError(null);
 
     try {
-      const res = await fetch(
+      const res = await calendarMutationFetch(
         `/api/calendars/${calendarId}/business-documents/${documentId}`,
         { method: "DELETE" }
       );

@@ -1,4 +1,5 @@
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
+import {publishingIntegrationInstalled,invokePublishingEntrypoint} from '@/lib/publishing/applicationBoundary';
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -16,6 +17,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/instagram/connect/route.ts#GETcanonical',Array.from(arguments)); } /* end-canonical-integration-boundary */
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.redirect(`${appUrl()}/login`);
 

@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
@@ -91,7 +92,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
     try {
       const query = new URLSearchParams({ from, to });
       if (platform) query.set("platform", platform);
-      const response = await fetch(`${clientSlug ? `/api/social-calendar/${encodeURIComponent(clientSlug)}` : `/api/calendars/${encodeURIComponent(calendarId)}`}/reporting?${query}`, { cache: "no-store" });
+      const response = await calendarMutationFetch(`${clientSlug ? `/api/social-calendar/${encodeURIComponent(clientSlug)}` : `/api/calendars/${encodeURIComponent(calendarId)}`}/reporting?${query}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not load reporting.");
       if (version === requestVersion.current) setLoadedReport({ key: queryKey, data });
@@ -118,7 +119,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
   async function syncReportingNow() {
     setSyncing(true); setError(""); setSyncNotice("");
     try {
-      const response = await fetch(`/api/calendars/${encodeURIComponent(calendarId)}/reporting/sync`, { method: "POST" });
+      const response = await calendarMutationFetch(`/api/calendars/${encodeURIComponent(calendarId)}/reporting/sync`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not start reporting sync.");
       if (!mounted.current) return;
@@ -139,7 +140,7 @@ export default function CalendarReportingPanel({ calendarId, isManager, canAnaly
   async function analyzePerformance() {
     setAnalyzing(true); setError("");
     try {
-      const response = await fetch(`/api/calendars/${encodeURIComponent(calendarId)}/reporting/analyze`, {
+      const response = await calendarMutationFetch(`/api/calendars/${encodeURIComponent(calendarId)}/reporting/analyze`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from, to, ...(platform ? { platform } : {}) }),
       });

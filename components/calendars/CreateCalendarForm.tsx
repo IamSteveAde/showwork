@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import { useEffect, useRef, useState } from "react";
@@ -53,7 +54,7 @@ export default function CreateCalendarForm({
     setError(null);
     setBillingBlocked(false);
     try {
-      const res = await fetch("/api/calendars", {
+      const res = await calendarMutationFetch("/api/calendars", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

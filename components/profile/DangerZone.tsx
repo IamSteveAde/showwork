@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,7 +14,7 @@ export default function DangerZone() {
 
   const handleDeactivate = async () => {
     setLoading("deactivate");
-    const res = await fetch("/api/account/deactivate", { method: "POST" });
+    const res = await calendarMutationFetch("/api/account/deactivate", { method: "POST" });
     if (res.ok) {
       router.push("/login");
     } else {
@@ -25,7 +26,7 @@ export default function DangerZone() {
   const handleDelete = async () => {
     setLoading("delete");
     setError(null);
-    const res = await fetch("/api/account", {
+    const res = await calendarMutationFetch("/api/account", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: deletePassword }),

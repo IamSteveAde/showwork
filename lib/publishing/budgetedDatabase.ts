@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ReliablePublishingStore } from "./reliableStore";
@@ -86,6 +87,8 @@ export function createBudgetedPublishingDatabase(store: ReliablePublishingStore,
             }
           }
           return transaction(async tx => {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/budgetedDatabase.ts#transaction:callback@88"); } /* end-canonical-integration-boundary */
+
           currentPublishingSignal()?.throwIfAborted();
           const delegate = (tx as unknown as Record<PropertyKey, Record<string, Function>>)[model];
           if (!delegate || typeof delegate[operation] !== "function") throw new Error("Unknown publishing model");

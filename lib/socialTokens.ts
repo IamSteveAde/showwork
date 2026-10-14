@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, publishingRetentionRequired } from "@/lib/publishing/applicationBoundary";
 import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 import type { SocialConnection } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -7,7 +8,12 @@ export function requireScopes(connection: Pick<SocialConnection, "tokenScopes" |
   const missing = required.filter(scope => !scopes.has(scope));
   if (missing.length) throw new Error(`${connection.platform} permission is missing (${missing.join(", ")}). Reconnect after enabling access in the developer app.`);
 }
+/* canonical-only-helper */
+export {requestSocialTokenRefresh} from './publishing/nativeTokenServices';
+/* end-canonical-only-helper */
 export async function freshConnection(connection: SocialConnection, database: typeof db = db): Promise<SocialConnection> {
+  /* canonical-integration-boundary */ if (publishingRetentionRequired()) { return await freshCanonicalAuxiliaryConnection(connection); } /* end-canonical-integration-boundary */
+
   if (connection.status !== "CONNECTED" || !connection.accessToken) throw new Error("Reconnect this account before continuing.");
   if (!connection.accessTokenExpiresAt || connection.accessTokenExpiresAt.getTime() > Date.now() + 60_000) return connection;
   if (!["X", "LINKEDIN"].includes(connection.platform) || !connection.refreshToken) throw new Error(`${connection.platform} connection has expired. Reconnect the account.`);
@@ -34,3 +40,6 @@ export async function freshConnection(connection: SocialConnection, database: ty
   if (updated.status !== "CONNECTED" || !updated.accessToken) throw new Error("This account was disconnected.");
   return updated;
 }
+/* canonical-only-helper */
+import {freshCanonicalAuxiliaryConnection} from "./publishing/auxiliaryAccountHost";
+/* end-canonical-only-helper */

@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -11,6 +12,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/social-calendar/[slug]/respond/route.ts#POST@10",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const { slug } = await params;
   const calendar = await db.socialCalendar.findUnique({ where: { slug } });
   if (!calendar) return NextResponse.json({ error: "Not found" }, { status: 404 });

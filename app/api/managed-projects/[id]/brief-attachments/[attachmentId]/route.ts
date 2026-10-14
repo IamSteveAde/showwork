@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -8,6 +9,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; attachmentId: string }> }
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts#DELETE@7")) { return await invokePublishingEntrypoint<never>("app/api/managed-projects/[id]/brief-attachments/[attachmentId]/route.ts#DELETE@7",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

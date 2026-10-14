@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import type { Prisma, PrismaClient, SocialConnection } from "@prisma/client";
 import { createInstagramPublisher } from "@/lib/instagramPublishing";
 import { createTikTokPublisher } from "@/lib/tiktokPublishing";
@@ -70,6 +71,8 @@ export function createPlatformIntegration(port: Port, options: { verifyPublicati
     for (const job of jobs) { const post = posts.find(p=>p.id===job.postId); if (post) snapshots.set(job.id,{post:{...post,calendar:{...post.calendar,socialConnections:post.calendar.socialConnections.filter(c=>c.platform===job.platform)}},expires:Date.now()+30_000}); }
   }
   async function publish(job: DurableJob, signal: AbortSignal): Promise<PublishingProviderResult> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/platformIntegration.ts#publish@72"); } /* end-canonical-integration-boundary */
+
     const snapshot = prepared.get(job.id);
     if (!snapshot) throw new Error("Platform preflight required");
     let attempted = false, rejected = false, reference: string | null = null;
@@ -188,6 +191,8 @@ export function createPlatformIntegration(port: Port, options: { verifyPublicati
     for(const job of jobs){const post=posts.find(p=>p.id===job.postId);if(post)reconciliationSnapshots.set(job.id,{post,expires:Date.now()+30_000});}
   }
   async function reconcile(job: DurableJob): Promise<string | { reference: string; reportingComplete: boolean } | { state: "failed"; reference: string; reason: string } | null> {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/platformIntegration.ts#reconcile@190"); } /* end-canonical-integration-boundary */
+
     port.forget(job.postId); // Never carry a reporting receipt from an earlier job/version.
     const cached = reconciliationSnapshots.get(job.id); reconciliationSnapshots.delete(job.id);
     const post = cached && cached.expires>Date.now() ? cached.post : await readPost(job.postId, job.platform);

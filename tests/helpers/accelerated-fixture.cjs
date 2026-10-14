@@ -1,0 +1,29 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path');
+const {authorizationFixture}=require('./authorization-fixture.cjs'),{load}=require('./load-typescript.cjs'),{mock}=require('./provider-mocks.cjs');
+exports.acceleratedFixture=async(cluster,n,run,{activate=true,legacyPost=false}={})=>authorizationFixture(cluster.pool,'accelerated_'+n,async h=>{
+ const cache=new Map(),shared=f=>load(f,{},cache);
+ await h.q(fs.readFileSync('scripts/publishing-reliability/provider-schema.sql','utf8'));
+ await h.q(`ALTER TABLE "CalendarPost" ADD COLUMN "postDate" timestamptz DEFAULT now(),ADD COLUMN "publishWorkerStartedAt" timestamptz,ADD COLUMN "tikTokInitStartedAt" timestamptz,ADD COLUMN "tikTokPublishId" text,ADD COLUMN "instagramMediaId" text,ADD COLUMN "platformPostId" text`);
+ await h.q(`ALTER TABLE "CalendarPost" ADD COLUMN hook text,ADD COLUMN script text,ADD COLUMN category text,ADD COLUMN "contentIdea" text,ADD COLUMN "tikTokPrivacyLevel" text`);
+ await h.q(`ALTER TABLE "CalendarPostAsset" ADD COLUMN "sizeBytes" bigint NOT NULL DEFAULT 0`);
+ await h.q(`ALTER TABLE "SocialConnection" ADD COLUMN "updatedAt" timestamptz NOT NULL DEFAULT now()`);
+ await h.q(fs.readFileSync('scripts/publishing-reliability/integration-schema.sql','utf8'));
+ let usageAllowed=true,viewerAllowed=true,retentionApproved=false,billingAllowed=true,stopVerified=true,stopHash='a'.repeat(64),originHash='b'.repeat(64);
+ const policy={verifyViewer:async(_tx,i)=>{if(!viewerAllowed||i.credential!=='synthetic-client'||i.calendarId!=='calendar')throw Error('VIEWER_DENIED');return {principalId:'viewer-client',calendarId:i.calendarId,expiresAt:new Date(Date.now()+60000)};},verifyRetryEvidence:async()=>{throw Error('UNVERIFIED_RETRY');}};
+ const v=shared('lib/publishing/validationAdapters.ts').createPublishingValidationAdapters({database:h.db,...policy});
+ const control=shared('lib/publishing/integrationControl.ts').createPublishingIntegrationControl({database:h.db,validation:{database:h.db,...policy},verifyNeverAttempted:async(_tx,input)=>{if(input.evidenceReference!=='synthetic-pristine-post'||input.postId!=='post')throw Error('UNVERIFIED_LEGACY_ORIGIN');return {kind:'VERIFIED_NEVER_AUTHORIZED',evidenceHash:originHash};},verifyStopped:async(_tx,reference)=>{if(!stopVerified||reference!=='synthetic-stopped-senders')throw Error('UNVERIFIED_SENDER_STOP');return {scope:'ALL_SENDERS',evidenceHash:stopHash};}});
+ if(activate){await h.owner.transition({operationId:'drain-integration',actor:'operator',expectedEpoch:1n,to:'DRAINING'});await control.activate({operationId:'activate-integration',actor:'operator',epoch:2n,evidenceReference:'synthetic-stopped-senders'});await h.owner.transition({operationId:'netlify-canonical',actor:'operator',expectedEpoch:2n,to:'NETLIFY'});}
+ if(activate&&!legacyPost)await h.q(`INSERT INTO "PublishingPostOrigin"("postId",protocol,epoch) VALUES('post','CANONICAL',3)`);
+ const proofMap=new Map();proofMap.set('existing',{connectionId:'connection',providerAccountId:'provider-one',platform:'X',tokenScopes:'tweet.write',accessToken:'synthetic-token',expiresAt:new Date(Date.now()+3600000)});
+ const creator={privacy_level_options:['SELF_ONLY'],comment_disabled:false,duet_disabled:false,stitch_disabled:false,max_video_post_duration_sec:60};
+ const actions=shared('lib/publishing/applicationActions.ts').createCanonicalApplicationActions({database:h.db,policy,creatorInfo:async()=>creator,verifyAccount:async(_tx,key)=>{if(!proofMap.has(key))throw Error('TRUSTED_ACCOUNT_PROOF_REQUIRED');return proofMap.get(key);},authorizeBilling:async(_tx,actor)=>{if(!billingAllowed||actor!=='billing')throw Error('BILLING_AUTHORITY_REQUIRED');},validateUsage:async()=>{if(!usageAllowed)throw Error('USAGE_ALLOWANCE_UNAVAILABLE');},retention:async()=>{if(!retentionApproved)throw Error('RETENTION_POLICY_UNAPPROVED');return new Date(Date.now()+30*86400000);}});
+ const io=mock(),spool=await shared('lib/publishing/providerSpool.ts').createSyntheticProviderSpool(path.join(cluster.socketDirectory,'accelerated-spool-'+n));
+ const coordination=shared('lib/publishing/executionCoordination.ts').createPublishingCoordination({database:h.db,validation:v});
+ const media=shared('lib/publishing/immutableMedia.ts').createImmutablePublishingMedia({database:h.db,validation:v,materialize:async i=>({blobKey:`publishing/${i.jobId}/${i.assetId}`,objectVersion:i.objectVersion,contentSha256:i.contentSha256})});
+ const originalMedia=io.media;io.media=async(target,assets,creator)=>originalMedia(target,await media.pinnedAssets(target,assets),creator);
+ const observer=shared('lib/publishing/externalAuthorization.ts').createExternalPublicationAuthorization({database:h.db,validation:v});const httpJournal=shared('lib/publishing/providerJournal.ts').createProviderJournal({database:h.db,authorization:observer,spool});
+ const workers=[];const build=(extra={})=>{const w=shared('lib/publishing/canonicalWorker.ts').createInactiveCanonicalWorker({environment:'isolated-mock',database:h.db,validation:v,spool,io,actor:'worker',owner:'NETLIFY',epoch:activate?3n:1n,jobTimeoutMs:3000,shutdownGraceMs:0,preparedLeaseMs:1500,executionCoordination:coordination,snapshotMedia:media.snapshot,projectStatus:shared('lib/publishing/statusProjection.ts').createCanonicalStatusProjection({database:h.db,validation:v}),...extra});workers.push(w);return w;};
+ const target=async jobId=>shared('lib/publishing/canonicalWorkerStore.ts').canonicalPublicationTarget(await v.canonicalStore().findJob(jobId));
+ try{await run({...h,shared,v,policy,control,actions,io,spool,httpJournal,coordination,media,build,target,proofMap,creator,viewer:v=>{viewerAllowed=v;},usage:v=>{usageAllowed=v;},retention:v=>{retentionApproved=v;},billing:v=>{billingAllowed=v;},stopVerified:v=>{stopVerified=v;},recordSyntheticStoppedProof:hash=>{stopVerified=true;stopHash=hash;originHash=hash;}});}finally{await Promise.all(workers.map(w=>w.close()));}
+});

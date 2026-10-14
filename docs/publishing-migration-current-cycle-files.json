@@ -1,0 +1,146 @@
+{
+  "files": [
+    {
+      "file": ".gitignore",
+      "sha256": "8597055643e673e66b868adc6db076d94b8900a8bec7c30d1badfe32ffbc42e0"
+    },
+    {
+      "file": "app/api/cron/instagram-publish/route.ts",
+      "sha256": "4110de9d6cd1340e0820dd82aa5c2797fe1ae3b68165327e60d24fad3df37044"
+    },
+    {
+      "file": "app/api/cron/social-publish/route.ts",
+      "sha256": "4110de9d6cd1340e0820dd82aa5c2797fe1ae3b68165327e60d24fad3df37044"
+    },
+    {
+      "file": "app/api/cron/tiktok-publish/route.ts",
+      "sha256": "4110de9d6cd1340e0820dd82aa5c2797fe1ae3b68165327e60d24fad3df37044"
+    },
+    {
+      "file": "lib/auth.ts",
+      "sha256": "cb998cb33ca9f90f6d46b316f512834a4865a10d0b6d3e795427ff8ec8df69a4"
+    },
+    {
+      "file": "lib/publishing/applicationActions.ts",
+      "sha256": "bdfda0afb1de02bf8b974a8af61bd97fe1c84c3faea03356bf90b767e6066c07"
+    },
+    {
+      "file": "lib/publishing/applicationComposition.ts",
+      "sha256": "7e0cb73a4918026f127649b689c79a18dbf0b3eca5d3e6b97c2ec2dadc4231c9"
+    },
+    {
+      "file": "lib/publishing/canonicalWorker.ts",
+      "sha256": "33bf07895caae00b1ebc1e451e0b51f87af3e462c6e41ab15e1408a9fa116739"
+    },
+    {
+      "file": "lib/publishing/canonicalWorkerStore.ts",
+      "sha256": "997d1a91f2813b35f9260c63d6c567155e055d43db5ad505f3e1dc520286741a"
+    },
+    {
+      "file": "lib/publishing/capabilityProviders.ts",
+      "sha256": "2de588ca54fdaf1b28cdd2768e8746cc421f3ff27d8046a63fad49d795408673"
+    },
+    {
+      "file": "lib/publishing/executionContext.ts",
+      "sha256": "0f3fdfd8f2f5a5660fa6e1c17110be42a7653407485465fd21fa579926bc50d5"
+    },
+    {
+      "file": "lib/publishing/nativeApplicationContext.ts",
+      "sha256": "70505b70d61798a4d79423486699ab83bc72a7e39021cf9aa6f71e0c02f492d2"
+    },
+    {
+      "file": "lib/publishing/nativeWorkerComposition.ts",
+      "sha256": "4e167698c8beabe0edb3ed366152f6e9df2c195e471a141a868847e4179c1b9e"
+    },
+    {
+      "file": "lib/publishing/retainedVisibility.ts",
+      "sha256": "fd376ac0505bd12d90b09dc7aa930462e92c206060a64e2b0ef13709d4fe482f"
+    },
+    {
+      "file": "lib/publishing/showworkApplication.ts",
+      "sha256": "f920a715cad766ca8b0d482990232657b2a7ee6259c4c232a5f2678f23b14ea6"
+    },
+    {
+      "file": "lib/publishing/validationAdapters.ts",
+      "sha256": "cb54256a8fd0027d160c376933d93609baae64f3f0200ab47f5598c166c36328"
+    },
+    {
+      "file": "lib/r2.ts",
+      "sha256": "9729c3bf879618fb46fc2495be9849ed6b4d68e9383846b8a30daf7308eee98c"
+    },
+    {
+      "file": "netlify.toml",
+      "sha256": "795a1e155763dc89f17ed760d65816fb4226f01ff66bf1388a99df67b2e5bdcd"
+    },
+    {
+      "file": "package.json",
+      "sha256": "696dda8b1e924213ea06f3f98bad1bdc7fe5783452ede8773868506852b779ae"
+    },
+    {
+      "file": "scripts/publishing-migration/dependencies.env.example",
+      "sha256": "043d4005f79e050ac0a478c921e51c301dfb55c1785703c6467b049078ae212e"
+    },
+    {
+      "file": "scripts/publishing-migration/prepare-proposals.mjs",
+      "sha256": "8e0c730240c8e2d4bf13f2ae4956cee341a0a7e598a35dfdaa0859feabaae0bc"
+    },
+    {
+      "file": "scripts/publishing-migration/production-preflight.sql",
+      "sha256": "cb378741299982f12f765582543d2d46edfdd0789dd402e5f0566669c50f8b7a"
+    },
+    {
+      "file": "scripts/publishing-reliability/integration-schema.sql",
+      "sha256": "09c03bee527f2e703262608c9ea86ba82e91468a3fe17323346f42ae29ddbd69"
+    },
+    {
+      "file": "scripts/publishing-reliability/production-grants.proposal.sql",
+      "sha256": "97d16896f3706b7ae81e0bd1aed8564919de8df1cdf434d81b7945899ac49f2a"
+    },
+    {
+      "file": "scripts/vps/prepare-netlify-handoff.mjs",
+      "sha256": "b979dea58f4a3955e526c5046d469332c2c5071cec313e10312decdd94988373"
+    },
+    {
+      "file": "tests/publishing-application-handlers.integration.test.cjs",
+      "sha256": "dd44a3ed4656c4d392c9e6b6c35b2210d16231af69a5a1bbc6b16b5ce75e6705"
+    },
+    {
+      "file": "tests/publishing-application-integration.test.cjs",
+      "sha256": "1d2c2267a056a8ca870f343a64e3fed92b8f3eea228d5a1ff7805d4ceadfeafb"
+    },
+    {
+      "file": "tests/publishing-canonical-worker.test.cjs",
+      "sha256": "944e6dfaa3c5557b0c56757ad7667b7984f8ff2a6c3fbdbba8e15d5780d1524a"
+    },
+    {
+      "file": "tests/publishing-entrypoint-boundaries.test.cjs",
+      "sha256": "f84db60a5146b946894f5951bf2633da2fc7161c122fe3f5c51ab0b1197036c4"
+    },
+    {
+      "file": "tests/publishing-launch-retirement.test.cjs",
+      "sha256": "02223074ba2bda78b562e024992664d82d158a8a95e2c455ad345ef4f0ae752c"
+    },
+    {
+      "file": "tests/publishing-native-composition.integration.test.cjs",
+      "sha256": "739ca00dc14ac632c82d4b363ee8dbcc168e018bb74993d5e48faf3de7d28794"
+    },
+    {
+      "file": "tests/publishing-netlify-handoff.test.mjs",
+      "sha256": "b7f095f64d407f9429689521a4b166ef6232d1104fbeca1e5f2ea0d02ccb9327"
+    },
+    {
+      "file": "tests/publishing-retained-visibility.test.cjs",
+      "sha256": "528da29eb8bc3cb452a6897e56f55ee14073a496e59bcd9d65c75e3c15e8fd6d"
+    },
+    {
+      "file": "tests/publishing-retention.integration.test.cjs",
+      "sha256": "6b08e0535bcbbe7a31c3c6b2647fc5e7398c01a443775b66dc5c19ed97538d74"
+    }
+  ],
+  "generated": [
+    "netlify/functions-vps/*",
+    "netlify/publishing-handoff-manifest.json",
+    "docs/publishing-migration-proposals/*"
+  ],
+  "productionTouched": false
+}

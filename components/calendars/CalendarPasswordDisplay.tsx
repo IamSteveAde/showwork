@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export default function CalendarPasswordDisplay({
   const regenerate = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/calendars/${calendarId}`, {
+    const res = await calendarMutationFetch(`/api/calendars/${calendarId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "regenerate_password" }),
@@ -50,7 +51,7 @@ export default function CalendarPasswordDisplay({
     }
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/calendars/${calendarId}`, {
+    const res = await calendarMutationFetch(`/api/calendars/${calendarId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "set_password", password: customPassword }),

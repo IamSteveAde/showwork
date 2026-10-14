@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import TikTokMessagingPanel from "./TikTokMessagingPanel";
 import { useState, useEffect } from "react";
@@ -57,7 +58,7 @@ export default function TikTokConnectionCard({
     setDisconnecting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/tiktok/disconnect`, { method: "POST" });
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/tiktok/disconnect`, { method: "POST" });
       if (res.ok) {
         router.refresh();
         setConfirming(false);

@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 export default function LinkedInPagePicker({ calendarId }: { calendarId: string }) {
@@ -9,14 +10,14 @@ export default function LinkedInPagePicker({ calendarId }: { calendarId: string 
   const [capabilities, setCapabilities] = useState<{ accountType: string; publishing: boolean; analytics: boolean; messaging: boolean; messagingNote: string } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/calendars/${calendarId}/channels/linkedin/pages?capabilities=true`, { cache: "no-store", signal: controller.signal })
+    calendarMutationFetch(`/api/calendars/${calendarId}/channels/linkedin/pages?capabilities=true`, { cache: "no-store", signal: controller.signal })
       .then(async response => { if (response.ok) setCapabilities(await response.json()); }).catch(() => {});
     return () => controller.abort();
   }, [calendarId]);
   async function request(pageId?: string) {
     setBusy(true); setError("");
     try {
-      const response = await fetch(`/api/calendars/${calendarId}/channels/linkedin/pages`, pageId ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pageId }) } : { cache: "no-store" });
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/channels/linkedin/pages`, pageId ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pageId }) } : { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "LinkedIn Pages could not load.");
       if (pageId) router.refresh(); else setPages(data.pages);
@@ -30,7 +31,7 @@ export default function LinkedInPagePicker({ calendarId }: { calendarId: string 
     <button type="button" disabled={busy} className="block text-blue-300 underline disabled:opacity-50" onClick={async () => {
       setBusy(true); setError("");
       try {
-        const response = await fetch(`/api/calendars/${calendarId}/channels/linkedin/messaging`, { method: "POST" });
+        const response = await calendarMutationFetch(`/api/calendars/${calendarId}/channels/linkedin/messaging`, { method: "POST" });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Messaging setup failed.");
         router.refresh();

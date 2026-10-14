@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -35,6 +36,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ channel: string }> },
 ) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/channels/[channel]/callback/route.ts#GET@34",Array.from(arguments)); } /* end-canonical-integration-boundary */
+
   const { channel: rawChannel } = await params;
 
   if (!CHANNELS.includes(rawChannel as PublishingChannel)) {

@@ -1,4 +1,5 @@
 "use client";
+import {calendarMutationFetch} from "@/lib/publishing/clientRequests";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,7 @@ export default function CreatorRowActions({ creatorId, isComped, discountPercent
   async function patch(body: object, label: string) {
     setLoading(label); setError("");
     try {
-      const response = await fetch(`/api/admin/creators/${creatorId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const response = await calendarMutationFetch(`/api/admin/creators/${creatorId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json(); if (!response.ok) throw new Error(result.error ?? "Could not update account");
       router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not update account"); }

@@ -2,10 +2,11 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('typescript');
+const applicationContext=require('./helpers/load-typescript.cjs').load('lib/publishing/nativeApplicationContext.ts');
 function evaluate(file, deps, globals) {
   const mod={exports:{}};
   const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;
-  new Function('require','module','exports','globalThis','process',code)(name=>deps[name],mod,mod.exports,globals,{env:{NODE_ENV:'development'}});
+  new Function('require','module','exports','globalThis','process',code)(name=>name==='@/lib/publishing/nativeApplicationContext'?applicationContext:deps[name],mod,mod.exports,globals,{env:{NODE_ENV:'development'}});
   return mod.exports;
 }
 test('hot reload replaces a cached client when the generated schema changes and preserves revenue middleware',async()=>{

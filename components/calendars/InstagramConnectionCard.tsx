@@ -1,4 +1,5 @@
 "use client";
+import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -50,7 +51,7 @@ export default function InstagramConnectionCard({
     setDisconnecting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/calendars/${calendarId}/instagram/disconnect`, { method: "POST" });
+      const res = await calendarMutationFetch(`/api/calendars/${calendarId}/instagram/disconnect`, { method: "POST" });
       if (res.ok) {
         router.refresh();
         setConfirming(false);

@@ -1,0 +1,84 @@
+{
+  "fullPostgres": {
+    "tests": 321,
+    "pass": 312,
+    "fail": 9,
+    "skipped": 0,
+    "logSha256": "ed78f8ab660242847db3a6cd0f6cb4a8dbe301a67d849aa450bc7cba44ff2c27"
+  },
+  "isolatedRerun": {
+    "tests": 54,
+    "pass": 54,
+    "fail": 0,
+    "skipped": 0,
+    "logSha256": "e7f4db4828eab7c7d4a0dccd4f79e91f01972571855a7f0f192319b0c1ad3ca8"
+  },
+  "unit": {
+    "tests": 137,
+    "pass": 137,
+    "fail": 0,
+    "skipped": 0,
+    "logSha256": "66c7592c3152c473bdba1bfc7d230d0279a7de2c880a139dcd130503599f23c4"
+  },
+  "priorConcurrent": {
+    "tests": 321,
+    "pass": 312,
+    "fail": 9,
+    "skipped": 0,
+    "logSha256": "a7227fcf966c17ed8a2095f172323c2267ee2288823acde644687398760958c6"
+  },
+  "uniqueDatabaseScenarios": 321,
+  "uniqueUnitScenarios": 137,
+  "uniqueScenariosWithPassingEvidenceAcrossRuns": 458,
+  "singleCombinedDatabaseRunGreen": false,
+  "typeScriptPassed": true,
+  "workerTypeScriptPassed": true,
+  "safeBuildPassed": true,
+  "productionTouched": false,
+  "postgresDownloadSha256": "e0630a3600aea27511715563259ec2111cd5f4353a4b040e0be827f94cd7a8b0",
+  "checksumVerifiedBeforeExtraction": true,
+  "cleanupVerified": true,
+  "temporaryPathsRemoved": [
+    "/private/tmp/showwork-handler-regressions.log",
+    "/private/tmp/showwork-full-pg-regressions.log",
+    "/private/tmp/showwork-retention-final.log",
+    "/private/tmp/showwork-current-integration.log",
+    "/private/tmp/showwork-current-unit.log",
+    "/private/tmp/showwork-isolated-failed-suites.log",
+    "/private/tmp/showwork-current-last-types.log",
+    "/private/tmp/showwork-postgres17-build",
+    "/private/tmp/showwork-unit-runner.cjs",
+    "/private/tmp/showwork-current-last-unit.log",
+    "/private/tmp/showwork-worker-types.log",
+    "/private/tmp/showwork-current-safe-build.log",
+    "/private/tmp/showwork-native-retention-final.log",
+    "/private/tmp/showwork-unit-selection.json",
+    "/private/tmp/showwork-current-types.log",
+    "/private/tmp/showwork-application-regressions.log",
+    "/private/tmp/showwork-concurrent-regressions-attempt.log",
+    "/private/tmp/showwork-all-unit-regressions.log"
+  ],
+  "remainingTaskPostgresProcesses": 0,
+  "databaseSuites": [
+    "tests/publishing-ownership.integration.test.cjs",
+    "tests/publishing-ownership-process.integration.test.cjs",
+    "tests/publishing-intent-actions.integration.test.cjs",
+    "tests/publishing-canonical.integration.test.cjs",
+    "tests/publishing-validation.integration.test.cjs",
+    "tests/publishing-authorization.integration.test.cjs",
+    "tests/publishing-providers.integration.test.cjs",
+    "tests/publishing-canonical-worker.integration.test.cjs",
+    "tests/publishing-application-integration.test.cjs",
+    "tests/publishing-provider-operations.integration.test.cjs",
+    "tests/publishing-real-schema.integration.test.cjs",
+    "tests/publishing-final-refresh.integration.test.cjs",
+    "tests/publishing-native-composition.integration.test.cjs",
+    "tests/publishing-retention.integration.test.cjs",
+    "tests/publishing-application-handlers.integration.test.cjs"
+  ],
+  "isolatedRerunSuites": [
+    "tests/publishing-native-composition.integration.test.cjs",
+    "tests/publishing-provider-operations.integration.test.cjs",
+    "tests/publishing-providers.integration.test.cjs"
+  ]
+}

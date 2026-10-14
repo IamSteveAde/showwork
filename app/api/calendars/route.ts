@@ -1,3 +1,4 @@
+import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect, workspaceComplimentaryPlan } from "@/lib/complimentaryAccess";
 import { initializeOfferSubscription } from "@/lib/billingOffers";
 import { NextRequest, NextResponse } from "next/server";
@@ -120,6 +121,8 @@ export async function GET() {
 //
 // New frontend code should send `plan` instead.
 export async function POST(req: NextRequest) {
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/route.ts#POST@122")) { return await invokePublishingEntrypoint<never>("app/api/calendars/route.ts#POST@122",Array.from(arguments)); } } /* end-canonical-integration-boundary */
+
   const session = await getCurrentCreator();
 
   if (!session) {
