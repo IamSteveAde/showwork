@@ -1,0 +1,440 @@
+{
+  "inputs": {
+    "workers/publishing/status.ts": {
+      "bytes": 233,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/deploymentReadiness.ts": {
+      "bytes": 1929,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/complimentaryAccess.ts": {
+      "bytes": 4573,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/contentWorkspaceEntitlements.ts": {
+      "bytes": 9098,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/state.ts": {
+      "bytes": 3069,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/eligibilityPolicy.ts": {
+      "bytes": 2742,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/complimentaryAccess.ts",
+          "kind": "import-statement",
+          "original": "../complimentaryAccess"
+        },
+        {
+          "path": "lib/contentWorkspaceEntitlements.ts",
+          "kind": "import-statement",
+          "original": "../contentWorkspaceEntitlements"
+        },
+        {
+          "path": "lib/publishing/state.ts",
+          "kind": "import-statement",
+          "original": "./state"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/canonicalWorkerStore.ts": {
+      "bytes": 4779,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/publishing/eligibilityPolicy.ts",
+          "kind": "import-statement",
+          "original": "./eligibilityPolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/ownership.ts": {
+      "bytes": 9983,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/externalAuthorization.ts": {
+      "bytes": 20423,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/publishing/ownership.ts",
+          "kind": "import-statement",
+          "original": "./ownership"
+        },
+        {
+          "path": "lib/publishing/eligibilityPolicy.ts",
+          "kind": "import-statement",
+          "original": "./eligibilityPolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/tiktokSettings.ts": {
+      "bytes": 3833,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/providerJournal.ts": {
+      "bytes": 6008,
+      "imports": [
+        {
+          "path": "lib/publishing/eligibilityPolicy.ts",
+          "kind": "import-statement",
+          "original": "./eligibilityPolicy"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/capabilityProviders.ts": {
+      "bytes": 18165,
+      "imports": [
+        {
+          "path": "lib/publishing/state.ts",
+          "kind": "import-statement",
+          "original": "./state"
+        },
+        {
+          "path": "lib/tiktokSettings.ts",
+          "kind": "import-statement",
+          "original": "../tiktokSettings"
+        },
+        {
+          "path": "lib/publishing/eligibilityPolicy.ts",
+          "kind": "import-statement",
+          "original": "./eligibilityPolicy"
+        },
+        {
+          "path": "lib/publishing/providerJournal.ts",
+          "kind": "import-statement",
+          "original": "./providerJournal"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/canonicalWorker.ts": {
+      "bytes": 10200,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "node:perf_hooks",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/publishing/canonicalWorkerStore.ts",
+          "kind": "import-statement",
+          "original": "./canonicalWorkerStore"
+        },
+        {
+          "path": "lib/publishing/externalAuthorization.ts",
+          "kind": "import-statement",
+          "original": "./externalAuthorization"
+        },
+        {
+          "path": "lib/publishing/capabilityProviders.ts",
+          "kind": "import-statement",
+          "original": "./capabilityProviders"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/calendarTeamPolicy.ts": {
+      "bytes": 7852,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/tiktokConsent.ts": {
+      "bytes": 1079,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/publishing/state.ts",
+          "kind": "import-statement",
+          "original": "@/lib/publishing/state"
+        },
+        {
+          "path": "lib/tiktokSettings.ts",
+          "kind": "import-statement",
+          "original": "@/lib/tiktokSettings"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/intentActions.ts": {
+      "bytes": 15668,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/canonicalContract.ts": {
+      "bytes": 2025,
+      "imports": [],
+      "format": "esm"
+    },
+    "lib/publishing/canonicalStore.ts": {
+      "bytes": 11274,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/publishing/intentActions.ts",
+          "kind": "import-statement",
+          "original": "./intentActions"
+        },
+        {
+          "path": "lib/publishing/canonicalContract.ts",
+          "kind": "import-statement",
+          "original": "./canonicalContract"
+        }
+      ],
+      "format": "esm"
+    },
+    "lib/publishing/validationAdapters.ts": {
+      "bytes": 18144,
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "lib/calendarTeamPolicy.ts",
+          "kind": "import-statement",
+          "original": "../calendarTeamPolicy"
+        },
+        {
+          "path": "lib/tiktokSettings.ts",
+          "kind": "import-statement",
+          "original": "../tiktokSettings"
+        },
+        {
+          "path": "lib/tiktokConsent.ts",
+          "kind": "import-statement",
+          "original": "../tiktokConsent"
+        },
+        {
+          "path": "lib/publishing/state.ts",
+          "kind": "import-statement",
+          "original": "./state"
+        },
+        {
+          "path": "lib/publishing/eligibilityPolicy.ts",
+          "kind": "import-statement",
+          "original": "./eligibilityPolicy"
+        },
+        {
+          "path": "lib/publishing/canonicalStore.ts",
+          "kind": "import-statement",
+          "original": "./canonicalStore"
+        },
+        {
+          "path": "lib/publishing/intentActions.ts",
+          "kind": "import-statement",
+          "original": "./intentActions"
+        }
+      ],
+      "format": "esm"
+    },
+    "workers/publishing/composition.ts": {
+      "bytes": 1718,
+      "imports": [
+        {
+          "path": "lib/publishing/deploymentReadiness.ts",
+          "kind": "import-statement",
+          "original": "@/lib/publishing/deploymentReadiness"
+        },
+        {
+          "path": "lib/publishing/canonicalWorker.ts",
+          "kind": "import-statement",
+          "original": "@/lib/publishing/canonicalWorker"
+        },
+        {
+          "path": "lib/publishing/validationAdapters.ts",
+          "kind": "import-statement",
+          "original": "@/lib/publishing/validationAdapters"
+        }
+      ],
+      "format": "esm"
+    },
+    "workers/publishing/main.ts": {
+      "bytes": 1514,
+      "imports": [
+        {
+          "path": "workers/publishing/status.ts",
+          "kind": "import-statement",
+          "original": "@/workers/publishing/status"
+        },
+        {
+          "path": "lib/publishing/deploymentReadiness.ts",
+          "kind": "import-statement",
+          "original": "@/lib/publishing/deploymentReadiness"
+        },
+        {
+          "path": "workers/publishing/composition.ts",
+          "kind": "import-statement",
+          "original": "@/workers/publishing/composition"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "dist-worker/main.cjs": {
+      "imports": [
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:perf_hooks",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        },
+        {
+          "path": "node:crypto",
+          "kind": "require-call",
+          "external": true
+        }
+      ],
+      "exports": [],
+      "entryPoint": "workers/publishing/main.ts",
+      "inputs": {
+        "workers/publishing/status.ts": {
+          "bytesInOutput": 157
+        },
+        "lib/publishing/deploymentReadiness.ts": {
+          "bytesInOutput": 1141
+        },
+        "lib/publishing/canonicalWorker.ts": {
+          "bytesInOutput": 8477
+        },
+        "lib/publishing/canonicalWorkerStore.ts": {
+          "bytesInOutput": 4168
+        },
+        "lib/publishing/eligibilityPolicy.ts": {
+          "bytesInOutput": 2214
+        },
+        "lib/complimentaryAccess.ts": {
+          "bytesInOutput": 1023
+        },
+        "lib/contentWorkspaceEntitlements.ts": {
+          "bytesInOutput": 1434
+        },
+        "lib/publishing/state.ts": {
+          "bytesInOutput": 2061
+        },
+        "lib/publishing/externalAuthorization.ts": {
+          "bytesInOutput": 18626
+        },
+        "lib/publishing/ownership.ts": {
+          "bytesInOutput": 8814
+        },
+        "lib/tiktokSettings.ts": {
+          "bytesInOutput": 3121
+        },
+        "lib/publishing/providerJournal.ts": {
+          "bytesInOutput": 5813
+        },
+        "lib/publishing/capabilityProviders.ts": {
+          "bytesInOutput": 16500
+        },
+        "lib/publishing/validationAdapters.ts": {
+          "bytesInOutput": 16945
+        },
+        "lib/calendarTeamPolicy.ts": {
+          "bytesInOutput": 4579
+        },
+        "lib/tiktokConsent.ts": {
+          "bytesInOutput": 654
+        },
+        "lib/publishing/canonicalStore.ts": {
+          "bytesInOutput": 9860
+        },
+        "lib/publishing/intentActions.ts": {
+          "bytesInOutput": 13362
+        },
+        "lib/publishing/canonicalContract.ts": {
+          "bytesInOutput": 661
+        },
+        "workers/publishing/composition.ts": {
+          "bytesInOutput": 1179
+        },
+        "workers/publishing/main.ts": {
+          "bytesInOutput": 1277
+        }
+      },
+      "bytes": 123078
+    }
+  }
+}

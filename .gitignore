@@ -12,3 +12,6 @@ backups/
 
 # Compressed media executables generated for deployment
 .media-bin/
+
+.env.netlify.backup
+.env.*.backup

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "publishingEnabled": false,
+  "owner": "VPS",
+  "protocol": "CANONICAL",
+  "schema": "public",
+  "databasePoolSize": 3,
+  "workerConcurrency": 2,
+  "journal": "shared-object-storage",
+  "media": "versioned-object-storage",
+  "metaVersion": "v26.0",
+  "linkedinVersion": "202609",
+  "reconciliationIntervalMs": 5000
+}
