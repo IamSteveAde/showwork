@@ -1,3 +1,16 @@
+// Fix for Node 22/25 broken experimental web storage on SSR
+if (typeof globalThis.localStorage !== 'undefined' && typeof globalThis.localStorage.getItem !== 'function') {
+  const mem = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => mem.get(String(key)) ?? null,
+    setItem: (key, value) => { mem.set(String(key), String(value)); },
+    removeItem: (key) => { mem.delete(String(key)); },
+    clear: () => { mem.clear(); },
+    key: (index) => Array.from(mem.keys())[index] ?? null,
+    get length() { return mem.size; },
+  };
+}
+
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
 
 /** @type {import('next').NextConfig} */

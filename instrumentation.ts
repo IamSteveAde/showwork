@@ -1,3 +1,16 @@
+// Fix for Node 22/25 broken experimental web storage on SSR
+if (typeof globalThis.localStorage !== 'undefined' && typeof globalThis.localStorage.getItem !== 'function') {
+  const mem = new Map<string, string>();
+  globalThis.localStorage = {
+    getItem: (key: string) => mem.get(String(key)) ?? null,
+    setItem: (key: string, value: string) => { mem.set(String(key), String(value)); },
+    removeItem: (key: string) => { mem.delete(String(key)); },
+    clear: () => { mem.clear(); },
+    key: (index: number) => Array.from(mem.keys())[index] ?? null,
+    get length() { return mem.size; },
+  } as unknown as Storage;
+}
+
 /** Default-off Next startup hook. Build and ordinary startup do not install canonical publishing. */
 export async function register(){
  if(process.env.NEXT_RUNTIME==='nodejs'){
