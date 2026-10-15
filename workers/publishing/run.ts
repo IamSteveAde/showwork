@@ -1,7 +1,7 @@
 import {publishingHostConfiguration} from '@/lib/publishing/hostConfiguration';
 /** Entry command is inert unless both --run and an explicit enable flag are supplied. */
 async function main(){
- if(Number(process.versions.node.split('.')[0])!==22)throw Error('NODE_22_REQUIRED');
+ const nodeMajor = Number(process.versions.node.split('.')[0]); if (nodeMajor !== 22 && nodeMajor !== 25) throw Error('NODE_VERSION_UNSUPPORTED');
  const command=process.argv.slice(2);if(command.length!==1||!['--run','--check','--reconcile'].includes(command[0]))throw Error('NATIVE_WORKER_EXPLICIT_COMMAND_REQUIRED');
  const config=publishingHostConfiguration(process.env);
  if(command[0]==='--check'){console.log(JSON.stringify({state:config.enabled?'configured':'disabled',publishingEnabled:config.enabled,databaseConnected:false,maySend:false}));return;}
