@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && NODE_OPTIONS='--no-experimental-webstorage' next dev",
-    "build": "node scripts/vps/prepare-netlify-handoff.mjs && node scripts/package-media-binaries.cjs && prisma generate && next build",
+    "build": "node scripts/package-media-binaries.cjs && prisma generate && next build",
     "start": "NODE_OPTIONS='--no-experimental-webstorage' next start",
     "lint": "next lint",
     "postinstall": "prisma generate",

@@ -26,7 +26,7 @@ test('VPS artifact contains canonical execution and no obsolete publishing imple
  const inputs=Object.keys(graph.inputs);assert.ok(inputs.some(file=>file.endsWith('lib/publishing/canonicalWorker.ts')));for(const file of inputs)assert.equal(old.has(file),false,file);
 });
 test('intended Netlify release omits publishing functions and HTTP cron exports are retired',async()=>{
- const config=fs.readFileSync('netlify.toml','utf8');assert.ok(config.includes('directory = "netlify/functions-vps"'));assert.equal(config.includes('[functions."social-publish-cron"]'),false);assert.equal(config.includes('[functions."publish-post-background"]'),false);
+ const config=fs.readFileSync('netlify.toml','utf8');assert.equal(config.includes('directory = "netlify/functions'), false);assert.equal(config.includes('[functions."social-publish-cron"]'),false);assert.equal(config.includes('[functions."publish-post-background"]'),false);
  for(const platform of ['social','instagram','tiktok']){
   const handler=load('app/api/cron/'+platform+'-publish/route.ts',{'next/server':{NextResponse:Response}});const response=await handler.POST();assert.equal(response.status,410);assert.equal((await response.json()).code,'PUBLISHING_HOST_RETIRED');
  }

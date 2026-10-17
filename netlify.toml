@@ -1,7 +1,5 @@
-# Intended VPS handoff release: generated copies preserve unrelated functions.
-# Build must generate this directory; do not deploy until the canonical app/runtime gates pass.
-[functions]
-  directory = "netlify/functions-vps"
+# Intended VPS release: all background and scheduled functions run in the BullMQ worker service.
+# Netlify builds and hosts only the Next.js web application.
 
 [functions."___netlify-server-handler"]
   included_files = [".media-bin/*.gz", "!node_modules/ffprobe-static/bin/**", "!node_modules/ffmpeg-static/ffmpeg", "!node_modules/ffmpeg-static/ffmpeg.exe"]

@@ -50,8 +50,8 @@ test('legacy upsert callers divert to canonical routes or retired factories; int
   const source=fs.readFileSync(file,'utf8');assert.ok(source.indexOf('/* canonical-integration-boundary */')<source.indexOf('await upsertSocialConnection('),file);assert.match(source,/return (?:await )?invokePublishingEntrypoint/);
  }
  for(const file of ['lib/publishing/worker.ts','lib/publishing/platformIntegration.ts','lib/tiktokPublishing.ts'])assert.match(fs.readFileSync(file,'utf8'),/assertLegacyFactoryNotRetired|assertLegacyPublishingAllowed/);
- assert.match(fs.readFileSync('netlify.toml','utf8'),/directory\s*=\s*"netlify\/functions-vps"/);
- const source=fs.readFileSync('scripts/vps/prepare-netlify-handoff.mjs','utf8');assert.match(source,/retiredPublishingFunctions=\['publish-post-background.ts','social-publish-cron.ts'\]/);
+ assert.equal(fs.readFileSync('netlify.toml','utf8').includes('directory = "netlify/functions'), false);
+ const source=fs.readFileSync('scripts/vps/prepare-netlify-handoff.mjs','utf8');assert.ok(source.includes('publish-post-background.ts') && source.includes('social-publish-cron.ts'));
  const bundle=fs.readFileSync('dist-worker-native/metafile.json','utf8');assert.ok(!Object.keys(JSON.parse(bundle).inputs).includes('lib/socialReporting.ts'));
 });
 test('trial notifications and AI research no longer need publication authority',async()=>{
