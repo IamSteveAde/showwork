@@ -10,7 +10,8 @@ test('intended function directory removes both publishing hosts and preserves ev
  const temp=await mkdtemp(path.join(tmpdir(),'sw-handoff-'));try{
  await mkdir(path.join(temp,'netlify'));await cp('netlify/functions',path.join(temp,'netlify/functions'),{recursive:true});
  const manifest=await prepareNetlifyHandoff(temp);const files=await readdir(path.join(temp,manifest.functionsDirectory));
- assert.equal(files.length,(await readdir('netlify/functions')).length-2);
+ const retiredInFunctions=(await readdir('netlify/functions')).filter(f=>retiredPublishingFunctions.includes(f)).length;
+ assert.equal(files.length,(await readdir('netlify/functions')).length-retiredInFunctions);
  for(const f of retiredPublishingFunctions)assert.equal(files.includes(f),false);
  for(const f of files)assert.deepEqual(await readFile(path.join(temp,manifest.functionsDirectory,f)),await readFile(path.join('netlify/functions',f)));
  assert.equal(manifest.publishingScheduleInvocationsPerDayRemoved,1440);assert.equal(manifest.productionMeasured,false);

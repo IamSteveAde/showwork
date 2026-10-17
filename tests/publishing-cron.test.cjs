@@ -81,9 +81,7 @@ test('deadline stops queued claims, and concurrency above three is rejected', as
   assert.ok(Object.values(result.platforms).every(p => p.deferred && p.claimed === 0));
   await assert.rejects(runPublishingBatchScheduler({ concurrency: 4, dispatch: async () => {} }), /between one and three/);
 });
-test('only one publishing cron remains and invokes the batch scheduler', () => {
+test('zero publishing crons remain in netlify/functions as BullMQ worker handles scheduling', () => {
   const files = fs.readdirSync(path.join(root, 'netlify/functions')).filter(name => /publish-cron\.(ts|js|mts|mjs)$/.test(name));
-  assert.deepEqual(files, ['social-publish-cron.ts']);
-  const source = fs.readFileSync(path.join(root, 'netlify/functions/social-publish-cron.ts'), 'utf8');
-  assert.match(source, /schedule\("\* \* \* \* \*"/); assert.match(source, /runPublishingBatchScheduler/); assert.doesNotMatch(source, /fetch\(/);
+  assert.deepEqual(files, []);
 });

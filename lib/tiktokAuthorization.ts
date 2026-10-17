@@ -1,5 +1,4 @@
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
-import { runScheduledPublishing } from "@/lib/publishing/scheduler";
 import { NextResponse } from "next/server";
 import type { CalendarPost, CalendarPostAsset, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -52,8 +51,7 @@ export async function authorizeTikTokPost(post: CalendarPost & { assets: Calenda
     const count = await db.calendarPost.updateMany({ where: { id: post.id, updatedAt: post.updatedAt, tikTokPublishStatus: post.tikTokPublishStatus }, data });
     if (!count.count) return NextResponse.json({ error: "The post changed. Refresh and review again." }, { status: 409 });
     if (action === "publish") {
-      const result = await runScheduledPublishing(["TIKTOK"], [post.id]);
-      return NextResponse.json({ ok: true, status: result.dispatched ? "PUBLISHING" : "SCHEDULED" });
+      return NextResponse.json({ ok: true, status: "SCHEDULED" });
     }
     return NextResponse.json({ ok: true, status: data.tikTokPublishStatus });
   } catch (error) {
