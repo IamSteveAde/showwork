@@ -6,8 +6,11 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { consumeAiGeneration, getContentWorkspacePlan } from "@/lib/contentWorkspaceUsage";
-import { generateContentCalendar } from "@/lib/openai";
+import { createAiGenerationJob, getAiGenerationJob } from "@/lib/aiGenerationJob";
 import type { SocialPlatform } from "@prisma/client";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 const VALID_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "YOUTUBE", "FACEBOOK", "X", "LINKEDIN"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -17,6 +20,36 @@ function isRealDate(value: unknown): value is string {
   if (typeof value !== "string" || !DATE_RE.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const creator = await getCurrentCreator();
+  if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  if (!(await hasCalendarPermission(creator.id, id, "ai.generate"))) {
+    return NextResponse.json({ error: "You don't have permission to view content on this calendar" }, { status: 403 });
+  }
+
+  const jobId = req.nextUrl.searchParams.get("jobId");
+  if (!jobId) {
+    return NextResponse.json({ error: "jobId is required" }, { status: 400 });
+  }
+
+  const job = await getAiGenerationJob(jobId);
+  if (!job || job.calendarId !== id) {
+    return NextResponse.json({ error: "Job not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    id: job.id,
+    status: job.status,
+    result: job.result,
+    error: job.error,
+    createdAt: job.createdAt,
+    startedAt: job.startedAt,
+    completedAt: job.completedAt,
+  });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -97,45 +130,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   try {
-    const ideas = await generateContentCalendar({
-      clientName: calendar.clientName,
-      businessSummary: calendar.aiBusinessSummary,
-      startDate,
-      endDate,
-      postsPerWeek: (postsPerWeek as number | undefined) ?? 3,
-      platforms: platforms as SocialPlatform[],
-      customInstructions: typeof customInstructions === "string" && customInstructions.trim() ? customInstructions.trim() : undefined,
-      contentStrategy: contentStrategy as "SAME_CONTENT" | "DIFFERENT_CONTENT" | "CUSTOM_GROUPS" | undefined,
-      contentGroups: contentGroups as string[][] | undefined,
-      scheduleStrategy: scheduleStrategy as "SAME_TIME" | "SAME_DAY" | "CUSTOM" | undefined,
-      platformSchedules: schedules as Record<string, { date: string; time: string }>,
-    });
-    if (ideas.length === 0) throw new Error("The AI returned no content. Please try again.");
-
-    const rows = ideas.map((idea) => {
-      if (!isRealDate(idea.postDate)) throw new Error("The generated content contains an invalid date. Please try again.");
-      const postTime = schedules[idea.platform]?.time ?? "09:00";
-      if (typeof postTime !== "string" || !TIME_RE.test(postTime)) throw new Error(`The scheduled time for ${idea.platform} is invalid.`);
-      const postDate = new Date(`${idea.postDate}T${postTime}:00.000Z`);
-      if (!Number.isFinite(postDate.getTime())) throw new Error(`The scheduled date for ${idea.platform} is invalid.`);
-      return {
-        calendarId: id, postDate, platform: idea.platform,
-        postType: idea.postType || null, category: idea.category || null,
-        hook: idea.hook || null, script: idea.script || null,
-        caption: idea.caption || null, contentIdea: idea.contentIdea || null,
-        cta: idea.cta || null, hashtags: idea.hashtags || null, isAiDraft: true,
-      };
+    const job = await createAiGenerationJob({
+      calendarId: id,
+      creatorId: creator.id,
+      payload: body,
     });
 
-    const posts = await db.$transaction(async (tx) => {
-      const created = [];
-      for (const data of rows) created.push(await tx.calendarPost.create({ data }));
-      return created;
-    });
-    return NextResponse.json({ created: posts.length, posts, aiGenerationsRemaining: null });
+    return NextResponse.json({
+      queued: true,
+      jobId: job.id,
+      status: "PENDING",
+    }, { status: 202 });
   } catch (error) {
     await db.contentWorkspaceUsage.updateMany({ where: { creatorId: owner.id }, data: { aiGenerationsUsed: { decrement: 1 } } });
-    const message = error instanceof Error ? error.message : "Failed to generate content";
-    return NextResponse.json({ error: message }, { status: 502 });
+    const message = error instanceof Error ? error.message : "Failed to queue content generation";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
