@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "ai-worker:build": "prisma generate && node scripts/vps/build-ai-worker.mjs",
+    "ai-worker:start": "node dist-ai-worker/run.cjs --run",
     "dev": "prisma generate && NODE_OPTIONS='--no-experimental-webstorage' next dev",
     "build": "node scripts/package-media-binaries.cjs && prisma generate && next build",
     "start": "NODE_OPTIONS='--no-experimental-webstorage' next start",

@@ -1,5 +1,14 @@
 import type { SocialConnection, SocialPlatform } from "@prisma/client";
 
+export class MetaMessagingWindowClosedError extends Error {
+  readonly code = "MESSAGING_WINDOW_CLOSED";
+
+  constructor(platform: "FACEBOOK" | "INSTAGRAM") {
+    super(`${platform === "INSTAGRAM" ? "Instagram" : "Facebook"}’s reply window has closed. You can reply after this person sends you another message.`);
+    this.name = "MetaMessagingWindowClosedError";
+  }
+}
+
 export async function sendMetaInboxMessage({
   connection,
   instagramPageId,
@@ -50,6 +59,9 @@ export async function sendMetaInboxMessage({
   };
   if (!response.ok || result.error) {
     const metaError = result.error;
+    if (metaError?.code === 10 && metaError.error_subcode === 2534022) {
+      throw new MetaMessagingWindowClosedError(connection.platform);
+    }
     const diagnostics = [
       typeof metaError?.code === "number" ? `code=${metaError.code}` : null,
       typeof metaError?.error_subcode === "number" ? `subcode=${metaError.error_subcode}` : null,

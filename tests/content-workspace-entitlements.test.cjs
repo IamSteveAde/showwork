@@ -129,14 +129,14 @@ test('automatic reply settings reject Studio requests without persisting any set
 });
 
 test('the content generation API honors denied quota results instead of treating objects as approval', async () => {
-  const api = load('app/api/calendars/[id]/ai-generate/route.ts', {
+  const api = load('lib/calendarAiGeneration.ts', {
     '@/lib/auth': { getCurrentCreator: async () => ({ id: 'owner' }) },
     '@/lib/calendarPermissions': { hasCalendarPermission: async () => true },
     '@/lib/db': { db: { socialCalendar: { findUnique: async () => ({ managerId: 'owner', aiBusinessSummary: 'Brand context' }) }, creator: { findUnique: async () => account() } } },
     '@/lib/contentWorkspaceUsage': { getContentWorkspacePlan: () => 'CREATOR', consumeAiGeneration: async () => ({ allowed: false, limit: 100 }) },
     '@/lib/openai': { generateContentCalendar: async () => { throw new Error('Quota must stop the model call'); } },
   });
-  const result = await api.POST({ json: async () => ({ startDate: '2026-10-04', endDate: '2026-10-11', platforms: ['INSTAGRAM'] }) }, { params: Promise.resolve({ id: 'workspace' }) });
+  const result = await api.generateCalendarDrafts({ json: async () => ({ startDate: '2026-10-04', endDate: '2026-10-11', platforms: ['INSTAGRAM'] }) }, { params: Promise.resolve({ id: 'workspace' }) }, { id: 'owner' });
   assert.equal(result.status, 403); assert.equal((await result.json()).code, 'AI_GENERATION_LIMIT_REACHED');
 });
 

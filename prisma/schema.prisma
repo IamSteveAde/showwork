@@ -12,6 +12,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model AiGenerationJob {
+  id         String   @id @default(uuid())
+  creatorId  String
+  calendarId String
+  status     String   @default("PENDING")
+  request    Json
+  result     Json?
+  httpStatus Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([creatorId, calendarId, createdAt])
+  @@index([status, createdAt])
+}
+
 // ─────────────────────────────────────────────
 // CREATOR — the Spotlite product's customer
 // (auth itself is handled by Supabase Auth; this table

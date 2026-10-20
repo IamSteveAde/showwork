@@ -110,10 +110,11 @@ export async function GET(req: NextRequest) {
         });
         return redirectTo(`${settingsPath}&instagramConnected=true`);
       }
-      // Instagram is linked to this Facebook Page. Use the Page for
-      // webhook subscription and messaging sends; keep the Instagram
-      // account ID on SocialConnection for webhook matching.
+      // Register both the linked Page and the Instagram account. A successful
+      // Page subscription alone can leave the Instagram account's
+      // subscribed_apps empty and incoming DMs undelivered.
       await subscribeMetaMessagingAccount(pageWithInstagram.id, pageWithInstagram.access_token, "INSTAGRAM");
+      await subscribeMetaMessagingAccount(igUserId, pageWithInstagram.access_token, "INSTAGRAM");
       await db.socialConnection.update({
         where: { id: socialConnection.id },
         data: {

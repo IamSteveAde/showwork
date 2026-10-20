@@ -1,5 +1,6 @@
 "use client";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
+import { readAiGenerationResponse, waitForAiGeneration } from "@/lib/aiGenerationResponse";
 
 import { useEffect, useState } from "react";
 import { consumeReportingRecommendation, REPORTING_RECOMMENDATION_EVENT } from "@/lib/reporting/recommendationHandoff";
@@ -166,7 +167,7 @@ const togglePlatform = (platform: string) => {
     setBillingBlocked(false);
 
     try {
-     const res = await calendarMutationFetch(
+     let res = await calendarMutationFetch(
   `/api/calendars/${encodeURIComponent(calendarId)}/ai-generate`,
   {
         method: "POST",
@@ -185,56 +186,16 @@ const togglePlatform = (platform: string) => {
 }),
       });
 
-      let data: any = null;
-      try {
-        const text = await res.text();
-        data = text ? JSON.parse(text) : null;
-      } catch {
-        data = null;
+      let data = await readAiGenerationResponse(res);
+      if (res.status === 202 && typeof data.jobId === "string") {
+        const completed = await waitForAiGeneration(calendarId, data.jobId);
+        res = completed.response;
+        data = completed.data;
       }
 
       if (!res.ok) {
-        if (res.status === 504 || res.status === 502) {
-          throw new Error("Generation timed out. Please try a shorter date range (e.g. 1–2 weeks) or fewer posts per week.");
-        }
-        setBillingBlocked(res.status === 402 || (res.status === 403 && !!(data?.requiresUpgrade || data?.code === "WORKSPACE_FEATURE_LOCKED" || /subscription|allowance|limit|upgrade|trial/i.test(data?.error || ""))));
-        throw new Error(data?.error ?? ("Failed to generate content (server status " + res.status + ")"));
-      }
-
-      // If queued asynchronously via BullMQ / database job
-      if (res.status === 202 && data?.jobId) {
-        const jobId = data.jobId;
-        const maxWaitMs = 240000; // 4 minutes maximum wait
-        const startTime = Date.now();
-
-        await new Promise<void>((resolve, reject) => {
-          const interval = setInterval(async () => {
-            if (Date.now() - startTime > maxWaitMs) {
-              clearInterval(interval);
-              reject(new Error("Generation is taking longer than expected. Please check your calendar drafts in a moment."));
-              return;
-            }
-
-            try {
-              const checkRes = await fetch(
-                `/api/calendars/${encodeURIComponent(calendarId)}/ai-generate?jobId=${encodeURIComponent(jobId)}`,
-                { cache: "no-store" }
-              );
-              if (!checkRes.ok) return;
-              const checkData = await checkRes.json();
-
-              if (checkData.status === "COMPLETED") {
-                clearInterval(interval);
-                resolve();
-              } else if (checkData.status === "FAILED") {
-                clearInterval(interval);
-                reject(new Error(checkData.error || "Failed to generate content"));
-              }
-            } catch {
-              // Network hiccups during polling shouldn't abort the generation
-            }
-          }, 2500);
-        });
+        setBillingBlocked(res.status === 402 || (res.status === 403 && !!(data.requiresUpgrade || data.code === "WORKSPACE_FEATURE_LOCKED" || /subscription|allowance|limit|upgrade|trial/i.test(data.error || ""))));
+        throw new Error(data.error ?? "Failed to generate content");
       }
 
       setReviewOpen(true);

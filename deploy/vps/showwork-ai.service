@@ -1,0 +1,25 @@
+[Unit]
+Description=Showwork AI generation worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=showwork
+WorkingDirectory=/home/showwork/app
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/showwork/ai-worker.env
+ExecStart=/usr/bin/node /home/showwork/app/dist-ai-worker/run.cjs --run
+Restart=on-failure
+RestartSec=5
+# Allow an active model call and its database save to finish on shutdown.
+TimeoutStopSec=8min
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
