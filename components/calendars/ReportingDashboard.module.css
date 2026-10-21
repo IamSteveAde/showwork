@@ -132,3 +132,42 @@
 .facebookDetail > summary { display: flex; justify-content: space-between; gap: 14px; padding: 18px 22px; cursor: pointer; font-size: 12px; color: #486584; }
 .facebookDetail > summary > span { font-size: 10px; color: #94a4b8; }
 .facebookDetail > section { border: 0; border-top: 1px solid #e7edf5; border-radius: 0; box-shadow: none; }
+
+/* Contain intrinsic table/form sizing at each flex and grid boundary. */
+.dashboard { width: 100%; min-width: 0; max-width: 100%; }
+.dashboard > *, .charts > *, .reportControls, .hero > div, .hero > div > div { min-width: 0; max-width: 100%; }
+.postsCard, .channelSection, .tableScroll { min-width: 0; width: 100%; max-width: 100%; }
+.reportControls input, .reportControls select { min-width: 0; max-width: 100%; }
+.postDetails summary { display: flex; align-items: center; gap: 4px; list-style: none; }
+.postDetails summary::-webkit-details-marker { display: none; }
+.postDetails[open] summary svg { transform: rotate(90deg); }
+@media(max-width:700px) {
+  .reportControls { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; width: 100%; }
+  .reportControls > label { min-width: 0; width: 100%; }
+  .reportControls input, .reportControls select { width: 100%; min-height: 40px; font-size: 11px; padding-inline: 7px; }
+  .reportControls > button { min-width: 0; padding-inline: 8px; font-size: 10px; }
+  .hero { overflow: hidden; }
+  .mixContent { min-width: 0; }
+  .accountStatus { max-width: 100%; }
+  .accountCard { flex-wrap: wrap; }
+  .postTable, .postTable tbody { display: block; width: 100%; }
+  .postTable thead { display: none; }
+  .postTable tr { display: grid; position: relative; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px 10px; padding: 17px; border-bottom: 1px solid #e8edf5; }
+  .postTable tr:last-child { border-bottom: 0; }
+  .postTable td, .postTable td:first-child { display: block; min-width: 0; padding: 0; border: 0; }
+  .postTable td:first-child { grid-column: 1 / -1; padding-right: 23px; }
+  .postTable td[data-label] { padding: 10px; border-radius: 8px; background: #f6f8fc; font-size: 13px; }
+  .postTable td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 6px; color: #91a0b5; font-size: 9px; font-weight: 400; }
+  .postTable td:last-child { position: absolute; right: 14px; top: 15px; }
+  .postIdentity { min-width: 0; max-width: 100%; gap: 10px; }
+  .postIdentity > div { min-width: 0; flex: 1; }
+  .postIdentity > div > p, .postDetails p { overflow-wrap: anywhere; word-break: break-word; }
+  .postDetails { margin-top: 9px; }
+  .postMeta { overflow-wrap: anywhere; gap: 4px 8px; }
+  .postMeta span { max-width: 100%; }
+  .tableScroll { overflow: visible; }
+  .postLink { width: 27px; height: 27px; }
+  .microBar { width: 100%; max-width: 70px; }
+  .postsFooter { flex-wrap: wrap; }
+  .postDetails > div { gap: 6px 10px; }
+}

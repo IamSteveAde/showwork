@@ -1,9 +1,9 @@
+import { rebuildBusinessKnowledge } from "@/lib/knowledge/context";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getObjectSize, publicUrlFor } from "@/lib/r2";
 import { extractTextFromDocument } from "@/lib/documentExtraction";
-import { updateBusinessSummaryWithDocument } from "@/lib/openai";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import {
   releaseContentWorkspaceStorageReservation,
@@ -597,21 +597,7 @@ export async function POST(
    * A summary failure must never undo a successful document upload.
    */
   try {
-    const updatedSummary =
-      await updateBusinessSummaryWithDocument({
-        existingSummary: calendar.aiBusinessSummary,
-        clientName: calendar.clientName,
-        documentText: extractedText,
-      });
-
-    const summaryUpdatedAt = new Date();
-    await db.socialCalendar.update({
-      where: { id },
-      data: {
-        aiBusinessSummary: updatedSummary,
-        aiBusinessSummaryUpdatedAt: summaryUpdatedAt,
-      },
-    });
+    const { summary: updatedSummary, updatedAt: summaryUpdatedAt } = await rebuildBusinessKnowledge(id);
 
     const serializedDocument = {
   ...document,

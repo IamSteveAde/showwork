@@ -110,7 +110,7 @@ function draftRoute({ signedIn = true, authorized = true, active = true, quotaAl
     { id: 'earlier', direction: 'INBOUND', text: 'Friday in Lagos', platformCreatedAt: new Date('2026-10-02T10:00:00Z') },
   ] } : override;
   const db = { socialLeadConversation: { findFirst: async args => { calls.push({ db: args }); return conversation; } }, socialInboxSettings: { findUnique: async () => ({ aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis.' }) } };
-  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
+  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/knowledge/context': { getBusinessKnowledgeContext: async () => 'Facts from current documents' }, '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
     '@/lib/auth': { getCurrentCreator: async () => signedIn ? ({ id: 'creator' }) : null }, '@/lib/db': { db },
     '@/lib/calendarPermissions': { calendarFeatureGate: async () => null, hasCalendarPermission: async (...args) => { assert.equal(args[2], 'inbox.reply'); return authorized; }, canAccessCalendarById: async () => active },
     '@/lib/openai': { generateSocialInboxAutoReply: async args => { calls.push({ ai: args }); return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } },
@@ -156,11 +156,11 @@ function workerFixture({ superseded = false, answered = false, quotaAllowed = tr
       { id: 'inbound', direction: 'INBOUND', status: 'RECEIVED', text: 'How much?', platformCreatedAt: time },
     ],
   } };
-  const db = { socialInboxSettings: { findMany: async () => [{ calendarId: 'workspace' }], findUnique: async () => ({ aiAutoReplyEnabled: true, aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis' }) },
-    socialLeadMessage: { findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => updates.push(args.data) },
+  const db = { socialLeadConversation: { findUniqueOrThrow: async () => ({ aiPausedAt: null, aiControlVersion: 0 }) }, socialInboxSettings: { findMany: async () => [{ calendarId: 'workspace' }], findUnique: async () => ({ aiAutoReplyEnabled: true, aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis' }) },
+    socialLeadMessage: { findFirst: async () => null, findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => updates.push(args.data) },
     $transaction: async fn => fn({ socialLeadMessage: { createMany: async () => ({count:1}), update: async args => updates.push(args.data) }, socialLeadConversation: { update: async () => {} } }),
   };
-  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
+  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/knowledge/context': { getBusinessKnowledgeContext: async () => 'Facts from current documents' }, '@/lib/socialMessaging/handoffNotifications': { deliverHandoffNotifications: async () => {} }, '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
   return { ...api, updates, getGenerated: () => generated, getSent: () => sent };
 }
 test('automatic replies use saved tone and business facts with the customer identity', async () => {

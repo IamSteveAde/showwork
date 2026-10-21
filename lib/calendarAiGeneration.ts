@@ -1,3 +1,4 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
@@ -72,7 +73,7 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
 
   const calendar = await db.socialCalendar.findUnique({ where: { id } });
   if (!calendar) return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  if (!calendar.aiBusinessSummary?.trim()) {
+  if (!await db.calendarBusinessDocument.count({ where: { calendarId: id, extractedText: { not: null } } })) {
     return NextResponse.json({ error: "Upload at least one business document first, so the AI understands what to create content about" }, { status: 400 });
   }
   const owner = await db.creator.findUnique({
@@ -93,7 +94,7 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
   try {
     const ideas = await generateContentCalendar({
       clientName: calendar.clientName,
-      businessSummary: calendar.aiBusinessSummary,
+      businessSummary: await getBusinessKnowledgeContext(id, String(customInstructions ?? "Business audience products services brand voice content strategy"), "content"),
       startDate,
       endDate,
       postsPerWeek: (postsPerWeek as number | undefined) ?? 3,

@@ -10,6 +10,7 @@ function load(file, deps = {}) {
   new Function('require', 'module', 'exports', code)(name => {
     if (name in deps) return deps[name];
     if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) };
+    if (name === '@/components/ui/IconText') return require('./helpers/load-typescript.cjs').load('components/ui/IconText.tsx');
     if (name === '@/lib/aiGenerationResponse') return require('./helpers/load-typescript.cjs').load('lib/aiGenerationResponse.ts');
     if (name.startsWith('./Reporting')) return load(require('node:path').join(require('node:path').dirname(file), name + '.tsx'), deps);
     if (name === './WorkspaceFeatureNotice') return { __esModule: true, default: () => null };

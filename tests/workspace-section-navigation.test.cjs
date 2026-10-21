@@ -14,6 +14,7 @@ const stub = { __esModule: true, default: () => null };
 const sections = ['overview', 'content', 'channels', 'inbox', 'knowledge', 'generate', 'team', 'analytics', 'leads', 'access', 'publish'].map(id => ({ id, label: id, title: id, group: 'Workspace', eyebrow: id, description: id, content: React.createElement('div', { 'data-panel': id }, id) }));
 function manager(url, available = sections) {
   const Component = load('components/calendars/CalendarWorkspaceShell.tsx', {
+    './InboxHandoffAlert': { __esModule: true, default: () => null },
     'next/navigation': { useSearchParams: () => new URL(url).searchParams },
     'next/link': { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) },
     '@/components/ui/UiSymbol': stub, '@/components/navigation/MobileDrawer': stub, '@/components/calendars/WorkspaceTour': stub,

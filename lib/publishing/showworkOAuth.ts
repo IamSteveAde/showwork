@@ -1,3 +1,4 @@
+import { linkedInCapabilities } from "@/lib/linkedin/capabilities";
 /** Existing signed OAuth/selection services, joined to canonical account actions. */
 import {NextRequest,NextResponse} from 'next/server';
 import {verifyChannelOAuthState,channelOAuthCookieOptions,xPkceCookieName,createChannelOAuthState,type PublishingChannel} from '../channelOAuthState';
@@ -43,10 +44,11 @@ export function createCanonicalShowworkOAuth(deps:{database:OwnershipDatabase;ac
    const response=NextResponse.json({ok:true,accountName:name});response.cookies.set('showwork_instagram_account_selection','',facebookPageSelectionCookieOptions(0));return response;
   }
   if(path.endsWith('/channels/linkedin/pages/route.ts')){
-   const stored=await deps.database.transaction(async tx=>{await validation.validateWorkspacePermission(tx,{actor:creator.id,calendarId:params.id,permission:'channels.manage'});return (await tx.query(`SELECT s.*,b."currentVersion" FROM "PublishingAccountBinding" b JOIN "PublishingAccountVersion" v ON v."bindingId"=b.id AND v.version=b."currentVersion" JOIN "SocialConnection" s ON s.id=v."connectionId" WHERE b."calendarId"=$1 AND b.platform='LINKEDIN' AND b.state='CONNECTED' AND s.status='CONNECTED'`,[params.id])).rows[0];});
+   const capabilities=request.method==='GET'&&request.nextUrl.searchParams.get('capabilities')==='true';
+   const stored=await deps.database.transaction(async tx=>{await validation.validateWorkspacePermission(tx,{actor:creator.id,calendarId:params.id,permission:capabilities?'channels.view':'channels.manage'});return (await tx.query(`SELECT s.*,b."currentVersion" FROM "PublishingAccountBinding" b JOIN "PublishingAccountVersion" v ON v."bindingId"=b.id AND v.version=b."currentVersion" JOIN "SocialConnection" s ON s.id=v."connectionId" WHERE b."calendarId"=$1 AND b.platform='LINKEDIN' AND b.state='CONNECTED' AND s.status='CONNECTED'`,[params.id])).rows[0];});
+   if(capabilities)return NextResponse.json(linkedInCapabilities(stored as SocialConnection | undefined));
    if(!stored||!stored.accessToken||stored.accessTokenExpiresAt&&stored.accessTokenExpiresAt<=new Date())throw Error('RECONNECT_LINKEDIN_REQUIRED');
    if(request.method==='GET'){
-    if(request.nextUrl.searchParams.get('capabilities')==='true'){const scopes=new Set((stored.tokenScopes??'').split(/[\s,]+/)),page=stored.platformAccountId.startsWith('urn:li:organization:'),messaging=linkedInMessagingAccess(stored as SocialConnection);return NextResponse.json({accountType:page?'Company Page':'Personal profile',publishing:scopes.has(page?'w_organization_social':'w_member_social'),analytics:scopes.has(page?'rw_organization_admin':'r_member_postAnalytics'),messaging:messaging.available,messagingNote:messaging.reason});}
     return NextResponse.json({pages:await bounded(()=>services.linkedinPages(stored as SocialConnection))});
    }
    if(request.headers.get('origin')!==request.nextUrl.origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});

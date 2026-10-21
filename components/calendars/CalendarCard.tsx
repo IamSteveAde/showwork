@@ -1,42 +1,12 @@
 "use client";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
-import { X, CalendarDays } from "lucide-react";
+import { X, CalendarDays, CheckCircle2 } from "lucide-react";
 import styles from "./CalendarDashboard.module.css";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CalendarPeopleManager from "./CalendarPeopleManager";
-
-const PLAN_STATUS_LABEL: Record<
-  string,
-  { text: string; color: string; bg: string; dot: string }
-> = {
-  BUILDING: {
-    text: "Building",
-    color: "#667085",
-    bg: "#F2F4F7",
-    dot: "#98A2B3",
-  },
-  AWAITING_APPROVAL: {
-    text: "Awaiting approval",
-    color: "#B54708",
-    bg: "#FFFAEB",
-    dot: "#F79009",
-  },
-  PLAN_APPROVED: {
-    text: "Plan approved",
-    color: "#027A48",
-    bg: "#ECFDF3",
-    dot: "#12B76A",
-  },
-  PLAN_NEEDS_CHANGES: {
-    text: "Needs changes",
-    color: "#B42318",
-    bg: "#FEF3F2",
-    dot: "#F04438",
-  },
-};
 
 function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -92,7 +62,6 @@ interface CalendarCardProps {
 export default function CalendarCard({
   id,
   clientName,
-  planStatus,
   postCount,
   collaboratorCount,
   createdAt,
@@ -118,7 +87,7 @@ export default function CalendarCard({
     };
   }, [confirming]);
 
-  const status = PLAN_STATUS_LABEL[planStatus] ?? PLAN_STATUS_LABEL.BUILDING;
+
 
   const href = `/dashboard/calendars/${id}`;
 
@@ -157,9 +126,10 @@ export default function CalendarCard({
         <div className={styles.cover}>
           <div className={styles.coverTop}>
             <span className={styles.monogram} aria-hidden="true">{clientName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "CW"}</span>
-            <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ color: status.color, background: status.bg }}>{status.text}</span>
+            <span className={styles.activeBadge}><CheckCircle2 size={12} aria-hidden="true" />Active</span>
           </div>
           <h3 className={styles.cardTitle} title={clientName}>{clientName}</h3>
+          <p className={styles.cardSubtitle}>Marketing workspace</p>
         </div>
         <div className={styles.cardBody}>
           <div className={styles.cardMeta}>

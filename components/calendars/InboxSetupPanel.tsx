@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, BookOpen, Check, CheckCheck, Eye, LockKeyhole, ShieldCheck, Sparkles, X } from "lucide-react";
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import BusinessKnowledgeCard from "./BusinessKnowledgeCard";
 import type { InboxBusinessKnowledge } from "./CustomerCareSettings";
@@ -16,6 +16,8 @@ export default function InboxSetupPanel({ calendarId, knowledge, settings, savin
 }) {
   const toneId = useId();
   const profile = normalizeReplyProfile(settings.aiReplyProfile);
+  const [handoffRules, setHandoffRules] = useState(profile.handoffRules);
+  useEffect(() => { setHandoffRules(profile.handoffRules); }, [profile.handoffRules]);
   return <div className={styles.panel}>
     <header className={styles.header}>
       <span className={styles.headerIcon}><Sparkles size={22} strokeWidth={1.5} aria-hidden="true" /></span>
@@ -37,6 +39,9 @@ export default function InboxSetupPanel({ calendarId, knowledge, settings, savin
           <label htmlFor={toneId} className={styles.fieldLabel}>Reply tone</label>
           <select id={toneId} className={styles.select} value={profile.tone} disabled={saving || !inboxAccess} onChange={event => onChange({ aiReplyProfile: { ...profile, tone: event.target.value as ReplyProfile["tone"] } })}>{REPLY_TONES.map(tone => <option key={tone.value} value={tone.value}>{tone.label}</option>)}</select>
           <p className={styles.toneDescription}>{REPLY_TONES.find(tone => tone.value === profile.tone)?.description}</p>
+          <label htmlFor={`${toneId}-handoff`} className={styles.fieldLabel}>When a person should take over</label>
+          <textarea id={`${toneId}-handoff`} className={styles.select} rows={4} maxLength={1200} value={handoffRules} disabled={saving || !inboxAccess} placeholder="For example: custom quotes, complaints, booking confirmation, or existing customers asking about an order." onChange={event => setHandoffRules(event.target.value)} onBlur={() => { if (handoffRules !== profile.handoffRules) onChange({ aiReplyProfile: { ...profile, handoffRules } }); }} />
+          <p className={styles.toneDescription}>Rules save when you leave this field. Payment requests, sensitive issues, and requests for a person go to your team. A handoff pauses AI until your team resumes it.</p>
           <div className={styles.voiceFoot}><CheckCheck size={14} aria-hidden="true" /> Applies to AI drafts and automatic replies.</div>
         </div>
         <div className={styles.safeguard}><ShieldCheck size={19} aria-hidden="true" /><p><strong>You stay in control.</strong> Uncertain requests are handed to your team. Encrypted X chats are excluded from AI.</p></div>

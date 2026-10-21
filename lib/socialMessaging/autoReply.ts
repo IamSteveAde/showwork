@@ -1,3 +1,6 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
+import { requiredHandoffReason, handoffSocialConversation } from "@/lib/socialMessaging/handoff";
+import { deliverHandoffNotifications } from "@/lib/socialMessaging/handoffNotifications";
 import { consumeCalendarAiGeneration } from "@/lib/contentWorkspaceUsage";
 import { canUseCalendarFeature } from "@/lib/calendarPermissions";
 import { normalizeReplyProfile } from "@/lib/socialMessaging/replyProfile";
@@ -8,7 +11,7 @@ import { whatsappAutoReplyHandoff } from "@/lib/socialMessaging/whatsapp";
 
 const CLAIM_TIMEOUT_MS = 5 * 60 * 1000;
 
-export async function processSocialInboxAutoReplies(messageIds?: string[]) {
+async function processSocialInboxAutoRepliesInternal(messageIds?: string[]) {
   let targetCalendarIds: string[] | undefined;
   if (messageIds) {
     const pending = await db.socialLeadMessage.findMany({
@@ -65,11 +68,34 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
       if (!claimed.count) continue;
       summary.analyzed++;
       let sendAttempted = false;
+      let controlVersion: number | undefined;
+      const retire = async (reason: string) => {
+        await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: reason } });
+      };
+      const handoff = async (reason: string) => {
+        // Pause first: a persistence failure must never leave automation running.
+        await handoffSocialConversation(inbound.conversationId, reason, controlVersion);
+        await retire(reason);
+      };
       try {
+        const control = await db.socialLeadConversation.findUniqueOrThrow({ where: { id: inbound.conversationId }, select: { aiPausedAt: true, aiControlVersion: true } });
+        controlVersion = control.aiControlVersion;
+        if (control.aiPausedAt) {
+          await retire("AI is paused while a team member handles this conversation.");
+          summary.handedOff++;
+          continue;
+        }
+        const requiredHandoff = requiredHandoffReason(inbound.text);
+        if (requiredHandoff) {
+          await handoff(requiredHandoff);
+          summary.handedOff++;
+          continue;
+        }
         if (inbound.conversation.platform === "WHATSAPP") {
           const reason = await whatsappAutoReplyHandoff(inbound);
           if (reason) {
-            await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: reason } });
+            if (reason.includes("reply window closed")) await handoff(reason);
+            else await retire(reason);
             summary.handedOff++;
             continue;
           }
@@ -103,7 +129,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
         const generationStartedAt = Date.now();
         const generated = await generateSocialInboxAutoReply({
           clientName: inbound.conversation.calendar.clientName,
-          businessSummary: inbound.conversation.calendar.aiBusinessSummary,
+          businessSummary: await getBusinessKnowledgeContext(calendarId, recent.map(m => m.text).join("\n") + "\n" + inbound.text, "reply"),
           instructions: replySettings?.aiAutoReplyInstructions ?? null,
           profile: normalizeReplyProfile(replySettings?.aiReplyProfile),
           platform: inbound.conversation.platform,
@@ -113,7 +139,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
         });
         generationMs = Date.now() - generationStartedAt;
         if (!generated.shouldReply || !generated.replyText || !inbound.conversation.connection || !supportsMessaging(inbound.conversation.platform)) {
-          await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: generated.handoffReason || "This message needs a human response." } });
+          await handoff(generated.handoffReason || "This message needs a human response.");
           summary.handedOff++;
           continue;
         }
@@ -130,10 +156,19 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
         if (inbound.conversation.platform === "WHATSAPP") {
           const reason = await whatsappAutoReplyHandoff(inbound);
           if (reason) {
-            await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: reason } });
+            if (reason.includes("reply window closed")) await handoff(reason);
+            else await retire(reason);
             summary.handedOff++;
             continue;
           }
+        }
+        // Re-read after generation: staff takeover/resume invalidates an in-flight draft.
+        const beforeSend = await db.socialLeadConversation.findUniqueOrThrow({ where: { id: inbound.conversationId }, select: { aiPausedAt: true, aiControlVersion: true } });
+        const newerMessage = await db.socialLeadMessage.findFirst({ where: { conversationId: inbound.conversationId, id: { not: inbound.id }, createdAt: { gt: inbound.createdAt }, OR: [{ direction: "INBOUND" }, { direction: "OUTBOUND", status: { in: ["PENDING", "SENT", "DELIVERED", "READ"] } }] }, select: { id: true } });
+        if (beforeSend.aiPausedAt || beforeSend.aiControlVersion !== control.aiControlVersion || newerMessage) {
+          await retire("Conversation changed while the reply was being prepared; this draft was cancelled.");
+          summary.handedOff++;
+          continue;
         }
         sendAttempted = true;
         const deliveryStartedAt = Date.now();
@@ -169,6 +204,9 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
       } catch (error) {
         const message = error instanceof Error ? error.message : "Automatic reply could not be sent.";
         const isLastAttempt = sendAttempted || inbound.autoReplyAttemptCount + 1 >= 3;
+        if (isLastAttempt) await handoffSocialConversation(inbound.conversationId, sendAttempted
+          ? "Reply delivery could not be confirmed. Check the platform inbox before replying again."
+          : "Automatic replies failed repeatedly. A team member needs to take over.", controlVersion);
         await db.socialLeadMessage.update({
           where: { id: inbound.id },
           data: {
@@ -187,4 +225,9 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
 
 export async function processSocialInboxAutoReply(messageId: string) {
   return processSocialInboxAutoReplies([messageId]);
+}
+
+export async function processSocialInboxAutoReplies(messageIds?: string[]) {
+  try { return await processSocialInboxAutoRepliesInternal(messageIds); }
+  finally { await deliverHandoffNotifications().catch(() => console.error("Inbox handoff email queue could not run; scheduled worker will retry.")); }
 }

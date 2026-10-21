@@ -1,3 +1,4 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import { consumeCalendarAiGeneration } from "@/lib/contentWorkspaceUsage";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
 import { Prisma, type SocialPlatform } from "@prisma/client";
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!quota.allowed) return NextResponse.json({ error: `Your monthly AI allowance of ${quota.limit} is unavailable or used up. Upgrade your plan or wait for your next monthly allowance.`, code: "AI_GENERATION_LIMIT_REACHED" }, { status: 403 });
     const generated = await generateReportingInsights({
       clientName: calendar.clientName,
-      businessSummary: calendar.aiBusinessSummary,
+      businessSummary: await getBusinessKnowledgeContext(calendarId, "Audience marketing objectives positioning content strategy engagement performance", "analytics"),
       periodStart: start.toISOString(),
       periodEnd: end.toISOString(),
       sampledPostCount: posts.length,

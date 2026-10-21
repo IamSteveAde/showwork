@@ -3,7 +3,7 @@ import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, CheckCircle2 } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, RefreshCw } from "lucide-react";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
@@ -164,6 +164,17 @@ export default function BusinessKnowledgeCard({
   const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
   const [documentsState, setDocumentsState] = useState(documents);
   const [uploading, setUploading] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
+  async function rebuildSummary() {
+    setRebuilding(true); setError(null);
+    try {
+      const response = await fetch(`/api/calendars/${calendarId}/business-documents/rebuild`, { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Unable to rebuild knowledge.");
+      setBusinessSummaryState(body.businessSummary); setSummaryUpdatedAtState(body.summaryUpdatedAt); router.refresh();
+    } catch (error) { setError(error instanceof Error ? error.message : "Unable to rebuild knowledge."); }
+    finally { setRebuilding(false); }
+  }
   const [uploadFile, setUploadFile] = useState<{ index: number; total: number; name: string } | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [addingWebsite, setAddingWebsite] = useState(false);
@@ -596,6 +607,8 @@ if (presignContentType.includes("application/json")) {
               </div>
             )}
 
+            {canEdit && aiActive && documentsState.length > 0 && <button type="button" onClick={rebuildSummary} disabled={rebuilding} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 disabled:opacity-50"><RefreshCw size={14} className={rebuilding ? "animate-spin" : ""} />{rebuilding ? "Rebuilding from current sources…" : "Rebuild from current sources"}</button>}
+            <p className="mt-3 text-xs leading-5 text-slate-500">Replies retrieve relevant passages from your current documents. Research findings are reviewed separately in the Research tab.</p>
             {(updated || researched) && (
               <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#E4E7EC] pt-4">
                 {updated && (

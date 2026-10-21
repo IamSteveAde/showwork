@@ -7,6 +7,7 @@ import MobileDrawer from "@/components/navigation/MobileDrawer";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import WorkspaceTour from "@/components/calendars/WorkspaceTour";
+import InboxHandoffAlert from "./InboxHandoffAlert";
 
 type WorkspaceSectionId =
   | "overview"
@@ -17,6 +18,7 @@ type WorkspaceSectionId =
   | "leads"
   | "access"
   | "channels"
+  | "research"
   | "knowledge"
   | "generate"
   | "publish";
@@ -119,6 +121,7 @@ function SectionIcon({
           <path d="M9 15 15 9M7 18H6a4 4 0 1 1 0-8h3M17 6h1a4 4 0 1 1 0 8h-3" />
         </svg>
       );
+    case "research":
     case "knowledge":
       return (
         <svg {...common}>
@@ -183,6 +186,7 @@ function SparkMark({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 export default function CalendarWorkspaceShell({
+  calendarId,
   clientName,
   clientUrl,
   isManager,
@@ -190,6 +194,7 @@ export default function CalendarWorkspaceShell({
   publishAction,
   sections,
 }: {
+  calendarId?: string;
   clientName: string;
   clientUrl: string;
   isManager: boolean;
@@ -277,6 +282,7 @@ export default function CalendarWorkspaceShell({
     featured: true,
     items: compact([
       byId("knowledge"),
+      byId("research"),
       byId("generate"),
     ]),
   },
@@ -468,7 +474,7 @@ export default function CalendarWorkspaceShell({
   </>;
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB] text-[#101828]">
+    <div data-marketing-workspace="true" className="min-h-screen w-full min-w-0 bg-[#F5F7FB] text-[#101828]">
       {/* BLUE COMMAND HEADER */}
       {/* BLUE COMMAND HEADER */}
 <header className="sticky top-0 z-50 border-b border-white/10 bg-[#1768E8] text-white shadow-[0_12px_40px_rgba(23,104,232,0.22)]">
@@ -602,14 +608,7 @@ export default function CalendarWorkspaceShell({
   </div>
 
   <MobileDrawer open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label="Workspace" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
-  <nav aria-label="Quick workspace navigation" className={`${active.id === "inbox" ? "hidden sm:flex" : "flex"} gap-1 overflow-x-auto border-t border-white/15 bg-white px-3 py-2 text-[#667085] lg:hidden`}>
-    {visibleSections.filter((section) => ["overview", "content", "generate", "inbox"].includes(section.id)).map((section) => (
-      <button key={section.id} type="button" aria-current={active.id === section.id ? "page" : undefined}
-        onClick={() => select(section.id)} className={`flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2478FF] ${active.id === section.id ? "bg-[#EEF5FF] text-[#1768E8]" : "hover:bg-slate-50"}`}>
-        <SectionIcon name={section.id} className="h-4 w-4 shrink-0" />{section.id === "content" ? "Calendar" : section.id === "generate" ? "Create" : section.label}
-      </button>
-    ))}
-  </nav>
+
 </header>
 
       <div className="mx-auto grid max-w-[1800px] lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]">
@@ -626,6 +625,7 @@ export default function CalendarWorkspaceShell({
             } ${["inbox", "team", "analytics"].includes(active.id) ? "px-3 py-4 sm:px-4 lg:px-5" : "px-4 py-6 sm:px-5 md:py-8 lg:px-7 xl:px-9"}`}
           >
             {/* CONTEXT BAR */}
+            {calendarId && active.id !== "inbox" && sections.some(section => section.id === "inbox") && <InboxHandoffAlert calendarId={calendarId} />}
             {["inbox", "team", "analytics"].includes(active.id) ? <h1 className="sr-only">{active.title}</h1> : (
             <div className="mb-5 flex flex-col gap-4 rounded-[24px] border border-[#E1E8F1] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0 max-w-4xl">

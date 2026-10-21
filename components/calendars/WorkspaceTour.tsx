@@ -12,6 +12,7 @@ type TourSectionId =
   | "leads"
   | "access"
   | "channels"
+  | "research"
   | "knowledge"
   | "generate"
   | "publish";

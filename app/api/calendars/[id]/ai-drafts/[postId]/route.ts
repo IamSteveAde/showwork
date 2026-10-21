@@ -1,3 +1,4 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { requirePostPlatform } from "@/lib/calendarPosts";
@@ -284,7 +285,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       );
     }
 
-    if (!calendar.aiBusinessSummary) {
+    if (!await db.calendarBusinessDocument.count({ where: { calendarId: id, extractedText: { not: null } } })) {
       /*
       * The request cannot be processed without business context, so
       * return the consumed regeneration to the account.
@@ -362,7 +363,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     try {
       generated = await regeneratePost({
     clientName: calendar.clientName,
-    businessSummary: calendar.aiBusinessSummary,
+    businessSummary: await getBusinessKnowledgeContext(id, String(body.instruction ?? "Products services brand voice content strategy"), "content"),
     currentPost: current,
     instruction:
       typeof body.instruction === "string" &&

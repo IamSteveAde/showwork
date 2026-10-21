@@ -175,3 +175,17 @@
 }
 .mobileHelp { display: none; }
 @media (max-width: 700px) { .mobileToolsOpen .mobileHelp { display: inline-flex; } }
+
+.attentionBar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px 13px; border: 1px solid #e7d9b9; border-radius: 10px; background: #fffaf0; color: #806028; font-size: 12px; }
+.attentionBar button { margin-left: auto; min-height: 32px; padding: 5px 10px; border: 1px solid #e7d9b9; border-radius: 7px; background: white; font-weight: 600; }
+.attentionBar button[aria-pressed=true] { background: #806028; color: white; }
+.handoffControl { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #e2e9f2; background: #f8fafc; color: #48617e; }
+.handoffControl > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.handoffControl > div:first-child { flex: 1 1 200px; flex-wrap: nowrap; }
+.handoffControl svg { flex-shrink: 0; }
+.handoffControl p { min-width: 0; font-size: 11px; }
+.handoffControl strong, .handoffControl span { display: block; overflow-wrap: anywhere; }
+.handoffControl span { margin-top: 3px; font-size: 10px; }
+.handoffControl button { min-height: 32px; border: 1px solid #d4dfed; border-radius: 7px; padding: 5px 8px; background: white; color: #235fc0; font-size: 10px; }
+.handoffControl button:disabled { opacity: .5; }
+@media(max-width:700px) { .mobileChatActive .attentionBar { display: none; } .handoffControl { padding: 8px 12px; gap: 6px; } }

@@ -1,3 +1,4 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import {createShowworkPublishingAccounts} from './showworkPublishingAccounts';
 /** Actual application policy services, explicitly composed; no bootstrap on import. */
 import {getCurrentCreator,verifyViewerTokenClaims,hashPassword,verifyPassword,verifyCreatorSessionClaims} from '../auth';
@@ -51,7 +52,7 @@ export function createShowworkPublishingApplication(input:{
   const token=await input.database.transaction(async tx=>(await tx.query(`SELECT "accessToken" FROM "SocialConnection" WHERE id=$1 AND status='CONNECTED' AND "platformAccountId"=$2`,[bound.connectionId,accountId])).rows[0]?.accessToken);if(!token)throw Error('ACCOUNT_DISCONNECTED');
   await coordination.reserveSpacing('TIKTOK:'+accountId+':creator',3100);return accountIO(()=>queryTikTokCreatorInfo(token));
  });
- const actions=createCanonicalApplicationActions({...input.actions,authorizeCreatorDeletion,database:input.database,policy,creatorInfo,hashViewerPassword:input.actions.hashViewerPassword??hashPassword,validateUsage:input.actions.validateUsage??validateCanonicalWorkspaceUsage,generateContent:input.actions.generateContent??(async request=>generateContentCalendar(request as Parameters<typeof generateContentCalendar>[0])),regenerateContent:input.actions.regenerateContent??(async request=>regeneratePost(request as Parameters<typeof regeneratePost>[0]))});
+ const actions=createCanonicalApplicationActions({...input.actions,authorizeCreatorDeletion,database:input.database,policy,creatorInfo,hashViewerPassword:input.actions.hashViewerPassword??hashPassword,validateUsage:input.actions.validateUsage??validateCanonicalWorkspaceUsage,generateContent:input.actions.generateContent??(async request=>generateContentCalendar({ ...request, businessSummary: await getBusinessKnowledgeContext(String(request.calendarId), String(request.customInstructions ?? "Business audience brand voice products services"), "content") } as Parameters<typeof generateContentCalendar>[0])),regenerateContent:input.actions.regenerateContent??(async request=>regeneratePost({ ...request, businessSummary: await getBusinessKnowledgeContext(String(request.calendarId), String(request.instruction ?? "Business brand voice products services"), "content") } as Parameters<typeof regeneratePost>[0]))});
  const resolveCalendar=async(request:Request,params:Record<string,string>)=>{
   if(params.id)return params.id;
   const slug=params.slug??new URL(request.url).pathname.match(/\/social-calendar\/([^/]+)\//)?.[1];

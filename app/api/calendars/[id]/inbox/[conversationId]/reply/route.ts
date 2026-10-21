@@ -28,6 +28,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   const now = new Date();
   try {
+    // A staff reply is a takeover, including while an AI draft is in flight.
+    await db.socialLeadConversation.update({ where: { id: conversationId }, data: {
+      aiPausedAt: conversation.aiPausedAt || now,
+      aiHandoffReason: conversation.aiHandoffReason || "A team member replied. AI stays paused until explicitly resumed.",
+      aiHandoffAcknowledgedAt: now,
+      aiControlVersion: { increment: 1 },
+    } });
     const providerMessageId = await sendSocialInboxMessage({
       connection: conversation.connection,
       instagramPageId: conversation.calendar.instagramPageId,

@@ -1,3 +1,4 @@
+import BusinessResearchPanel from "@/components/calendars/BusinessResearchPanel";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -916,6 +917,15 @@ contentIdea: p.contentIdea,
             ),
           },
           {
+            id: "research" as const,
+            label: "Research",
+            eyebrow: "AI Studio · research",
+            title: "Evidence for your next move.",
+            description: "Explore findings, follow the sources and decide what informs your content.",
+            group: "AI Studio" as const,
+            content: <BusinessResearchPanel calendarId={calendar.id} canManage={can("knowledge.manage")} />,
+          },
+          {
             id: "generate" as const,
             label: "Generate",
             eyebrow: "AI Studio · create",
@@ -929,7 +939,7 @@ contentIdea: p.contentIdea,
                 <div className="relative">
                   <AiContentGeneratorCard
                     calendarId={calendar.id}
-                    hasBusinessSummary={!!calendar.aiBusinessSummary}
+                    hasBusinessSummary={calendar.businessDocuments.length > 0}
                     performanceRecommendationsAccess={featureAccess("performanceRecommendations")}
                   />
                 </div>
@@ -945,6 +955,7 @@ contentIdea: p.contentIdea,
     <CalendarPaymentCallbackHandler />
     <CalendarWorkspaceShell
       clientName={calendar.clientName}
+      calendarId={calendar.id}
       clientUrl={can("delivery.manage") ? clientUrl : ""}
       isManager={isManager}
       settings={can("workspace.manage") ?
@@ -956,7 +967,7 @@ contentIdea: p.contentIdea,
         /> : undefined
       }
       sections={sections.filter(section => {
-        const required: Record<string, TeamPermission> = { overview: "workspace.manage", content: "calendar.view", team: "people.view", analytics: "analytics.view", inbox: "inbox.view", leads: "leads.view", access: "delivery.manage", channels: "channels.view", knowledge: "knowledge.view", generate: "ai.generate" };
+        const required: Record<string, TeamPermission> = { overview: "workspace.manage", content: "calendar.view", team: "people.view", analytics: "analytics.view", inbox: "inbox.view", leads: "leads.view", access: "delivery.manage", channels: "channels.view", knowledge: "knowledge.view", research: "knowledge.view", generate: "ai.generate" };
         if (section.id === "overview") return can("workspace.manage") && can("calendar.view") && can("analytics.view") && can("inbox.view") && can("leads.view");
         return can(required[section.id]);
       }).map(section => ({ ...section, content: (

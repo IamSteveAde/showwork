@@ -17,6 +17,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     const inbox = await getSocialInbox(calendar.id, req.nextUrl.searchParams);
     return NextResponse.json({
       ...inbox,
+      conversations: inbox.conversations.map(({ aiPausedAt: _paused, aiHandoffReason: _reason, aiHandoffAcknowledgedAt: _acknowledged, ...conversation }) => ({
+        ...conversation,
+        messages: conversation.messages.map(({ autoReplyHandoffReason: _handoff, sendError: _error, ...message }) => message),
+      })),
       settings: { clientAccessEnabled: true, aiAutoReplyEnabled: false, aiAutoReplyInstructions: null },
     });
   }
