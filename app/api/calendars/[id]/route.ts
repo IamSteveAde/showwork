@@ -563,12 +563,12 @@ export async function PATCH(
 // DELETE
 // ─────────────────────────────────────────────
 //
-// Deletes the client workspace and its content.
+// Deletes the marketing workspace and its content.
 //
 // IMPORTANT:
 // Calendar billing is account-level. Deleting one workspace
 // must NOT cancel the creator's calendar subscription because
-// the creator may have other client workspaces covered by
+// the creator may have other marketing workspaces covered by
 // the same subscription.
 //
 // Billing remains attached to the Creator account.

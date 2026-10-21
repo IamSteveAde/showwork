@@ -49,7 +49,7 @@ export default function TikTokConnectionCard({
       url.searchParams.delete("tiktokError");
       url.searchParams.delete("tiktokConnected");
       url.searchParams.delete("tiktokMessagingConnected");
-      router.replace(url.pathname + url.search, { scroll: false });
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

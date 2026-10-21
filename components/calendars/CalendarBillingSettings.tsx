@@ -185,7 +185,7 @@ const PLAN_DETAILS = Object.fromEntries(CONTENT_WORKSPACE_PLAN_ORDER.map(key => 
  const plan = CONTENT_WORKSPACE_PLANS[key];
  return [key, {
   name: plan.name, monthlyPrice: plan.priceNgnMonthly, annualPrice: plan.priceNgnAnnual,
-  workspaces: `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspaces`,
+  workspaces: `${formatWorkspaceLimit(plan.activeWorkspaces)} active marketing workspaces`,
   collaborators: `${formatWorkspaceLimit(plan.collaborators)} collaborators`,
   storage: `${plan.storageBytes / 1_000_000_000} GB storage`,
   ai: `${plan.aiGenerations.toLocaleString("en-NG")} AI generations / month`,
@@ -472,7 +472,7 @@ export default function CalendarBillingSettings({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold tracking-[-0.01em] text-[#101828]">
-                Content Workspace
+                Marketing Workspace
               </p>
 
               <span
@@ -519,7 +519,7 @@ export default function CalendarBillingSettings({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#78AEFF]">
-                  Content Workspace
+                  Marketing Workspace
                 </span>
 
                 <span
@@ -554,7 +554,7 @@ export default function CalendarBillingSettings({
               </h2>
 
               <p className="mt-2 max-w-lg text-sm leading-6 text-white/45">
-                Manage your Content Workspace subscription,
+                Manage your Marketing Workspace subscription,
                 plan and access in one place.
               </p>
             </div>
@@ -681,8 +681,8 @@ export default function CalendarBillingSettings({
                   </h4>
 
                   <p className="mt-2 text-sm leading-6 text-[#475467]">
-                    Your Content Workspace subscription includes
-                    client workspaces, collaboration, storage,
+                    Your Marketing Workspace subscription includes
+                    marketing workspaces, collaboration, storage,
                     publishing, analytics and AI Studio.
                   </p>
 
@@ -750,7 +750,7 @@ export default function CalendarBillingSettings({
               </p>
 
               <h3 className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[#101828]">
-                Change your Content Workspace plan.
+                Change your Marketing Workspace plan.
               </h3>
             </div>
 
@@ -802,13 +802,13 @@ export default function CalendarBillingSettings({
                 {confirmingCancel ? (
                   <div>
                     <p className="text-sm font-semibold text-[#101828]">
-                      Cancel your Content Workspace subscription?
+                      Cancel your Marketing Workspace subscription?
                     </p>
 
                     <p className="mt-1.5 max-w-2xl text-xs leading-5 text-[#667085]">
-                      Your client workspaces will become inaccessible
+                      Your marketing workspaces will become inaccessible
                       after cancellation. AI Studio and the other
-                      features included in your Content Workspace
+                      features included in your Marketing Workspace
                       subscription will also become unavailable until
                       you subscribe again.
                     </p>
@@ -846,7 +846,7 @@ export default function CalendarBillingSettings({
 
                       <p className="mt-1 text-xs leading-5 text-[#667085]">
                         Stop billing and restrict access to your
-                        Content Workspace account.
+                        Marketing Workspace account.
                       </p>
                     </div>
 
@@ -1091,7 +1091,7 @@ export default function CalendarBillingSettings({
               </div>
 
               <p className="mt-4 text-center text-[10px] leading-4 text-white/25">
-                Your existing client workspaces and content
+                Your existing marketing workspaces and content
                 stay on your account.
               </p>
             </div>

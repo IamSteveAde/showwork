@@ -271,7 +271,7 @@ function WorkspacePreview() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[8px] font-bold uppercase tracking-[0.18em] text-[#2478FF]">
-                    Client Content Workspace
+                    Marketing Workspace
                   </p>
                   <h3 className="mt-2 text-xl font-semibold tracking-[-0.045em] text-slate-950 sm:text-2xl">
                     Aurora Creative
@@ -562,7 +562,7 @@ export default function ContentWorkspacePage() {
               className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#2478FF] shadow-sm"
             >
               <Sparkles size={12} />
-              Showwork Content Workspace
+              Showwork Marketing Workspace
             </motion.div>
 
             <motion.h1
@@ -597,7 +597,7 @@ export default function ContentWorkspacePage() {
                 href="/signup?next=/dashboard/calendars"
                 className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-slate-950 px-7 text-sm font-semibold text-white shadow-xl shadow-slate-950/10 transition hover:-translate-y-0.5 hover:bg-[#2478FF]"
               >
-                Create a client workspace
+                Create a marketing workspace
                 <ArrowRight
                   size={16}
                   className="transition-transform group-hover:translate-x-1"
@@ -643,7 +643,7 @@ export default function ContentWorkspacePage() {
               <p className="max-w-2xl text-lg leading-8 text-white/60">
                 Keep the work and the results connected. Your content plan,
                 client feedback, incoming messages, lead pipeline and
-                performance reports belong in the same client workspace.
+                performance reports belong in the same marketing workspace.
               </p>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-white/60">
@@ -1160,7 +1160,7 @@ export default function ContentWorkspacePage() {
           </h2>
 
           <p className="mx-auto mt-8 max-w-2xl text-base leading-7 text-white/45 sm:text-lg">
-            Build a client workspace once. Then let it become the place where
+            Build a marketing workspace once. Then let it become the place where
             the relationship keeps moving.
           </p>
 
@@ -1203,7 +1203,7 @@ export default function ContentWorkspacePage() {
           </h2>
 
           <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-slate-500">
-            Try Content Workspace free for 7 days. Bring content, approvals,
+            Try Marketing Workspace free for 7 days. Bring content, approvals,
             conversations, leads and analytics into one place for your client.
           </p>
 
@@ -1212,7 +1212,7 @@ export default function ContentWorkspacePage() {
               href="/signup?next=/dashboard/calendars"
               className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 text-[15px] font-semibold text-white shadow-xl shadow-slate-950/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#2478FF] hover:shadow-[0_14px_35px_rgba(36,120,255,0.20)] sm:h-[58px] sm:px-9"
             >
-              Create a client workspace
+              Create a marketing workspace
               <ArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-1"

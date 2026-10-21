@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description:
     "Showwork's Terms of Service govern your use of the Showwork platform.",
   alternates: { canonical: "/terms" },
-  openGraph: { type: "website", siteName: "Showwork", title: "Terms of Service | Showwork", description: "Read the terms governing use of Showwork's creator portfolios, client delivery and content workspace services.", url: "/terms" },
+  openGraph: { type: "website", siteName: "Showwork", title: "Terms of Service | Showwork", description: "Read the terms governing use of Showwork's creator portfolios, client delivery and marketing workspace services.", url: "/terms" },
   robots: { index: true, follow: true },
 };
 

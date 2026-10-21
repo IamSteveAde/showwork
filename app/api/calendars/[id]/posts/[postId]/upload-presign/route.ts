@@ -59,7 +59,7 @@ export async function POST(
   }
 
   /*
-   * Storage belongs to the Content Workspace subscription owner.
+   * Storage belongs to the Marketing Workspace subscription owner.
    * Collaborators upload against the owner's storage allowance.
    */
   const ownerId = post.calendar.managerId;
@@ -141,7 +141,7 @@ export async function POST(
       {
         error:
           reservation.reason ??
-          "You don't have enough Content Workspace storage for this upload.",
+          "You don't have enough Marketing Workspace storage for this upload.",
         storage: {
           usedBytes: reservation.storageBytes,
           reservedBytes: reservation.storageReservedBytes,

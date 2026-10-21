@@ -102,25 +102,25 @@ export default function CalendarRowActions({
 
       {billingStatus === "TRIAL" && (
         <p className="text-[10px] text-white/30">
-          Content Workspace is currently in its free trial.
+          Marketing Workspace is currently in its free trial.
         </p>
       )}
 
       {billingStatus === "ACTIVE" && (
         <p className="text-[10px] text-white/30">
-          Content Workspace access is active for this manager&apos;s account.
+          Marketing Workspace access is active for this manager&apos;s account.
         </p>
       )}
 
       {billingStatus === "OFFLINE" && (
         <p className="text-[10px] text-red-400/70">
-          Content Workspace is offline because payment is not active.
+          Marketing Workspace is offline because payment is not active.
         </p>
       )}
 
       {billingStatus === "PENDING_SETUP" && (
         <p className="text-[10px] text-white/30">
-          This manager has not activated a Content Workspace subscription.
+          This manager has not activated a Marketing Workspace subscription.
         </p>
       )}
 

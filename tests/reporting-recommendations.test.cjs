@@ -7,7 +7,14 @@ function load(file, deps = {}) {
   deps={ '@/lib/publishing/clientRequests':require('./helpers/load-typescript.cjs').load('lib/publishing/clientRequests.ts'),...deps};
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', code)(name => name in deps ? deps[name] : require(name), mod, mod.exports);
+  new Function('require', 'module', 'exports', code)(name => {
+    if (name in deps) return deps[name];
+    if (name.endsWith('.module.css')) return { __esModule: true, default: new Proxy({}, { get: (_, key) => String(key) }) };
+    if (name === '@/lib/aiGenerationResponse') return require('./helpers/load-typescript.cjs').load('lib/aiGenerationResponse.ts');
+    if (name.startsWith('./Reporting')) return load(require('node:path').join(require('node:path').dirname(file), name + '.tsx'), deps);
+    if (name === './WorkspaceFeatureNotice') return { __esModule: true, default: () => null };
+    return require(name);
+  }, mod, mod.exports);
   return mod.exports;
 }
 function hooks() {
@@ -39,11 +46,15 @@ function hooks() {
 function find(node, predicate) {
   if (Array.isArray(node)) return node.flatMap(child => find(child, predicate));
   if (!React.isValidElement(node)) return [];
+  if (typeof node.type === 'function' && ['ReportingInsights', 'ReportingChannels'].includes(node.type.name)) return find(node.type(node.props), predicate);
   return [...(predicate(node) ? [node] : []), ...find(node.props.children, predicate)];
 }
 function text(node) {
   if (Array.isArray(node)) return node.map(text).join('');
-  if (React.isValidElement(node)) return text(node.props.children);
+  if (React.isValidElement(node)) {
+    if (typeof node.type === 'function' && ['ReportingInsights', 'ReportingChannels'].includes(node.type.name)) return text(node.type(node.props));
+    return text(node.props.children);
+  }
   return typeof node === 'string' || typeof node === 'number' ? String(node) : '';
 }
 const button = (tree, label) => find(tree, node => node.type === 'button' && text(node).includes(label))[0];
@@ -165,7 +176,7 @@ test('analysis completion and delayed sync refresh the latest selected filters',
   const b = browser();
   try {
     const h = hooks(), handoff = load('lib/reporting/recommendationHandoff.ts'), Panel = panel(h, handoff), analysis = deferred(), urls = [];
-    global.fetch = (url, options) => { urls.push(url); return url.endsWith('/analyze') ? analysis.promise : Promise.resolve(response({ ...report([insight('a', 'TREND', 'Experiment')]), connections: [{ id: 'connected', platform: 'INSTAGRAM', status: 'CONNECTED', accountMetricSnapshots: [], lastSyncAt: null }] })); };
+    global.fetch = (url, options) => { urls.push(url); if (url.includes('/reporting/sync?')) return Promise.resolve(response({ completed: true, failed: 0 })); if (url.endsWith('/reporting/sync')) return Promise.resolve(response({ queued: true, queuedAt: new Date().toISOString() })); return url.endsWith('/analyze') ? analysis.promise : Promise.resolve(response({ ...report([insight('a', 'TREND', 'Experiment')]), connections: [{ id: 'connected', platform: 'INSTAGRAM', status: 'CONNECTED', accountMetricSnapshots: [], lastSyncAt: null }] })); };
     const render = () => h.render(Panel, panelProps);
     render(); h.flush(); await tick();
     const analyzing = button(render(), 'Refresh AI analysis').props.onClick();

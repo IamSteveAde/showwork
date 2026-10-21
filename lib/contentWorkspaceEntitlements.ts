@@ -1,12 +1,12 @@
 /**
- * Content Workspace subscription entitlements.
+ * Marketing Workspace subscription entitlements.
  *
  * IMPORTANT:
- * - This is ONLY for the Content Workspace / Calendar product.
+ * - This is ONLY for the Marketing Workspace / Calendar product.
  * - Portfolio billing uses lib/subscriptionTiers.ts and is completely separate.
  * - AI is included in these plans; there is no separate AI subscription.
  *
- * Keep all Content Workspace limits here so plan changes can be made
+ * Keep all Marketing Workspace limits here so plan changes can be made
  * without rewriting billing or feature-enforcement logic.
  */
 
@@ -16,7 +16,7 @@ export type ContentWorkspaceBillingCycle = "MONTHLY" | "ANNUAL";
 
 export interface ContentWorkspaceEntitlements {
   /**
-   * Maximum number of active client workspaces the account can have.
+   * Maximum number of active marketing workspaces the account can have.
    */
   activeWorkspaces: number;
 
@@ -178,7 +178,7 @@ export const CONTENT_WORKSPACE_PLAN_DISPLAY_NAME: Record<
 };
 
 /**
- * The Content Workspace trial is intentionally short.
+ * The Marketing Workspace trial is intentionally short.
  *
  * No payment method is required to start the trial.
  */
@@ -251,7 +251,7 @@ export function getContentWorkspacePlanCode(
 }
 
 /**
- * Converts a Paystack plan code back into the Content Workspace plan
+ * Converts a Paystack plan code back into the Marketing Workspace plan
  * and billing cycle.
  *
  * Useful for webhook processing.

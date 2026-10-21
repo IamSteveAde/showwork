@@ -30,7 +30,7 @@ function resolveBillingCycle(
   return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — upgrades a Content Workspace account to Studio or Agency.
+// POST — upgrades a Marketing Workspace account to Studio or Agency.
 //
 // If the account is still inside its valid 7-day trial, the switch can
 // happen without immediate payment unless `payNow` is true.
@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace Studio Paystack plan code is not configured:",
+      "Marketing Workspace Studio Paystack plan code is not configured:",
       error
     );
 
@@ -209,7 +209,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace Studio upgrade checkout initialize error:",
+      "Marketing Workspace Studio upgrade checkout initialize error:",
       error
     );
 

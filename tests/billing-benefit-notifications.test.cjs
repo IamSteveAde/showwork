@@ -62,9 +62,9 @@ test('a grant stopped before delivery cancels its obsolete grant announcement',a
 test('benefit email copy escapes user values and describes the actual plan rather than full platform access',async()=>{
   const calls=[];
   class Resend{constructor(){this.emails={send:async(payload,options)=>{calls.push({payload,options});return{data:{id:'sent'},error:null};}};}}
-  const mail=load('lib/resend.ts',{resend:{Resend}});
+  const mail=load('lib/resend.ts',{resend:{Resend},'@/lib/publishing/nativeApplicationContext':{nativeApplicationContext:()=>undefined}});
   await mail.sendBillingBenefitEmail({to:'user@example.com',name:'<script>',title:'A & B',event:'GRANTED',product:'CONTENT_WORKSPACE',deliveryTier:null,workspacePlan:'CREATOR',percent:100,durationMonths:2,billingCycle:null,availableUntil:null,endsAt:'2026-12-06T12:00:00Z'},'key');
-  assert.equal(calls[0].options.idempotencyKey,'key');assert.match(calls[0].payload.html,/Content Workspace · Creator/);assert.match(calls[0].payload.html,/6 December 2026/);assert.match(calls[0].payload.html,/A &amp; B/);assert.doesNotMatch(calls[0].payload.html,/<script>|A &amp;amp; B|Everything is unlocked/);
+  assert.equal(calls[0].options.idempotencyKey,'key');assert.match(calls[0].payload.html,/Marketing Workspace · Creator/);assert.match(calls[0].payload.html,/6 December 2026/);assert.match(calls[0].payload.html,/A &amp; B/);assert.doesNotMatch(calls[0].payload.html,/<script>|A &amp;amp; B|Everything is unlocked/);
 });
 test('accepted-partner search filters by approval status and retains paused accepted partners',async()=>{
   let lookup;

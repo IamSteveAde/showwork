@@ -42,7 +42,7 @@ export default function InstagramConnectionCard({
       const url = new URL(window.location.href);
       url.searchParams.delete("instagramError");
       url.searchParams.delete("instagramConnected");
-      router.replace(url.pathname + url.search, { scroll: false });
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

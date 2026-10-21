@@ -244,7 +244,7 @@ export default function CalendarSettingsMenu({
                       </span>
 
                       <span className="mt-0.5 block text-[10px] text-[#98A2B3]">
-                        Change the client workspace name
+                        Change the marketing workspace name
                       </span>
                     </span>
                   </button>

@@ -42,7 +42,7 @@ type UserInsight = {
   total_value?: { value?: number };
 };
 
-async function readAccountPosts(accountId: string, token: string): Promise<SocialAccountPostRecord[]> {
+async function readAccountPosts(accountId: string, token: string, canReadInsights: boolean): Promise<SocialAccountPostRecord[]> {
   const until = new Date();
   const since = new Date(until.getTime() - 366 * 24 * 60 * 60 * 1000);
   const posts: SocialAccountPostRecord[] = [];
@@ -79,6 +79,25 @@ async function readAccountPosts(accountId: string, token: string): Promise<Socia
     }
     after = result.paging?.cursors?.after;
     if (!result.paging?.next || !after) break;
+  }
+  if (canReadInsights) {
+    // Native posts need their own media insights too, including content that
+    // was published outside Showwork. Bound concurrency to avoid a request
+    // burst against Meta when importing a larger account history.
+    for (let offset = 0; offset < posts.length; offset += 3) {
+      await Promise.all(posts.slice(offset, offset + 3).map(async post => {
+        const insights = await readMediaInsights(post.platformPostId, token);
+        post.reach = valueFromInsights(insights, "reach");
+        post.views = valueFromInsights(insights, "views");
+        post.shares = valueFromInsights(insights, "shares");
+        post.saves = valueFromInsights(insights, "saved");
+        const interactions = valueFromInsights(insights, "total_interactions");
+        if (interactions !== null) post.engagement = interactions;
+        else if ([post.likes, post.comments, post.shares, post.saves].every(value => value != null)) {
+          post.engagement = post.likes! + post.comments! + post.shares! + post.saves!;
+        }
+      }));
+    }
   }
   return posts;
 }
@@ -220,7 +239,7 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
             rangeViews: null,
             warnings: ["Instagram Insights permission is missing; account metrics cannot be read until the account is reconnected with instagram_manage_insights."],
           }),
-      readAccountPosts(connection.platformAccountId, connection.accessToken).catch((error) => {
+      readAccountPosts(connection.platformAccountId, connection.accessToken, scopes.has("instagram_manage_insights")).catch((error) => {
         console.warn("Instagram account post list could not be read:", error);
         return [];
       }),

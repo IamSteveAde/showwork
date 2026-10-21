@@ -34,9 +34,9 @@ for (const product of ['delivery', 'content-workspace']) {
       workspaceBilling: null, selectedProduct: product, selectedTier: null, selectedCycle: 'MONTHLY',
     }));
     assert.match(html, /Billing &amp; subscriptions/);
-    for (const name of ['Project Delivery', 'Content Workspace', 'Portfolio', 'No subscription required']) assert.ok(html.includes(name));
+    for (const name of ['Project Delivery', 'Marketing Workspace', 'Portfolio', 'No subscription required']) assert.ok(html.includes(name));
     assert.match(html, /href="\/dashboard\/portfolio"/);
-    assert.match(html, new RegExp(product === 'delivery' ? '1 project per 30 days' : 'Start Content Workspace'));
+    assert.match(html, new RegExp(product === 'delivery' ? '1 project per 30 days' : 'Start Marketing Workspace'));
     assert.doesNotMatch(html, /role="tablist"/);
   });
   test(`${product} billing loads both paid products`, async () => {

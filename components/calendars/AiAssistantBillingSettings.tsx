@@ -27,7 +27,7 @@ export default function AiAssistantBillingSettings({
       ? "Studio"
       : plan === "CREATOR"
         ? "Creator"
-        : "Content Workspace";
+        : "Marketing Workspace";
 
   const isAvailable =
     billingStatus === "ACTIVE" ||
@@ -38,7 +38,7 @@ export default function AiAssistantBillingSettings({
       ? "Included"
       : billingStatus === "TRIAL"
         ? "Included · Trial"
-        : "Available with Content Workspace";
+        : "Available with Marketing Workspace";
 
   if (!open) {
     return (
@@ -93,7 +93,7 @@ export default function AiAssistantBillingSettings({
           </p>
 
           <p className="mt-1 text-xs text-white/40">
-            AI is included with your {planName} Content Workspace
+            AI is included with your {planName} Marketing Workspace
             subscription. There is no separate AI subscription.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function AiAssistantBillingSettings({
 
             <p className="mt-1 text-xs leading-5 text-white/50">
               AI content generation, regeneration, Business Knowledge,
-              and scheduled AI research are included in your Content
+              and scheduled AI research are included in your Marketing
               Workspace plan. You do not need to purchase a separate
               AI subscription.
             </p>
@@ -190,7 +190,7 @@ export default function AiAssistantBillingSettings({
             className="text-xs font-semibold uppercase text-white/40"
             style={{ letterSpacing: "0.08em" }}
           >
-            Content Workspace renewal
+            Marketing Workspace renewal
           </p>
 
           <p className="mt-1 text-sm font-medium text-white">
@@ -204,7 +204,7 @@ export default function AiAssistantBillingSettings({
           </p>
 
           <p className="mt-1 text-xs text-white/40">
-            Your AI access is covered by this Content Workspace
+            Your AI access is covered by this Marketing Workspace
             subscription.
           </p>
         </div>
@@ -213,12 +213,12 @@ export default function AiAssistantBillingSettings({
       {!isAvailable && (
         <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
           <p className="text-sm font-medium text-white">
-            Content Workspace access is required
+            Marketing Workspace access is required
           </p>
 
           <p className="mt-1 text-xs leading-5 text-white/40">
             AI Studio becomes available automatically when your
-            Content Workspace trial starts or your subscription is
+            Marketing Workspace trial starts or your subscription is
             activated.
           </p>
         </div>

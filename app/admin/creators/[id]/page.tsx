@@ -483,7 +483,7 @@ export default async function CreatorDetailPage({
           <StatCard
             label="Workspaces"
             value={calendarCount}
-            description="Content Workspace accounts"
+            description="Marketing Workspace accounts"
             accent={COLOR.orange}
           />
 
@@ -583,9 +583,9 @@ export default async function CreatorDetailPage({
               </div>
             </Section>
 
-            {/* Content Workspace */}
+            {/* Marketing Workspace */}
             <Section
-              title="Content Workspace"
+              title="Marketing Workspace"
               description="Account-level workspace subscription and usage."
             >
               <div className="p-5 sm:p-6">
@@ -1082,7 +1082,7 @@ export default async function CreatorDetailPage({
                 >
                   <div>
                     <p className="text-sm font-semibold text-white">
-                      Content Workspace
+                      Marketing Workspace
                     </p>
                     <p
                       className="mt-1 text-xs"

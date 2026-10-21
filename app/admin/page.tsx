@@ -79,7 +79,7 @@ export default async function AdminPage() {
           {[
             ["Delivery projects", totals.projects, FolderKanban],
             ["Managed projects", totals.managed, Layers],
-            ["Content workspaces", totals.workspaces, CalendarDays],
+            ["Marketing workspaces", totals.workspaces, CalendarDays],
             ["Portfolios", totals.portfolios, Globe],
           ].map(([label, value, Icon]) => {
             const Glyph = Icon as typeof Layers;
@@ -160,7 +160,7 @@ export default async function AdminPage() {
               [
                 "/admin/social-calendars",
                 "Review workspaces",
-                "Client workspaces and billing controls",
+                "Marketing workspaces and billing controls",
               ],
               [
                 "/admin/partners",

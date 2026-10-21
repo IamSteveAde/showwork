@@ -60,7 +60,7 @@ const CATEGORY_META: Record<
     dot: "bg-violet-500",
   },
   CONTENT_WORKSPACE: {
-    label: "Content Workspace",
+    label: "Marketing Workspace",
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     dot: "bg-emerald-500",
@@ -430,7 +430,7 @@ const media = await db.media.findMany({
   });
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACES
+  // MARKETING WORKSPACES
   // ------------------------------------------------------------
 
   const calendars = await db.socialCalendar.findMany({
@@ -450,7 +450,7 @@ const media = await db.media.findMany({
   });
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACE POSTS
+  // MARKETING WORKSPACE POSTS
   // ------------------------------------------------------------
 
   const calendarPosts = await db.calendarPost.findMany({
@@ -469,7 +469,7 @@ const media = await db.media.findMany({
   });
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACE COLLABORATORS
+  // MARKETING WORKSPACE COLLABORATORS
   // ------------------------------------------------------------
 
   const calendarCollaborators =
@@ -488,7 +488,7 @@ const media = await db.media.findMany({
     });
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACE INVITES
+  // MARKETING WORKSPACE INVITES
   // ------------------------------------------------------------
 
   const calendarInvites = await db.calendarInvite.findMany({
@@ -509,7 +509,7 @@ const media = await db.media.findMany({
   });
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACE CLIENT VIEWS
+  // MARKETING WORKSPACE CLIENT VIEWS
   // ------------------------------------------------------------
 
   const calendarViewerEmails =
@@ -888,7 +888,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
   }
 
   // ------------------------------------------------------------
-  // CONTENT WORKSPACE CREATION
+  // MARKETING WORKSPACE CREATION
   // ------------------------------------------------------------
 
   for (const calendar of calendars) {
@@ -1086,7 +1086,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
 
       description = calendar
         ? `${account.name} paid for "${calendar.clientName}"`
-        : `${account.name} paid for Content Workspace`;
+        : `${account.name} paid for Marketing Workspace`;
     } else if (payment.type.includes("PORTFOLIO")) {
       const portfolio = payment.portfolioId
         ? portfolioMap.get(payment.portfolioId)
@@ -1292,7 +1292,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                     A chronological view of the activity currently
                     recorded across creator accounts, Project Delivery,
-                    Portfolios, Content Workspaces, collaboration,
+                    Portfolios, Marketing Workspaces, collaboration,
                     client activity and billing.
                   </p>
                 </div>
@@ -1503,7 +1503,7 @@ description: `${collaborator?.name || collaborator?.email || "A creator"} joined
               </option>
               <option value="PORTFOLIO">Portfolio</option>
               <option value="CONTENT_WORKSPACE">
-                Content Workspace
+                Marketing Workspace
               </option>
               <option value="COLLABORATION">
                 Collaboration

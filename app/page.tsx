@@ -3,7 +3,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import HomeClient from "./HomeClient";
 
 export const metadata: Metadata = {
-  title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
+  title: "Showwork | Portfolios, Project Delivery & Marketing Workspaces",
   description:
     "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
   keywords: [
@@ -32,11 +32,11 @@ export const metadata: Metadata = {
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
-    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and client workspaces" }],
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and marketing workspaces" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
+    title: "Showwork | Portfolios, Project Delivery & Marketing Workspaces",
     description:
       "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     images: ["/images/work.jpg"],

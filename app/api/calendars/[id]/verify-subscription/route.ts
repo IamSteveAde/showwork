@@ -14,7 +14,7 @@ import {
 // POST — called after Paystack redirects back from the Content
 // Workspace subscription checkout.
 //
-// Billing belongs to the creator's Content Workspace subscription,
+// Billing belongs to the creator's Marketing Workspace subscription,
 // not to an individual calendar. This route therefore activates the
 // account-level subscription so every workspace owned by the creator
 // becomes usable.
@@ -139,7 +139,7 @@ export async function POST(
      *
      * The transaction's plan code is the authoritative billing
      * identifier. Metadata is used as a fallback because the
-     * checkout route also sends the Content Workspace plan.
+     * checkout route also sends the Marketing Workspace plan.
      */
     await syncVerifiedPayment(pendingReference, verification, { expectedCreatorId: creator.id });
 
@@ -184,12 +184,12 @@ export async function POST(
       "MONTHLY";
 
     /*
-     * We should never activate a Content Workspace subscription
+     * We should never activate a Marketing Workspace subscription
      * without being able to identify its plan.
      */
     if (!plan) {
       console.error(
-        "Content Workspace payment verified but plan could not be determined",
+        "Marketing Workspace payment verified but plan could not be determined",
         {
           creatorId: creator.id,
           reference: pendingReference,
@@ -201,14 +201,14 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Payment was received, but the Content Workspace plan could not be identified. Contact support.",
+            "Payment was received, but the Marketing Workspace plan could not be identified. Contact support.",
         },
         { status: 500 }
       );
     }
 
     /*
-     * Activate the account-level Content Workspace subscription.
+     * Activate the account-level Marketing Workspace subscription.
      *
      * The webhook will subsequently populate the subscription code
      * and email token when subscription.create arrives.
@@ -244,7 +244,7 @@ export async function POST(
     });
   } catch (err) {
     console.error(
-      "Direct Content Workspace subscription verification failed:",
+      "Direct Marketing Workspace subscription verification failed:",
       err
     );
 

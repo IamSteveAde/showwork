@@ -123,7 +123,7 @@ export async function POST(
       {
         error:
           reservation.reason ??
-          "There isn't enough Content Workspace storage for this upload.",
+          "There isn't enough Marketing Workspace storage for this upload.",
       },
       { status: 400 }
     );

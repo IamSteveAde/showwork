@@ -30,7 +30,7 @@ function resolveBillingCycle(
   return value === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — restarts Content Workspace checkout for an account whose
+// POST — restarts Marketing Workspace checkout for an account whose
 // subscription isn't currently active.
 //
 // Billing is account-level, so payment activates the entire Content
@@ -121,7 +121,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Your Content Workspace access is already provided by your account.",
+          "Your Marketing Workspace access is already provided by your account.",
       },
       { status: 400 }
     );
@@ -134,7 +134,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Your Content Workspace subscription is already active",
+          "Your Marketing Workspace subscription is already active",
       },
       { status: 400 }
     );
@@ -143,7 +143,7 @@ export async function POST(
   /*
    * Resolve plan from:
    * 1. Request body
-   * 2. Existing Content Workspace plan
+   * 2. Existing Marketing Workspace plan
    * 3. Legacy Calendar account type
    *
    * Legacy mapping:
@@ -172,7 +172,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator, Studio or Agency",
+          "Choose a Marketing Workspace plan first: Creator, Studio or Agency",
       },
       { status: 400 }
     );
@@ -197,7 +197,7 @@ export async function POST(
       );
   } catch (error) {
     console.error(
-      "Content Workspace Paystack plan configuration error:",
+      "Marketing Workspace Paystack plan configuration error:",
       error
     );
 
@@ -263,7 +263,7 @@ export async function POST(
     });
   } catch (error) {
     console.error(
-      "Content Workspace retry-payment initialize error:",
+      "Marketing Workspace retry-payment initialize error:",
       error
     );
 

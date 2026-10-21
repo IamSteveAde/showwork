@@ -88,7 +88,7 @@ const WORKSPACE_PLANS: PricingPlan[] = CONTENT_WORKSPACE_PLAN_ORDER.map((key) =>
     annual: plan.priceNgnAnnual,
     description: key === "CREATOR" ? "For freelancers and independent creative professionals." : key === "STUDIO" ? "For agencies and teams managing multiple clients." : "For growing agencies managing clients at scale.",
     features: [
-      key === "UNLIMITED" ? "Unlimited active client workspaces" : `${formatWorkspaceLimit(plan.activeWorkspaces)} active client workspace${plan.activeWorkspaces === 1 ? "" : "s"}`,
+      key === "UNLIMITED" ? "Unlimited active marketing workspaces" : `${formatWorkspaceLimit(plan.activeWorkspaces)} active marketing workspace${plan.activeWorkspaces === 1 ? "" : "s"}`,
       key === "UNLIMITED" ? "Unlimited collaborators" : `Up to ${plan.collaborators} collaborators`,
       `${plan.storageBytes / 1_000_000_000} GB storage`,
       `${plan.aiGenerations.toLocaleString("en-NG")} AI generations / month`,
@@ -324,7 +324,7 @@ export default function PricingSection() {
             }`}
           >
             <ProductIcon product="workspace" />
-            Content Workspace
+            Marketing Workspace
           </button>
 
           <button
@@ -482,7 +482,7 @@ if (product === "delivery") {
                   >
                     {product === "delivery"
                       ? "Project Delivery"
-                      : "Content Workspace"}
+                      : "Marketing Workspace"}
                   </p>
 
                   <h3

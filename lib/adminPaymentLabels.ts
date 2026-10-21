@@ -15,12 +15,12 @@ export function paymentAction(type: string) {
     SUBSCRIPTION_RENEWAL: "Project Delivery subscription renewed",
     PORTFOLIO_SUBSCRIPTION_INITIAL: "Portfolio subscription started",
     PORTFOLIO_SUBSCRIPTION_RENEWAL: "Portfolio subscription renewed",
-    CALENDAR_SUBSCRIPTION_INITIAL: "Content Workspace subscription started",
-    CALENDAR_SUBSCRIPTION_RENEWAL: "Content Workspace subscription renewed",
+    CALENDAR_SUBSCRIPTION_INITIAL: "Marketing Workspace subscription started",
+    CALENDAR_SUBSCRIPTION_RENEWAL: "Marketing Workspace subscription renewed",
     CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL:
-      "Content Workspace subscription started",
+      "Marketing Workspace subscription started",
     CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL:
-      "Content Workspace subscription renewed",
+      "Marketing Workspace subscription renewed",
     AI_ASSISTANT_SUBSCRIPTION_INITIAL: "AI subscription started",
     AI_ASSISTANT_SUBSCRIPTION_RENEWAL: "AI subscription renewed",
   };
@@ -28,7 +28,7 @@ export function paymentAction(type: string) {
 }
 export function paymentProductDescription(type: string) {
   if (type.startsWith("CALENDAR_") || type.startsWith("CONTENT_WORKSPACE_"))
-    return "Content Workspace";
+    return "Marketing Workspace";
   if (type.startsWith("PORTFOLIO_")) return "a portfolio";
   if (type.startsWith("AI_ASSISTANT_")) return "AI Assistant";
   if (type === "PROJECT_ONE_TIME" || type.startsWith("SUBSCRIPTION_"))

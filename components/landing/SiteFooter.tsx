@@ -15,7 +15,7 @@ const navigation = [
   { title: "Your work", links: [
     { label: "Portfolio", href: "/portfolio" },
     { label: "Project delivery", href: "/delivery" },
-    { label: "Content Workspace", href: "/content-workspace" },
+    { label: "Marketing Workspace", href: "/content-workspace" },
   ] },
   { title: "Your community", links: [
     { label: "Creativo", href: "/creativo" },
@@ -68,7 +68,7 @@ export default function SiteFooter() {
               <Image src="/images/logo/swwhite.svg" alt="Showwork" width={180} height={30} className="h-auto w-40" />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-7 text-slate-400">
-              Portfolios, project delivery and client workspaces for creators,
+              Portfolios, project delivery and marketing workspaces for creators,
               agencies and social media teams.
             </p>
             <a

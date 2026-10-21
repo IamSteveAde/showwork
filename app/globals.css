@@ -92,3 +92,10 @@ body {
   outline-offset: 4px;
   border-radius: 8px;
 }
+
+/* Inbox carries its own support action on mobile; edge widgets must not cover chats. */
+@media (max-width: 700px) {
+  body:has([data-showwork-inbox]):not(:has([hidden] [data-showwork-inbox])) [data-showwork-support] {
+    display: none !important;
+  }
+}

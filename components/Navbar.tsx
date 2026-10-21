@@ -131,7 +131,7 @@ const SOLUTIONS: Solution[] = [
     visual: "delivery",
   },
   {
-    label: "Content Workspace",
+    label: "Marketing Workspace",
     eyebrow: "MANAGE THE WORK",
     description:
       "Manage client content, approvals, conversations, leads and analytics in one workspace.",
@@ -343,7 +343,7 @@ function SolutionVisual({ type }: { type: SolutionType }) {
 
       <div className="absolute bottom-4 right-4 rounded-full border border-black/[0.07] bg-white px-3 py-1.5 shadow-sm">
         <span className="text-[7px] font-bold uppercase tracking-[0.12em] text-[#2478FF]">
-          Client workspace
+          Marketing workspace
         </span>
       </div>
     </div>

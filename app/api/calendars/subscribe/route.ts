@@ -31,10 +31,10 @@ function resolveBillingCycle(
   return value === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — starts or restarts the account-level Content Workspace
+// POST — starts or restarts the account-level Marketing Workspace
 // subscription.
 //
-// Billing belongs to the Content Workspace product as a whole,
+// Billing belongs to the Marketing Workspace product as a whole,
 // not to an individual calendar/workspace.
 //
 // Creator:
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     // An empty body is allowed because the account may already
-    // have a Content Workspace plan saved.
+    // have a Marketing Workspace plan saved.
   }
 
   const creator = await db.creator.findUnique({
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Your Content Workspace access is already provided by your account.",
+          "Your Marketing Workspace access is already provided by your account.",
       },
       { status: 400 }
     );
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Your Content Workspace subscription is already active",
+          "Your Marketing Workspace subscription is already active",
       },
       { status: 400 }
     );
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator, Studio or Agency",
+          "Choose a Marketing Workspace plan first: Creator, Studio or Agency",
       },
       { status: 400 }
     );
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace Paystack plan configuration error:",
+      "Marketing Workspace Paystack plan configuration error:",
       error
     );
 
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace subscribe initialize error:",
+      "Marketing Workspace subscribe initialize error:",
       error
     );
 

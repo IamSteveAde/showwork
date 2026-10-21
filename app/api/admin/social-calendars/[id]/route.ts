@@ -16,7 +16,7 @@ async function requireAdmin() {
 }
 
 // PATCH — admin billing controls for the account that owns a
-// client workspace. Content Workspace billing is account-level:
+// marketing workspace. Marketing Workspace billing is account-level:
 // one subscription covers every workspace owned by the creator.
 export async function PATCH(
   req: NextRequest,
@@ -35,7 +35,7 @@ export async function PATCH(
 
   const { id } = await params;
 
-  // Find the client workspace and its owner.
+  // Find the marketing workspace and its owner.
   const calendar = await db.socialCalendar.findUnique({
     where: { id },
     select: {
@@ -62,7 +62,7 @@ export async function PATCH(
 
   if (!calendar) {
     return NextResponse.json(
-      { error: "Client workspace not found" },
+      { error: "Marketing workspace not found" },
       { status: 404 }
     );
   }
@@ -73,12 +73,12 @@ export async function PATCH(
   // GRANT FREE MONTH
   // ─────────────────────────────────────────────
   //
-  // Content Workspace billing lives on Creator, not SocialCalendar.
+  // Marketing Workspace billing lives on Creator, not SocialCalendar.
   // Granting a free month therefore gives the entire account
-  // one month of Content Workspace access across all workspaces.
+  // one month of Marketing Workspace access across all workspaces.
   //
   // AI Studio is included automatically because it is part of
-  // the Content Workspace subscription.
+  // the Marketing Workspace subscription.
   //
   if (action === "grant_free_month") {
     const now = new Date();
@@ -114,7 +114,7 @@ export async function PATCH(
     return NextResponse.json({
       creator: updated,
       message:
-        "One free month granted for the account's Content Workspace access.",
+        "One free month granted for the account's Marketing Workspace access.",
     });
   }
 
@@ -122,8 +122,8 @@ export async function PATCH(
   // RESET BILLING
   // ─────────────────────────────────────────────
   //
-  // Completely resets the account's Content Workspace billing state.
-  // This does NOT delete or modify any client workspaces, posts,
+  // Completely resets the account's Marketing Workspace billing state.
+  // This does NOT delete or modify any marketing workspaces, posts,
   // collaborators, AI history, documents, or other workspace data.
   //
   if (action === "reset_billing") {
@@ -153,7 +153,7 @@ export async function PATCH(
 
     return NextResponse.json({
       creator: updated,
-      message: "Content Workspace billing has been reset for the account.",
+      message: "Marketing Workspace billing has been reset for the account.",
     });
   }
 

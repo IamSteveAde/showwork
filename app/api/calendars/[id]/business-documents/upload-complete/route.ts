@@ -187,7 +187,7 @@ export async function POST(
 
     if (!existingDocument) {
       console.error(
-        "Content Workspace storage reservation is COMPLETED but its business document is missing:",
+        "Marketing Workspace storage reservation is COMPLETED but its business document is missing:",
         reservationId
       );
 
@@ -232,7 +232,7 @@ export async function POST(
       );
     } catch (error) {
       console.error(
-        "Failed to release expired Content Workspace storage reservation:",
+        "Failed to release expired Marketing Workspace storage reservation:",
         error
       );
     }
@@ -290,7 +290,7 @@ export async function POST(
     reservedBytes <= 0
   ) {
     console.error(
-      "Invalid Content Workspace storage reservation size:",
+      "Invalid Marketing Workspace storage reservation size:",
       reservation
     );
 
@@ -320,7 +320,7 @@ export async function POST(
       );
     } catch (releaseError) {
       console.error(
-        "Failed to release mismatched Content Workspace storage reservation:",
+        "Failed to release mismatched Marketing Workspace storage reservation:",
         releaseError
       );
     }
@@ -576,7 +576,7 @@ export async function POST(
     }
 
     console.error(
-      "Failed to finalize Content Workspace business document upload:",
+      "Failed to finalize Marketing Workspace business document upload:",
       error
     );
 

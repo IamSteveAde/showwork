@@ -104,14 +104,14 @@ export async function GET() {
   return NextResponse.json({ calendars });
 }
 
-// POST — creates a new Content Workspace.
+// POST — creates a new Marketing Workspace.
 //
 // Billing is account-level:
 // - Creator: 1 active workspace
 // - Studio: 10 active workspaces
 //
 // Every account gets one 7-day trial, ever.
-// The trial is attached to the Content Workspace subscription,
+// The trial is attached to the Marketing Workspace subscription,
 // not to an individual calendar/workspace.
 //
 // `accountType` is accepted temporarily for backwards compatibility
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * Determine the Content Workspace plan.
+   * Determine the Marketing Workspace plan.
    *
    * Existing accounts that previously selected:
    *   INDIVIDUAL -> CREATOR
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
    *
    * New accounts should provide `plan`.
    *
-   * Once a Content Workspace plan exists on the account, it is used
+   * Once a Marketing Workspace plan exists on the account, it is used
    * as the source of truth.
    */
   let plan: ContentWorkspacePlan | null =
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Choose a Content Workspace plan first: Creator, Studio or Agency",
+          "Choose a Marketing Workspace plan first: Creator, Studio or Agency",
       },
       { status: 400 }
     );
@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
 
   /*
    * Build the account shape expected by the centralized
-   * Content Workspace entitlement service.
+   * Marketing Workspace entitlement service.
    */
   const account: ContentWorkspaceAccount = {
   billingComplimentaryGrants: creator.billingComplimentaryGrants,
@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
       {
         error:
           creationCheck.reason ??
-          "You cannot create another Content Workspace.",
+          "You cannot create another Marketing Workspace.",
         usage: creationCheck.usage,
       },
       { status: 403 }
@@ -276,8 +276,8 @@ export async function POST(req: NextRequest) {
   }
 
   /*
-   * Persist the selected Content Workspace plan if this is the
-   * account's first Content Workspace setup.
+   * Persist the selected Marketing Workspace plan if this is the
+   * account's first Marketing Workspace setup.
    *
    * This does NOT touch the main Showwork subscription fields.
    */
@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
    * Create the workspace.
    *
    * There are deliberately no billing fields on SocialCalendar.
-   * Billing belongs to the creator's Content Workspace subscription.
+   * Billing belongs to the creator's Marketing Workspace subscription.
    */
   const creation = await db.$transaction(async tx => {
     // Serialize account-level limits and the first trial start across requests.
@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
  * COMPLIMENTARY ACCESS:
  *
  * If the creator has active complimentary access, the new
- * Content Workspace is already covered.
+ * Marketing Workspace is already covered.
  *
  * Do not start the trial.
  * Do not initialize Paystack.
@@ -355,7 +355,7 @@ if (
 }
 
   /*
-   * FIRST-EVER CONTENT WORKSPACE:
+   * FIRST-EVER MARKETING WORKSPACE:
    *
    * Start the 7-day free trial.
    *
@@ -370,7 +370,7 @@ if (
    * Existing active subscription:
    *
    * The new workspace is immediately covered by the same
-   * Content Workspace subscription.
+   * Marketing Workspace subscription.
    */
   if (
     creator.contentWorkspaceBillingStatus === "ACTIVE"
@@ -403,7 +403,7 @@ if (
   /*
    * Trial has ended or the subscription is offline/pending.
    *
-   * Start the Content Workspace subscription checkout.
+   * Start the Marketing Workspace subscription checkout.
    */
   const billingCycle = resolveBillingCycle(
     body.billingCycle ??
@@ -421,7 +421,7 @@ if (
     );
   } catch (error) {
     console.error(
-      "Content Workspace Paystack plan configuration error:",
+      "Marketing Workspace Paystack plan configuration error:",
       error
     );
 
@@ -484,7 +484,7 @@ if (
     });
   } catch (error) {
     console.error(
-      "Content Workspace subscription initialize error:",
+      "Marketing Workspace subscription initialize error:",
       error
     );
 
@@ -492,7 +492,7 @@ if (
      * Leave the workspace row in place.
      *
      * It remains inaccessible until the account has an active
-     * Content Workspace subscription or valid trial.
+     * Marketing Workspace subscription or valid trial.
      */
     return NextResponse.json(
       {

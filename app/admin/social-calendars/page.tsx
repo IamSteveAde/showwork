@@ -860,7 +860,7 @@ export default async function AdminSocialCalendarsPage({
                       "0.16em",
                   }}
                 >
-                  Admin / Content Workspace
+                  Admin / Marketing Workspace
                 </p>
               </div>
 
@@ -875,7 +875,7 @@ export default async function AdminSocialCalendarsPage({
                     COLOR.muted,
                 }}
               >
-                Manage client workspaces,
+                Manage marketing workspaces,
                 subscriptions,
                 publishing connections,
                 collaboration and
@@ -1083,7 +1083,7 @@ export default async function AdminSocialCalendarsPage({
               Includes historical
               calendar subscription
               payments and current
-              Content Workspace
+              Marketing Workspace
               subscription payments.
             </p>
           </div>
@@ -1112,7 +1112,7 @@ export default async function AdminSocialCalendarsPage({
                   type="search"
                   name="q"
                   defaultValue={query}
-                  placeholder="Search manager, company, client workspace or slug..."
+                  placeholder="Search manager, company, marketing workspace or slug..."
                   className="h-11 w-full rounded-xl border bg-black/20 px-4 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-white/20"
                   style={{
                     borderColor:
@@ -1347,7 +1347,7 @@ export default async function AdminSocialCalendarsPage({
                     "0.12em",
                 }}
               >
-                Client workspaces
+                Marketing workspaces
               </p>
 
               <h2 className="mt-1 text-xl font-semibold">
@@ -1390,7 +1390,7 @@ export default async function AdminSocialCalendarsPage({
                 }}
               >
                 Try changing the search
-                or filters. No client
+                or filters. No marketing
                 workspace matches the
                 current criteria.
               </p>
@@ -1933,15 +1933,15 @@ export default async function AdminSocialCalendarsPage({
                     COLOR.muted,
                 }}
               >
-                Content Workspace billing is
+                Marketing Workspace billing is
                 managed at the creator account
                 level. A creator can therefore
-                manage multiple client workspaces
+                manage multiple marketing workspaces
                 under the same subscription.
                 Workspace activity and billing are
                 shown separately so the admin can
                 understand both the account and
-                individual client workspace.
+                individual marketing workspace.
               </p>
             </div>
           </div>

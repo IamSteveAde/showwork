@@ -274,7 +274,7 @@ export default async function AdminPage({
   }
 
   /*
-   * Portfolio and Content Workspace filtering are intentionally
+   * Portfolio and Marketing Workspace filtering are intentionally
    * handled using lightweight relation existence checks.
    *
    * We do not load the relations here.
@@ -657,7 +657,7 @@ export default async function AdminPage({
 
                 <option value="DELIVERY">Project Delivery</option>
 
-                <option value="WORKSPACE">Content Workspace</option>
+                <option value="WORKSPACE">Marketing Workspace</option>
 
                 <option value="PORTFOLIO">Portfolio</option>
               </select>
@@ -811,7 +811,7 @@ export default async function AdminPage({
                             />
 
                             <ProductStatus
-                              label="Content Workspace"
+                              label="Marketing Workspace"
                               value={
                                 creator._count.ownedCalendars > 0
                                   ? "Active workspace"

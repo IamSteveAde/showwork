@@ -3,11 +3,11 @@ import { ArrowUpRight, MessageCircle, Plus } from "lucide-react";
 const questions = [
   {
     question: "What can I do with Showwork?",
-    answer: "Showwork brings your creative client work together. Build a portfolio to showcase your work, deliver projects through shareable links, and use Content Workspace to organize ongoing client content, approvals, conversations, leads and analytics.",
+    answer: "Showwork brings your creative client work together. Build a portfolio to showcase your work, deliver projects through shareable links, and use Marketing Workspace to organize ongoing client content, approvals, conversations, leads and analytics.",
   },
   {
     question: "Can I get started for free?",
-    answer: "Yes. Your portfolio is free, and the free Project Delivery plan includes one project per 30 days. Content Workspace comes with 7 days of full Agency feature access, whichever plan you intend to choose. When you need more capacity, choose a paid plan from the pricing section above.",
+    answer: "Yes. Your portfolio is free, and the free Project Delivery plan includes one project per 30 days. Marketing Workspace comes with 7 days of full Agency feature access, whichever plan you intend to choose. When you need more capacity, choose a paid plan from the pricing section above.",
   },
   {
     question: "Who is Showwork built for?",
@@ -18,8 +18,8 @@ const questions = [
     answer: "Create a delivery project, add your files and share the project link with your client. It gives your work a dedicated presentation page and keeps the delivery organized in one place.",
   },
   {
-    question: "How is Content Workspace different from Project Delivery?",
-    answer: "Project Delivery is for presenting and handing over individual projects. Content Workspace is for ongoing client accounts: plan content, manage feedback and approvals, collaborate with your team, and keep track of conversations, leads and performance.",
+    question: "How is Marketing Workspace different from Project Delivery?",
+    answer: "Project Delivery is for presenting and handing over individual projects. Marketing Workspace is for ongoing client accounts: plan content, manage feedback and approvals, collaborate with your team, and keep track of conversations, leads and performance.",
   },
   {
     question: "Do I need to know how to code to create a portfolio?",

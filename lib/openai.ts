@@ -78,6 +78,7 @@ import { normalizeReplyProfile, REPLY_TONES, type ReplyProfile } from "@/lib/soc
     maxOutputTokens = 4096,
     timeoutMs = 120_000,
     attempts = 3,
+    model = process.env.OPENAI_MODEL || DEFAULT_MODEL,
   }: {
     instructions: string;
     input: string;
@@ -86,9 +87,9 @@ import { normalizeReplyProfile, REPLY_TONES, type ReplyProfile } from "@/lib/soc
     maxOutputTokens?: number;
     timeoutMs?: number;
     attempts?: number;
+    model?: string;
   }): Promise<string> {
     const apiKey = requireApiKey();
-    const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
     const body: Record<string, unknown> = {
       model,
@@ -275,6 +276,8 @@ import { normalizeReplyProfile, REPLY_TONES, type ReplyProfile } from "@/lib/soc
     const careProfile = normalizeReplyProfile(profile);
     const tone = REPLY_TONES.find(item => item.value === careProfile.tone)!;
     const raw = await callOpenAI({
+      // Short customer-care replies should not inherit the batch-content model.
+      model: process.env.OPENAI_REPLY_MODEL || "gpt-4.1-mini",
       instructions: `You write customer-care replies on behalf of a business. Sound like a capable, attentive customer-care professional, with natural language tailored to this conversation.
 
 VOICE

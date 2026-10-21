@@ -18,7 +18,7 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
  * This means at least one business document has been uploaded and the
  * AI has existing business context to improve.
  *
- * AI Research is included in the Content Workspace subscription.
+ * AI Research is included in the Marketing Workspace subscription.
  * It does not consume the customer's monthly interactive AI generation
  * or regeneration allowance because this is an internal scheduled
  * background process.
@@ -46,7 +46,7 @@ export async function runScheduledAiBusinessResearch() {
       ],
 
       /*
-       * Only calendars whose owner has Content Workspace access
+       * Only calendars whose owner has Marketing Workspace access
        * should receive scheduled AI research.
        *
        * We intentionally fetch the owner billing fields below rather

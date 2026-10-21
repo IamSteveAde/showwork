@@ -47,7 +47,7 @@ test('workspace search stays scoped to the owner and collaborator membership', a
   const shared = calls.find(([kind]) => kind === 'shared')[1];
   assert.deepEqual(shared.where, { creatorId: 'owner', calendar: { clientName: { contains: 'Alpha', mode: 'insensitive' } } });
   assert.match(html, /href="\/dashboard\/calendars\?q=Alpha"/);
-  assert.match(html, /Search client workspaces/);
+  assert.match(html, /Search marketing workspaces/);
 });
 test('out-of-range and invalid pages are clamped without dropping ownership', async () => {
   for (const [input, skip] of [['999', 9], ['-3', 0], ['invalid', 0], ['1.9', 0]]) {

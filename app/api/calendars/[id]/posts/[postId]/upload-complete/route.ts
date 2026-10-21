@@ -193,7 +193,7 @@ const validatedMediaType = mediaType as MediaType;
 
     if (!existingAsset) {
       console.error(
-        "Content Workspace storage reservation is COMPLETED but its asset is missing:",
+        "Marketing Workspace storage reservation is COMPLETED but its asset is missing:",
         reservationId
       );
 
@@ -266,7 +266,7 @@ return NextResponse.json({
       );
     } catch (error) {
       console.error(
-        "Failed to release expired Content Workspace storage reservation:",
+        "Failed to release expired Marketing Workspace storage reservation:",
         error
       );
     }
@@ -324,7 +324,7 @@ return NextResponse.json({
     reservedBytes <= 0
   ) {
     console.error(
-      "Invalid Content Workspace storage reservation size:",
+      "Invalid Marketing Workspace storage reservation size:",
       reservation
     );
 
@@ -354,7 +354,7 @@ return NextResponse.json({
       );
     } catch (releaseError) {
       console.error(
-        "Failed to release mismatched Content Workspace storage reservation:",
+        "Failed to release mismatched Marketing Workspace storage reservation:",
         releaseError
       );
     }
@@ -639,7 +639,7 @@ return NextResponse.json({
     }
 
     console.error(
-      "Failed to finalize Content Workspace post upload:",
+      "Failed to finalize Marketing Workspace post upload:",
       error
     );
 

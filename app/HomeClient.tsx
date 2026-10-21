@@ -636,7 +636,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
           </div>
         </motion.div>
 
-        {/* Content workspace */}
+        {/* Marketing workspace */}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -668,7 +668,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
 
             <div>
               <p className="text-[9px] font-semibold text-black/65">
-                Client workspace
+                Marketing workspace
               </p>
 
               <p className="text-[7px] text-black/30">
@@ -930,7 +930,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
 
             <span className="h-1 w-1 rounded-full bg-[#2478FF]/40" />
 
-            <span>Content Workspace</span>
+            <span>Marketing Workspace</span>
 
             <span className="h-1 w-1 rounded-full bg-[#2478FF]/40" />
 
@@ -998,7 +998,7 @@ function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
 const WORLDS = [
   {
     number: "01",
-    title: "Content Workspace",
+    title: "Marketing Workspace",
     label: "Manage client accounts",
     body: "Plan content with AI, collect approvals, manage conversations and leads, and track performance in a dedicated workspace for each client.",
     href: "/content-workspace",
@@ -1065,7 +1065,7 @@ function Worlds() {
           </h2>
 
           <p className="mt-7 max-w-[540px] text-sm leading-7 text-[#737982] sm:text-base">
-            Showwork brings your portfolio, project delivery and client
+            Showwork brings your portfolio, project delivery and marketing
             workspaces together. Choose the tools you need to showcase
             your work, collaborate with clients and manage their accounts.
           </p>
@@ -1368,7 +1368,7 @@ function FinalCTA({ isLoggedIn }: { isLoggedIn: boolean }) {
 
         <p className="mx-auto mt-8 max-w-[520px] text-sm leading-7 text-white/70 sm:text-base">
           Start with a free portfolio or project delivery. When you
-          manage ongoing client accounts, try Content Workspace free for 7 days.
+          manage ongoing client accounts, try Marketing Workspace free for 7 days.
         </p>
 
         <div className="mt-9 flex justify-center">

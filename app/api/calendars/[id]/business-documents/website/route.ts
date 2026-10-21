@@ -43,7 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
   if (!owner || !canAccessContentWorkspace(owner)) {
-    return NextResponse.json({ error: "Your Content Workspace subscription isn't active yet." }, { status: 403 });
+    return NextResponse.json({ error: "Your Marketing Workspace subscription isn't active yet." }, { status: 403 });
   }
 
   const body = await req.json().catch(() => null) as { url?: unknown } | null;

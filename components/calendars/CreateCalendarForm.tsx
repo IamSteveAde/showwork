@@ -47,7 +47,7 @@ export default function CreateCalendarForm({
       return;
     }
     if (!chosenPlan) {
-      setError("Choose a Content Workspace plan.");
+      setError("Choose a Marketing Workspace plan.");
       return;
     }
     setLoading(true);
@@ -104,7 +104,7 @@ export default function CreateCalendarForm({
 
   return (
     <section
-      aria-label="New client workspace"
+      aria-label="New marketing workspace"
       className="rounded-2xl border border-[#E4E7EC] bg-white p-4 sm:p-5"
     >
       <div className="mb-4 flex items-start justify-between gap-3">

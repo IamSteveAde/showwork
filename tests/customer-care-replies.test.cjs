@@ -34,6 +34,24 @@ function fakeModel(value, capture = () => {}) {
   return load('lib/openai.ts').generateSocialInboxAutoReply;
 }
 const generationInput = extra => ({ clientName: 'Studio', businessSummary: 'General business facts', instructions: null, profile: profile(), conversation: [{ direction: 'INBOUND', text: 'I need portraits in Lagos on Friday.', createdAt: '2026-10-02T10:00:00Z' }], latestInbound: 'How much is the portrait package?', ...extra });
+test('reply model is independent of the batch model and supports a dedicated override', async () => {
+  const general = process.env.OPENAI_MODEL;
+  const reply = process.env.OPENAI_REPLY_MODEL;
+  try {
+    process.env.OPENAI_MODEL = 'batch-model';
+    delete process.env.OPENAI_REPLY_MODEL;
+    let body;
+    const generate = fakeModel({ shouldReply: true, replyText: 'Hello!', handoffReason: null }, value => { body = value; });
+    await generate(generationInput());
+    assert.equal(body.model, 'gpt-4.1-mini');
+    process.env.OPENAI_REPLY_MODEL = 'reply-override';
+    await generate(generationInput());
+    assert.equal(body.model, 'reply-override');
+  } finally {
+    if (general === undefined) delete process.env.OPENAI_MODEL; else process.env.OPENAI_MODEL = general;
+    if (reply === undefined) delete process.env.OPENAI_REPLY_MODEL; else process.env.OPENAI_REPLY_MODEL = reply;
+  }
+});
 test('profiles default legacy settings and reject invalid or oversized input', () => {
   const api = profileApi();
   assert.equal(api.normalizeReplyProfile(null).tone, 'professional');

@@ -6,6 +6,7 @@ import { ingestSocialMessage } from "@/lib/socialMessaging/ingest";
 import { dispatchSocialInboxAutoReply } from "@/lib/socialMessaging/dispatchAutoReply";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 function validSignature(rawBody: string, signature: string | null) {
   const secret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
@@ -28,6 +29,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   if (!validSignature(rawBody, req.headers.get("x-hub-signature-256"))) {
+    console.warn("Meta messaging webhook rejected", {
+      reason: "invalid_signature",
+      signaturePresent: Boolean(req.headers.get("x-hub-signature-256")),
+      secretConfigured: Boolean(process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET),
+    });
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
   let body: {
@@ -46,10 +52,16 @@ export async function POST(req: NextRequest) {
   const platform = body.object ? metaWebhookPlatform(body.object) : null;
   if (!platform || !Array.isArray(body.entry)) return NextResponse.json({ received: true });
 
+  // Log before database access so processing failures cannot look like an
+  // absent delivery. Do not include message contents, IDs, or credentials.
+  console.info("Meta messaging webhook accepted", { platform, entries: body.entry.length });
   let messagingEventCount = 0;
   let matchedEntryCount = 0;
   let unmatchedEntryCount = 0;
   let entryWithoutMessagingCount = 0;
+  let importedMessageCount = 0;
+  let duplicateMessageCount = 0;
+  let skippedEventCount = 0;
   for (const entry of body.entry) {
     if (!entry.id || !Array.isArray(entry.messaging)) {
       entryWithoutMessagingCount += 1;
@@ -74,8 +86,8 @@ export async function POST(req: NextRequest) {
       const senderId = isEcho ? event.recipient?.id : event.sender?.id;
       const providerMessageId = event.message?.mid;
       const text = event.message?.text?.trim() || event.message?.attachments?.map((attachment) => `[${attachment.type || "Media"} attachment]`).join(" ") || "";
-      if (!senderId || !providerMessageId || !text) continue;
-      if (!isEcho && senderId === connection.platformAccountId) continue;
+      if (!senderId || !providerMessageId || !text) { skippedEventCount += 1; continue; }
+      if (!isEcho && senderId === connection.platformAccountId) { skippedEventCount += 1; continue; }
       const messageAt = new Date(Number.isFinite(event.timestamp) ? Number(event.timestamp) : Date.now());
       const conversationKey = {
         socialConnectionId_providerConversationId: {
@@ -102,7 +114,7 @@ export async function POST(req: NextRequest) {
       const participantName = profile?.name || senderName || (hasUsableSavedName ? existingConversation?.participantName : null) || null;
       const participantUsername = profile?.username || senderUsername || existingConversation?.participantUsername || null;
       // Echoes update existing threads but must never manufacture a new lead.
-      if (isEcho && !existingConversation) continue;
+      if (isEcho && !existingConversation) { skippedEventCount += 1; continue; }
       const inserted = await ingestSocialMessage(connection, {
         conversationId: senderId, messageId: providerMessageId, participantId: senderId,
         ...(participantName ? { name: participantName } : {}),
@@ -110,6 +122,8 @@ export async function POST(req: NextRequest) {
         text, createdAt: messageAt, outbound: isEcho,
         autoReplyEligible: !isEcho && !!event.message?.text?.trim() && settings.aiAutoReplyEnabled,
       });
+      if (inserted) importedMessageCount += 1;
+      else duplicateMessageCount += 1;
       if (inserted && !isEcho && settings.aiAutoReplyEnabled) {
         await dispatchSocialInboxAutoReply(
           (await db.socialLeadMessage.findUniqueOrThrow({
@@ -135,6 +149,9 @@ export async function POST(req: NextRequest) {
       matchedEntries: matchedEntryCount,
       unmatchedEntries: unmatchedEntryCount,
       entriesWithoutMessaging: entryWithoutMessagingCount,
+      importedMessages: importedMessageCount,
+      duplicateMessages: duplicateMessageCount,
+      skippedEvents: skippedEventCount,
     });
   }
   return NextResponse.json({ received: true });

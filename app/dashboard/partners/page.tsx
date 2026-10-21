@@ -671,7 +671,7 @@ loadPayoutAccount();
 
                   <p className="mt-5 max-w-xl text-sm leading-6 text-[#617087] sm:text-[16px]">
                     Share Showwork with people in your network and earn
-                    10% of verified Delivery and Content Workspace subscription payments
+                    10% of verified Delivery and Marketing Workspace subscription payments
                     made by customers who sign up through your referral link, for
                     12 months from their first qualifying payment. Commissions are
                     based on the amount paid, including any annual discount.

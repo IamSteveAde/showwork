@@ -29,7 +29,7 @@ export async function syncContentWorkspaceRenewal(creatorId: string): Promise<Da
       return nextDate;
     }
   } catch (error) {
-    console.error("Could not refresh Content Workspace renewal date", error);
+    console.error("Could not refresh Marketing Workspace renewal date", error);
   }
   return stored;
 }

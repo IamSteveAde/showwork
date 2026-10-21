@@ -1,5 +1,6 @@
 "use client";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
+import { mergeSavedCalendarPosts } from "@/lib/calendarPostCollection";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 
 import { MEDIA_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
@@ -7109,10 +7110,7 @@ export default function CalendarGrid({
             setAddingDate(null)
           }
           onCreated={(newPosts) =>
-            setPosts((prev) => [
-              ...prev,
-              ...newPosts.map(normalize),
-            ])
+            setPosts((prev) => mergeSavedCalendarPosts(prev, newPosts.map(normalize)))
           }
         />
       )}

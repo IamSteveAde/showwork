@@ -53,7 +53,7 @@ const TOUR_STEPS: TourStep[] = [
   },
   {
     id: "content",
-    eyebrow: "Content Workspace",
+    eyebrow: "Marketing Workspace",
     title: "Plan your content",
     description:
       "Schedule posts, add creative and manage client feedback and approvals.",
@@ -64,13 +64,6 @@ const TOUR_STEPS: TourStep[] = [
     title: "Connect your channels",
     description:
       "Link social accounts and WhatsApp to publish, track results and manage messages.",
-  },
-  {
-    id: "publish",
-    eyebrow: "Publishing",
-    title: "Share the client plan",
-    description:
-      "Update the workspace presentation and publish it for your client to review.",
   },
   {
     id: "team",

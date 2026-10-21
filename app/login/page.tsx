@@ -305,7 +305,7 @@ function LoginForm() {
               </h1>
 
               <p className="mt-8 max-w-lg text-base leading-[1.8] text-white/45 xl:text-lg">
-                Your portfolio, deliveries and client workspaces —
+                Your portfolio, deliveries and marketing workspaces —
                 with content, conversations, leads and reports in one place.
               </p>
 

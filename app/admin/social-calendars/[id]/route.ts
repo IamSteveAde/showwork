@@ -14,11 +14,11 @@ return null;
 return creator;
 }
 
-// PATCH — admin billing controls for the Content Workspace account
-// that owns a client workspace.
+// PATCH — admin billing controls for the Marketing Workspace account
+// that owns a marketing workspace.
 //
-// Content Workspace billing is account-level:
-// one subscription covers the creator's client workspaces,
+// Marketing Workspace billing is account-level:
+// one subscription covers the creator's marketing workspaces,
 // collaborators, AI Studio, publishing and related workspace features.
 export async function PATCH(
 req: NextRequest,
@@ -47,7 +47,7 @@ managerId: true,
 
 if (!calendar) {
 return NextResponse.json(
-{ error: "Client workspace not found" },
+{ error: "Marketing workspace not found" },
 { status: 404 }
 );
 }
@@ -69,11 +69,11 @@ const { action } = body;
 // GRANT FREE MONTH
 // ─────────────────────────────────────────────
 //
-// Grants one month of Content Workspace access to
+// Grants one month of Marketing Workspace access to
 // the entire creator account.
 //
 // This also makes AI Studio available because AI is
-// included in the Content Workspace subscription.
+// included in the Marketing Workspace subscription.
 //
 if (action === "grant_free_month") {
 const now = new Date();
@@ -116,7 +116,7 @@ const updated = await db.creator.update({
 return NextResponse.json({
   creator: updated,
   message:
-    "One free month of Content Workspace access granted for the account.",
+    "One free month of Marketing Workspace access granted for the account.",
 });
  
 
@@ -126,11 +126,11 @@ return NextResponse.json({
 // RESET BILLING
 // ─────────────────────────────────────────────
 //
-// Resets the account-level Content Workspace billing
+// Resets the account-level Marketing Workspace billing
 // state without deleting any workspace data.
 //
 // This does NOT delete:
-// - client workspaces
+// - marketing workspaces
 // - posts
 // - collaborators
 // - business documents
@@ -166,7 +166,7 @@ contentWorkspaceTrialEndsAt: true,
 return NextResponse.json({
   creator: updated,
   message:
-    "Content Workspace billing has been reset for the account.",
+    "Marketing Workspace billing has been reset for the account.",
 });
  
 

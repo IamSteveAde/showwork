@@ -48,6 +48,10 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
       },
     });
     for (const inbound of queue) {
+      const processingStartedAt = Date.now();
+      const queueWaitMs = inbound.createdAt ? Math.max(0, processingStartedAt - inbound.createdAt.getTime()) : null;
+      let generationMs = 0;
+      let deliveryMs = 0;
       const now = new Date();
       const claimed = await db.socialLeadMessage.updateMany({
         where: {
@@ -96,6 +100,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           } });
           continue;
         }
+        const generationStartedAt = Date.now();
         const generated = await generateSocialInboxAutoReply({
           clientName: inbound.conversation.calendar.clientName,
           businessSummary: inbound.conversation.calendar.aiBusinessSummary,
@@ -106,6 +111,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           conversation: recent,
           latestInbound: inbound.text.slice(0, 3000),
         });
+        generationMs = Date.now() - generationStartedAt;
         if (!generated.shouldReply || !generated.replyText || !inbound.conversation.connection || !supportsMessaging(inbound.conversation.platform)) {
           await db.socialLeadMessage.update({ where: { id: inbound.id }, data: { autoReplyHandledAt: new Date(), autoReplyClaimedAt: null, autoReplyHandoffReason: generated.handoffReason || "This message needs a human response." } });
           summary.handedOff++;
@@ -130,6 +136,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           }
         }
         sendAttempted = true;
+        const deliveryStartedAt = Date.now();
         const providerMessageId = await sendSocialInboxMessage({
           connection: inbound.conversation.connection,
           conversationId: inbound.conversation.providerConversationId,
@@ -137,6 +144,7 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           recipientId: inbound.conversation.participantPlatformId,
           text: generated.replyText,
         });
+        deliveryMs = Date.now() - deliveryStartedAt;
         const sentAt = new Date();
         await db.$transaction(async (tx) => {
           if (providerMessageId) {
@@ -151,6 +159,13 @@ export async function processSocialInboxAutoReplies(messageIds?: string[]) {
           await tx.socialLeadConversation.update({ where: { id: inbound.conversationId }, data: { lastMessageAt: sentAt, lastMessagePreview: generated.replyText.slice(0, 500) } });
         });
         summary.sent++;
+        // Aggregate timings only; no customer text, credentials, or account IDs.
+        console.info("Social inbox AI reply timing", {
+          platform: inbound.conversation.platform,
+          queueWaitMs,
+          generationMs, deliveryMs,
+          processingMs: Date.now() - processingStartedAt,
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Automatic reply could not be sent.";
         const isLastAttempt = sendAttempted || inbound.autoReplyAttemptCount + 1 >= 3;

@@ -4,7 +4,7 @@ import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import UiSymbol from "@/components/ui/UiSymbol";
 import LinkedInPagePicker from "./LinkedInPagePicker";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export type AdditionalChannel = "facebook" | "linkedin" | "x";
 
@@ -36,7 +36,6 @@ export default function AdditionalChannelCard({
   connectedAt: string | null;
   isManager: boolean;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const meta = CHANNEL_META[channel];
   const [connectedAccount, setConnectedAccount] = useState(accountName);
@@ -55,7 +54,7 @@ export default function AdditionalChannelCard({
       const url = new URL(window.location.href);
       url.searchParams.delete(`${channel}Connected`);
       url.searchParams.delete(`${channel}Error`);
-      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     // The callback is a full OAuth navigation; process its result once.
     // eslint-disable-next-line react-hooks/exhaustive-deps

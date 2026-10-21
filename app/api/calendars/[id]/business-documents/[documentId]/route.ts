@@ -194,7 +194,7 @@ export async function DELETE(
         "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
     ) {
       console.error(
-        `Failed to release Content Workspace storage for business document ${documentId}:`,
+        `Failed to release Marketing Workspace storage for business document ${documentId}:`,
         error
       );
 

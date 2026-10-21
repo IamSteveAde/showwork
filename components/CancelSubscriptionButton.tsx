@@ -32,7 +32,7 @@ export default function CancelSubscriptionButton({ label = "Cancel subscription"
     return (
       <div className="flex flex-col gap-2">
         <p className="text-xs text-[#667085]">
-          Cancelling stops recurring payments and switches Project Delivery to Free (1 project/month). Projects you&apos;ve already published stay live. Content Workspace access stays unchanged.
+          Cancelling stops recurring payments and switches Project Delivery to Free (1 project/month). Projects you&apos;ve already published stay live. Marketing Workspace access stays unchanged.
         </p>
         <div className="flex gap-2">
           <button

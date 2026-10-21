@@ -917,7 +917,7 @@ function DeliverySubscription({
 }
 
 /* ============================================================
-   CONTENT WORKSPACE
+   MARKETING WORKSPACE
 ============================================================ */
 
 function ContentWorkspaceSubscription({
@@ -963,7 +963,7 @@ function ContentWorkspaceSubscription({
     : null;
 
   /*
-   * If the account has not created a Content Workspace
+   * If the account has not created a Marketing Workspace
    * yet, send the user to the actual workspace entry point.
    *
    * We deliberately do not invent another subscription
@@ -988,7 +988,7 @@ function ContentWorkspaceSubscription({
 
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#2478FF]">
-                      Content Workspace
+                      Marketing Workspace
                     </p>
 
                     <p className="mt-0.5 text-xs text-[#667085]">
@@ -1049,7 +1049,7 @@ function ContentWorkspaceSubscription({
                   href="/dashboard/calendars"
                   className="group mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-5 py-3 text-xs font-semibold text-white shadow-[0_10px_28px_rgba(36,120,255,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8]"
                 >
-                  Start Content Workspace
+                  Start Marketing Workspace
                   <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
@@ -1090,7 +1090,7 @@ function ContentWorkspaceSubscription({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#78AEFF]">
-                    Content Workspace
+                    Marketing Workspace
                   </p>
 
                   <span
@@ -1118,7 +1118,7 @@ function ContentWorkspaceSubscription({
                 </h2>
 
                 <p className="mt-1.5 max-w-lg text-sm leading-6 text-white/45">
-                  {agencyTrial && !(billingStatus === "ACTIVE" && plan === "UNLIMITED") ? billingStatus === "ACTIVE" ? `Your ${planDetails.name} subscription is active. Full Agency access remains available until your original trial ends, then your paid plan continues.` : "Agency trial access is active. Your selected plan applies after the trial." : "Your ongoing client workspace subscription."}
+                  {agencyTrial && !(billingStatus === "ACTIVE" && plan === "UNLIMITED") ? billingStatus === "ACTIVE" ? `Your ${planDetails.name} subscription is active. Full Agency access remains available until your original trial ends, then your paid plan continues.` : "Agency trial access is active. Your selected plan applies after the trial." : "Your ongoing marketing workspace subscription."}
                 </p>
               </div>
             </div>
@@ -1237,7 +1237,7 @@ function ContentWorkspaceSubscription({
             href="/dashboard/calendars"
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#D0D5DD] bg-white px-4 py-2.5 text-xs font-semibold text-[#344054] shadow-sm transition hover:bg-[#F9FAFB]"
           >
-            Open Content Workspace
+            Open Marketing Workspace
             <ArrowUpRightIcon className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -1340,7 +1340,7 @@ function WorkspacePlanComparison({
     <div id="content-workspace-plans" className="scroll-mt-6">
       <div className="mb-4">
         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#98A2B3]">
-          Content Workspace plans
+          Marketing Workspace plans
         </p>
 
         <h3 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-[#101828]">
@@ -1531,12 +1531,12 @@ export default function BillingSubscriptions({
     },
     {
       key: "content-workspace",
-      title: "Content Workspace",
+      title: "Marketing Workspace",
       icon: <WorkspaceIcon />,
       plan: workspacePlan ? CONTENT_WORKSPACE_PLANS[workspacePlan].name : "Not started",
       status: workspaceStatus,
       href: `/dashboard/billing?product=content-workspace&cycle=${selectedCycle}#subscription-details`,
-      action: "Manage Content Workspace",
+      action: "Manage Marketing Workspace",
     },
     {
       key: "portfolio",
@@ -1559,7 +1559,7 @@ export default function BillingSubscriptions({
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">Account billing</p>
               <h1 className="mt-2 text-[32px] font-semibold tracking-tight sm:text-[42px]">Billing & subscriptions</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#667085]">
-                Manage Project Delivery, Content Workspace and your free Portfolio in one place.
+                Manage Project Delivery, Marketing Workspace and your free Portfolio in one place.
               </p>
             </div>
             <div className="rounded-2xl border border-[#E7E9EE] bg-[#F9FAFB] px-4 py-3">
@@ -1597,7 +1597,7 @@ export default function BillingSubscriptions({
           )}
         </section>
         <p className="mt-10 pb-8 text-center text-[10px] text-[#98A2B3]">
-          Project Delivery and Content Workspace are billed separately. Portfolio is free.
+          Project Delivery and Marketing Workspace are billed separately. Portfolio is free.
         </p>
       </div>
     </main>
