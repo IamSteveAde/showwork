@@ -1705,6 +1705,8 @@ enum CalendarBillingStatus {
 }
 
 model SocialCalendar {
+  // Workspace-wide permission to dispatch queued social posts.
+  autoPublishEnabled Boolean @default(true)
   id           String  @id @default(uuid())
   slug         String  @unique
   clientName   String

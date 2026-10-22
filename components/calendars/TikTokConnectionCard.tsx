@@ -88,7 +88,7 @@ export default function TikTokConnectionCard({
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold leading-5 text-white">TikTok publishing</p>
               <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#718096]">
-                Auto-publish approved posts
+                Schedule approved posts
               </p>
             </div>
           </div>
@@ -119,11 +119,7 @@ export default function TikTokConnectionCard({
               After client approval, review TikTok settings and authorize each post to publish at its scheduled time.
               {connectedAt && ` Connected ${new Date(connectedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}
             </p>
-            <div className="mt-3 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2.5">
-              <p className="text-[11px] leading-relaxed text-amber-200/80">
-                <span className="font-semibold text-amber-200">While this app awaits TikTok&apos;s content audit:</span> TikTok requires a private account and Only me visibility for test posts. Public publishing requires TikTok approval.
-              </p>
-            </div>
+
           </>
         ) : (
           <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">

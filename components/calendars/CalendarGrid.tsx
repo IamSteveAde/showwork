@@ -16,6 +16,7 @@ import SocialFeedPreview from "@/components/calendars/SocialFeedPreview";
 import InstagramPreview from "@/components/calendars/InstagramPreview";
 import TikTokPreview from "@/components/calendars/TikTokPreview";
 import TikTokPrivacySelect from "@/components/calendars/TikTokPrivacySelect";
+import AutoPublishToggle from "@/components/calendars/AutoPublishToggle";
 import SocialPostPublishing from "@/components/calendars/SocialPostPublishing";
 import ResetCalendarButton from "@/components/calendars/ResetCalendarButton";
 import ImportCalendar from "@/components/calendars/ImportCalendar";
@@ -556,7 +557,10 @@ function PostTile({
   const sharedStatusMeta = post.publishStatus && post.publishStatus !== "NOT_SCHEDULED"
     ? { text: post.publishStatus === "PUBLISHED" ? `Published to ${meta.label}` : post.publishStatus === "SCHEDULED" ? "Scheduled to publish" : post.publishStatus === "PUBLISHING" ? "Publishing now" : "Publish failed", color: post.publishStatus === "FAILED" ? "#EF4444" : "#2478FF" }
     : null;
-  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? approvalMeta;
+  const tikTokSetupMeta = post.platform === "TIKTOK" && post.approvalStatus === "APPROVED" && post.tikTokPublishStatus === "NOT_SCHEDULED"
+    ? { text: "Authorize to schedule", color: "#D97706" }
+    : null;
+  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? tikTokSetupMeta ?? approvalMeta;
 
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
@@ -5900,6 +5904,7 @@ export default function CalendarGrid({
           CALENDAR HEADER
           ===================================================== */}
 
+      <AutoPublishToggle calendarId={calendarId} canManage={isOwner || (permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR")} />
       <div className="
         mb-5
         flex

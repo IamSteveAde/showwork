@@ -28,7 +28,7 @@ export function createPublishingValidationAdapters(deps:ValidationDependencies){
  }
  async function clock(tx:Tx):Promise<Date>{return (await tx.query('SELECT clock_timestamp() AS now')).rows[0].now;}
  async function workspace(tx:Tx,calendarId:string){
-  id(calendarId);const calendar=(await tx.query(`SELECT id,"managerId","createdAt" FROM "SocialCalendar" WHERE id=$1`,[calendarId])).rows[0];ensure(calendar,'WORKSPACE_MISSING');
+  id(calendarId);const calendar=(await tx.query(`SELECT id,"managerId","createdAt","autoPublishEnabled" FROM "SocialCalendar" WHERE id=$1`,[calendarId])).rows[0];ensure(calendar,'WORKSPACE_MISSING');
   const owner=(await tx.query(`SELECT id,"isDeactivated","contentWorkspacePlan","contentWorkspaceBillingStatus","contentWorkspaceTrialEndsAt","isComped","compedUntil","workspaceCompedPlan","workspaceCompedUntil","billingComplimentaryGrants" FROM "Creator" WHERE id=$1`,[calendar.managerId])).rows[0];ensure(owner,'OWNER_MISSING');
   const hasRetirement=(await tx.query(`SELECT to_regclass('"PublishingResourceTombstone"') IS NOT NULL AS present`)).rows[0].present;
   const ordinal=(await tx.query(`SELECT count(*)::integer AS ordinal FROM "SocialCalendar" c WHERE "managerId"=$1 AND ("createdAt",id)<=(SELECT "createdAt",id FROM "SocialCalendar" WHERE id=$2) ${hasRetirement?`AND NOT EXISTS(SELECT 1 FROM "PublishingResourceTombstone" t WHERE t."resourceType"='WORKSPACE' AND t."resourceId"=c.id)`:''}`,[owner.id,calendar.id])).rows[0].ordinal;
@@ -106,6 +106,7 @@ export function createPublishingValidationAdapters(deps:ValidationDependencies){
   if((await tx.query(`SELECT to_regclass('"PublishingEligibilityHold"') IS NOT NULL AS present`)).rows[0].present&&
    (await tx.query(`SELECT 1 FROM "PublishingEligibilityHold" WHERE "intentId"=$1 AND revision=$2`,[job.intentId,job.revision])).rows.length)throw new PublishingValidationError('EXPLICIT_REAUTHORIZATION_REQUIRED');
   const s=await snapshot(tx,job.postId),now=await clock(tx);
+  ensure(s.calendar.autoPublishEnabled!==false,'AUTO_PUBLISH_PAUSED');
   const p=(await tx.query(`SELECT * FROM "PublishingRevisionPolicy" WHERE "intentId"=$1 AND revision=$2`,[job.intentId,job.revision])).rows[0];
   ensure(p&&p.principalKind==='CREATOR'&&p.calendarId===s.calendar.id&&p.ownerId===s.owner.id,'REVISION_AUTHORITY_CHANGED');
   approved(s);

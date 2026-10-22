@@ -177,7 +177,7 @@ export function createPlatformIntegration(port: Port, options: { verifyPublicati
         throw new UncertainPublication(reference);
       });
     } catch (error) {
-      if (!attempted || rejected) return { state: transient(error) || port.hadTransientFailure(job.postId) ? "retryable" : "rejected", resetTikTokInit: job.platform === "TIKTOK" && !snapshot.post.tikTokInitStartedAt && !snapshot.post.tikTokPublishId, reason: error instanceof Error ? error.message : "Native publishing failed" };
+      if (!attempted || rejected) return { state: beginDeferred || transient(error) || port.hadTransientFailure(job.postId) ? "retryable" : "rejected", resetTikTokInit: job.platform === "TIKTOK" && !snapshot.post.tikTokInitStartedAt && !snapshot.post.tikTokPublishId, reason: error instanceof Error ? error.message : "Native publishing failed" };
       throw new UncertainPublication(reference, knownProof(job));
     } finally { prepared.delete(job.id); }
   }

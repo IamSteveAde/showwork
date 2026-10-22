@@ -14,7 +14,7 @@ test('Stage 4C.2 policy adapters on disposable PostgreSQL',async t=>{
   async function q(sql,args){const c=await pool.connect();try{await c.query(`SET search_path TO ${schema}`);return await c.query(sql,args);}finally{c.release();}}
   await q(`CREATE TYPE "SocialPlatform" AS ENUM('INSTAGRAM','TIKTOK','FACEBOOK','LINKEDIN','X');
    CREATE TABLE "Creator"(id text PRIMARY KEY,"isDeactivated" boolean NOT NULL DEFAULT false,"contentWorkspacePlan" text DEFAULT 'CREATOR',"contentWorkspaceBillingStatus" text DEFAULT 'ACTIVE',"contentWorkspaceTrialEndsAt" timestamptz,"isComped" boolean DEFAULT false,"compedUntil" timestamptz,"workspaceCompedPlan" text,"workspaceCompedUntil" timestamptz,"billingComplimentaryGrants" jsonb);
-   CREATE TABLE "SocialCalendar"(id text PRIMARY KEY,"managerId" text NOT NULL,"createdAt" timestamptz NOT NULL DEFAULT now());
+   CREATE TABLE "SocialCalendar"(id text PRIMARY KEY,"autoPublishEnabled" boolean NOT NULL DEFAULT true,"managerId" text NOT NULL,"createdAt" timestamptz NOT NULL DEFAULT now());
    CREATE TABLE "CalendarCollaborator"(id text PRIMARY KEY,"calendarId" text NOT NULL,"creatorId" text NOT NULL,role text NOT NULL,permissions text[] NOT NULL DEFAULT '{}',"customPermissions" boolean NOT NULL DEFAULT false,UNIQUE("calendarId","creatorId"));
    CREATE TABLE "CalendarPost"(id text PRIMARY KEY,"calendarId" text NOT NULL,platform "SocialPlatform" NOT NULL,caption text,cta text,hashtags text,"taggedAccounts" text,"linkUrl" text,"postType" text,"approvalStatus" text DEFAULT 'APPROVED',"isAiDraft" boolean DEFAULT false,"instagramPublishStatus" text DEFAULT 'NOT_SCHEDULED',"tikTokPublishStatus" text DEFAULT 'NOT_SCHEDULED',"publishStatus" text DEFAULT 'SCHEDULED',"tikTokSettings" jsonb,"tikTokConsentAccountId" text,"tikTokConsentAt" timestamptz,"tikTokConsentBy" text,"tikTokConsentVersion" text,"tikTokConsentHash" text,"updatedAt" timestamptz DEFAULT now());
    CREATE TABLE "CalendarPostAsset"(id text PRIMARY KEY,"postId" text NOT NULL,"fileKey" text NOT NULL,"mediaType" text NOT NULL,"displayOrder" integer NOT NULL);
@@ -52,6 +52,14 @@ test('Stage 4C.2 policy adapters on disposable PostgreSQL',async t=>{
   await run({q,db,owner,adapters,actions,store,rawStore,accountInput,req,op,prepare,authorize,allowProof:()=>{allowProof=true;},lose:()=>{lose=true;}});
  }
  try{
+  await t.test('workspace pause blocks prepared delivery and can resume without reapproval',()=>fixture(async h=>{
+   const s=await h.prepare();
+   await h.q(`UPDATE "SocialCalendar" SET "autoPublishEnabled"=false WHERE id='calendar'`);
+   await assert.rejects(h.authorize(s),/AUTO_PUBLISH_PAUSED/);
+   assert.equal((await h.q(`SELECT count(*)::int n FROM "PublishingExternalAttempt"`)).rows[0].n,0);
+   await h.q(`UPDATE "SocialCalendar" SET "autoPublishEnabled"=true WHERE id='calendar'`);
+   assert.equal((await h.authorize(s)).maySend,true);
+  }));
   await t.test('owner and collaborator schedule with current role policy',()=>fixture(async h=>{const s=await h.prepare('collab');assert.equal((await h.authorize(s)).maySend,true);assert.equal((await h.q(`SELECT "principalId" FROM "PublishingRevisionPolicy"`)).rows[0].principalId,'collab');}));
   await t.test('outsider, creative-only and custom permissions without view dependency fail',()=>fixture(async h=>{
    await assert.rejects(h.actions.schedule(h.req('outsider','outsider')));

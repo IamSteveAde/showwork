@@ -13,8 +13,17 @@ export async function runPublishJob(postId: string, platform: SocialPlatform, di
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/worker.ts#runPublishJob@11"); } /* end-canonical-integration-boundary */
 
   if (!PUBLISHING_PLATFORMS.includes(platform)) throw new Error("Unsupported publishing channel.");
+  // Return unsent dispatches to the queue while paused. Never reset an
+  // accepted TikTok operation: it still needs reconciliation.
+  await db.calendarPost.updateMany({ where: {
+    id: postId, ...statusWhere(platform, "PUBLISHING"), updatedAt: dispatchedAt,
+    publishWorkerStartedAt: null, calendar: { autoPublishEnabled: false },
+    ...(platform === "TIKTOK" ? { tikTokPublishId: null } : {}),
+  }, data: statusUpdate(platform, "SCHEDULED") });
   const claimed = await db.calendarPost.updateMany({ where: {
-    id: postId, ...statusWhere(platform, "PUBLISHING"), approvalStatus: "APPROVED", isAiDraft: false, publishWorkerStartedAt: null, updatedAt: dispatchedAt,
+    id: postId, OR: [{ calendar: { autoPublishEnabled: true } },
+      ...(platform === "TIKTOK" ? [{ tikTokPublishId: { not: null } }] : [])],
+    ...statusWhere(platform, "PUBLISHING"), approvalStatus: "APPROVED", isAiDraft: false, publishWorkerStartedAt: null, updatedAt: dispatchedAt,
   }, data: { publishWorkerStartedAt: new Date() } });
   if (claimed.count !== 1) return;
   try {
