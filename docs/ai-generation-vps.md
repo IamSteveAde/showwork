@@ -43,3 +43,23 @@ interruption after 16 minutes and asks the user to check drafts before retrying.
 No existing publishing worker, schedule or publishing activation gate changes.
 The separately enabled canonical application integration continues to own its
 existing request path.
+
+## Web/worker protocol mismatch (2026-10-23)
+
+Observed failed jobs had no result or HTTP status; their legacy error field
+reported `Cannot destructure property 'startDate' from null or undefined value`.
+The current web app writes `request`; the older job implementation read
+`payload` and saved errors separately. Those jobs cannot be fixed by retrying
+against the same outdated worker.
+
+The compatibility facade now maps the legacy API onto the Prisma job schema
+(request, result, httpStatus, RUNNING). It no longer creates a conflicting table
+at runtime. Status polling returns a structured error for missing terminal
+results, and the current worker rejects malformed generator responses.
+
+Deploy the updated web app and rebuild/restart the dedicated AI worker using
+the configured service's repository and build path. Stop any obsolete AI
+consumer of this same queue; do not stop publishing or messaging workers.
+No database reset or automatic replay of failed jobs is required. Check drafts
+before submitting a new generation. The code changes do not update a running
+VPS process until its bundle is rebuilt and its service restarted.

@@ -11,7 +11,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const job = await db.aiGenerationJob.findFirst({ where: { id: jobId, calendarId: id, creatorId: creator.id } });
   if (!job) return NextResponse.json({ error: "Generation not found" }, { status: 404 });
   if (job.status === "COMPLETED" || job.status === "FAILED") {
-    return NextResponse.json(job.result, { status: job.httpStatus || 500, headers: { "Cache-Control": "no-store" } });
+    const result = job.result;
+    const valid = result !== null && typeof result === "object" && !Array.isArray(result);
+    if (!valid) return NextResponse.json({
+      error: "The AI worker did not return a valid result. Check your drafts before retrying. The server administrator should update and restart the AI generation worker.",
+      code: "AI_WORKER_RESULT_MISSING",
+    }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    const status = job.status === "FAILED"
+      ? (job.httpStatus && job.httpStatus >= 400 && job.httpStatus <= 599 ? job.httpStatus : 500)
+      : (job.httpStatus && job.httpStatus >= 200 && job.httpStatus < 300 ? job.httpStatus : 200);
+    return NextResponse.json(result, { status, headers: { "Cache-Control": "no-store" } });
   }
   const progressAt = job.status === "RUNNING" ? job.updatedAt : job.createdAt;
   if (Date.now() - progressAt.getTime() > 16 * 60_000) {

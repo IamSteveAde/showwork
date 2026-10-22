@@ -120,3 +120,35 @@ test('VPS worker polls pending jobs, expires old admissions and drains on shutdo
     }
   }
 });
+test('failed legacy jobs return a structured actionable error instead of JSON null',async()=>{
+ for(const result of [null,[], 'invalid']) {
+  const api=load('app/api/calendars/[id]/ai-generate/[jobId]/route.ts',{
+   '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},'@/lib/calendarPermissions':{hasCalendarPermission:async()=>true},
+   '@/lib/db':{db:{aiGenerationJob:{findFirst:async()=>({status:'FAILED',httpStatus:null,result})}}},
+  });
+  const response=await api.GET(new NextRequest('http://localhost'),{params:Promise.resolve({id:'calendar',jobId:'job'})});
+  assert.equal(response.status,502);assert.equal((await response.json()).code,'AI_WORKER_RESULT_MISSING');
+ }
+});
+test('completed legacy job with a valid result does not become HTTP 500 because status was absent',async()=>{
+ const api=load('app/api/calendars/[id]/ai-generate/[jobId]/route.ts',{
+  '@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},'@/lib/calendarPermissions':{hasCalendarPermission:async()=>true},
+  '@/lib/db':{db:{aiGenerationJob:{findFirst:async()=>({status:'COMPLETED',httpStatus:null,result:{created:3}})}}},
+ });
+ const response=await api.GET(new NextRequest('http://localhost'),{params:Promise.resolve({id:'calendar',jobId:'job'})});
+ assert.equal(response.status,200);assert.deepEqual(await response.json(),{created:3});
+});
+test('worker cannot mark a null generation response as completed',async()=>{
+ const f=fixture(async()=>NextResponse.json(null));await f.api.runAiGenerationJob('job');
+ assert.equal(f.job.status,'FAILED');assert.equal(f.job.httpStatus,500);assert.equal(typeof f.job.result.error,'string');
+});
+test('legacy worker facade maps request to payload and stores failures in the modern result envelope',async()=>{
+ let update;
+ const api=load('lib/aiGenerationJob.ts',{'./db':{db:{aiGenerationJob:{
+  findUnique:async()=>({id:'job',request:{startDate:'2026-10-23'},status:'RUNNING',result:null,updatedAt:new Date()}),
+  update:async args=>{update=args.data;},
+ }}}});
+ const job=await api.getAiGenerationJob('job');assert.deepEqual(job.payload,{startDate:'2026-10-23'});assert.equal(job.status,'PROCESSING');
+ await api.updateAiGenerationJob('job',{status:'FAILED',error:'Generation failed'});
+ assert.equal(update.status,'FAILED');assert.equal(update.httpStatus,500);assert.deepEqual(update.result,{error:'Generation failed'});
+});

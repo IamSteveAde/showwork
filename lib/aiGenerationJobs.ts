@@ -42,8 +42,10 @@ export async function runAiGenerationJob(jobId: string) {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(job.request),
       }), { params: Promise.resolve({ id: job.calendarId }) }, creator)
       : NextResponse.json({ error: "Account no longer available." }, { status: 401 });
+    const result = await response.json();
+    if (!result || typeof result !== "object" || Array.isArray(result)) throw new Error("Invalid generation result");
     await db.aiGenerationJob.update({ where: { id: jobId }, data: {
-      status: response.ok ? "COMPLETED" : "FAILED", httpStatus: response.status, result: await response.json(),
+      status: response.ok ? "COMPLETED" : "FAILED", httpStatus: response.status, result,
     } });
   } catch (error) {
     console.error("AI_JOB_FAILED", { jobId });
