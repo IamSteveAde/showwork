@@ -6,6 +6,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { buildTikTokAuthUrl } from "@/lib/tiktok";
 import { appUrl } from "@/lib/url";
+import { tikTokRedirectUri } from "@/lib/tiktokOAuthConfig";
 
 // GET — starts the TikTok connection flow for one calendar.
 // Manager-only, same trust boundary as the Instagram connect route —
@@ -26,7 +27,7 @@ export async function GET(
     return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&tiktokError=not_found`);
   }
 
-  const redirectUri = `${appUrl()}/api/calendars/tiktok/callback`;
+  const redirectUri = tikTokRedirectUri();
 
   try {
     const state = createChannelOAuthState("tiktok", id);

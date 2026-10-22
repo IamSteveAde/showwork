@@ -38,3 +38,24 @@ test('missing Insights permission preserves basic feed and avoids unauthorized p
   assert.equal(result.accountPosts[0].saves, undefined);
   assert.equal(api.calls.some(url => url.pathname.endsWith('/native/insights')), false);
 });
+for (const code of [190, 10, 200, 4, 613]) {
+  test(`Meta error ${code} is surfaced instead of becoming unavailable metrics`, async () => {
+    const api = mock(); const upstream = global.fetch; let failures = 0;
+    global.fetch = async input => {
+      if (new URL(input).pathname.endsWith('/native/insights')) {
+        failures++;return Response.json({error:{code,message:'Access or rate limit failure'}},{status:400});
+      }
+      return upstream(input);
+    };
+    await assert.rejects(api.run(), new RegExp(`Meta code ${code}`));assert.equal(failures,1);
+  });
+}
+test('malformed successful responses fail visibly',async()=>{
+  global.fetch=async()=>new Response('invalid JSON');
+  await assert.rejects(load('lib/reporting/adapters/instagram.ts').instagramReportingAdapter.fetchAccountMetrics(connection('instagram_basic')),/invalid reporting response/);
+});
+test('linked posts without Insights permission keep basic counts without insights calls',async()=>{
+  let calls=0;global.fetch=async input=>{calls++;assert.ok(!new URL(input).pathname.endsWith('/insights'));return Response.json({like_count:4,comments_count:2});};
+  const result=await load('lib/reporting/adapters/instagram.ts').instagramReportingAdapter.fetchPostMetrics(connection('instagram_basic'),[{id:'post',platformPostId:'media'}]);
+  assert.equal(calls,1);assert.equal(result.get('post').likes,4);assert.equal(result.get('post').saves,null);
+});

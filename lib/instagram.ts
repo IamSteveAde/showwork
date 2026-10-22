@@ -42,6 +42,7 @@ interface FacebookPage {
   tasks?: string[];
   instagram_business_account?: {
     id: string;
+    username?: string;
   };
 }
 
@@ -91,13 +92,17 @@ function requireAppCredentials(): {
 const INSTAGRAM_BASE_OAUTH_SCOPES =
   "instagram_basic,instagram_content_publish,instagram_manage_messages,pages_read_engagement,pages_show_list,pages_manage_metadata";
 
-// Only request this after `instagram_manage_insights` is enabled for the
-// configured Meta app. Meta rejects the entire OAuth request as Invalid Scopes
-// when the app has not been granted access to this permission.
+// Enable globally only after Advanced Access approval. Before approval,
+// explicitly allowlist Showwork creators whose Facebook user has an app role.
 export const INSTAGRAM_OAUTH_SCOPES =
   process.env.INSTAGRAM_REQUEST_INSIGHTS_SCOPE === "true"
     ? `${INSTAGRAM_BASE_OAUTH_SCOPES},instagram_manage_insights`
     : INSTAGRAM_BASE_OAUTH_SCOPES;
+
+export function instagramInsightsEnabledForCreator(creatorId?: string): boolean {
+  return process.env.INSTAGRAM_REQUEST_INSIGHTS_SCOPE === "true" || !!creatorId &&
+    (process.env.INSTAGRAM_INSIGHTS_REVIEW_CREATOR_IDS ?? "").split(",").map(id => id.trim()).filter(Boolean).includes(creatorId);
+}
 
 // ─────────────────────────────────────────────────────────────
 // OAUTH URL
@@ -106,16 +111,21 @@ export const INSTAGRAM_OAUTH_SCOPES =
 export function buildInstagramAuthUrl({
   redirectUri,
   state,
+  creatorId,
 }: {
   redirectUri: string;
   state: string;
+  creatorId?: string;
 }): string {
   const { APP_ID } = requireAppCredentials();
 
   const params = new URLSearchParams({
     client_id: APP_ID,
     redirect_uri: redirectUri,
-    scope: INSTAGRAM_OAUTH_SCOPES,
+    scope: instagramInsightsEnabledForCreator(creatorId)
+      ? `${INSTAGRAM_BASE_OAUTH_SCOPES},instagram_manage_insights`
+      : INSTAGRAM_BASE_OAUTH_SCOPES,
+    auth_type: "rerequest",
     state,
     response_type: "code",
   });
@@ -267,15 +277,24 @@ export async function exchangeForLongLivedToken(
 export async function listManagedPages(
   userAccessToken: string
 ): Promise<FacebookPage[]> {
-  const result = await graphGet<{ data: FacebookPage[] }>(
-    "/me/accounts",
-    {
-      access_token: userAccessToken,
-      fields: "id,name,access_token,tasks,instagram_business_account",
-    }
-  );
-
-  return result.data ?? [];
+  const pages: FacebookPage[] = [];
+  let after: string | undefined;
+  const cursors = new Set<string>();
+  do {
+    const result: { data?: FacebookPage[]; paging?: { next?: string; cursors?: { after?: string } } } = await graphGet(
+      "/me/accounts", {
+        access_token: userAccessToken,
+        fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
+        limit: "100",
+        ...(after ? { after } : {}),
+      },
+    );
+    pages.push(...(result.data ?? []));
+    after = result.paging?.next ? result.paging.cursors?.after : undefined;
+    if (after && cursors.has(after)) throw new Error("Meta returned a repeated Page cursor.");
+    if (after) cursors.add(after);
+  } while (after);
+  return pages;
 }
 
 export async function listInstagramGrantedPermissions(userAccessToken: string): Promise<string[]> {

@@ -31,7 +31,9 @@ function requireAppCredentials() {
 
 // user.info.basic — for the account's display name/username.
 // video.publish — the actual Direct Post permission.
-export const TIKTOK_OAUTH_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish";
+// Request only scopes approved for the current Live app. Analytics scope
+// support stays in the reporting adapter until the new app version is approved.
+export const TIKTOK_OAUTH_SCOPES = "user.info.basic,video.publish";
 
 /** Builds the TikTok authorization page URL the manager is redirected to. */
 export function buildTikTokAuthUrl({ redirectUri, state, codeChallenge }: { redirectUri: string; state: string; codeChallenge: string }): string {

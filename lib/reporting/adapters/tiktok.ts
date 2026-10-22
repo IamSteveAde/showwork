@@ -6,6 +6,12 @@ import type { NormalizedSocialMetrics, PublishedPostRef, SocialAccountPostRecord
 const API_BASE = "https://open.tiktokapis.com/v2";
 const REPORTING_HISTORY_DAYS = 366;
 const MAX_VIDEO_LIST_PAGES = 10;
+type TikTokUserStats = {
+  follower_count?: number;
+  following_count?: number;
+  likes_count?: number;
+  video_count?: number;
+};
 
 async function apiGet<T>(path: string, token: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -44,12 +50,8 @@ async function apiPost<T>(path: string, token: string, body: unknown): Promise<T
   return data.data as T;
 }
 
-function requireScopes(connection: SocialConnection, required: string[]) {
-  const scopes = new Set((connection.tokenScopes ?? "").split(/[\s,]+/).filter(Boolean));
-  const missing = required.filter((scope) => !scopes.has(scope));
-  if (missing.length) {
-    throw new Error(`TikTok reporting permissions are missing (${missing.join(", ")}). Reconnect TikTok after enabling these scopes in the developer app.`);
-  }
+function hasScope(connection: SocialConnection, scope: string): boolean {
+  return (connection.tokenScopes ?? "").split(/[\s,]+/).includes(scope);
 }
 
 export const tiktokReportingAdapter: SocialReportingAdapter = {
@@ -60,17 +62,24 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
   },
 
   async fetchAccountMetrics(connection): Promise<NormalizedSocialMetrics> {
-    requireScopes(connection, ["user.info.stats"]);
-    requireScopes(connection, ["video.list"]);
+    const canReadStats = hasScope(connection, "user.info.stats");
+    const canReadVideos = hasScope(connection, "video.list");
+    const missing = [!canReadStats && "user.info.stats", !canReadVideos && "video.list"].filter(Boolean);
+    const reportingWarnings = missing.length
+      ? [`TikTok analytics unavailable for permissions not granted: ${missing.join(", ")}. You do not need to disconnect TikTok. Analytics requires TikTok approval and a new authorization after approval.`]
+      : [];
     if (!connection.accessToken) throw new Error("TikTok connection needs to be renewed.");
     const [result, videos] = await Promise.all([
-      apiGet<{
-      user?: { follower_count?: number; following_count?: number; likes_count?: number; video_count?: number };
-      }>("/user/info/?fields=follower_count,following_count,likes_count,video_count", connection.accessToken),
-      listReportingVideos(connection.accessToken),
+      canReadStats
+        ? apiGet<{ user?: TikTokUserStats }>(
+            "/user/info/?fields=follower_count,following_count,likes_count,video_count", connection.accessToken,
+          )
+        : Promise.resolve<{ user?: TikTokUserStats }>({}),
+      canReadVideos ? listReportingVideos(connection.accessToken) : Promise.resolve([]),
     ]);
     const user = result.user ?? {};
     return {
+      reportingWarnings,
       followers: typeof user.follower_count === "number" ? user.follower_count : null,
       // TikTok returns current lifetime counters per video, not a historical
       // daily account time series. The report aggregates these on native posts.
@@ -98,13 +107,13 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
         ...(typeof user.following_count === "number" ? { followingCount: user.following_count } : {}),
         ...(typeof user.likes_count === "number" ? { totalLikes: user.likes_count } : {}),
         ...(typeof user.video_count === "number" ? { videoCount: user.video_count } : {}),
-        reportedVideos: videos.length,
+        ...(canReadVideos ? { reportedVideos: videos.length } : {}),
       },
     };
   },
 
   async fetchPostMetrics(connection: SocialConnection, posts: PublishedPostRef[]) {
-    requireScopes(connection, ["video.list"]);
+    if (!hasScope(connection, "video.list")) return new Map<string, NormalizedSocialMetrics>();
     if (!connection.accessToken) throw new Error("TikTok connection needs to be renewed.");
     const postsWithIds = posts.filter((post) => !!post.platformPostId);
     const results = new Map<string, NormalizedSocialMetrics>();

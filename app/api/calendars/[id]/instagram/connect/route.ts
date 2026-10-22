@@ -4,15 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { buildInstagramAuthUrl } from "@/lib/instagram";
+import { createChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
 import { appUrl } from "@/lib/url";
 
-// GET — starts the Instagram connection flow for one calendar.
-// Manager-only (not collaborators, even ones with EDIT_CALENDAR —
-// connecting a real social account on someone's behalf is a bigger
-// trust decision than editing posts). Redirects straight to
-// Facebook's OAuth dialog; the calendar id travels through as
-// `state` so the callback knows which calendar to attach the
-// connection to once Facebook redirects back.
+// Start a manager-authorized OAuth flow with signed, browser-bound state.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,8 +25,11 @@ export async function GET(
   const redirectUri = `${appUrl()}/api/calendars/instagram/callback`;
 
   try {
-    const authUrl = buildInstagramAuthUrl({ redirectUri, state: id });
-    return NextResponse.redirect(authUrl);
+    const state = createChannelOAuthState("instagram", id);
+    const authUrl = buildInstagramAuthUrl({ redirectUri, state: state.state, creatorId: creator.id });
+    const response = NextResponse.redirect(authUrl);
+    response.cookies.set(state.cookieName, state.nonce, channelOAuthCookieOptions("instagram", state.maxAge));
+    return response;
   } catch (err) {
     console.error("Failed to build Instagram auth URL:", err);
     return NextResponse.redirect(`${appUrl()}/dashboard/calendars/${id}?view=channels&instagramError=not_configured`);

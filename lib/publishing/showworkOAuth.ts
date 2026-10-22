@@ -5,6 +5,7 @@ import {verifyChannelOAuthState,channelOAuthCookieOptions,xPkceCookieName,create
 import {exchangeChannelCode,getXMember,getLinkedInMember,exchangeForLongLivedFacebookToken,getFacebookPages,getFacebookGrantedPermissions} from '../channelOAuth';
 import {createFacebookPageSelection,verifyFacebookPageSelection,facebookPageSelectionCookieName,facebookPageSelectionCookieOptions} from '../facebookPageSelection';
 import {appUrl} from '../url';
+import {tikTokRedirectUri} from '../tiktokOAuthConfig';
 import {policyHash} from './eligibilityPolicy';
 import {createPublishingValidationAdapters,type ValidationDependencies} from './validationAdapters';
 import type {createCanonicalApplicationActions} from './applicationActions';
@@ -59,7 +60,7 @@ export function createCanonicalShowworkOAuth(deps:{database:OwnershipDatabase;ac
   }
   if(path.endsWith('/instagram/connect/route.ts')){
    await deps.database.transaction(tx=>validation.validateWorkspacePermission(tx,{actor:creator.id,calendarId:params.id,permission:'channels.manage'}));
-   const state=createChannelOAuthState('instagram',params.id),response=NextResponse.redirect(buildInstagramAuthUrl({redirectUri:appUrl()+'/api/calendars/instagram/callback',state:state.state}));response.cookies.set(state.cookieName,state.nonce,channelOAuthCookieOptions('instagram',state.maxAge));return response;
+   const state=createChannelOAuthState('instagram',params.id),response=NextResponse.redirect(buildInstagramAuthUrl({redirectUri:appUrl()+'/api/calendars/instagram/callback',state:state.state,creatorId:creator.id}));response.cookies.set(state.cookieName,state.nonce,channelOAuthCookieOptions('instagram',state.maxAge));return response;
   }
   if(path==='app/api/calendars/instagram/callback/route.ts'||path==='app/api/calendars/tiktok/callback/route.ts'){
    const channel=path.includes('/instagram/')?'instagram':'tiktok',state=request.nextUrl.searchParams.get('state'),calendarId=verifyChannelOAuthState(channel,state,request.cookies.get(`showwork_${channel}_oauth_state`)?.value),code=request.nextUrl.searchParams.get('code');
@@ -74,7 +75,7 @@ export function createCanonicalShowworkOAuth(deps:{database:OwnershipDatabase;ac
    if(fresh){
     if(channel==='tiktok'){
      const verifier=readTikTokVerifier(request.cookies.get(TIKTOK_PKCE_COOKIE)?.value,request.cookies.get('showwork_tiktok_oauth_state')?.value);if(!verifier)throw Error('TIKTOK_PKCE_REQUIRED');
-     const tokens=await bounded(()=>services.tiktokExchange(code,appUrl()+'/api/calendars/tiktok/callback',verifier));if(!tokens.scope.split(/[\s,]+/).includes('video.publish'))throw Error('TIKTOK_PERMISSION_REQUIRED');const name=await bounded(()=>services.tiktokName(tokens.access_token));
+     const tokens=await bounded(()=>services.tiktokExchange(code,tikTokRedirectUri(),verifier));if(!tokens.scope.split(/[\s,]+/).includes('video.publish'))throw Error('TIKTOK_PERMISSION_REQUIRED');const name=await bounded(()=>services.tiktokName(tokens.access_token));
      await deps.actions.bindVerifiedAccount({operationId,actor:creator.id,calendarId,platform:'TIKTOK',evidence:{platform:'TIKTOK',providerAccountId:tokens.open_id,connectionId:policyHash({calendarId,platform:'TIKTOK',id:tokens.open_id}).slice(0,40),accessToken:tokens.access_token,refreshToken:tokens.refresh_token,expiresAt:expires(tokens.expires_in),refreshTokenExpiresAt:expires(tokens.refresh_expires_in)??undefined,tokenScopes:tokens.scope,accountName:name,username:name}});
     }else{
      const short=await bounded(()=>services.instagramExchange(code,appUrl()+'/api/calendars/instagram/callback')),tokens=await bounded(()=>services.instagramLong(short.access_token)),pages=await bounded(()=>services.instagramPages(tokens.access_token)),permissions=await bounded(()=>services.instagramPermissions(tokens.access_token));

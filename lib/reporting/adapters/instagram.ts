@@ -13,11 +13,13 @@ type InstagramGraphRequestError = Error & {
 
 async function graphGet<T>(path: string, token: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(`${GRAPH_BASE}${path}`);
-  url.search = new URLSearchParams({ ...params, access_token: token }).toString();
-  const response = await fetch(url, { cache: "no-store" });
-  const data = await response.json().catch(() => ({})) as T & GraphError;
+  url.search = new URLSearchParams(params).toString();
+  const response = await fetch(url, { cache: "no-store", headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(15_000) });
+  const data = await response.json().catch(() => {
+    throw new Error("Instagram returned an invalid reporting response. Try syncing again.");
+  }) as T & GraphError;
   if (!response.ok || data.error) {
-    const detail = data.error?.message || `Instagram reporting request failed (${response.status}).`;
+    const detail = data.error?.message?.replaceAll(token, "[redacted]") || `Instagram reporting request failed (${response.status}).`;
     const code = typeof data.error?.code === "number" ? ` (Meta code ${data.error.code})` : "";
     const request = path.replace(/^\/+/, "");
     const error = new Error(data.error?.code === 190
@@ -28,6 +30,12 @@ async function graphGet<T>(path: string, token: string, params: Record<string, s
     throw error;
   }
   return data;
+}
+
+function isUnsupportedMetric(error: unknown): boolean {
+  const graphError = error as InstagramGraphRequestError;
+  return graphError.metaCode === 100 && graphError.metaSubcode !== 33 &&
+    /metric/i.test(graphError.message) && /invalid|unsupported|not supported|must be|valid/i.test(graphError.message);
 }
 
 function valueFromInsights(data: UserInsight[], name: string) {
@@ -139,6 +147,7 @@ async function readAccountInsights(accountId: string, token: string) {
       }
       if (insight) data.push(insight);
     } catch (error) {
+      if (!isUnsupportedMetric(error)) throw error;
       // Keep other metrics available, but make an unavailable metric visible
       // in server logs rather than silently treating it as a real zero.
       const detail = error instanceof Error ? error.message : "Unknown insights error";
@@ -201,7 +210,8 @@ async function readMediaInsights(mediaId: string, token: string) {
       { metric: "reach,views,saved,shares,total_interactions" },
     );
     return result.data ?? [];
-  } catch {
+  } catch (error) {
+    if (!isUnsupportedMetric(error)) throw error;
     // Some metric names vary by media type and API version. Retry each
     // metric separately so a single unsupported metric does not hide the
     // metrics this account can provide.
@@ -212,7 +222,8 @@ async function readMediaInsights(mediaId: string, token: string) {
           `/${mediaId}/insights`, token, { metric },
         );
         values.push(...(result.data ?? []));
-      } catch {
+      } catch (error) {
+        if (!isUnsupportedMetric(error)) throw error;
         // Unsupported for this media/account: leave it unavailable.
       }
     }
@@ -239,10 +250,7 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
             rangeViews: null,
             warnings: ["Instagram Insights permission is missing; account metrics cannot be read until the account is reconnected with instagram_manage_insights."],
           }),
-      readAccountPosts(connection.platformAccountId, connection.accessToken, scopes.has("instagram_manage_insights")).catch((error) => {
-        console.warn("Instagram account post list could not be read:", error);
-        return [];
-      }),
+      readAccountPosts(connection.platformAccountId, connection.accessToken, scopes.has("instagram_manage_insights")),
     ]);
     const latest = insights.dailySnapshots.at(-1);
     const snapshotDate = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
@@ -284,7 +292,8 @@ export const instagramReportingAdapter: SocialReportingAdapter = {
         }>(`/${post.platformPostId}`, connection.accessToken, {
           fields: "media_type,like_count,comments_count,permalink,timestamp",
         });
-        const insights = await readMediaInsights(post.platformPostId, connection.accessToken);
+        const insights = (connection.tokenScopes ?? "").split(/[\s,]+/).includes("instagram_manage_insights")
+          ? await readMediaInsights(post.platformPostId, connection.accessToken) : [];
         const reach = valueFromInsights(insights, "reach");
         const views = valueFromInsights(insights, "views");
         const likes = typeof media.like_count === "number" ? media.like_count : null;
