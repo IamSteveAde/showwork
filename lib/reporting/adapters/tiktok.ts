@@ -17,15 +17,17 @@ async function apiGet<T>(path: string, token: string): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.error?.code !== "ok") {
-    const message = data.error?.message || `TikTok reporting request failed (${response.status}).`;
     const code = data.error?.code;
-    throw new Error(code === "scope_not_authorized"
-      ? "TikTok reporting permission is missing. Reconnect TikTok after enabling video.list and user.info.stats for the app."
-      : message);
+    if (code === "scope_not_authorized") throw new Error("TikTok reporting permission is missing. Reconnect TikTok and grant profile statistics and video access.");
+    if (response.status === 401 || code === "access_token_invalid" || code === "access_token_expired") throw new Error("TikTok access expired. Reconnect TikTok to renew analytics access.");
+    if (response.status === 429 || code === "rate_limit_exceeded") throw new Error("TikTok analytics rate limit reached. Try syncing again later.");
+    throw new Error(`TikTok reporting request failed (${response.status}). Try syncing again later.`);
   }
+  if (!data.data || typeof data.data !== "object") throw new Error("TikTok returned an incomplete analytics response. Try syncing again.");
   return data.data as T;
 }
 
@@ -38,15 +40,17 @@ async function apiPost<T>(path: string, token: string, body: unknown): Promise<T
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data.error?.code !== "ok") {
-    const message = data.error?.message || `TikTok reporting request failed (${response.status}).`;
     const code = data.error?.code;
-    throw new Error(code === "scope_not_authorized"
-      ? "TikTok reporting permission is missing. Reconnect TikTok after enabling video.list and user.info.stats for the app."
-      : message);
+    if (code === "scope_not_authorized") throw new Error("TikTok reporting permission is missing. Reconnect TikTok and grant profile statistics and video access.");
+    if (response.status === 401 || code === "access_token_invalid" || code === "access_token_expired") throw new Error("TikTok access expired. Reconnect TikTok to renew analytics access.");
+    if (response.status === 429 || code === "rate_limit_exceeded") throw new Error("TikTok analytics rate limit reached. Try syncing again later.");
+    throw new Error(`TikTok reporting request failed (${response.status}). Try syncing again later.`);
   }
+  if (!data.data || typeof data.data !== "object") throw new Error("TikTok returned an incomplete analytics response. Try syncing again.");
   return data.data as T;
 }
 
@@ -66,7 +70,7 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
     const canReadVideos = hasScope(connection, "video.list");
     const missing = [!canReadStats && "user.info.stats", !canReadVideos && "video.list"].filter(Boolean);
     const reportingWarnings = missing.length
-      ? [`TikTok analytics unavailable for permissions not granted: ${missing.join(", ")}. You do not need to disconnect TikTok. Analytics requires TikTok approval and a new authorization after approval.`]
+      ? [`TikTok analytics unavailable for permissions not granted: ${missing.join(", ")}. Reconnect TikTok from Channel access and grant profile statistics and video access. You do not need to disconnect first.`]
       : [];
     if (!connection.accessToken) throw new Error("TikTok connection needs to be renewed.");
     const [result, videos] = await Promise.all([
@@ -79,7 +83,7 @@ export const tiktokReportingAdapter: SocialReportingAdapter = {
     ]);
     const user = result.user ?? {};
     return {
-      reportingWarnings,
+      reportingWarnings: [...reportingWarnings, ...(videos.length >= MAX_VIDEO_LIST_PAGES * 20 ? ["TikTok analytics covers up to 200 recent public videos from the last 366 days; older videos may be excluded."] : [])],
       followers: typeof user.follower_count === "number" ? user.follower_count : null,
       // TikTok returns current lifetime counters per video, not a historical
       // daily account time series. The report aggregates these on native posts.

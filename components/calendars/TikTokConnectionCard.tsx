@@ -36,6 +36,16 @@ export default function TikTokConnectionCard({
   const [error, setError] = useState<string | null>(null);
   const [messagingConnected, setMessagingConnected] = useState(false);
   const [justConnected, setJustConnected] = useState(false);
+  const [analyticsAccess, setAnalyticsAccess] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!isManager || !username) return;
+    const controller = new AbortController();
+    setAnalyticsAccess(null);
+    void fetch(`/api/calendars/${calendarId}/tiktok/analytics-access`, { cache: "no-store", signal: controller.signal })
+      .then(async response => { if (!response.ok) return; const data = await response.json(); if (!controller.signal.aborted) setAnalyticsAccess(data.analyticsGranted === true); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [calendarId, isManager, username]);
 
   useEffect(() => {
     const errorCode = searchParams.get("tiktokError");
@@ -126,6 +136,15 @@ export default function TikTokConnectionCard({
             Connect this calendar to a client&apos;s TikTok account — once connected, review the settings and authorize each approved TikTok post for scheduled publishing.
           </p>
         )}
+        {isManager && isConnected && <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
+          <p className="text-xs font-semibold text-white">TikTok analytics</p>
+          <p className="mt-1 text-[11px] leading-5 text-[#AAB4C3]">{analyticsAccess === true
+            ? "Analytics permissions granted. Open Analytics & Reporting, select TikTok, and sync data to retrieve current statistics."
+            : analyticsAccess === false
+              ? "Reconnect this account and grant profile statistics and video access to enable analytics. Publishing stays connected."
+              : "Reconnect to grant or renew analytics access. Publishing stays connected."}</p>
+          <a href={`/api/calendars/${calendarId}/tiktok/connect`} className="mt-3 inline-flex rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-900">Reconnect TikTok</a>
+        </div>}
         {isManager && isConnected && <TikTokMessagingPanel calendarId={calendarId} />}
       </div>
 
