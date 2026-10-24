@@ -280,48 +280,93 @@ export async function listManagedPages(
   const pages: FacebookPage[] = [];
   let after: string | undefined;
   const cursors = new Set<string>();
+
   do {
-    const result: { data?: FacebookPage[]; paging?: { next?: string; cursors?: { after?: string } } } = await graphGet(
-      "/me/accounts", {
-        access_token: userAccessToken,
-        fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
-        limit: "100",
-        ...(after ? { after } : {}),
-      },
-    );
+    const result = await graphGet<{
+      data?: FacebookPage[];
+      paging?: {
+        next?: string;
+        cursors?: { after?: string };
+      };
+    }>("/me/accounts", {
+      access_token: userAccessToken,
+      fields: "id,name,access_token,tasks",
+      limit: "100",
+      ...(after ? { after } : {}),
+    });
+
     pages.push(...(result.data ?? []));
-    console.info("[Instagram OAuth Discovery]", {
-  graphVersion: GRAPH_API_VERSION,
-  returnedPageCount: result.data?.length ?? 0,
-  pages: (result.data ?? []).map((page) => ({
-    pageId: page.id,
-    pageName: page.name,
-    hasPageAccessToken: Boolean(page.access_token),
-    tasks: page.tasks ?? [],
-    hasInstagramBusinessAccount: Boolean(
-      page.instagram_business_account?.id
-    ),
-    instagramAccountId:
-      page.instagram_business_account?.id ?? null,
-  })),
-});
-    after = result.paging?.next ? result.paging.cursors?.after : undefined;
-    if (after && cursors.has(after)) throw new Error("Meta returned a repeated Page cursor.");
+
+    after = result.paging?.next
+      ? result.paging.cursors?.after
+      : undefined;
+
+    if (after && cursors.has(after)) {
+      throw new Error("Meta returned a repeated Page cursor.");
+    }
+
     if (after) cursors.add(after);
   } while (after);
-  return pages;
-}
 
-export async function listInstagramGrantedPermissions(userAccessToken: string): Promise<string[]> {
-  const result = await graphGet<{ data?: { permission: string; status: string }[] }>(
-    "/me/permissions",
-    { access_token: userAccessToken },
+  console.info("[Instagram Discovery] Facebook Pages", {
+    pageCount: pages.length,
+    pageIds: pages.map((page) => page.id),
+  });
+
+  const enrichedPages = await Promise.all(
+    pages.map(async (page) => {
+      try {
+        const details = await graphGet<{
+          instagram_business_account?: {
+            id: string;
+            username?: string;
+          };
+        }>(`/${page.id}`, {
+          access_token: page.access_token,
+          fields: "instagram_business_account{id,username}",
+        });
+
+        console.info("[Instagram Discovery] Page relationship", {
+          pageId: page.id,
+          hasInstagramAccount: Boolean(
+            details.instagram_business_account?.id
+          ),
+        });
+
+        return {
+          ...page,
+          instagram_business_account:
+            details.instagram_business_account,
+        };
+      } catch (error) {
+        console.error("[Instagram Discovery] Relationship failed", {
+          pageId: page.id,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unknown Graph API error",
+        });
+
+        return page;
+      }
+    })
   );
+
+  return enrichedPages;
+}
+export async function listInstagramGrantedPermissions(
+  userAccessToken: string
+): Promise<string[]> {
+  const result = await graphGet<{
+    data?: { permission: string; status: string }[];
+  }>("/me/permissions", {
+    access_token: userAccessToken,
+  });
+
   return (result.data ?? [])
     .filter((permission) => permission.status === "granted")
     .map((permission) => permission.permission);
 }
-
 // ─────────────────────────────────────────────────────────────
 // INSTAGRAM ACCOUNT
 // ─────────────────────────────────────────────────────────────
