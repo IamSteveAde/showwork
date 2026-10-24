@@ -32,7 +32,7 @@ const navigation = [
 
 const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#4D9EFF]";
 
-export default function SiteFooter() {
+export default function SiteFooter({ homepage = false }: { homepage?: boolean }) {
   return (
     <footer
       className="relative z-10 isolate overflow-hidden border-t border-white/10 bg-[#07080A] px-5 text-white sm:px-8 lg:px-16"
@@ -40,11 +40,11 @@ export default function SiteFooter() {
     >
       <div aria-hidden="true" className="pointer-events-none absolute -right-48 -top-48 h-[600px] w-[600px] rounded-full bg-[#2478FF]/10 blur-[120px]" />
       <div className="relative mx-auto max-w-7xl">
-        <div className="flex flex-col gap-8 border-b border-white/10 py-12 sm:py-16 md:flex-row md:items-end md:justify-between">
+        <div className={homepage ? "hidden" : "flex flex-col gap-8 border-b border-white/10 py-12 sm:py-16 md:flex-row md:items-end md:justify-between"}>
           <div>
             <p className="mb-5 flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-300">
               <span className="h-1.5 w-1.5 rounded-full bg-[#4D9EFF]" aria-hidden="true" />
-              Built for people who make things
+              {homepage ? "Connected marketing operations" : "Built for people who make things"}
             </p>
             <h2 className="text-[clamp(2.5rem,6vw,5rem)] font-medium leading-[1.05] tracking-[-0.055em]">
               Your work.<br />
@@ -68,8 +68,7 @@ export default function SiteFooter() {
               <Image src="/images/logo/swwhite.svg" alt="Showwork" width={180} height={30} className="h-auto w-40" />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-7 text-slate-400">
-              Portfolios, project delivery and marketing workspaces for creators,
-              agencies and social media teams.
+              {homepage ? "Showwork is an intelligent marketing operations platform helping businesses and marketing professionals organise the work behind their marketing." : "Portfolios, project delivery and marketing workspaces for creators, agencies and social media teams."}
             </p>
             <a
               href="https://wa.me/2347018819588"

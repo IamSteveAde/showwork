@@ -15,7 +15,7 @@ const integrations = [
   { name: "Paystack", slug: "paystack" },
 ];
 
-export default function IntegrationsSection() {
+export default function IntegrationsSection({ homepage = false }: { homepage?: boolean }) {
   const [paused, setPaused] = useState(false);
 
   return (
@@ -25,17 +25,17 @@ export default function IntegrationsSection() {
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#2478FF]">
+          <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${homepage ? "text-[#155FC7]" : "text-[#2478FF]"}`}>
             Connected to your workflow
           </p>
           <h2
             id="integrations-heading"
             className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[#111317] sm:text-4xl"
           >
-            The tools you use. Working together.
+            {homepage ? "Your favourite tools. Better together." : "The tools you use. Working together."}
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-500 sm:text-base">
-            Showwork connects with your everyday tools to keep your work flowing.
+            {homepage ? "Supported social connections, OpenAI for AI assistance, and Paystack for payments. Available capabilities vary by platform." : "Showwork connects with your everyday tools to keep your work flowing."}
           </p>
         </div>
 

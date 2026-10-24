@@ -1,1500 +1,472 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
-
+import { ArrowRight, ArrowUpRight, Sparkles, MoveUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/landing/SiteFooter";
 import PricingSection from "@/components/landing/PricingSection";
 import IntegrationsSection from "@/components/landing/IntegrationsSection";
-import FAQSection from "@/components/landing/FAQSection";
+import people from "@/public/images/people.png";
+import dashboard from "@/public/images/dashboard.webp";
+import reply from "@/public/images/reply.webp";
+import workflow from "@/public/images/workflow.webp";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-jakarta",
 });
-
 const fraunces = Fraunces({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-fraunces",
 });
+const focus =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current";
+const title =
+  "font-semibold tracking-[-0.065em] leading-[1.03] text-[clamp(2.5rem,5.1vw,5rem)]";
 
-const COLOR = {
-  black: "#07080A",
-  ink: "#111317",
-  white: "#FFFFFF",
-  paper: "#F4F5F7",
-  blue: "#2478FF",
-  blueSoft: "#AFC9FF",
-  muted: "rgba(17,19,23,0.55)",
-  mutedDark: "rgba(255,255,255,0.58)",
-  line: "rgba(17,19,23,0.1)",
-  lineDark: "rgba(255,255,255,0.12)",
-};
-
-const COMMUNITY_URL =
-  "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
-
-/* ============================================================
-   ICONS
-============================================================ */
-
-function ArrowIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M7 17 17 7M17 7H8M17 7v9"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function ArrowRightIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="M5 12h14M14 7l5 5-5 5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PlayIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-      <path d="M8.5 5.5v13L19 12 8.5 5.5Z" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <path
-        d="m5 12.5 4.5 4.5L19 7"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PortfolioIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect
-        x="3"
-        y="4"
-        width="18"
-        height="16"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <circle
-        cx="8.5"
-        cy="9"
-        r="1.4"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <path
-        d="m3 16 5-5 4 4 3-3 6 6"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function DeliveryIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect
-        x="3"
-        y="4"
-        width="18"
-        height="16"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <path
-        d="M8 9h8M8 13h5"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-      <path
-        d="m15 16 2.5-2.5L20 16"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function WorkspaceIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="15"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <path
-        d="M3 9.5h18M8 3v4M16 3v4"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7 13h3M14 13h3M7 16.5h3M14 16.5h3"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CommunityIcon({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
-      <circle
-        cx="9"
-        cy="9"
-        r="3"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <circle
-        cx="17"
-        cy="10"
-        r="2.5"
-        stroke="currentColor"
-        strokeWidth="1.35"
-      />
-      <path
-        d="M3.5 19c.5-3.2 2.5-5 5.5-5s5 1.8 5.5 5"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-      <path
-        d="M15 15c2.8 0 4.6 1.4 5 4"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-/* ============================================================
-   WORDMARK
-============================================================ */
-
-function Wordmark({
-  color = COLOR.black,
-  size = "md",
+function Artwork({
+  src,
+  alt,
+  sizes,
+  className = "",
 }: {
-  color?: string;
-  size?: "sm" | "md" | "lg";
+  src: StaticImageData;
+  alt: string;
+  sizes: string;
+  className?: string;
 }) {
-  const heights = {
-    sm: 20,
-    md: 28,
-    lg: 38,
-  };
-
-  const height = heights[size];
-
-  return (
-    <div
-      role="img"
-      aria-label="Showwork"
-      style={{
-        width: height * 2,
-        height,
-        backgroundColor: color,
-        WebkitMaskImage: "url(/images/logo/sw.svg)",
-        maskImage: "url(/images/logo/sw.svg)",
-        WebkitMaskRepeat: "no-repeat",
-        maskRepeat: "no-repeat",
-        WebkitMaskPosition: "left center",
-        maskPosition: "left center",
-        WebkitMaskSize: "contain",
-        maskSize: "contain",
-      }}
-    />
-  );
-}
-
-/* ============================================================
-   HERO
-============================================================ */
-
-function Hero({ isLoggedIn }: { isLoggedIn: boolean }) {
-  const [mounted, setMounted] = useState(false);
-
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const smoothX = useSpring(mouseX, {
-    stiffness: 70,
-    damping: 22,
-    mass: 0.8,
-  });
-
-  const smoothY = useSpring(mouseY, {
-    stiffness: 70,
-    damping: 22,
-    mass: 0.8,
-  });
-
-  const orbX = useTransform(smoothX, [-1, 1], [-30, 30]);
-  const orbY = useTransform(smoothY, [-1, 1], [-22, 22]);
-
-  const ringX = useTransform(smoothX, [-1, 1], [-12, 12]);
-  const ringY = useTransform(smoothY, [-1, 1], [-10, 10]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handlePointerMove = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-
-    mouseX.set(x * 2 - 1);
-    mouseY.set(y * 2 - 1);
-  };
-
-  const handlePointerLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  return (
-    <section
-      className="relative min-h-[760px] overflow-hidden bg-white text-[#111317] md:min-h-[100svh]"
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-    >
-      {/* ======================================================
-          ATMOSPHERIC BACKGROUND
-      ======================================================= */}
-
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Main blue atmosphere */}
-
-        <motion.div
-          className="absolute left-1/2 top-[43%] h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{
-            x: orbX,
-            y: orbY,
-            background:
-              "radial-gradient(circle, rgba(70,125,255,.15) 0%, rgba(70,125,255,.07) 28%, rgba(255,255,255,0) 68%)",
-            filter: "blur(4px)",
-          }}
-          animate={
-            mounted
-              ? {
-                  scale: [1, 1.045, 1],
-                  opacity: [0.72, 0.92, 0.72],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-
-        {/* Soft blue upper-right glow */}
-
-        <motion.div
-          className="absolute -right-[180px] top-[0%] h-[560px] w-[560px] rounded-full"
-          animate={
-            mounted
-              ? {
-                  x: [0, -20, 0],
-                  y: [0, 25, 0],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 11,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          style={{
-            background:
-              "radial-gradient(circle, rgba(36,120,255,.105), transparent 68%)",
-            filter: "blur(18px)",
-          }}
-        />
-
-        {/* Soft violet atmosphere */}
-
-        <motion.div
-          className="absolute -left-[220px] top-[18%] h-[500px] w-[500px] rounded-full"
-          animate={
-            mounted
-              ? {
-                  x: [0, 28, 0],
-                  y: [0, 18, 0],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 13,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          style={{
-            background:
-              "radial-gradient(circle, rgba(108,92,255,.075), transparent 70%)",
-            filter: "blur(20px)",
-          }}
-        />
-
-        {/* ====================================================
-            FINE ARCHITECTURAL GRID
-        ===================================================== */}
-
-        <div
-          className="absolute inset-0 opacity-[0.48]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(17,19,23,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17,19,23,.045) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-            maskImage:
-              "radial-gradient(circle at center, black 0%, black 30%, transparent 73%)",
-            WebkitMaskImage:
-              "radial-gradient(circle at center, black 0%, black 30%, transparent 73%)",
-          }}
-        />
-
-        {/* ====================================================
-            DOT FIELD
-        ===================================================== */}
-
-        <div
-          className="absolute left-1/2 top-1/2 h-[580px] w-[580px] -translate-x-1/2 -translate-y-1/2 opacity-[0.24]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(36,120,255,.4) 1px, transparent 1px)",
-            backgroundSize: "18px 18px",
-            maskImage:
-              "radial-gradient(circle, black 0%, transparent 66%)",
-            WebkitMaskImage:
-              "radial-gradient(circle, black 0%, transparent 66%)",
-          }}
-        />
-
-        {/* ====================================================
-            ORBITAL RINGS
-        ===================================================== */}
-
-        <motion.div
-          className="absolute left-1/2 top-[44%] h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#2478FF]/[0.10]"
-          style={{
-            x: ringX,
-            y: ringY,
-          }}
-          animate={
-            mounted
-              ? {
-                  rotate: 360,
-                }
-              : undefined
-          }
-          transition={{
-            duration: 42,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          <motion.div
-            className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-[#2478FF]/50"
-            animate={{
-              boxShadow: [
-                "0 0 0 rgba(36,120,255,0)",
-                "0 0 22px rgba(36,120,255,.55)",
-                "0 0 0 rgba(36,120,255,0)",
-              ],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.div>
-
-        <motion.div
-          className="absolute left-1/2 top-[44%] h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#2478FF]/[0.055]"
-          animate={
-            mounted
-              ? {
-                  rotate: -360,
-                }
-              : undefined
-          }
-          transition={{
-            duration: 58,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        >
-          <span className="absolute left-[17%] top-[-3px] h-1.5 w-1.5 rounded-full bg-[#2478FF]/35" />
-        </motion.div>
-
-        <div className="absolute left-1/2 top-[44%] h-[650px] w-[650px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#2478FF]/[0.035]" />
-
-        {/* ====================================================
-            HORIZONTAL LINES
-        ===================================================== */}
-
-        <div className="absolute left-0 right-0 top-[30%] h-px bg-gradient-to-r from-transparent via-[#2478FF]/[0.08] to-transparent" />
-
-        <div className="absolute left-0 right-0 top-[70%] h-px bg-gradient-to-r from-transparent via-[#2478FF]/[0.06] to-transparent" />
-
-        {/* ====================================================
-            CORNER DETAILS
-        ===================================================== */}
-
-        <div className="absolute left-[6%] top-[27%] hidden h-16 w-16 border-l border-t border-[#2478FF]/[0.10] lg:block" />
-
-        <div className="absolute bottom-[18%] right-[6%] hidden h-16 w-16 border-b border-r border-[#2478FF]/[0.10] lg:block" />
-
-        {/* ====================================================
-            COORDINATES
-        ===================================================== */}
-
-        <div className="absolute left-[8%] top-[43%] hidden items-center gap-2 lg:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]/50" />
-
-          <span className="font-mono text-[8px] tracking-[0.18em] text-black/20">
-            06 / 24 / 26
-          </span>
-        </div>
-
-        <div className="absolute right-[8%] top-[56%] hidden items-center gap-2 lg:flex">
-          <span className="font-mono text-[8px] tracking-[0.18em] text-black/20">
-            SHOW / 001
-          </span>
-
-          <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]/50" />
-        </div>
-      </div>
-
-      {/* ======================================================
-          FLOATING PRODUCT SURFACES
-      ======================================================= */}
-
-      <div
-        className="pointer-events-none absolute inset-0 hidden lg:block"
-        aria-hidden
-      >
-        {/* Portfolio */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={
-            mounted
-              ? {
-                  opacity: 1,
-                  y: [0, -8, 0],
-                }
-              : undefined
-          }
-          transition={{
-            opacity: {
-              duration: 0.8,
-              delay: 0.15,
-            },
-            y: {
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-          }}
-          className="absolute left-[7%] top-[31%] w-[205px] -rotate-[7deg] rounded-2xl border border-white/90 bg-white/65 p-3 shadow-[0_25px_70px_rgba(24,52,110,.10)] backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[8px] font-bold uppercase tracking-[0.14em] text-[#2478FF]">
-              Portfolio
-            </span>
-
-            <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
-          </div>
-
-          <div className="mt-3 overflow-hidden rounded-xl bg-[#EEF3FF]">
-            <div className="h-24 bg-[linear-gradient(135deg,#dce8ff,#f8faff)]" />
-          </div>
-
-          <div className="mt-3 space-y-1.5">
-            <div className="h-1.5 w-20 rounded-full bg-black/10" />
-            <div className="h-1.5 w-28 rounded-full bg-black/[0.06]" />
-          </div>
-        </motion.div>
-
-        {/* Project delivery */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={
-            mounted
-              ? {
-                  opacity: 1,
-                  y: [0, -7, 0],
-                }
-              : undefined
-          }
-          transition={{
-            opacity: {
-              duration: 0.8,
-              delay: 0.35,
-            },
-            y: {
-              duration: 6.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-          }}
-          className="absolute right-[6%] top-[27%] w-[220px] rotate-[6deg] rounded-2xl border border-white/90 bg-white/65 p-4 shadow-[0_25px_70px_rgba(24,52,110,.10)] backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#EEF3FF] text-[#2478FF]">
-                <DeliveryIcon className="h-3.5 w-3.5" />
-              </span>
-
-              <span className="text-[9px] font-semibold text-black/70">
-                Client delivery
-              </span>
-            </div>
-
-            <span className="text-[8px] text-black/30">
-              LIVE
-            </span>
-          </div>
-
-          <div className="mt-4 rounded-xl border border-black/[0.06] bg-white/75 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] uppercase tracking-[0.12em] text-black/30">
-                Fashion Fest
-              </span>
-
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </div>
-
-            <div className="mt-3 h-1.5 w-24 rounded-full bg-black/10" />
-
-            <div className="mt-2 h-1.5 w-32 rounded-full bg-black/[0.05]" />
-
-            <div className="mt-4 flex items-center justify-between border-t border-black/[0.06] pt-3">
-              <span className="text-[8px] text-black/35">
-                28 files
-              </span>
-
-              <span className="text-[8px] font-semibold text-[#2478FF]">
-                Approved
-              </span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Marketing workspace */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={
-            mounted
-              ? {
-                  opacity: 1,
-                  y: [0, -8, 0],
-                }
-              : undefined
-          }
-          transition={{
-            opacity: {
-              duration: 0.8,
-              delay: 0.55,
-            },
-            y: {
-              duration: 7,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-          }}
-          className="absolute bottom-[17%] left-[11%] w-[185px] rotate-[5deg] rounded-2xl border border-white/90 bg-white/65 p-3 shadow-[0_25px_70px_rgba(24,52,110,.10)] backdrop-blur-xl"
-        >
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F1F5FF] text-[#2478FF]">
-              <WorkspaceIcon className="h-3.5 w-3.5" />
-            </span>
-
-            <div>
-              <p className="text-[9px] font-semibold text-black/65">
-                Marketing workspace
-              </p>
-
-              <p className="text-[7px] text-black/30">
-                Planning · Approval
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 grid grid-cols-3 gap-1.5">
-            <div className="h-9 rounded-lg bg-[#EEF3FF]" />
-            <div className="h-9 rounded-lg bg-[#F3F4F7]" />
-            <div className="h-9 rounded-lg bg-[#E7EDFF]" />
-          </div>
-        </motion.div>
-
-        {/* Approval */}
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={
-            mounted
-              ? {
-                  opacity: 1,
-                  y: [0, -7, 0],
-                }
-              : undefined
-          }
-          transition={{
-            opacity: {
-              duration: 0.8,
-              delay: 0.75,
-            },
-            y: {
-              duration: 6.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            },
-          }}
-          className="absolute bottom-[15%] right-[10%] w-[175px] -rotate-[5deg] rounded-2xl border border-white/90 bg-white/65 p-3 shadow-[0_25px_70px_rgba(24,52,110,.10)] backdrop-blur-xl"
-        >
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EEF3FF] text-[#2478FF]">
-              <CheckIcon className="h-3.5 w-3.5" />
-            </div>
-
-            <div>
-              <p className="text-[9px] font-semibold text-black/70">
-                Client approved
-              </p>
-
-              <p className="text-[7px] text-black/30">
-                Project is ready
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 h-1.5 w-full rounded-full bg-[#E9EDF4]" />
-
-          <div className="mt-2 h-1.5 w-[72%] rounded-full bg-[#F0F2F6]" />
-        </motion.div>
-      </div>
-
-      {/* ======================================================
-          NAVIGATION
-      ======================================================= */}
-
-      <div className="relative z-40">
-        <Navbar isLoggedIn={isLoggedIn} />
-      </div>
-
-      {/* ======================================================
-          CENTRAL HERO CONTENT
-      ======================================================= */}
-
-      <div className="relative z-30 flex min-h-[760px] items-center justify-center px-5 pb-20 pt-24 sm:px-8 lg:min-h-[100svh] lg:px-10">
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 22,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.95,
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="mx-auto w-full max-w-[900px] text-center"
-        >
-          {/* ==================================================
-              EYEBROW
-          =================================================== */}
-
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 8,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              delay: 0.15,
-              duration: 0.7,
-            }}
-            className="mb-7 flex items-center justify-center gap-3"
-          >
-            <span className="h-px w-7 bg-[#2478FF]/25" />
-
-            <span className="flex items-center gap-2 font-[var(--font-fraunces)] text-sm italic text-black/50">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inset-0 rounded-full bg-[#2478FF]/30 blur-sm" />
-
-                <span className="relative h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
-              </span>
-
-              For creators, agencies and social media teams
-            </span>
-
-            <span className="h-px w-7 bg-[#2478FF]/25" />
-          </motion.div>
-
-          {/* ==================================================
-              MAIN HEADLINE
-          =================================================== */}
-
-          <h1 className="font-[var(--font-fraunces)] text-[clamp(2.0rem,6.0vw,6.0rem)] font-normal leading-[0.87] tracking-[-0.055em] text-[#07080A]">
-            <span className="block">Your work. Your clients.</span>
-
-            <span className="relative mt-1 block">
-              <span className="relative z-10">
-                One place to{" "}
-                <em className="relative font-normal not-italic text-[#2478FF]">
-                  grow
-                </em>
-              </span>
-
-              <motion.span
-                initial={{
-                  width: 0,
-                  opacity: 0,
-                }}
-                animate={{
-                  width: "32%",
-                  opacity: 1,
-                }}
-                transition={{
-                  delay: 0.9,
-                  duration: 0.85,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="absolute bottom-[-13px] left-1/2 h-[2px] -translate-x-1/2 rounded-full bg-[#2478FF]/45"
-              />
-            </span>
-          </h1>
-
-          {/* ==================================================
-              SUPPORTING COPY
-          =================================================== */}
-
-          <motion.p
-            initial={{
-              opacity: 0,
-              y: 12,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              delay: 0.38,
-              duration: 0.75,
-            }}
-            className="mx-auto mt-10 max-w-[600px] text-[15px] leading-7 text-black/55 sm:text-[17px] sm:leading-8"
-          >
-            Build your portfolio, deliver projects and manage client accounts. Plan content with AI, collect approvals, reply to conversations, organize leads and understand what performs with Showwork.
-          </motion.p>
-
-          {/* ==================================================
-              ACTIONS
-          =================================================== */}
-
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 12,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              delay: 0.52,
-              duration: 0.75,
-            }}
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-          >
-            {/* Primary */}
-
-            <div className="relative">
-              <motion.div
-                className="absolute -inset-2 rounded-full bg-[#2478FF]/10 blur-xl"
-                animate={{
-                  opacity: [0.35, 0.7, 0.35],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-
-              <Link
-                href={isLoggedIn ? "/dashboard" : "/start"}
-                className="group relative inline-flex items-center gap-3 rounded-full bg-[#2478FF] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(36,120,255,.18)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#15309E] hover:shadow-[0_15px_40px_rgba(36,120,255,.24)]"
-              >
-                {isLoggedIn ? "Open Showwork" : "Get started"}
-
-                <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </div>
-
-            {/* Secondary */}
-
-            <Link
-              href="/signup?next=/dashboard/portfolio"
-              className="group inline-flex items-center gap-3 rounded-full border border-black/10 bg-white/70 px-6 py-3.5 text-sm font-semibold text-black/65 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-black/20 hover:bg-white hover:text-black"
-            >
-              Create your portfolio
-
-              <ArrowIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-          </motion.div>
-
-          {/* ==================================================
-              APP STRIP
-          =================================================== */}
-
-          <motion.div
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            transition={{
-              delay: 0.78,
-              duration: 0.8,
-            }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[9px] font-semibold uppercase tracking-[0.17em] text-black/30"
-          >
-            <span>Portfolio</span>
-
-            <span className="h-1 w-1 rounded-full bg-[#2478FF]/40" />
-
-            <span>Project Delivery</span>
-
-            <span className="h-1 w-1 rounded-full bg-[#2478FF]/40" />
-
-            <span>Marketing Workspace</span>
-
-            <span className="h-1 w-1 rounded-full bg-[#2478FF]/40" />
-
-            <span>Creativo</span>
-          </motion.div>
-        </motion.div>
-      </div>
-
-      {/* ======================================================
-          BOTTOM STATUS BAR
-      ======================================================= */}
-
-      <motion.div
-        initial={{
-          opacity: 0,
-        }}
-        animate={{
-          opacity: 1,
-        }}
-        transition={{
-          delay: 1.2,
-          duration: 1,
-        }}
-        className="absolute bottom-7 left-5 right-5 z-40 flex items-center justify-between sm:left-8 sm:right-8 lg:left-16 lg:right-16"
-      >
-        <div className="flex items-center gap-3">
-          <motion.span
-            className="h-1.5 w-1.5 rounded-full bg-[#2478FF]"
-            animate={{
-              boxShadow: [
-                "0 0 0 rgba(36,120,255,0)",
-                "0 0 14px rgba(36,120,255,.7)",
-                "0 0 0 rgba(36,120,255,0)",
-              ],
-            }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-black/35">
-            Built for modern creators
-          </span>
-        </div>
-
-        <span className="hidden text-[9px] font-medium uppercase tracking-[0.18em] text-black/25 sm:block">
-          Scroll to explore
-        </span>
-      </motion.div>
-
-      {/* ======================================================
-          MOBILE BACKGROUND DETAIL
-      ======================================================= */}
-
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/50 to-transparent" />
-    </section>
-  );
-}
-/* ============================================================
-   FOUR WORLDS
-============================================================ */
-
-const WORLDS = [
-  {
-    number: "01",
-    title: "Marketing Workspace",
-    label: "Manage client accounts",
-    body: "Plan content with AI, collect approvals, manage conversations and leads, and track performance in a dedicated workspace for each client.",
-    href: "/content-workspace",
-    Icon: WorkspaceIcon,
-  },
-    {
-    number: "02",
-    title: "Project Delivery",
-    label: "Move the work",
-    body: "Share project files, collect feedback and approvals, and deliver final downloads through a branded project delivery page for each client.",
-    href: "/start",
-    Icon: DeliveryIcon,
-  },
-  {
-    number: "03",
-    title: "Portfolio",
-    label: "Show the work",
-    body: "Show projects, services and testimonials in a professional portfolio you can share with potential clients.",
-    href: "/signup?next=/dashboard/portfolio",
-    Icon: PortfolioIcon,
-  },
-
-  {
-    number: "04",
-    title: "Creativo",
-    label: "Grow together",
-    body: "A community for creators building better businesses and better careers.",
-    href: COMMUNITY_URL,
-    Icon: CommunityIcon,
-  },
-];
-
-function Worlds() {
-  return (
-    <section
-      id="showwork"
-      className="relative overflow-hidden bg-[#F4F5F7] px-5 py-24 sm:px-8 sm:py-32 lg:px-16 lg:py-40"
-    >
-      {/* background geometry */}
-      <div
-        className="pointer-events-none absolute right-[-160px] top-[-180px] h-[500px] w-[500px] rounded-full border border-[#2478FF]/[0.07]"
-        aria-hidden
-      />
-
-      <div
-        className="pointer-events-none absolute right-[-100px] top-[-120px] h-[380px] w-[380px] rounded-full border border-[#2478FF]/[0.05]"
-        aria-hidden
-      />
-
-      <div className="mx-auto max-w-[1400px]">
-        <div className="max-w-[720px]">
-          <div className="flex items-center gap-3">
-            <span className="h-px w-8 bg-[#2478FF]" />
-
-            <span className="font-[var(--font-fraunces)] text-sm italic text-[#6F7580]">
-              One platform. Four ways to work.
-            </span>
-          </div>
-
-          <h2 className="mt-6 font-[var(--font-fraunces)] text-[clamp(2.8rem,6vw,5.8rem)] font-normal leading-[0.94] tracking-[-0.045em] text-[#101216]">
-            Everything around
-            <br />
-            <span className="text-[#2478FF]">the work.</span>
-          </h2>
-
-          <p className="mt-7 max-w-[540px] text-sm leading-7 text-[#737982] sm:text-base">
-            Showwork brings your portfolio, project delivery and marketing
-            workspaces together. Choose the tools you need to showcase
-            your work, collaborate with clients and manage their accounts.
-          </p>
-        </div>
-
-        <div className="mt-16 grid gap-px overflow-hidden rounded-[28px] border border-[#DDE0E5] bg-[#DDE0E5] md:grid-cols-2">
-          {WORLDS.map((world, index) => {
-            const external = world.href.startsWith("http");
-
-            const card = (
-              <motion.div
-                whileHover={{ y: -3 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 24,
-                }}
-                className="group relative min-h-[320px] overflow-hidden bg-[#FAFAFB] p-7 transition-colors duration-300 hover:bg-white sm:p-9 lg:min-h-[370px] lg:p-11"
-              >
-                <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[#2478FF]/[0.035] blur-3xl transition-all duration-500 group-hover:bg-[#2478FF]/[0.08]" />
-
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#DDE1E7] bg-white text-[#2478FF] shadow-sm">
-                      <world.Icon />
-                    </div>
-
-                    <span className="font-[var(--font-fraunces)] text-sm italic text-[#9CA2AB]">
-                      {world.number}
-                    </span>
-                  </div>
-
-                  <div className="mt-16">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#2478FF]">
-                      {world.label}
-                    </p>
-
-                    <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[#101216] sm:text-3xl">
-                      {world.title}
-                    </h3>
-
-                    <p className="mt-4 max-w-[430px] text-sm leading-6 text-[#757B84]">
-                      {world.body}
-                    </p>
-
-                    <div className="mt-7 flex items-center gap-2 text-sm font-semibold text-[#101216]">
-                      Explore
-
-                      <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-
-            if (external) {
-              return (
-                <a
-                  key={world.number}
-                  href={world.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {card}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={world.number} href={world.href}>
-                {card}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================
-   PRODUCT MOMENT
-============================================================ */
-
-function ProductMoment({
-  onOpen,
-}: {
-  onOpen: () => void;
-}) {
-  return (
-    <section className="relative overflow-hidden bg-[#07080A] px-5 py-24 sm:px-8 sm:py-32 lg:px-16 lg:py-40">
-      {/* atmosphere */}
-      <div
-        className="pointer-events-none absolute -left-[250px] top-[10%] h-[650px] w-[650px] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(36,120,255,.18), transparent 68%)",
-        }}
-      />
-
-      <div
-        className="pointer-events-none absolute right-[-220px] bottom-[-260px] h-[650px] w-[650px] rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(50,80,180,.15), transparent 68%)",
-        }}
-      />
-
-      <div className="relative mx-auto max-w-[1400px]">
-        <div className="grid gap-12 lg:grid-cols-[0.65fr_1.35fr] lg:items-end lg:gap-20">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-white/35" />
-
-              <span className="font-[var(--font-fraunces)] text-sm italic text-white/50">
-                The client experience
-              </span>
-            </div>
-
-            <h2 className="mt-6 font-[var(--font-fraunces)] text-[clamp(2.8rem,5.5vw,5.4rem)] font-normal leading-[0.95] tracking-[-0.045em] text-white">
-              Show the work
-              <br />
-              <span className="text-white/40">at its best.</span>
-            </h2>
-
-            <p className="mt-7 max-w-[480px] text-sm leading-7 text-white/50 sm:text-base">
-              Share a branded project link where clients can view files,
-              leave feedback, approve work and download the final delivery.
-            </p>
-
-            <button
-              type="button"
-              onClick={onOpen}
-              className="group mt-8 inline-flex items-center gap-3 text-sm font-semibold text-white"
-            >
-              See the experience
-
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#2478FF] group-hover:bg-[#2478FF]">
-                <PlayIcon className="h-3.5 w-3.5" />
-              </span>
-            </button>
-          </div>
-
-          {/* browser / delivery preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{
-              duration: 0.8,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="relative"
-          >
-            <div className="absolute -inset-5 rounded-[32px] bg-[#2478FF]/[0.08] blur-3xl" />
-
-            <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#111216] shadow-[0_40px_120px_rgba(0,0,0,.4)]">
-              <div className="flex h-12 items-center gap-2 border-b border-white/10 px-4">
-                <span className="h-2 w-2 rounded-full bg-white/15" />
-                <span className="h-2 w-2 rounded-full bg-white/15" />
-                <span className="h-2 w-2 rounded-full bg-white/15" />
-
-                <div className="ml-4 flex h-7 flex-1 items-center rounded-md bg-white/[0.045] px-3">
-                  <span className="truncate text-[9px] text-white/25">
-                    client.showwork.com/project
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={onOpen}
-                className="group relative block w-full text-left"
-              >
-                <video
-                  src="/images/motion.mp4"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  className="aspect-video w-full object-cover opacity-90 transition duration-700 group-hover:scale-[1.015] group-hover:opacity-100"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-
-                <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
-                  <div className="flex items-end justify-between gap-5">
-                    <div>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-white/40">
-                        Fashion campaign
-                      </p>
-
-                      <p className="mt-1 font-[var(--font-fraunces)] text-xl italic text-white sm:text-2xl">
-                        The final collection
-                      </p>
-                    </div>
-
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md">
-                      <PlayIcon className="h-3.5 w-3.5" />
-                    </div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================
-   PHILOSOPHY
-============================================================ */
-
-function Philosophy() {
-  return (
-    <section className="relative overflow-hidden bg-white px-5 py-28 sm:px-8 sm:py-36 lg:px-16 lg:py-44">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="grid gap-14 lg:grid-cols-[0.35fr_1.65fr] lg:gap-20">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#2478FF]" />
-
-              <span className="font-[var(--font-fraunces)] text-sm italic text-[#777D86]">
-                Our philosophy
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="max-w-[1050px] font-[var(--font-fraunces)] text-[clamp(3rem,7vw,7.2rem)] font-normal leading-[0.91] tracking-[-0.055em] text-[#101216]">
-              The work is
-              <br />
-              <span className="text-[#2478FF]">the point.</span>
-            </h2>
-
-            <p className="mt-10 max-w-[650px] text-base leading-8 text-[#737982] sm:text-lg">
-              Showwork helps you spend less time chasing files, feedback
-              and updates. Keep client work organized, follow up on
-              opportunities and use performance insights to decide
-              what to create next.
-            </p>
-
-            <div className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-[#E5E7EB] pt-6">
-              {[
-                "Present beautifully",
-                "Collaborate clearly",
-                "Deliver confidently",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-2 text-xs font-semibold text-[#343840]"
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#EEF4FF] text-[#2478FF]">
-                    <CheckIcon className="h-3 w-3" />
-                  </span>
-
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================
-   FINAL CTA
-============================================================ */
-
-function FinalCTA({ isLoggedIn }: { isLoggedIn: boolean }) {
-  return (
-    <section className="relative overflow-hidden bg-[#2478FF] px-5 py-28 text-white sm:px-8 sm:py-36 lg:px-16 lg:py-44">
-      {/* giant geometry */}
-      <div
-        className="pointer-events-none absolute -right-[220px] -top-[280px] h-[700px] w-[700px] rounded-full border border-white/[0.13]"
-        aria-hidden
-      >
-        <div className="absolute inset-[65px] rounded-full border border-white/[0.08]" />
-        <div className="absolute inset-[135px] rounded-full border border-white/[0.06]" />
-      </div>
-
-      <div
-        className="pointer-events-none absolute -left-[300px] bottom-[-400px] h-[700px] w-[700px] rounded-full border border-white/[0.08]"
-        aria-hidden
-      />
-
-      <div className="relative mx-auto max-w-[1000px] text-center">
-        <p className="font-[var(--font-fraunces)] text-sm italic text-white/60">
-          Ready when you are.
-        </p>
-
-        <h2 className="mt-6 font-[var(--font-fraunces)] text-[clamp(3.4rem,8vw,7.5rem)] font-normal leading-[0.88] tracking-[-0.055em]">
-          Move the work.
-        </h2>
-
-        <p className="mx-auto mt-8 max-w-[520px] text-sm leading-7 text-white/70 sm:text-base">
-          Start with a free portfolio or project delivery. When you
-          manage ongoing client accounts, try Marketing Workspace free for 7 days.
-        </p>
-
-        <div className="mt-9 flex justify-center">
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/start"}
-            className="group inline-flex items-center gap-3 rounded-full bg-white px-7 py-4 text-sm font-semibold text-[#101216] transition-all duration-300 hover:-translate-y-1 hover:bg-[#08090A] hover:text-white"
-          >
-            {isLoggedIn ? "Open Showwork" : "Start free"}
-
-            <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ============================================================
-   FOOTER
-============================================================ */
-
-
-/* ============================================================
-   VIDEO MODAL
-============================================================ */
-
-function VideoModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    if (!open) return;
-
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [open]);
-
-  if (!open) return null;
-
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 px-4 py-6 backdrop-blur-xl"
-      onClick={onClose}
+      initial={reduced ? false : { y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.12 }}
+      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close video"
-        className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition hover:bg-white/10"
-      >
-        ×
-      </button>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
-      >
-        <video
-          src="/images/motion.mp4"
-          controls
-          autoPlay
-          playsInline
-          className="max-h-[84vh] w-full object-contain"
-        />
-      </motion.div>
+      <Image src={src} alt={alt} sizes={sizes} className="h-auto w-full" />
     </motion.div>
   );
 }
-
-/* ============================================================
-   PAGE
-============================================================ */
 
 export default function HomeClient({
   isLoggedIn = false,
 }: {
   isLoggedIn?: boolean;
 }) {
-  const [showVideo, setShowVideo] = useState(false);
-
+  const start = "/signup";
   return (
-    <main
-      className={`${jakarta.variable} ${fraunces.variable} overflow-x-hidden`}
-      style={{
-        fontFamily: "var(--font-jakarta)",
-        background: COLOR.paper,
-      }}
-    >
-   
+    <MotionConfig reducedMotion="user">
+      <main
+        className={`${jakarta.variable} ${fraunces.variable} overflow-x-clip bg-[#F8FAF5] text-[#102A29]`}
+        style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
+      >
+        <Navbar />
+        <section aria-labelledby="home-heading" className="relative isolate">
+          <div className="mx-auto grid max-w-[1280px] items-center gap-8 px-5 pb-14 pt-28 sm:gap-10 sm:pt-32 sm:px-8 lg:min-h-[760px] lg:grid-cols-[1fr_1fr] lg:gap-8 lg:px-14 lg:pb-24 lg:pt-40">
+            <div className="relative z-10 max-w-2xl">
+              <p className="mb-5 flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.17em]">
+                <span
+                  className="h-2 w-2 rounded-full bg-[#16834B]"
+                  aria-hidden="true"
+                />
+                Serious technology. Human energy.
+              </p>
+              <h1
+                id="home-heading"
+                className="text-[clamp(3.2rem,5.5vw,5.6rem)] font-semibold leading-[0.99] tracking-[-0.075em]"
+              >
+                Great teams do great work. <br />
+                <span className="text-[#155FC7]">
+                  Showwork makes it{" "}
+                  <em className="font-[var(--font-fraunces)] font-medium">
+                    easier.
+                  </em>
+                </span>
+              </h1>
+              <p className="mt-7 max-w-md text-base leading-7 text-[#52635E] sm:text-lg sm:leading-8">
+                One intelligent workspace to plan, create, collaborate, publish,
+                engage, and grow together.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1 sm:mt-8 sm:gap-4">
+                <Link
+                  href={start}
+                  className={`group inline-flex items-center gap-6 rounded-full bg-[#155FC7] px-6 py-4 text-sm font-semibold text-white transition hover:bg-[#104CA1] ${focus}`}
+                >
+                  Get Started
+                  <ArrowUpRight
+                    size={19}
+                    aria-hidden="true"
+                    className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transform-none"
+                  />
+                </Link>
+                <a
+                  href="/signup"
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-4 text-sm font-semibold ${focus}`}
+                >
+                  Explore Showwork <ArrowRight size={17} aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+            <figure className="relative min-w-0 pb-8 lg:pb-12">
+              <div
+                aria-hidden="true"
+                className="absolute -bottom-2 left-8 right-0 top-12 rounded-tl-[90px] bg-[#D8F3A5] lg:left-14"
+              />
+              <Image
+                src={people}
+                alt="Three teammates sharing ideas around a laptop in a blue studio."
+                priority
+                sizes="(max-width: 1023px) 100vw, (max-width: 1279px) 46vw, 568px"
+                className="relative h-auto w-full rounded-tr-[56px] rounded-bl-[56px] lg:rounded-tr-none lg:rounded-bl-[100px]"
+              />
+              <figcaption className="relative ml-10 mt-5 flex items-center gap-3 text-sm font-semibold lg:ml-20">
+                <Sparkles size={20} aria-hidden="true" />A little more together.
+                A lot more possible.
+              </figcaption>
+            </figure>
+          </div>
+          <div className="mx-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#102A29]/15 py-5 text-[10px] font-semibold uppercase tracking-[0.15em] sm:mx-8 lg:mx-14">
+            <span>Made for the people behind the marketing</span>
+            <span className="flex items-center gap-2">
+              Meet your new workspace{" "}
+              <MoveUpRight size={14} aria-hidden="true" />
+            </span>
+          </div>
+        </section>
 
-      <Hero isLoggedIn={isLoggedIn} />
+        <section
+          id="experience"
+          aria-labelledby="experience-heading"
+          className="relative scroll-mt-24 bg-[#EAF2FF] px-5 py-16 sm:px-8 sm:py-24 lg:px-14"
+        >
+          <div className="mx-auto max-w-[1280px]">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#155FC7]">
+                The Showwork experience
+              </p>
+              <h2 id="experience-heading" className={`${title} mt-5`}>
+                Everything your marketing team needs.
+                <br />
+                <em className="font-[var(--font-fraunces)] font-medium text-[#155FC7]">
+                  Together.
+                </em>
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-base leading-7 text-slate-600">
+                From content planning to customer conversations, performance
+                insights, and intelligent recommendations.
+              </p>
+            </div>
+            <div className="mx-auto mt-8 flex max-w-xl flex-wrap justify-center gap-x-7 gap-y-3 text-xs font-semibold sm:text-sm">
+              {["Plan", "Engage", "Analyse", "Improve"].map((label, i) => (
+                <span key={label} className="flex items-center gap-2">
+                  <span className="text-[#155FC7]">0{i + 1}</span>
+                  {label}
+                </span>
+              ))}
+            </div>
+            <Artwork
+              src={dashboard}
+              alt="Illustrative Showwork product views: content calendar, social inbox, marketing analytics, and AI recommendations."
+              sizes="(max-width: 959px) 100vw, 880px"
+              className="mx-auto mt-12 max-w-[880px] sm:mt-16"
+            />
+            <p className="mx-auto mt-5 max-w-xl text-center text-xs leading-6 text-slate-600">
+              Illustrative product views. Features and metrics depend on your
+              plan, connected channels, and permissions.
+            </p>
+          </div>
+        </section>
 
-      <IntegrationsSection />
+        <section
+          id="ai-inbox"
+          aria-labelledby="inbox-heading"
+          className="relative isolate scroll-mt-24 overflow-hidden bg-[#F8FAF5] px-5 py-16 sm:px-8 sm:py-24 lg:px-14 lg:py-28"
+        >
+          {/* Subtle background atmosphere */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-32 top-0 -z-10 h-[650px] w-[650px] rounded-full bg-[#DCEFE5]/50 blur-[110px]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-60 -left-40 -z-10 h-[500px] w-[500px] rounded-full bg-[#E4EDFA]/40 blur-[110px]"
+          />
 
-      <Worlds />
+          <div className="mx-auto grid max-w-[1080px] items-center gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-6">
+            {/* LEFT: Content */}
+            <div className="relative z-10 max-w-[540px]">
+              {/* Eyebrow */}
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-[#CDE5D6] bg-white/75 px-4 py-2 shadow-sm">
+                <Sparkles
+                  size={15}
+                  className="text-[#16834B]"
+                  aria-hidden="true"
+                />
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#176B45]">
+                  AI-powered conversations
+                </span>
+              </div>
 
-<PricingSection />
+              {/* Headline */}
+              <h2
+                id="inbox-heading"
+                className="mt-8 max-w-[620px] text-[clamp(2.35rem,4vw,3.8rem)] font-semibold leading-[1.07] tracking-[-0.055em] text-[#102A29]"
+              >
+                Every message
+                <br />
+                deserves a
+                <br />
+                <span className="text-[#155FC7]">thoughtful reply.</span>
+              </h2>
 
-<ProductMoment onOpen={() => setShowVideo(true)} />
+              {/* Description */}
+              <p className="mt-7 max-w-[480px] text-[16px] leading-[1.85] text-[#60716A] sm:text-[17px]">
+                Keep customer conversations moving with AI-powered reply
+                suggestions and optional automatic responses.
+              </p>
 
-      <Philosophy />
+              {/* Features */}
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                {/* Feature 1 */}
+                <div className="group rounded-[22px] border border-[#E0EAE3] bg-white/75 p-5 transition-all duration-300 motion-safe:hover:-translate-y-1 hover:border-[#B9D9C7] hover:shadow-[0_16px_40px_rgba(16,42,41,0.06)]">
+                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E6F4EB]">
+                    <Sparkles
+                      size={19}
+                      className="text-[#16834B]"
+                      aria-hidden="true"
+                    />
+                  </div>
 
-      <FAQSection />
+                  <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-[#102A29]">
+                    AI-assisted replies
+                  </h3>
 
-      <FinalCTA isLoggedIn={isLoggedIn} />
+                  <p className="mt-2 text-[13px] leading-[1.7] text-[#60716A]">
+                    Get thoughtful reply suggestions. Review, personalise, and
+                    send with confidence.
+                  </p>
+                </div>
 
-      <SiteFooter />
+                {/* Feature 2 */}
+                <div className="group rounded-[22px] border border-[#E0EAE3] bg-white/75 p-5 transition-all duration-300 motion-safe:hover:-translate-y-1 hover:border-[#B9D9C7] hover:shadow-[0_16px_40px_rgba(16,42,41,0.06)]">
+                  <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E9F0FD]">
+                    <ArrowUpRight
+                      size={19}
+                      className="text-[#155FC7]"
+                      aria-hidden="true"
+                    />
+                  </div>
 
-      {showVideo && (
-        <VideoModal
-          open={showVideo}
-          onClose={() => setShowVideo(false)}
-        />
-      )}
-    </main>
+                  <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-[#102A29]">
+                    Automatic responses
+                  </h3>
+
+                  <p className="mt-2 text-[13px] leading-[1.7] text-[#60716A]">
+                    Enable AI responses on supported channels to keep customers
+                    engaged.
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="mt-10 flex flex-wrap items-center gap-5">
+                <Link
+                  href="/signup"
+                  className={`group inline-flex items-center justify-center gap-4 rounded-full bg-[#102A29] px-7 py-4 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(16,42,41,0.12)] transition-all duration-300 motion-safe:hover:-translate-y-0.5 hover:bg-[#155FC7] hover:shadow-[0_12px_30px_rgba(21,95,199,0.18)] ${focus}`}
+                >
+                  Explore AI Inbox
+                  <ArrowUpRight
+                    size={18}
+                    className="transition-transform duration-300 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </Link>
+
+                <span className="text-[12px] font-medium text-[#52635E]">
+                  Built for teams that value every conversation.
+                </span>
+              </div>
+
+              <p className="mt-5 max-w-lg text-xs leading-6 text-[#52635E]">
+                AI drafting is available on Studio and Agency. Automatic replies
+                are opt-in on Agency, with supported channels and plan
+                allowances.
+              </p>
+            </div>
+
+            {/* RIGHT: Product Visual */}
+            <div className="relative flex min-w-0 items-center justify-center lg:justify-center">
+              {/* Soft visual halo */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 h-[390px] w-[390px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D9EDE3]/65 blur-[75px]"
+              />
+
+              {/* Decorative outline */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-1/2 h-[390px] w-[390px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#CFE5D9]/60"
+              />
+
+              {/* Small contextual label */}
+              <div className="absolute left-0 top-4 z-20 hidden items-center gap-2 rounded-full border border-[#E3EBE5] bg-white/95 px-4 py-2.5 shadow-[0_8px_30px_rgba(16,42,41,0.06)] sm:flex lg:-left-5">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#22A66A]/25" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#22A66A]" />
+                </span>
+                <span className="text-[11px] font-semibold text-[#244A39]">
+                  AI assistance available
+                </span>
+              </div>
+
+              {/* Screenshot */}
+              <div className="relative z-10 flex w-full max-w-[420px] items-center justify-center py-12 sm:max-w-[450px] lg:max-w-[430px]">
+                <Artwork
+                  src={reply}
+                  alt="Illustrative Showwork inbox showing customer conversations and an AI reply suggestion."
+                  sizes="(max-width: 639px) 90vw, 410px"
+                  className="mx-auto h-auto w-full max-w-[380px] object-contain drop-shadow-[0_25px_45px_rgba(16,42,41,0.10)] sm:max-w-[410px] lg:max-w-[390px]"
+                />
+              </div>
+
+              {/* Bottom caption */}
+              <div className="absolute bottom-0 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-[#E0EAE3] bg-white/90 px-4 py-2.5 shadow-[0_8px_24px_rgba(16,42,41,0.04)]">
+                <Sparkles
+                  size={13}
+                  className="text-[#16834B]"
+                  aria-hidden="true"
+                />
+                <span className="text-[11px] font-medium text-[#60716A]">
+                  Less time replying. More time creating.
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="team-heading"
+          className="overflow-hidden bg-[#102A29] px-5 py-20 text-white sm:px-8 sm:py-28 lg:px-14"
+        >
+          <div className="mx-auto max-w-[1280px]">
+            <div className="grid items-end gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#BFEA91]">
+                  Good work is a team sport.
+                </p>
+                <h2 id="team-heading" className={`${title} mt-5 max-w-3xl`}>
+                  Less back-and-forth.
+                  <br />
+                  <em className="font-[var(--font-fraunces)] font-medium text-[#D8F3A5]">
+                    More getting things done.
+                  </em>
+                </h2>
+              </div>
+              <div className="lg:pb-2">
+                <p className="max-w-md text-base leading-7 text-emerald-50/85">
+                  Bring your team, feedback, and approvals into one organised
+                  workspace.
+                </p>
+                <p className="mt-5 text-sm font-semibold tracking-wide text-[#D8F3A5]">
+                  Create. Review. Approve.
+                </p>
+              </div>
+            </div>
+            <Artwork
+              src={workflow}
+              alt="Illustrative Showwork collaboration view with teammates, feedback, review, and approval."
+              sizes="(max-width: 1199px) 100vw, 1080px"
+              className="mx-auto mt-12 max-w-[1080px]"
+            />
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-xs leading-6 text-emerald-50/80">
+              <span>
+                Illustrative workflow. Team access and features vary by plan.
+              </span>
+              <Link
+                href="/signup"
+                className={`inline-flex items-center gap-2 rounded-sm text-sm font-semibold text-[#D8F3A5] ${focus}`}
+              >
+                Find your team’s flow{" "}
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <IntegrationsSection homepage />
+
+        <section
+          id="products"
+          aria-label="Explore Showwork products"
+          className="scroll-mt-24 bg-white px-5 pt-20 sm:px-8 lg:px-14"
+        >
+          <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-6 border-b border-slate-200 pb-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#155FC7]">
+                Find your kind of Showwork
+              </p>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-slate-600">
+                Marketing Workspace for your team. Project Delivery for creative
+                handovers.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-5 text-sm font-semibold">
+              <Link href="/signup" className={`rounded-sm ${focus}`}>
+                Marketing Workspace{" "}
+                <ArrowUpRight className="inline" size={16} aria-hidden="true" />
+              </Link>
+              <Link href="/signup" className={`rounded-sm ${focus}`}>
+                Project Delivery{" "}
+                <ArrowUpRight className="inline" size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+        <PricingSection compact />
+
+        <section
+          aria-labelledby="closing-heading"
+          className="relative overflow-hidden bg-[#D8F3A5] px-5 py-20 sm:px-8 sm:py-28"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-28 -top-28 h-80 w-80 rounded-full border-[38px] border-[#16834B]/10"
+          />
+          <div className="relative mx-auto max-w-4xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.18em]">
+              Great teams. Better work. More fun.
+            </p>
+            <h2
+              id="closing-heading"
+              className="mt-6 text-[clamp(3.1rem,7vw,7rem)] font-semibold leading-[0.98] tracking-[-0.065em]"
+            >
+              Your next great thing.
+              <br />
+              <em className="font-[var(--font-fraunces)] font-medium">
+                Starts together.
+              </em>
+            </h2>
+            <Link
+              href={start}
+              className={`mt-9 inline-flex items-center gap-7 rounded-full bg-[#102A29] px-8 py-4 text-sm font-semibold text-white transition hover:bg-[#1C4946] ${focus}`}
+            >
+              Get Started
+              <ArrowUpRight size={20} aria-hidden="true" />
+            </Link>
+            <p className="mt-5 text-sm text-[#36533E]">
+              Marketing Workspace · Seven-day trial
+            </p>
+          </div>
+        </section>
+        <SiteFooter homepage />
+      </main>
+    </MotionConfig>
   );
 }

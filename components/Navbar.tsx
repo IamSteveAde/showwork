@@ -572,7 +572,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="group relative flex items-center gap-2 py-2 text-[12px] font-semibold tracking-[-0.01em] text-black/50 transition-colors duration-150 hover:text-black"
+      className="group relative flex items-center gap-2 py-2 text-[12px] font-semibold tracking-[-0.01em] text-black/65 transition-colors duration-150 hover:text-black"
     >
       <Icon
         size={13}
