@@ -3081,6 +3081,38 @@ function PostDetailPanel({
   const canDeliver = permissions ? permissions.includes("delivery.manage") : userRole === "EDIT_CALENDAR";
   const t = THEMES[theme];
   const router = useRouter();
+  const [detailTab, setDetailTab] = useState<"content" | "publishing">("content");
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    panelRef.current?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); }
+      if (event.key !== "Tab") return;
+      const elements = Array.from(panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex="0"]'
+      ) ?? []).filter(element => element.getClientRects().length > 0);
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === panelRef.current)) {
+        event.preventDefault(); last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === panelRef.current)) {
+        event.preventDefault(); first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKey);
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, []);
 
   const videoRef =
     useRef<HTMLVideoElement>(null);
@@ -3487,7 +3519,7 @@ caption: draftDetails.caption,
   return (
     <div
       className="
-        fixed inset-0 z-50
+        fixed inset-0 z-[150]
         flex items-end justify-center
         bg-black/75
         p-0
@@ -3497,23 +3529,28 @@ caption: draftDetails.caption,
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-post-detail-title"
+        tabIndex={-1}
         onClick={(e) =>
           e.stopPropagation()
         }
         className="
           relative
           flex
-          h-[96dvh]
-          max-h-[96dvh]
+          h-[100dvh]
+          max-h-[100dvh]
           w-full
           flex-col
           overflow-hidden
-          rounded-t-3xl
+          rounded-none
           border
           shadow-2xl
-          sm:h-auto
+          sm:h-[92dvh]
           sm:max-h-[94vh]
-          sm:max-w-2xl
+          sm:max-w-[1200px]
           sm:rounded-3xl
         "
         style={{
@@ -3562,6 +3599,7 @@ caption: draftDetails.caption,
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2
+                    id="calendar-post-detail-title"
                     className="
                       text-base
                       font-semibold
@@ -3671,300 +3709,21 @@ caption: draftDetails.caption,
           </div>
         </div>
 
-        {/* BODY */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div
-            className="
-              flex flex-col gap-7
-              px-4 py-5
-              sm:px-7 sm:py-6
-            "
-          >
-            {/* STATUS */}
-            {post.assets.length > 0 && (
-              <section>
-                <div
-                  className="
-                    flex flex-col gap-3
-                    rounded-2xl
-                    border
-                    p-4
-                    sm:flex-row
-                    sm:items-center
-                  "
-                  style={{
-                    background:
-                      approvalMeta.bg,
-                    borderColor:
-                      `${approvalMeta.color}26`,
-                  }}
-                >
-                  <span
-                    className="
-                      flex h-9 w-9
-                      flex-shrink-0
-                      items-center justify-center
-                      rounded-full
-                    "
-                    style={{
-                      background:
-                        `${approvalMeta.color}18`,
-                      color:
-                        approvalMeta.color,
-                    }}
-                  >
-                    {post.approvalStatus ===
-                      "APPROVED" ? (
-                      <IconCheck className="h-4 w-4" />
-                    ) : (
-                      <span className="text-sm">
-                        !
-                      </span>
-                    )}
-                  </span>
-
-                  <div>
-                    <p
-                      className="text-xs font-semibold"
-                      style={{
-                        color:
-                          approvalMeta.color,
-                      }}
-                    >
-                      {approvalMeta.text}
-                    </p>
-
-                    <p
-                      className="mt-0.5 text-[10px]"
-                      style={{
-                        color: t.textMuted,
-                      }}
-                    >
-                      {post.approvalStatus ===
-                        "APPROVED"
-                        ? "This content has been approved."
-                        : post.approvalStatus ===
-                          "NEEDS_REVISION"
-                          ? "Changes have been requested before approval."
-                          : "Waiting for client review."}
-                    </p>
-                  </div>
-                </div>
-
-                {post.approvalStatus ===
-                  "NEEDS_REVISION" &&
-                  post.approvalNote && (
-                    <div
-                      className="
-                        mt-3
-                        rounded-2xl
-                        border
-                        p-4
-                      "
-                      style={{
-                        background:
-                          "rgba(249,115,22,0.06)",
-                        borderColor:
-                          "rgba(249,115,22,0.14)",
-                      }}
-                    >
-                      <p
-                        className="
-                          mb-2
-                          text-[10px]
-                          font-bold
-                          uppercase
-                        "
-                        style={{
-                          color: "#F97316",
-                          letterSpacing:
-                            "0.08em",
-                        }}
-                      >
-                        Client feedback
-                      </p>
-
-                      <p
-                        className="
-                          text-sm
-                          leading-relaxed
-                        "
-                        style={{
-                          color: t.textMuted,
-                        }}
-                      >
-                        &ldquo;{post.approvalNote}&rdquo;
-                      </p>
-                    </div>
-                  )}
-                {post.approvalStatus === "NEEDS_REVISION" &&
-                  canDeliver && (
-                    <div className="mt-3">
-                      <button
-                        type="button"
-                        onClick={resubmitForApproval}
-                        disabled={resubmitting || post.assets.length === 0}
-                        className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-                        style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
-                      >
-                        {resubmitting ? "Sending for approval..." : "Resubmit for approval"}
-                      </button>
-                      <p className="mt-2 text-[10px]" style={{ color: t.textMuted }}>
-                        The client will be able to review this updated post.
-                      </p>
-                    </div>
-                  )}
-              </section>
-            )}
-
-            {canPublish && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
-
-            {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
-                post has actually been scheduled, published, or
-                failed; a post that's never been through that at all
-                shows nothing here. */}
-            {post.platform === "INSTAGRAM" &&
-              post.instagramPublishStatus !== "NOT_SCHEDULED" && (
-                <section>
-                  <div
-                    className="rounded-2xl border p-4"
-                    style={{
-                      background:
-                        post.instagramPublishStatus === "PUBLISHED"
-                          ? "rgba(225,48,108,0.06)"
-                          : post.instagramPublishStatus === "FAILED"
-                            ? "rgba(239,68,68,0.06)"
-                            : "rgba(36,120,255,0.06)",
-                      borderColor:
-                        post.instagramPublishStatus === "PUBLISHED"
-                          ? "rgba(225,48,108,0.16)"
-                          : post.instagramPublishStatus === "FAILED"
-                            ? "rgba(239,68,68,0.16)"
-                            : "rgba(36,120,255,0.16)",
-                    }}
-                  >
-                    <p
-                      className="mb-1.5 text-[10px] font-bold uppercase"
-                      style={{
-                        letterSpacing: "0.08em",
-                        color:
-                          post.instagramPublishStatus === "PUBLISHED"
-                            ? "#E1306C"
-                            : post.instagramPublishStatus === "FAILED"
-                              ? "#EF4444"
-                              : "#2478FF",
-                      }}
-                    >
-                      Instagram
-                    </p>
-
-                    {post.instagramPublishStatus === "SCHEDULED" && (
-                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        This will publish to Instagram automatically once its scheduled time arrives — no manual posting needed.
-                      </p>
-                    )}
-
-                    {post.instagramPublishStatus === "PUBLISHED" && (
-                      <>
-                        <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                          This post is live on Instagram.
-                        </p>
-                        {post.instagramPermalink && (
-
-                          <a href={post.instagramPermalink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
-                            style={{ color: "#E1306C" }}
-                          >
-                            View on Instagram
-                            <span aria-hidden><><UiSymbol name="upRight" /></></span>
-                          </a>
-                        )}
-                      </>
-                    )}
-
-                    {post.instagramPublishStatus === "PUBLISHING" && (
-                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        Instagram is processing this post now. Its status will update when publishing is confirmed.
-                      </p>
-                    )}
-
-                    {post.instagramPublishStatus === "FAILED" && (
-                      <p className="text-sm leading-relaxed text-red-400">
-                        {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
-                      </p>
-                    )}
-                  </div>
-                </section>
-              )}
-
-            {/* Viewers see the stored publishing status. Editors already have
-                the interactive TikTok panel above, which tracks action results
-                immediately without repeating a stale failure below it. */}
-            {post.platform === "TIKTOK" &&
-              !canPublish &&
-              post.tikTokPublishStatus !== "NOT_SCHEDULED" && (
-                <section>
-                  <div
-                    className="rounded-2xl border p-4"
-                    style={{
-                      background:
-                        post.tikTokPublishStatus === "PUBLISHED"
-                          ? "rgba(0,242,234,0.06)"
-                          : post.tikTokPublishStatus === "FAILED"
-                            ? "rgba(239,68,68,0.06)"
-                            : "rgba(36,120,255,0.06)",
-                      borderColor:
-                        post.tikTokPublishStatus === "PUBLISHED"
-                          ? "rgba(0,242,234,0.18)"
-                          : post.tikTokPublishStatus === "FAILED"
-                            ? "rgba(239,68,68,0.16)"
-                            : "rgba(36,120,255,0.16)",
-                    }}
-                  >
-                    <p
-                      className="mb-1.5 text-[10px] font-bold uppercase"
-                      style={{
-                        letterSpacing: "0.08em",
-                        color:
-                          post.tikTokPublishStatus === "PUBLISHED"
-                            ? "#00C2B8"
-                            : post.tikTokPublishStatus === "FAILED"
-                              ? "#EF4444"
-                              : "#2478FF",
-                      }}
-                    >
-                      TikTok
-                    </p>
-
-                    {post.tikTokPublishStatus === "SCHEDULED" && (
-                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        This will publish to your authorized TikTok account at its scheduled time using the settings you reviewed.
-                      </p>
-                    )}
-
-                    {post.tikTokPublishStatus === "PUBLISHED" && (
-                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        TikTok confirmed publishing. Open the connected TikTok account to view the post.
-                      </p>
-                    )}
-
-                    {post.tikTokPublishStatus === "PUBLISHING" && (
-                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
-                        TikTok is processing this post now. Its status will update when publishing is confirmed.
-                      </p>
-                    )}
-
-                    {post.tikTokPublishStatus === "FAILED" && (
-                      <p className="text-sm leading-relaxed text-red-400">
-                        {post.tikTokPublishError ?? "Something went wrong publishing this post to TikTok."}
-                      </p>
-                    )}
-                  </div>
-                </section>
-              )}
-
+        <div className="flex shrink-0 gap-2 border-b px-4 py-3 sm:px-7" style={{ borderColor: t.cardBorder }}>
+          {([ ["content", "Content & creative"], ["publishing", "Review & publishing"] ] as const).map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={detailTab === value}
+              onClick={() => setDetailTab(value)}
+              className="min-h-11 rounded-xl px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+              style={{ background: detailTab === value ? "#155FC7" : t.pillBg, color: detailTab === value ? "white" : t.textMuted }}>
+              {label}
+            </button>
+          ))}
+          <span className="ml-auto hidden items-center rounded-full px-3 text-xs font-semibold sm:inline-flex" style={{ background: approvalMeta.bg, color: approvalMeta.color }}>{approvalMeta.text}</span>
+        </div>
+        {/* A single scroll surface keeps long captions and publishing controls reachable. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-wrap:anywhere]">
+          <div className={detailTab === "content" ? "grid min-w-0 gap-7 p-4 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-8" : "hidden"}>
+            <div className="min-w-0">
             {/* MEDIA */}
             <section>
               <div className="mb-3 flex items-end justify-between gap-3">
@@ -4430,9 +4189,12 @@ caption: draftDetails.caption,
               )}
             </section>
 
+
+            </div>
+            <div className="min-w-0 space-y-7 lg:border-l lg:pl-8" style={{ borderColor: t.cardBorder }}>
             {/* POST DETAILS */}
             <section>
-              <div className="mb-3 flex items-start justify-between gap-4">
+              <div className="mb-4 flex flex-col items-start gap-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <h3
@@ -4468,11 +4230,11 @@ caption: draftDetails.caption,
                 </div>
 
                {canEdit && !isApproved && !editingDetails && (
-  <div className="flex items-center gap-2">
+  <div className="flex flex-wrap items-center gap-2">
     <button
       type="button"
       onClick={startEditingDetails}
-      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+      className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
     >
       <span className="text-sm"><><UiSymbol name="edit" /></></span>
       Edit details
@@ -4487,7 +4249,7 @@ caption: draftDetails.caption,
   setAiEditError("");
   setAiEditFields([]);
 }}
-  className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
+  className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg bg-purple-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-purple-700"
 >
   <span className="text-sm"><UiSymbol name="sparkles" /></span>
   Edit with AI
@@ -5417,8 +5179,303 @@ caption: draftDetails.caption,
                   </div>
                 </section>
               )}
+            </div>
+          </div>
+          <div className={detailTab === "publishing" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
+            <div>
+              <h3 className="text-lg font-semibold" style={{ color: t.text }}>From review to publishing</h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: t.textMuted }}>Client approval and publishing are separate steps. Check the status and available actions below.</p>
+            </div>
+            {/* STATUS */}
+            {post.assets.length > 0 && (
+              <section>
+                <div
+                  className="
+                    flex flex-col gap-3
+                    rounded-2xl
+                    border
+                    p-4
+                    sm:flex-row
+                    sm:items-center
+                  "
+                  style={{
+                    background:
+                      approvalMeta.bg,
+                    borderColor:
+                      `${approvalMeta.color}26`,
+                  }}
+                >
+                  <span
+                    className="
+                      flex h-9 w-9
+                      flex-shrink-0
+                      items-center justify-center
+                      rounded-full
+                    "
+                    style={{
+                      background:
+                        `${approvalMeta.color}18`,
+                      color:
+                        approvalMeta.color,
+                    }}
+                  >
+                    {post.approvalStatus ===
+                      "APPROVED" ? (
+                      <IconCheck className="h-4 w-4" />
+                    ) : (
+                      <span className="text-sm">
+                        !
+                      </span>
+                    )}
+                  </span>
+
+                  <div>
+                    <p
+                      className="text-xs font-semibold"
+                      style={{
+                        color:
+                          approvalMeta.color,
+                      }}
+                    >
+                      {approvalMeta.text}
+                    </p>
+
+                    <p
+                      className="mt-0.5 text-[10px]"
+                      style={{
+                        color: t.textMuted,
+                      }}
+                    >
+                      {post.approvalStatus ===
+                        "APPROVED"
+                        ? "This content has been approved."
+                        : post.approvalStatus ===
+                          "NEEDS_REVISION"
+                          ? "Changes have been requested before approval."
+                          : "Waiting for client review."}
+                    </p>
+                  </div>
+                </div>
+
+                {post.approvalStatus ===
+                  "NEEDS_REVISION" &&
+                  post.approvalNote && (
+                    <div
+                      className="
+                        mt-3
+                        rounded-2xl
+                        border
+                        p-4
+                      "
+                      style={{
+                        background:
+                          "rgba(249,115,22,0.06)",
+                        borderColor:
+                          "rgba(249,115,22,0.14)",
+                      }}
+                    >
+                      <p
+                        className="
+                          mb-2
+                          text-[10px]
+                          font-bold
+                          uppercase
+                        "
+                        style={{
+                          color: "#F97316",
+                          letterSpacing:
+                            "0.08em",
+                        }}
+                      >
+                        Client feedback
+                      </p>
+
+                      <p
+                        className="
+                          text-sm
+                          leading-relaxed
+                        "
+                        style={{
+                          color: t.textMuted,
+                        }}
+                      >
+                        &ldquo;{post.approvalNote}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                {post.approvalStatus === "NEEDS_REVISION" &&
+                  canDeliver && (
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={resubmitForApproval}
+                        disabled={resubmitting || post.assets.length === 0}
+                        className="rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: "linear-gradient(135deg, #2478FF 0%, #0052FF 100%)" }}
+                      >
+                        {resubmitting ? "Sending for approval..." : "Resubmit for approval"}
+                      </button>
+                      <p className="mt-2 text-[10px]" style={{ color: t.textMuted }}>
+                        The client will be able to review this updated post.
+                      </p>
+                    </div>
+                  )}
+              </section>
+            )}
+
+            {canPublish && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
+
+            {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
+                post has actually been scheduled, published, or
+                failed; a post that's never been through that at all
+                shows nothing here. */}
+            {post.platform === "INSTAGRAM" &&
+              post.instagramPublishStatus !== "NOT_SCHEDULED" && (
+                <section>
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{
+                      background:
+                        post.instagramPublishStatus === "PUBLISHED"
+                          ? "rgba(225,48,108,0.06)"
+                          : post.instagramPublishStatus === "FAILED"
+                            ? "rgba(239,68,68,0.06)"
+                            : "rgba(36,120,255,0.06)",
+                      borderColor:
+                        post.instagramPublishStatus === "PUBLISHED"
+                          ? "rgba(225,48,108,0.16)"
+                          : post.instagramPublishStatus === "FAILED"
+                            ? "rgba(239,68,68,0.16)"
+                            : "rgba(36,120,255,0.16)",
+                    }}
+                  >
+                    <p
+                      className="mb-1.5 text-[10px] font-bold uppercase"
+                      style={{
+                        letterSpacing: "0.08em",
+                        color:
+                          post.instagramPublishStatus === "PUBLISHED"
+                            ? "#E1306C"
+                            : post.instagramPublishStatus === "FAILED"
+                              ? "#EF4444"
+                              : "#2478FF",
+                      }}
+                    >
+                      Instagram
+                    </p>
+
+                    {post.instagramPublishStatus === "SCHEDULED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        This will publish to Instagram automatically once its scheduled time arrives — no manual posting needed.
+                      </p>
+                    )}
+
+                    {post.instagramPublishStatus === "PUBLISHED" && (
+                      <>
+                        <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                          This post is live on Instagram.
+                        </p>
+                        {post.instagramPermalink && (
+
+                          <a href={post.instagramPermalink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold"
+                            style={{ color: "#E1306C" }}
+                          >
+                            View on Instagram
+                            <span aria-hidden><><UiSymbol name="upRight" /></></span>
+                          </a>
+                        )}
+                      </>
+                    )}
+
+                    {post.instagramPublishStatus === "PUBLISHING" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        Instagram is processing this post now. Its status will update when publishing is confirmed.
+                      </p>
+                    )}
+
+                    {post.instagramPublishStatus === "FAILED" && (
+                      <p className="text-sm leading-relaxed text-red-400">
+                        {post.instagramPublishError ?? "Something went wrong publishing this post to Instagram."}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+
+            {/* Viewers see the stored publishing status. Editors already have
+                the interactive TikTok panel above, which tracks action results
+                immediately without repeating a stale failure below it. */}
+            {post.platform === "TIKTOK" &&
+              !canPublish &&
+              post.tikTokPublishStatus !== "NOT_SCHEDULED" && (
+                <section>
+                  <div
+                    className="rounded-2xl border p-4"
+                    style={{
+                      background:
+                        post.tikTokPublishStatus === "PUBLISHED"
+                          ? "rgba(0,242,234,0.06)"
+                          : post.tikTokPublishStatus === "FAILED"
+                            ? "rgba(239,68,68,0.06)"
+                            : "rgba(36,120,255,0.06)",
+                      borderColor:
+                        post.tikTokPublishStatus === "PUBLISHED"
+                          ? "rgba(0,242,234,0.18)"
+                          : post.tikTokPublishStatus === "FAILED"
+                            ? "rgba(239,68,68,0.16)"
+                            : "rgba(36,120,255,0.16)",
+                    }}
+                  >
+                    <p
+                      className="mb-1.5 text-[10px] font-bold uppercase"
+                      style={{
+                        letterSpacing: "0.08em",
+                        color:
+                          post.tikTokPublishStatus === "PUBLISHED"
+                            ? "#00C2B8"
+                            : post.tikTokPublishStatus === "FAILED"
+                              ? "#EF4444"
+                              : "#2478FF",
+                      }}
+                    >
+                      TikTok
+                    </p>
+
+                    {post.tikTokPublishStatus === "SCHEDULED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        This will publish to your authorized TikTok account at its scheduled time using the settings you reviewed.
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "PUBLISHED" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        TikTok confirmed publishing. Open the connected TikTok account to view the post.
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "PUBLISHING" && (
+                      <p className="text-sm leading-relaxed" style={{ color: t.textMuted }}>
+                        TikTok is processing this post now. Its status will update when publishing is confirmed.
+                      </p>
+                    )}
+
+                    {post.tikTokPublishStatus === "FAILED" && (
+                      <p className="text-sm leading-relaxed text-red-400">
+                        {post.tikTokPublishError ?? "Something went wrong publishing this post to TikTok."}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+
+
+            {!post.assets.length && <p className="rounded-xl border p-4 text-sm" style={{ borderColor: t.cardBorder, color: t.textMuted }}>Add your creative in Content &amp; creative to prepare this post for review.</p>}
           </div>
         </div>
+
 
         {/* FOOTER */}
         <div
@@ -5470,13 +5527,25 @@ caption: draftDetails.caption,
                 : "No content attached yet"}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 pb-[env(safe-area-inset-bottom)]">
+          {editingDetails && (
+            <button type="button" onClick={saveDetails} disabled={savingDetails}
+              className="min-h-11 flex-1 rounded-xl bg-[#155FC7] px-5 py-2.5 text-xs font-semibold text-white disabled:opacity-50 sm:flex-none">
+              {savingDetails ? "Saving…" : "Save changes"}
+            </button>
+          )}
+          {!editingDetails && detailTab === "content" && (
+            <button type="button" onClick={() => setDetailTab("publishing")}
+              className="min-h-11 flex-1 rounded-xl bg-[#155FC7] px-5 py-2.5 text-xs font-semibold text-white sm:flex-none">
+              Review &amp; publishing
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
             className="
               min-h-11
-              w-full
+              flex-1
               rounded-xl
               px-5 py-2.5
               text-xs
