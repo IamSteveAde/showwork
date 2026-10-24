@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import {
   publishingIntegrationInstalled,
   invokePublishingEntrypoint,
 } from "@/lib/publishing/applicationBoundary";
+
 import { getCurrentCreator } from "@/lib/auth";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
+
 import {
   verifyFacebookPageSelection,
   facebookPageSelectionCookieOptions,
 } from "@/lib/facebookPageSelection";
-import { listManagedPages } from "@/lib/instagram";
+
+import {
+  listManagedPages,
+  listInstagramGrantedPermissions,
+} from "@/lib/instagram";
+
 import { completeInstagramConnection } from "@/lib/instagramConnection";
 
 const COOKIE = "showwork_instagram_legacy_selection";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store",
+};
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -22,7 +34,10 @@ async function invoke(
   request: NextRequest,
   context: RouteContext
 ) {
-  // Preserve canonical publishing integration when installed.
+  // ============================================================
+  // 1. CANONICAL PUBLISHING INTEGRATION
+  // ============================================================
+
   if (publishingIntegrationInstalled()) {
     try {
       return await invokePublishingEntrypoint<NextResponse>(
@@ -31,22 +46,40 @@ async function invoke(
       );
     } catch {
       return NextResponse.json(
-        { error: "Account selection failed. Please reconnect." },
-        { status: 409 }
+        {
+          error: "Account selection failed. Please reconnect.",
+        },
+        {
+          status: 409,
+          headers: NO_STORE_HEADERS,
+        }
       );
     }
   }
+
+  // ============================================================
+  // 2. AUTHENTICATION
+  // ============================================================
 
   const creator = await getCurrentCreator();
 
   if (!creator) {
     return NextResponse.json(
-      { error: "Sign in to continue." },
-      { status: 401 }
+      {
+        error: "Sign in to continue.",
+      },
+      {
+        status: 401,
+        headers: NO_STORE_HEADERS,
+      }
     );
   }
 
   const { id } = await context.params;
+
+  // ============================================================
+  // 3. WORKSPACE PERMISSIONS
+  // ============================================================
 
   const allowed = await hasCalendarPermission(
     creator.id,
@@ -59,19 +92,35 @@ async function invoke(
       {
         error: "You cannot manage this workspace's channels.",
       },
-      { status: 403 }
+      {
+        status: 403,
+        headers: NO_STORE_HEADERS,
+      }
     );
   }
+
+  // ============================================================
+  // 4. REQUEST SECURITY
+  // ============================================================
 
   if (
     request.method === "POST" &&
     request.headers.get("origin") !== request.nextUrl.origin
   ) {
     return NextResponse.json(
-      { error: "Invalid request origin." },
-      { status: 403 }
+      {
+        error: "Invalid request origin.",
+      },
+      {
+        status: 403,
+        headers: NO_STORE_HEADERS,
+      }
     );
   }
+
+  // ============================================================
+  // 5. VERIFY FACEBOOK OAUTH SESSION
+  // ============================================================
 
   const session = verifyFacebookPageSelection(
     request.cookies.get(COOKIE)?.value
@@ -87,86 +136,182 @@ async function invoke(
       {
         error:
           "Your account selection session expired. Connect Instagram again.",
+        code: "INSTAGRAM_SESSION_EXPIRED",
       },
-      { status: 409 }
+      {
+        status: 409,
+        headers: NO_STORE_HEADERS,
+      }
     );
   }
 
   try {
-    // Step 1: Retrieve ALL authorized Facebook Pages.
-    const allPages = await listManagedPages(
-      session.pages[0].accessToken
-    );
+    // ==========================================================
+    // 6. CHECK META PERMISSIONS
+    // ==========================================================
 
-    // Step 2: Identify Pages with linked Instagram accounts.
+    const userAccessToken = session.pages[0].accessToken;
+
+    const grantedPermissions =
+      await listInstagramGrantedPermissions(userAccessToken);
+
+    const permissionDiagnostics = {
+      pagesShowListGranted:
+        grantedPermissions.includes("pages_show_list"),
+
+      pagesReadEngagementGranted:
+        grantedPermissions.includes("pages_read_engagement"),
+
+      pagesManageMetadataGranted:
+        grantedPermissions.includes("pages_manage_metadata"),
+
+      instagramBasicGranted:
+        grantedPermissions.includes("instagram_basic"),
+
+      instagramContentPublishGranted:
+        grantedPermissions.includes("instagram_content_publish"),
+
+      instagramManageMessagesGranted:
+        grantedPermissions.includes("instagram_manage_messages"),
+
+      instagramInsightsGranted:
+        grantedPermissions.includes("instagram_manage_insights"),
+    };
+
+    // ==========================================================
+    // 7. DISCOVER FACEBOOK PAGES
+    // ==========================================================
+
+    const allPages = await listManagedPages(userAccessToken);
+
+    // ==========================================================
+    // 8. DISCOVER LINKED INSTAGRAM ACCOUNTS
+    // ==========================================================
+
     const eligiblePages = allPages.filter(
       (page) => Boolean(page.instagram_business_account?.id)
     );
 
-    // Step 3: Diagnose account discovery.
-    const discoveryStatus =
-      allPages.length === 0
-        ? "NO_FACEBOOK_PAGES"
-        : eligiblePages.length === 0
-        ? "NO_INSTAGRAM_RELATIONSHIP"
-        : "ACCOUNTS_FOUND";
+    // ==========================================================
+    // 9. DETERMINE DISCOVERY STATUS
+    // ==========================================================
+
+    let discoveryStatus:
+      | "PAGES_PERMISSION_MISSING"
+      | "NO_FACEBOOK_PAGES"
+      | "NO_INSTAGRAM_RELATIONSHIP"
+      | "ACCOUNTS_FOUND";
+
+    if (!permissionDiagnostics.pagesShowListGranted) {
+      discoveryStatus = "PAGES_PERMISSION_MISSING";
+    } else if (allPages.length === 0) {
+      discoveryStatus = "NO_FACEBOOK_PAGES";
+    } else if (eligiblePages.length === 0) {
+      discoveryStatus = "NO_INSTAGRAM_RELATIONSHIP";
+    } else {
+      discoveryStatus = "ACCOUNTS_FOUND";
+    }
+
+    // ==========================================================
+    // 10. SAFE DIAGNOSTICS
+    // ==========================================================
 
     const diagnostics = {
       facebookPagesFound: allPages.length,
+
       instagramAccountsFound: eligiblePages.length,
+
       discoveryStatus,
+
+      permissions: permissionDiagnostics,
     };
 
+    // ==========================================================
+    // 11. GET: RETURN INSTAGRAM ACCOUNT OPTIONS
+    // ==========================================================
+
     if (request.method === "GET") {
+      const accounts = eligiblePages.map((page) => ({
+        accountId: page.instagram_business_account!.id,
+
+        pageId: page.id,
+
+        name: `${
+          page.name
+        } — ${
+          page.instagram_business_account?.username
+            ? `@${page.instagram_business_account.username}`
+            : "linked Instagram account"
+        }`,
+      }));
+
       return NextResponse.json(
         {
-          accounts: eligiblePages.map((page) => ({
-            accountId: page.instagram_business_account!.id,
-            pageId: page.id,
-            name: `${
-              page.name
-            } — ${
-              page.instagram_business_account?.username
-                ? "@" + page.instagram_business_account.username
-                : "linked Instagram account"
-            }`,
-          })),
+          accounts,
 
           expectedVersion: 0,
 
           insightsGranted:
-            session.grantedPermissions.includes(
-              "instagram_manage_insights"
-            ),
+            permissionDiagnostics.instagramInsightsGranted,
 
           diagnostics,
         },
         {
-          headers: {
-            "Cache-Control": "no-store",
-          },
+          status: 200,
+          headers: NO_STORE_HEADERS,
         }
       );
     }
 
-    // Preserve existing account-selection behavior.
-    const body = await request.json();
+    // ==========================================================
+    // 12. POST: VALIDATE SELECTED ACCOUNT
+    // ==========================================================
+
+    const body: unknown = await request.json();
+
+    if (
+      !body ||
+      typeof body !== "object" ||
+      !("accountId" in body) ||
+      typeof body.accountId !== "string" ||
+      !body.accountId.trim()
+    ) {
+      return NextResponse.json(
+        {
+          error: "Select a valid Instagram account.",
+          code: "INVALID_INSTAGRAM_ACCOUNT",
+        },
+        {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        }
+      );
+    }
+
+    const accountId = body.accountId;
 
     const page = eligiblePages.find(
       (candidate) =>
-        candidate.instagram_business_account!.id ===
-        body.accountId
+        candidate.instagram_business_account?.id === accountId
     );
 
     if (!page?.instagram_business_account) {
       return NextResponse.json(
         {
           error:
-            "Select an Instagram account linked to a Page you administer.",
+            "Select an Instagram account linked to a Facebook Page you administer.",
+          code: "INSTAGRAM_ACCOUNT_NOT_FOUND",
         },
-        { status: 400 }
+        {
+          status: 400,
+          headers: NO_STORE_HEADERS,
+        }
       );
     }
+
+    // ==========================================================
+    // 13. COMPLETE INSTAGRAM CONNECTION
+    // ==========================================================
 
     await completeInstagramConnection(
       id,
@@ -175,15 +320,25 @@ async function invoke(
         instagram_business_account:
           page.instagram_business_account,
       },
-      session.grantedPermissions,
+      grantedPermissions,
       new Date(
         session.userTokenExpiresAt ?? Date.now()
       )
     );
 
-    const response = NextResponse.json({
-      connected: true,
-    });
+    // ==========================================================
+    // 14. CLEAR TEMPORARY SELECTION SESSION
+    // ==========================================================
+
+    const response = NextResponse.json(
+      {
+        connected: true,
+      },
+      {
+        status: 200,
+        headers: NO_STORE_HEADERS,
+      }
+    );
 
     response.cookies.set(
       COOKIE,
@@ -196,19 +351,29 @@ async function invoke(
 
     return response;
   } catch (error) {
-    // Avoid exposing Meta tokens or raw API error messages.
-    console.error(
-      "[Instagram Account Selection]",
-      error instanceof Error ? error.message : "Unknown error"
-    );
+    // ==========================================================
+    // 15. ERROR HANDLING
+    // ==========================================================
 
+    console.error("[Instagram Account Selection]", {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unknown Instagram discovery error",
+    });
+
+    // Never expose Meta access tokens or raw API errors.
     return NextResponse.json(
       {
         error:
           "Instagram account discovery failed. Please reconnect and try again.",
+
         code: "INSTAGRAM_DISCOVERY_FAILED",
       },
-      { status: 502 }
+      {
+        status: 502,
+        headers: NO_STORE_HEADERS,
+      }
     );
   }
 }
