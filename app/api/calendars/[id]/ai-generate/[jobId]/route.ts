@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       : (job.httpStatus && job.httpStatus >= 200 && job.httpStatus < 300 ? job.httpStatus : 200);
     return NextResponse.json(result, { status, headers: { "Cache-Control": "no-store" } });
   }
-  const progressAt = job.status === "RUNNING" ? job.updatedAt : job.createdAt;
+  const progressAt = (job.status === "RUNNING" || job.status === "PROCESSING") ? (job.startedAt ?? job.createdAt) : job.createdAt;
   if (Date.now() - progressAt.getTime() > 16 * 60_000) {
     return NextResponse.json({ error: "Generation was interrupted. Check your drafts before trying again." }, { status: 504 });
   }
