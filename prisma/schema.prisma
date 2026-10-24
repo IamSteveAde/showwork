@@ -12,20 +12,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model AiGenerationJob {
-  id         String   @id @default(uuid())
-  creatorId  String
-  calendarId String
-  status     String   @default("PENDING")
-  request    Json
-  result     Json?
-  httpStatus Int?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([creatorId, calendarId, createdAt])
-  @@index([status, createdAt])
-}
 
 // ─────────────────────────────────────────────
 // CREATOR — the Spotlite product's customer
@@ -2789,6 +2775,7 @@ model AiGenerationJob {
   startedAt   DateTime?
   completedAt DateTime?
 
+@@index([creatorId, calendarId, createdAt])
   @@index([calendarId], map: "idx_ai_gen_job_calendar")
   @@index([status, createdAt], map: "idx_ai_gen_job_status")
 }
