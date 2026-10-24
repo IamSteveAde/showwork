@@ -1,3 +1,4 @@
+import { notifyInternalReview } from "../calendarReviewNotifications";
 import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import {createShowworkPublishingAccounts} from './showworkPublishingAccounts';
 /** Actual application policy services, explicitly composed; no bootstrap on import. */
@@ -65,7 +66,9 @@ export function createShowworkPublishingApplication(input:{
   if(entrypoint!=='app/dashboard/billing/page.tsx#BillingPage@23'||!input.nativePolicy)throw Error('UNREVIEWED_NATIVE_READ_HANDLER');
   nativePolicyHandlers![entrypoint]=(...args:any[])=>withNativeApplicationContext({database:readOnlyApplicationDatabase(input.nativePolicy!.prisma),billingFetch:async(request,init)=>{const url=new URL(typeof request==='string'?request:request instanceof Request?request.url:String(request));if(url.hostname!=='api.paystack.co'||url.protocol!=='https:'||(init?.method??'GET')!=='GET')throw Error('READ_ONLY_BILLING_HTTP_REQUIRED');return input.nativePolicy!.billingFetch(request,{...init,redirect:'error',signal:AbortSignal.timeout(15000)});}},()=>handler(...args));
  }
- const application=createDisabledCanonicalApplication({database:input.database,worker:input.worker,actions,resolveCalendar,publicUrlFor,nativePolicyHandlers,serverOperationId:async()=>{const id=(await headers()).get('idempotency-key');if(!id)throw Error('Stable operation ID required');return id;},
+ const application=createDisabledCanonicalApplication({
+  notifyInternalReview:input.nativePolicy?.notify ? event=>notifyInternalReview(event,(sql,args)=>input.database.transaction(tx=>tx.query(sql,args)),input.nativePolicy!.notify) : undefined,
+  database:input.database,worker:input.worker,actions,resolveCalendar,publicUrlFor,nativePolicyHandlers,serverOperationId:async()=>{const id=(await headers()).get('idempotency-key');if(!id)throw Error('Stable operation ID required');return id;},
   authenticateCreator:async()=>{const creator=await currentCreator();return creator?{id:creator.id}:null;},
   confirmCreatorDeletion:async(actor,password)=>{const creator=await currentCreator();return creator?.id===actor&&typeof password==='string'&&await verifyPassword(password,creator.passwordHash)?{passwordHash:creator.passwordHash}:null;},
   authenticateCron:async value=>{const supplied=value instanceof Request?value.headers.get('authorization'):(value as {headers?:Record<string,string>})?.headers?.authorization;return supplied===`Bearer ${input.cronSecret}`;},

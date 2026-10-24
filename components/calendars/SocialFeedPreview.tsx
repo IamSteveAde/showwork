@@ -1,8 +1,10 @@
 "use client";
+import { calendarWorkflow } from "@/lib/calendarWorkflow";
 
 import { useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, FileText, Heart, MessageCircle, Repeat2, Send, ThumbsUp } from "lucide-react";
 type PreviewPost = {
+  internalReviewStatus?: string; publishStatus?: string; instagramPublishStatus?: string; tikTokPublishStatus?: string; isAiDraft?: boolean;
   id: string; postDate: string; platform: string; caption: string | null;
   contentIdea: string | null; hashtags: string | null; taggedAccounts: string | null;
   linkUrl: string | null; approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
@@ -37,7 +39,7 @@ function FeedPost({ post, clientName, channel, onOpen }: { post: PreviewPost; cl
           {isX && <p className="truncate text-xs text-slate-500">@{clientName.toLowerCase().replace(/[^a-z0-9_]/g, "") || "yourbrand"}</p>}
           <time dateTime={post.postDate} className="text-xs text-slate-500">{new Date(post.postDate).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</time>
         </div>
-        <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${status.className}`}>{status.label}</span>
+        <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${status.className}`}>{calendarWorkflow(post).label}</span>
       </div>
       <div className="px-4 pb-4 sm:px-5">
         {!caption && <p className="text-sm text-slate-500">{post.contentIdea || "Add a caption in the post editor."}</p>}

@@ -1,4 +1,5 @@
 "use client";
+import { calendarWorkflow } from "@/lib/calendarWorkflow";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
@@ -12,6 +13,7 @@ interface PreviewAsset {
 }
 
 interface PreviewPost {
+  internalReviewStatus?: string; publishStatus?: string; instagramPublishStatus?: string; tikTokPublishStatus?: string; isAiDraft?: boolean;
   id: string;
   postDate: string;
   platform: string;
@@ -471,11 +473,7 @@ function FeedCard({
               className="h-1.5 w-1.5 rounded-full"
               style={{ background: APPROVAL_DOT[post.approvalStatus] }}
             />
-            {post.approvalStatus === "APPROVED"
-              ? "Approved"
-              : post.approvalStatus === "NEEDS_REVISION"
-                ? "Needs revision"
-                : "Awaiting review"}
+            {calendarWorkflow(post).label}
           </span>
         </div>
 

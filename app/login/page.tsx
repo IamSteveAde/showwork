@@ -83,23 +83,23 @@ function LoginForm() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1320px] items-center gap-12 px-5 pb-20 pt-12 sm:px-8 lg:min-h-[calc(100vh-82px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-14 lg:px-14 lg:py-16 xl:gap-24">
-        <section className="min-w-0">
+      <div className="relative z-10 mx-auto grid max-w-[1320px] items-center gap-8 px-4 pb-12 pt-6 sm:gap-12 sm:px-8 sm:pb-20 sm:pt-12 lg:min-h-[calc(100vh-82px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-14 lg:px-14 lg:py-16 xl:gap-24">
+        <section className="order-2 min-w-0 lg:order-1">
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
             <span className="inline-flex items-center gap-2.5 rounded-full border border-[#D4E7D9] bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#256B47] shadow-sm">
               <span className="h-2 w-2 rounded-full bg-[#16834B]" />
               Your creative workspace
             </span>
-            <h1 className="mt-8 max-w-[680px] text-[clamp(3.1rem,5.2vw,5.5rem)] font-semibold leading-[1.04] tracking-[-0.07em]">
+            <h1 className="mt-6 max-w-[680px] text-[clamp(3.1rem,5.2vw,5.5rem)] font-semibold leading-[1.04] tracking-[-0.07em]">
               Pick up where<br />
               <span className="text-[#155FC7]">you left off.</span>
             </h1>
-            <p className="mt-7 max-w-[530px] text-base leading-8 text-[#64766B] sm:text-lg">
+            <p className="mt-5 max-w-[530px] text-base leading-8 text-[#64766B] sm:text-lg">
               Your portfolio, deliveries and marketing workspaces — with content, conversations, leads and reports in one place.
             </p>
           </motion.div>
 
-          <div className="mt-11 grid gap-3 sm:grid-cols-2">
+          <div className="mt-7 grid gap-3 sm:mt-11 sm:grid-cols-2">
             {[
               { number: "01", title: "Create & deliver", description: "Keep your creative work moving.", icon: Sparkles },
               { number: "02", title: "Built for your work", description: "Everything organised in one place.", icon: ShieldCheck },
@@ -131,17 +131,17 @@ function LoginForm() {
           </div>
         </section>
 
-        <section className="min-w-0 w-full" aria-label="Log in to Showwork">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.12 }} className="rounded-[30px] border border-[#DFE8E0] bg-white p-5 shadow-[0_25px_85px_rgba(16,42,41,0.07)] sm:p-9 lg:p-10">
+        <section className="order-1 min-w-0 w-full lg:order-2" aria-label="Log in to Showwork">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.12 }} className="rounded-[24px] border border-[#DFE8E0] bg-white p-5 shadow-[0_25px_85px_rgba(16,42,41,0.07)] sm:p-9 lg:p-10">
             <div className="flex items-center justify-between gap-3">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF2FF] text-[#155FC7]"><LockKeyhole size={22} /></span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F3F8F1] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#58715E]"><ShieldCheck size={13} /> Secure access</span>
             </div>
-            <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.16em] text-[#16834B]">Welcome back</p>
-            <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.05em] sm:text-[34px]">Log in to Showwork.</h2>
+            <p className="mt-6 text-[11px] sm:mt-8 font-bold uppercase tracking-[0.16em] text-[#16834B]">Welcome back</p>
+            <h2 className="mt-3 text-[27px] leading-tight sm:text-[30px] font-semibold tracking-[-0.05em] lg:text-[34px]">Log in to Showwork.</h2>
             <p className="mt-2 text-sm leading-6 text-[#738278]">Pick up right where you left off.</p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
               <div>
                 <label htmlFor="email" className="mb-2 block text-xs font-semibold text-[#30483C]">Email address</label>
                 <input id="email" type="email" inputMode="email" autoComplete="email" required placeholder="you@studio.com" value={email} onChange={(event) => { setEmail(event.target.value); if (error) setError(null); }} className={inputClass} />

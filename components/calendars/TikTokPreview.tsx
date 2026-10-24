@@ -1,4 +1,5 @@
 "use client";
+import { calendarWorkflow } from "@/lib/calendarWorkflow";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useRef, useState } from "react";
@@ -12,6 +13,7 @@ interface PreviewAsset {
 }
 
 interface PreviewPost {
+  internalReviewStatus?: string; publishStatus?: string; instagramPublishStatus?: string; tikTokPublishStatus?: string; isAiDraft?: boolean;
   id: string;
   postDate: string;
   platform: string;
@@ -780,11 +782,7 @@ function TikTokSlide({
               border: `1px solid ${APPROVAL_DOT[post.approvalStatus]}45`,
             }}
           >
-            {post.approvalStatus === "APPROVED"
-              ? "Approved"
-              : post.approvalStatus === "NEEDS_REVISION"
-              ? "Needs revision"
-              : "Awaiting review"}
+            {calendarWorkflow(post).label}
           </span>
         </div>
 

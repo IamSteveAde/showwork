@@ -41,7 +41,7 @@ const OPTIONS = [
 ];
 
 const inputClass =
-  "block w-full rounded-2xl border border-[#DFE8E0] bg-[#FAFCF9] px-4 py-3.5 text-[15px] text-[#102A29] outline-none transition placeholder:text-[#A0ADA3] hover:border-[#BACDBE] focus:border-[#155FC7] focus:bg-white focus:ring-4 focus:ring-[#155FC7]/[0.08] disabled:opacity-50";
+  "block w-full rounded-2xl border border-[#DFE8E0] bg-[#FAFCF9] px-4 py-3.5 text-[16px] text-[#102A29] outline-none transition placeholder:text-[#A0ADA3] hover:border-[#BACDBE] focus:border-[#155FC7] focus:bg-white focus:ring-4 focus:ring-[#155FC7]/[0.08] disabled:opacity-50";
 
 function Field({
   label,
@@ -77,19 +77,19 @@ function Brand() {
 
 function StepProgress({ step }: { step: Step }) {
   return (
-    <div className="mb-8 flex items-center gap-3" aria-label={`Step ${step === "details" ? 1 : 2} of 2`}>
-      <div className="flex items-center gap-2.5">
+    <div className="mb-6 flex items-center gap-2 sm:mb-8 sm:gap-3" aria-label={`Step ${step === "details" ? 1 : 2} of 2`}>
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#155FC7] text-xs font-bold text-white">
           {step === "verify" ? <Check size={16} strokeWidth={3} /> : "1"}
         </span>
-        <span className="text-xs font-semibold text-[#30483C]">Your details</span>
+        <span className="text-[11px] font-semibold text-[#30483C] sm:text-xs">Your details</span>
       </div>
       <span className={`h-px flex-1 ${step === "verify" ? "bg-[#155FC7]" : "bg-[#DDE8DE]"}`} />
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
         <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${step === "verify" ? "bg-[#155FC7] text-white" : "border border-[#DDE8DE] bg-[#F7FAF6] text-[#93A299]"}`}>
           2
         </span>
-        <span className={`text-xs font-semibold ${step === "verify" ? "text-[#30483C]" : "text-[#93A299]"}`}>
+        <span className={`text-[11px] font-semibold sm:text-xs ${step === "verify" ? "text-[#30483C]" : "text-[#93A299]"}`}>
           Verify email
         </span>
       </div>
@@ -207,9 +207,9 @@ function SignupForm() {
       </div>
 
       <header className="relative z-20 border-b border-[#102A29]/[0.07] bg-[#F8FAF5]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-[82px] max-w-[1320px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-14">
+        <div className="mx-auto flex min-h-[68px] max-w-[1320px] items-center justify-between gap-3 px-4 py-3 sm:min-h-[82px] sm:px-8 lg:px-14">
           <Brand />
-          <p className="text-[12px] text-[#697B70] sm:text-sm">
+          <p className="text-right text-[11px] leading-5 text-[#697B70] sm:text-sm">
             Already have an account?{" "}
             <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-bold text-[#155FC7] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-[#155FC7]">
               Log in <ArrowUpRight size={14} className="inline" />
@@ -218,8 +218,8 @@ function SignupForm() {
         </div>
       </header>
 
-      <div className="relative z-10 mx-auto grid max-w-[1320px] items-start gap-12 px-5 pb-20 pt-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] lg:gap-14 lg:px-14 lg:pt-20 xl:gap-24">
-        <section className="min-w-0 lg:sticky lg:top-20">
+      <div className="relative z-10 mx-auto grid max-w-[1320px] items-start gap-8 px-4 pb-14 pt-5 sm:gap-12 sm:px-8 sm:pb-20 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] lg:gap-14 lg:px-14 lg:pt-20 xl:gap-24">
+        <section className="order-2 min-w-0 lg:order-1 lg:sticky lg:top-20">
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
             <span className="inline-flex items-center gap-2.5 rounded-full border border-[#D4E7D9] bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.15em] text-[#256B47] shadow-sm">
               <span className="h-2 w-2 rounded-full bg-[#16834B]" />
@@ -267,17 +267,17 @@ function SignupForm() {
           </div>
         </section>
 
-        <section className="min-w-0 w-full" aria-label="Create your Showwork account">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.12 }} className="rounded-[30px] border border-[#DFE8E0] bg-white p-5 shadow-[0_25px_85px_rgba(16,42,41,0.07)] sm:p-9 lg:p-10">
+        <section className="order-1 min-w-0 w-full lg:order-2" aria-label="Create your Showwork account">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.12 }} className="rounded-[22px] border border-[#DFE8E0] bg-white p-4 shadow-[0_25px_85px_rgba(16,42,41,0.07)] sm:rounded-[30px] sm:p-9 lg:p-10">
             <StepProgress step={step} />
             <AnimatePresence mode="wait" initial={false}>
               {step === "details" ? (
                 <motion.div key="details" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.22 }}>
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#16834B]">Get started</p>
-                  <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.05em] sm:text-[34px]">Create your account.</h2>
+                  <h2 className="mt-3 text-[27px] font-semibold leading-tight tracking-[-0.05em] sm:text-[34px]">Create your account.</h2>
                   <p className="mt-2 text-sm leading-6 text-[#738278]">Choose where to start after creating your account.</p>
 
-                  <form onSubmit={handleSendCode} className="mt-8 space-y-5">
+                  <form onSubmit={handleSendCode} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
                     <fieldset>
                       <legend className="mb-3 text-xs font-semibold text-[#30483C]">What best describes you?</legend>
                       <div className="grid gap-2.5">
@@ -328,9 +328,9 @@ function SignupForm() {
                 <motion.div key="verify" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.22 }}>
                   <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF2FF] text-[#155FC7]"><Mail size={26} /></div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#16834B]">One last step</p>
-                  <h2 className="mt-3 text-[30px] font-semibold tracking-[-0.05em] sm:text-[34px]">Check your email.</h2>
+                  <h2 className="mt-3 text-[27px] font-semibold leading-tight tracking-[-0.05em] sm:text-[34px]">Check your email.</h2>
                   <p className="mt-3 text-sm leading-7 text-[#738278]">We sent a 6-digit verification code to <strong className="break-all font-semibold text-[#102A29]">{email}</strong>.</p>
-                  <form onSubmit={handleVerify} className="mt-8 space-y-5">
+                  <form onSubmit={handleVerify} className="mt-6 space-y-4 sm:mt-8 sm:space-y-5">
                     <Field label="Verification code">
                       <input type="text" inputMode="numeric" autoComplete="one-time-code" placeholder="000000" required maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} autoFocus className={`${inputClass} py-5 text-center text-[28px] font-semibold tracking-[0.32em]`} />
                     </Field>

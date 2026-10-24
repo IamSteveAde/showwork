@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { CONTENT_WORKSPACE_PLANS } from "@/lib/contentWorkspaceEntitlements";
 import { Resend } from "resend";
 import {nativeApplicationContext} from '@/lib/publishing/nativeApplicationContext';
@@ -32,10 +33,10 @@ type EmailPayload = Parameters<typeof resend.emails.send>[0];
  * Keep email delivery independent of the local filesystem and inline attachments.
  * Brand images are referenced through absolute HTTPS URLs from the public site.
  */
-async function sendEmail(input: EmailPayload, idempotencyKey?: string) {
+async function sendEmail(input: EmailPayload, idempotencyKey?: string, transport?: NonNullable<ReturnType<typeof nativeApplicationContext>>["notify"]) {
   const scoped=nativeApplicationContext();
-  if(scoped&&!scoped.notify)throw Error('EXPLICIT_NOTIFICATION_PORT_REQUIRED');
-  const { data, error } = scoped?await scoped.notify!(input as unknown as Record<string,unknown>,idempotencyKey):await resend.emails.send(input, idempotencyKey ? { idempotencyKey } : undefined);
+  if(scoped&&!scoped.notify&&!transport)throw Error('EXPLICIT_NOTIFICATION_PORT_REQUIRED');
+  const { data, error } = transport ? await transport(input as unknown as Record<string,unknown>,idempotencyKey) : scoped?await scoped.notify!(input as unknown as Record<string,unknown>,idempotencyKey):await resend.emails.send(input, idempotencyKey ? { idempotencyKey } : undefined);
 
   if (error) {
     console.error("[Showwork email] Resend send failed", {
@@ -2161,4 +2162,15 @@ export async function sendDemoBookingAcknowledgementEmail(
         "A quick, personalised walkthrough of Showwork. No commitment required.",
     }),
   });
+}
+
+export async function sendInternalReviewEmail(input: {to:string;calendarId:string;postId:string;version:number;action:string;note:string|null}, transport?: NonNullable<ReturnType<typeof nativeApplicationContext>>["notify"]) {
+  const title = input.action === 'approve' ? 'Content approved internally' : input.action === 'request_changes' ? 'Internal changes requested' : input.action === 'reopen' ? 'Content returned to internal review' : 'New internal feedback';
+  const url = `${APP_URL}/dashboard/calendars/${encodeURIComponent(input.calendarId)}?view=content&post=${encodeURIComponent(input.postId)}`;
+  await sendEmail({from:FROM,to:input.to,subject:`${title} · Showwork`,html:emailShell({
+    eyebrow:'Your content workflow',headline:title,
+    body:input.action==='approve'?'Your team has approved this content for client review. Client approval is still required before publishing.':'Your team has updated the internal review. Open the post to read the feedback and continue the workflow.',
+    detailsHtml:input.note?`<div style="padding:18px;border-radius:12px;background:#EFF6FF;color:#1E3A8A;line-height:1.6"><strong>Private team feedback</strong><p style="white-space:pre-wrap">${escapeHtml(input.note)}</p></div>`:undefined,
+    ctaLabel:'Open content & workflow',ctaUrl:url,
+  })},`review-${input.postId}-${input.version}-${createHash('sha256').update(input.to).digest('hex').slice(0,24)}`,transport);
 }

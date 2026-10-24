@@ -1,3 +1,4 @@
+import type { ReviewNotice } from "../calendarReviewNotifications";
 import { withoutInternalReview } from '../calendarInternalReview';
 /** Local-only route composition. Every unported path fails closed; no legacy fallback. */
 import {policyHash} from './eligibilityPolicy';
@@ -13,6 +14,7 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
  resolveCalendar(request:Request,params:Record<string,string>):Promise<string>;
  confirmCreatorDeletion?:(actor:string,password:unknown)=>Promise<{passwordHash:string}|null>;
  publicUrlFor?:(key:string)=>string;
+ notifyInternalReview?:(event:ReviewNotice)=>Promise<{sent:number;failed:number}>;
  nativePolicyHandlers?:Record<string,(...args:any[])=>Promise<unknown>>;
  serverOperationId?:()=>Promise<string>;
  verifyUpload(upload:unknown):Promise<{fileKey:string;objectVersion:string;contentSha256:string;mediaType:'PHOTO'|'VIDEO';sizeBytes:string;verifiedFor:{calendarId:string;postId:string};reservationId?:string;sourceAssetId?:string;sourcePostId?:string}>;
@@ -80,8 +82,9 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
     if(!scoped)throw Error('POST_WORKSPACE_SCOPE_CONFLICT');
    }
    if(path.endsWith('/posts/[postId]/internal-review/route.ts')) {
-    await deps.actions.internalReview({operationId,actor:actor.id,calendarId,postId,body});
-    return Response.json({post:await view(calendarId,postId)});
+    const result=await deps.actions.internalReview({operationId,actor:actor.id,calendarId,postId,body});
+    const notifications=deps.notifyInternalReview ? await deps.notifyInternalReview(result.notification).catch(()=>({sent:0,failed:1})) : {sent:0,failed:1};
+    return Response.json({post:await view(calendarId,postId),notifications});
    }
    if(path.includes('/posts/[postId]/publish/')||path.endsWith('/posts/[postId]/publish/route.ts')){
     if(request.method==='GET')return Response.json(await deps.actions.metadata(actor.id,calendarId,postId),{headers:{'Cache-Control':'no-store'}});

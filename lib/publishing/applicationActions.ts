@@ -89,17 +89,23 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
  }
  async function internalReview(input:{operationId:string;actor:string;calendarId:string;postId:string;body:Record<string,unknown>}) {
   const decision=internalReviewInput(input.body);
-  await permission(input.actor,input.calendarId,'delivery.manage');
+  let reviewPermission = 'delivery.manage';
+  if (decision.status === undefined) {
+   for (const candidate of ['creatives.upload','calendar.edit','delivery.manage']) {
+    try { await permission(input.actor,input.calendarId,candidate); reviewPermission=candidate; break; }
+    catch (error) { if (candidate==='delivery.manage') throw error; }
+   }
+  } else await permission(input.actor,input.calendarId,reviewPermission);
   return replay(input.operationId,input.actor,input,async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);
-   await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'delivery.manage'});
+   await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:reviewPermission as any});
    await tx.query(`SELECT id FROM "CalendarPost" WHERE id=$1 AND "calendarId"=$2 FOR UPDATE`,[input.postId,input.calendarId]);
    const p=await post(tx,input.postId,input.calendarId);
    const error=internalReviewError(p as any,decision.status);if(error)throw Error(error);
    if(await busy(tx,p.id))throw Error('PENDING_RECONCILIATION');
    if(p.internalReviewVersion!==decision.version)throw Error('This post changed. Refresh and review the latest version.');
-   await tx.query(`UPDATE "CalendarPost" SET "internalReviewStatus"=$2::"InternalReviewStatus","internalReviewNote"=$3,"internalReviewedAt"=clock_timestamp(),"internalReviewedBy"=$4,"internalReviewVersion"="internalReviewVersion"+1,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,decision.status,decision.note,input.actor]);
-   return {ok:true};
+   await tx.query(`UPDATE "CalendarPost" SET "internalReviewStatus"=$2::"InternalReviewStatus","internalReviewNote"=$3,"internalReviewedAt"=CASE WHEN $5 THEN "internalReviewedAt" ELSE clock_timestamp() END,"internalReviewedBy"=CASE WHEN $5 THEN "internalReviewedBy" ELSE $4 END,"internalReviewVersion"="internalReviewVersion"+1,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,decision.status ?? p.internalReviewStatus,decision.note,input.actor,decision.status===undefined]);
+   return {ok:true,notification:{calendarId:input.calendarId,postId:input.postId,version:decision.version+1,action:String(input.body.action),note:decision.note}};
   });
  }
  async function review(input:{operationId:string;calendarId:string;postId:string;credential:string;approved:boolean;note?:string}){

@@ -55,6 +55,48 @@ export function tableItems(matrix: unknown[][], sheet: string): SourceItem[] {
     }));
 }
 
+/** Extract HTML as data only. Never render uploaded markup in the browser. */
+async function htmlImport(buffer: Buffer, filename: string): Promise<{ items: SourceItem[]; method: string }> {
+  const html = decodeText(buffer);
+  if (!/<(?:!doctype\s+html|html\b|body\b|table\b|main\b|article\b)/i.test(html)) {
+    throw new Error("This file does not appear to contain an HTML document.");
+  }
+
+  const { load } = await import("cheerio");
+  const $ = load(html, { xmlMode: false });
+  $("script, style, noscript, template, iframe, object, embed, svg, canvas").remove();
+
+  const tables = $("table").toArray();
+  if (tables.length > 20) throw new Error("At most 20 HTML tables are supported.");
+  const items: SourceItem[] = [];
+  for (const [index, table] of tables.entries()) {
+    const matrix: string[][] = [];
+    $(table).find("tr").each((_, tr) => {
+      const cells = $(tr).children("th, td").toArray();
+      if (!cells.length) return;
+      if (cells.length > 50) throw new Error("At most 50 columns are supported.");
+      matrix.push(cells.map(cell => $(cell).text().replace(/\s+/g, " ").trim()));
+      if (matrix.length > 2000) throw new Error("This HTML table exceeds the row limit.");
+    });
+    if (matrix.length) {
+  const tableRows = tableItems(matrix, `${filename}, table ${index + 1}`);
+
+  // Ignore purely presentational tables without a recognizable header.
+  if (tableRows.some((row) => (row.warnings?.length ?? 0) === 0)) {
+    items.push(...tableRows);
+  }
+}
+  }
+  if (items.length) return checkItems(items, "HTML table extraction");
+
+  const text = $("body").length ? $("body").text() : $.root().text();
+  const readable = text.replace(/\s+/g, " ").trim();
+  if (!readable) throw new Error("No readable content found in this HTML file.");
+  if (readable.length > MAX_TEXT) throw new Error("This HTML document is too large to interpret reliably. Split it into smaller files.");
+  return checkItems(await extractCalendarItems(readable, filename),
+    "HTML document interpretation — review extracted copy and dates against the source");
+}
+
 async function pdfText(buffer: Buffer): Promise<string> {
   const module = await import("pdf2json");
   const PDFParser = module.default;
@@ -132,6 +174,9 @@ export async function extractImport(
   const ole = buffer.subarray(0, 8).toString("hex") === "d0cf11e0a1b11ae1";
   let items: SourceItem[];
   let method = "Table extraction";
+  if (ext === "html" || ext === "htm") {
+    return htmlImport(buffer, filename);
+  }
   if (ext === "xlsx" || ext === "xls") {
     if ((ext === "xlsx" && !zip) || (ext === "xls" && !ole))
       throw new Error("The file contents do not match its Excel extension.");
@@ -233,7 +278,7 @@ export async function extractImport(
         items = tableItems(parseTable(text, "\t"), filename);
         return checkItems(items, method);
       }
-    } else throw new Error("Use PDF, CSV, XLS, XLSX, DOC, DOCX, or TXT.");
+    } else throw new Error("Use PDF, CSV, XLS, XLSX, DOC, DOCX, TXT, HTML, or HTM.");
     if (!text.replace(/<[^>]*>/g, "").trim())
       throw new Error(
         "No readable text found. Scanned PDFs need OCR first; export a text PDF or spreadsheet.",

@@ -162,17 +162,15 @@ export default function InstagramConnectionCard({
         </button>
       )
     ) : (
-      <a
-        href={`/api/calendars/${calendarId}/instagram/connect`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
-        style={{
-          background:
-            "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
-        }}
-      >
-        Connect Instagram
+    <a
+  href={`/api/calendars/${calendarId}/instagram/connect`}
+  className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white transition-transform hover:-translate-y-0.5"
+  style={{
+    background:
+      "linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+  }}
+>
+  Connect Instagram
 
         <svg
           viewBox="0 0 24 24"

@@ -1,4 +1,7 @@
 "use client";
+import { FilePenLine, ShieldCheck, Users, Send, X } from "lucide-react";
+import ContentWorkflow from "@/components/calendars/ContentWorkflow";
+import { calendarWorkflow } from "@/lib/calendarWorkflow";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import { mergeSavedCalendarPosts } from "@/lib/calendarPostCollection";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
@@ -146,7 +149,7 @@ const APPROVAL_META: Record<
   }
 > = {
   PENDING: {
-    text: "Awaiting client review",
+    text: "Pending",
     color: "#FFCC00",
     bg: "rgba(255,204,0,0.15)",
   },
@@ -527,7 +530,7 @@ function PostTile({
   const cover = post.assets[0];
 
   const approvalMeta =
-    APPROVAL_META[post.approvalStatus];
+    { ...APPROVAL_META[post.approvalStatus], text: calendarWorkflow(post).label };
 
   const tiltDeg = index % 2 === 0 ? -2 : 2;
 
@@ -537,7 +540,7 @@ function PostTile({
   // text/color in that case, rather than showing both at once on a
   // tile this small.
   const instagramStatusMeta =
-    post.platform === "INSTAGRAM" && post.instagramPublishStatus !== "NOT_SCHEDULED"
+    post.platform === "INSTAGRAM" && post.instagramPublishStatus && post.instagramPublishStatus !== "NOT_SCHEDULED"
       ? post.instagramPublishStatus === "PUBLISHED"
         ? { text: "Live on Instagram", color: "#E1306C" }
         : post.instagramPublishStatus === "SCHEDULED"
@@ -549,7 +552,7 @@ function PostTile({
   // A post is only ever one platform, so at most one of these two
   // is ever non-null at the same time — safe to just combine them.
   const tikTokStatusMeta =
-    post.platform === "TIKTOK" && post.tikTokPublishStatus !== "NOT_SCHEDULED"
+    post.platform === "TIKTOK" && post.tikTokPublishStatus && post.tikTokPublishStatus !== "NOT_SCHEDULED"
       ? post.tikTokPublishStatus === "PUBLISHED"
         ? { text: "Published to TikTok", color: "#00F2EA" }
         : post.tikTokPublishStatus === "SCHEDULED"
@@ -564,7 +567,7 @@ function PostTile({
   const tikTokSetupMeta = post.platform === "TIKTOK" && post.approvalStatus === "APPROVED" && post.tikTokPublishStatus === "NOT_SCHEDULED"
     ? { text: "Authorize to schedule", color: "#D97706" }
     : null;
-  const bottomStatusMeta = instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? tikTokSetupMeta ?? approvalMeta;
+  const bottomStatusMeta = calendarWorkflow(post).stage < 3 ? approvalMeta : instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? tikTokSetupMeta ?? approvalMeta;
 
   const [confirmingDelete, setConfirmingDelete] =
     useState(false);
@@ -3086,14 +3089,17 @@ function PostDetailPanel({
   const t = THEMES[theme];
   const router = useRouter();
   const [detailTab, setDetailTab] = useState<"content" | "internal" | "client" | "publishing">("content");
+  const detailScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (detailScrollRef.current) detailScrollRef.current.scrollTop = 0; }, [detailTab]);
   const [internalNote, setInternalNote] = useState(post.internalReviewNote ?? "");
   const [reviewSaving, setReviewSaving] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewNotice, setReviewNotice] = useState<string | null>(null);
   const internallyApproved = post.internalReviewStatus === "APPROVED";
   useEffect(() => { setInternalNote(post.internalReviewNote ?? ""); }, [post.internalReviewVersion, post.internalReviewNote]);
-  async function saveInternalReview(action: "approve" | "request_changes" | "reopen") {
+  async function saveInternalReview(action: "approve" | "request_changes" | "reopen" | "feedback") {
     if (reviewSaving) return;
-    setReviewSaving(true); setReviewError(null);
+    setReviewSaving(true); setReviewError(null); setReviewNotice(null);
     try {
       const response = await calendarMutationFetch(`/api/calendars/${calendarId}/posts/${post.id}/internal-review`, {
         method: "POST", headers: {"Content-Type":"application/json"},
@@ -3103,6 +3109,7 @@ function PostDetailPanel({
       if (!response.ok) throw new Error(result.error || "Unable to save internal review.");
       onUpdated(result.post);
       setInternalNote(result.post.internalReviewNote ?? "");
+      setReviewNotice(result.notifications?.failed ? "Review saved. Some team emails could not be delivered. Your team can still read the update here." : `Review saved. ${result.notifications?.sent ?? 0} team members notified.`);
       router.refresh();
     } catch (error) { setReviewError(error instanceof Error ? error.message : "Unable to save internal review."); }
     finally { setReviewSaving(false); }
@@ -3358,7 +3365,7 @@ caption: draftDetails.caption,
     )!;
 
   const approvalMeta =
-    APPROVAL_META[post.approvalStatus];
+    { ...APPROVAL_META[post.approvalStatus], text: calendarWorkflow(post).label };
 
   const activeAsset =
     post.assets[activeAssetIdx] ??
@@ -3635,6 +3642,7 @@ caption: draftDetails.caption,
                   <h2
                     id="calendar-post-detail-title"
                     className="
+                      line-clamp-2
                       text-base
                       font-semibold
                       tracking-tight
@@ -3644,7 +3652,7 @@ caption: draftDetails.caption,
                       color: t.text,
                     }}
                   >
-                    {platformMeta.label}
+                    {post.contentIdea || post.hook || `${platformMeta.label} content`}
                   </h2>
 
                   {post.postType && (
@@ -3738,24 +3746,26 @@ caption: draftDetails.caption,
                 color: t.textMuted,
               }}
             >
-              ×
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2 overflow-x-auto border-b px-4 py-3 sm:px-7" style={{ borderColor: t.cardBorder }}>
+        <div className="flex shrink-0 gap-1 overflow-x-auto border-b px-4 py-2 sm:gap-2 sm:px-7 sm:py-3" style={{ borderColor: t.cardBorder }}>
           {([ ["content", "Content"], ["internal", "Internal review"], ["client", "Client review"], ["publishing", "Publishing"] ] as const).map(([value, label]) => (
             <button key={value} type="button" aria-pressed={detailTab === value}
               onClick={() => setDetailTab(value)}
-              className="min-h-11 shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
               style={{ background: detailTab === value ? "#155FC7" : t.pillBg, color: detailTab === value ? "white" : t.textMuted }}>
+              {value === "content" ? <FilePenLine size={15}/> : value === "internal" ? <ShieldCheck size={15}/> : value === "client" ? <Users size={15}/> : <Send size={15}/>}
               {label}
             </button>
           ))}
-          <span className="ml-auto hidden items-center rounded-full px-3 text-xs font-semibold sm:inline-flex" style={{ background: approvalMeta.bg, color: approvalMeta.color }}>{approvalMeta.text}</span>
+
         </div>
         {/* A single scroll surface keeps long captions and publishing controls reachable. */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-wrap:anywhere]">
+        <div ref={detailScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-wrap:anywhere]">
+          <div className="px-4 pt-4 sm:px-7 sm:pt-6"><ContentWorkflow post={post} onNavigate={setDetailTab} dark={theme === "dark"} /></div>
           <div className={detailTab === "content" ? "grid min-w-0 gap-7 p-4 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-8" : "hidden"}>
             <div className="min-w-0">
             {/* MEDIA */}
@@ -5215,25 +5225,28 @@ caption: draftDetails.caption,
               )}
             </div>
           </div>
-          <div className={detailTab === "internal" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
-            <div className="rounded-2xl border p-5" style={{borderColor:t.cardBorder,background:t.inputBg}}>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{color:internallyApproved ? "#16834B" : t.textMuted}}>{internallyApproved ? "Internally approved" : post.internalReviewStatus === "NEEDS_CHANGES" ? "Changes requested" : "Awaiting internal approval"}</p>
+          <div className={detailTab === "internal" ? "mx-auto max-w-4xl space-y-6 p-4 sm:p-7" : "hidden"}>
+            <div className="rounded-2xl border p-5 sm:p-6" style={{borderColor:t.cardBorder,background:t.inputBg}}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{color:internallyApproved ? "#16834B" : t.textMuted}}>{internallyApproved ? "Internally approved" : post.internalReviewStatus === "NEEDS_CHANGES" ? "Changes requested" : "Pending internal review"}</p>
               <h3 className="mt-3 text-xl font-semibold" style={{color:t.text}}>{internallyApproved ? "Ready for your client" : "Keep the review inside your team"}</h3>
               <p className="mt-3 text-sm leading-6" style={{color:t.textMuted}}>{internallyApproved ? "This post can appear in the unlocked client portal. Client approval is still required before publishing." : "This post is hidden from the client portal. An owner or teammate with delivery management permission must approve it internally first."}</p>
               <p className="mt-3 text-xs leading-6" style={{color:t.textMuted}}>Changing the creative, caption, schedule or other content details requires fresh internal approval.</p>
             </div>
-            {canDeliver && !isApproved ? <>
-              <label className="block text-sm font-semibold" style={{color:t.text}}>Internal review note
+            {(canDeliver || canUpload || canEdit) && !isApproved ? <>
+              <label className="block text-sm font-semibold" style={{color:t.text}}>Private team feedback
                 <textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} maxLength={4000} rows={4}
-                  className="mt-3 w-full rounded-xl border p-3 text-sm font-normal" style={{borderColor:t.inputBorder,background:t.inputBg,color:t.text}}
-                  placeholder="Feedback for your team only. A note is required when requesting changes." />
+                  className="mt-3 w-full rounded-2xl border p-4 text-sm font-normal leading-6 outline-none transition-shadow focus:ring-4 focus:ring-blue-500/10" style={{borderColor:t.inputBorder,background:t.inputBg,color:t.text}}
+                  placeholder="What should your team know? Share feedback on the creative, caption or next steps…" />
               </label>
+              <p className="text-xs leading-5" style={{color:t.textMuted}}>Shared with your workspace’s content team by email. Clients never receive internal feedback.</p>
               <div className="flex flex-wrap gap-3">
-                {!internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("approve")} className="min-h-11 rounded-xl bg-[#155FC7] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{reviewSaving ? "Saving…" : "Approve for client review"}</button>}
-                <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("request_changes")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Request changes</button>
-                {internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("reopen")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold" style={{borderColor:t.inputBorder,color:t.text}}>Return to internal review</button>}
+                {canDeliver && !internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("approve")} className="min-h-11 rounded-xl bg-[#155FC7] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{reviewSaving ? "Saving…" : "Approve for client review"}</button>}
+                {canDeliver && <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("request_changes")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Request changes</button>}
+                <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("feedback")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Share internal feedback</button>
+                {canDeliver && internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("reopen")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold" style={{borderColor:t.inputBorder,color:t.text}}>Return to internal review</button>}
               </div>
             </> : <p className="whitespace-pre-wrap text-sm leading-6" style={{color:t.textMuted}}>{post.internalReviewNote || (isApproved ? "Client-approved content is locked." : "Waiting for an internal reviewer.")}</p>}
+            {reviewNotice && <p role="status" className="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">{reviewNotice}</p>}
             {reviewError && <p role="alert" className="text-sm text-red-600">{reviewError}</p>}
           </div>
           <div className={detailTab === "client" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
@@ -5731,6 +5744,14 @@ export default function CalendarGrid({
     useState<CalendarPostData | null>(
       null
     );
+
+  const openedLinkedPost = useRef(false);
+  useEffect(() => {
+    if (openedLinkedPost.current) return;
+    const id = new URLSearchParams(window.location.search).get("post");
+    const linked = id && posts.find(p => p.id === id);
+    if (linked) { setSelectedPost(linked); openedLinkedPost.current = true; }
+  }, [posts]);
 
   useEffect(() => {
     const refreshedPosts = initialPosts.map(normalize);
@@ -6372,7 +6393,7 @@ export default function CalendarGrid({
                     setStatusFilter(value as ApprovalStatus | "ALL"),
                   options: [
                     { value: "ALL", label: "All statuses" },
-                    { value: "PENDING", label: "Awaiting review" },
+                    { value: "PENDING", label: "Pending approval" },
                     { value: "APPROVED", label: "Approved" },
                     { value: "NEEDS_REVISION", label: "Needs revision" },
                   ],

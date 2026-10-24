@@ -2,7 +2,6 @@
 
 import Image, { type StaticImageData } from "next/image";
 import Link from "next/link";
-import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import { ArrowRight, ArrowUpRight, Sparkles, MoveUpRight, CheckCheck, MessageCircle, WandSparkles, BarChart3, CalendarDays, MessagesSquare, CheckCircle2, UsersRound } from "lucide-react";
@@ -27,8 +26,6 @@ const fraunces = Fraunces({
 });
 const focus =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current";
-const title =
-  "font-semibold tracking-[-0.065em] leading-[1.03] text-[clamp(2.5rem,5.1vw,5rem)]";
 
 const features = [
   { label: "Plan", detail: "Content, beautifully organised", Icon: CalendarDays },
@@ -38,17 +35,15 @@ const features = [
 ] as const;
 
 function ShowworkExperienceSection({ dashboard }: { dashboard: StaticImageData }) {
-  const reduced = useReducedMotion();
-  const animated = reduced === false;
   return (
-    <section id="experience" aria-labelledby="experience-heading" className="relative isolate scroll-mt-24 overflow-hidden bg-[#EAF2FF] px-5 py-20 sm:px-8 sm:py-28 lg:px-14 lg:py-32">
+    <section id="experience" aria-labelledby="experience-heading" className="relative isolate scroll-mt-24 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_850px] bg-[#EAF2FF] px-5 py-20 sm:px-8 sm:py-28 lg:px-14 lg:py-32">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-40 top-40 h-[480px] w-[480px] rounded-full bg-[#D6F1E7]/75 blur-[100px]" />
-        <div className="absolute -right-40 bottom-12 h-[580px] w-[580px] rounded-full bg-[#C9DFFF]/80 blur-[120px]" />
+        <div className="absolute -left-40 top-40 h-[480px] w-[480px] rounded-full bg-[#D6F1E7]/75 md:blur-[100px]" />
+        <div className="absolute -right-40 bottom-12 h-[580px] w-[580px] rounded-full bg-[#C9DFFF]/80 md:blur-[120px]" />
         <div className="absolute left-1/2 top-[45%] h-[620px] w-[620px] -translate-x-1/2 rounded-full border border-white/45" />
       </div>
       <div className="mx-auto max-w-[1280px]">
-        <motion.div initial={animated ? { opacity: 0, y: 28 } : false} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} className="mx-auto max-w-[790px] text-center">
+        <div className="mx-auto max-w-[790px] text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-[#B9D3FA] bg-white/65 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#155FC7]">
             <Sparkles size={14} aria-hidden="true" /> The Showwork experience
           </div>
@@ -56,33 +51,33 @@ function ShowworkExperienceSection({ dashboard }: { dashboard: StaticImageData }
             Everything your marketing team needs. <em className="font-[var(--font-fraunces)] font-medium text-[#155FC7]">Together.</em>
           </h2>
           <p className="mx-auto mt-6 max-w-[590px] text-base leading-8 text-[#526775] sm:text-lg">From content planning to customer conversations, performance insights, and intelligent recommendations.</p>
-        </motion.div>
+        </div>
 
         <div className="relative mx-auto mt-12 max-w-[1140px] sm:mt-16">
-          <motion.div initial={animated ? { opacity: 0, y: 65, scale: 0.94, rotateX: 7 } : false} whileInView={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }} style={{ perspective: 1200 }} className="relative mx-auto max-w-[970px]">
+          <div className="relative mx-auto max-w-[970px]">
             <div aria-hidden="true" className="absolute -inset-5 rounded-[36px] bg-white/35 blur-2xl sm:-inset-10" />
-            <motion.div animate={animated ? { y: [0, -9, 0] } : undefined} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }} className="relative overflow-hidden rounded-[18px] border border-white/80 bg-white/65 p-2 shadow-[0_30px_90px_rgba(25,70,133,0.16)] sm:rounded-[30px] sm:p-3">
+            <div className="relative overflow-hidden rounded-[18px] border border-white/80 bg-white/65 p-2 shadow-[0_30px_90px_rgba(25,70,133,0.16)] sm:rounded-[30px] sm:p-3">
               <Image src={dashboard} alt="Illustrative Showwork product views including content calendar, social inbox, analytics and AI recommendations" sizes="(max-width: 1023px) 100vw, 970px" className="h-auto w-full rounded-[12px] sm:rounded-[22px]" />
               <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/55" />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
-          <motion.div aria-hidden="true" initial={animated ? { opacity: 0, x: -25 } : false} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.6, duration: 0.7 }} className="pointer-events-none absolute -left-3 top-[20%] hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_15px_35px_rgba(21,95,199,0.12)] xl:flex">
+          <div aria-hidden="true" className="pointer-events-none absolute -left-3 top-[20%] hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_15px_35px_rgba(21,95,199,0.12)] xl:flex">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F5EB] text-[#16834B]"><CalendarDays size={18} /></span>
             <span className="text-xs font-semibold text-[#102A29]">Ideas become plans</span>
-          </motion.div>
-          <motion.div aria-hidden="true" initial={animated ? { opacity: 0, x: 25 } : false} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: 0.85, duration: 0.7 }} className="pointer-events-none absolute -right-3 bottom-[22%] hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_15px_35px_rgba(21,95,199,0.12)] xl:flex">
+          </div>
+          <div aria-hidden="true" className="pointer-events-none absolute -right-3 bottom-[22%] hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-[0_15px_35px_rgba(21,95,199,0.12)] xl:flex">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E7F0FF] text-[#155FC7]"><BarChart3 size={18} /></span>
             <span className="text-xs font-semibold text-[#102A29]">Insights drive growth</span>
-          </motion.div>
+          </div>
         </div>
 
         <div className="mx-auto mt-12 grid max-w-[1050px] grid-cols-2 gap-3 sm:mt-16 lg:grid-cols-4 lg:gap-4">
           {features.map(({ label, detail, Icon }, i) => (
-            <motion.div key={label} initial={animated ? { opacity: 0, y: 25 } : false} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: i * 0.1 }} whileHover={animated ? { y: -5 } : undefined} className="group flex min-w-0 items-start gap-3 rounded-[20px] border border-white/80 bg-white/60 p-4 shadow-[0_8px_25px_rgba(25,70,133,0.04)] backdrop-blur-sm transition-colors hover:bg-white/90 sm:p-5">
+            <div key={label} className="group flex min-w-0 items-start gap-3 rounded-[20px] border border-white/80 bg-white/60 p-4 shadow-[0_8px_25px_rgba(25,70,133,0.04)] md:backdrop-blur-sm transition-colors hover:bg-white/90 sm:p-5">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#DDEBFF] text-[#155FC7] transition-colors group-hover:bg-[#D8F3A5] group-hover:text-[#102A29]"><Icon size={19} aria-hidden="true" /></span>
               <span className="min-w-0"><span className="block text-sm font-bold text-[#102A29]">{label}</span><span className="mt-1 block text-[11px] leading-[1.5] text-[#5D7180] sm:text-xs">{detail}</span></span>
-            </motion.div>
+            </div>
           ))}
         </div>
         <div className="mx-auto mt-8 flex max-w-xl items-center justify-center gap-2 text-center text-xs leading-6 text-[#617386]">
@@ -102,7 +97,6 @@ export default function HomeClient({
 }) {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
-    <MotionConfig reducedMotion="user">
       <main
         className={`${jakarta.variable} ${fraunces.variable} overflow-x-clip bg-[#F8FAF5] text-[#102A29]`}
         style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
@@ -110,60 +104,57 @@ export default function HomeClient({
         <Navbar />
         <section aria-labelledby="home-heading" className="relative isolate overflow-hidden bg-[#F8FAF5]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -right-32 -top-48 h-[620px] w-[620px] rounded-full bg-[#E3EEFF]/80 blur-[110px]" />
-            <div className="absolute -left-48 bottom-0 h-[480px] w-[480px] rounded-full bg-[#E7F5DD]/65 blur-[110px]" />
+            <div className="absolute -right-32 -top-48 h-[620px] w-[620px] rounded-full bg-[#E3EEFF]/80 md:blur-[110px]" />
+            <div className="absolute -left-48 bottom-0 h-[480px] w-[480px] rounded-full bg-[#E7F5DD]/65 md:blur-[110px]" />
             <div className="absolute inset-0 opacity-[0.22] [background-image:radial-gradient(#B5C8BB_0.7px,transparent_0.7px)] [background-size:26px_26px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
           </div>
 
           <div className="relative mx-auto grid max-w-[1340px] items-center gap-12 px-5 pb-16 pt-32 sm:px-8 sm:pb-20 sm:pt-36 lg:min-h-[790px] lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:px-14 lg:pb-24 lg:pt-40">
             <div className="relative z-20 min-w-0 max-w-[700px]">
-              <motion.div
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              <div
                 className="mb-7 inline-flex items-center gap-3 rounded-full border border-[#D6E7DA] bg-white/80 px-4 py-2.5 shadow-[0_8px_25px_rgba(16,42,41,0.04)]"
               >
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inset-0 rounded-full bg-[#16834B] motion-safe:animate-ping motion-safe:opacity-30" />
+                  <span className="absolute inset-0 rounded-full bg-[#16834B] motion-safe:md:animate-ping motion-safe:opacity-30" />
                   <span className="relative h-2.5 w-2.5 rounded-full bg-[#16834B]" />
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#31584B] sm:text-[11px]">
                   Serious technology. Human energy.
                 </span>
-              </motion.div>
+              </div>
 
               <h1 id="home-heading" className="max-w-[740px] text-[clamp(3.3rem,5.4vw,6.15rem)] font-semibold leading-[0.99] tracking-[-0.075em] text-[#102A29]">
                 <span className="block overflow-hidden pb-[0.09em]">
-                  <motion.span className="block" initial={{ y: "115%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}>
+                  <span className="block">
                     Great teams
-                  </motion.span>
+                  </span>
                 </span>
                 <span className="block overflow-hidden pb-[0.09em]">
-                  <motion.span className="block" initial={{ y: "115%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.9, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}>
+                  <span className="block">
                     do great work.
-                  </motion.span>
+                  </span>
                 </span>
                 <span className="mt-2 block overflow-hidden pb-[0.11em] text-[#155FC7]">
-                  <motion.span className="block" initial={{ y: "115%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.95, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}>
+                  <span className="block">
                     Showwork makes
-                  </motion.span>
+                  </span>
                 </span>
                 <span className="block overflow-hidden pb-[0.13em] text-[#155FC7]">
-                  <motion.span className="inline-flex flex-wrap items-baseline gap-x-[0.23em]" initial={{ y: "115%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.95, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}>
+                  <span className="inline-flex flex-wrap items-baseline gap-x-[0.23em]">
                     <span>it</span>
                     <span className="relative inline-block">
                       <em className="relative z-10 font-[var(--font-fraunces)] font-medium italic">easier.</em>
-                      <motion.span aria-hidden="true" className="absolute bottom-[0.08em] left-0 right-0 h-[0.14em] origin-left rounded-full bg-[#D8F3A5]" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 1.35, ease: [0.16, 1, 0.3, 1] }} />
+                      <span aria-hidden="true" className="absolute bottom-[0.08em] left-0 right-0 h-[0.14em] origin-left rounded-full bg-[#D8F3A5]" />
                     </span>
-                  </motion.span>
+                  </span>
                 </span>
               </h1>
 
-              <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.9 }} className="mt-7 max-w-[510px] text-base leading-8 text-[#52635E] sm:text-lg">
+              <p className="mt-7 max-w-[510px] text-base leading-8 text-[#52635E] sm:text-lg">
                 One intelligent workspace to plan, create, collaborate, publish, engage, and grow together.
-              </motion.p>
+              </p>
 
-              <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 1.08 }} className="mt-8 flex flex-wrap items-center gap-3 sm:gap-5">
+              <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-5">
                 <button type="button" onClick={() => setDemoOpen(true)} className={`group inline-flex items-center justify-between gap-8 rounded-full bg-[#155FC7] px-7 py-4 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(21,95,199,0.2)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#104CA1] hover:shadow-[0_18px_38px_rgba(21,95,199,0.28)] motion-reduce:transform-none ${focus}`}>
                   Book a Demo
                   <ArrowUpRight size={19} aria-hidden="true" className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -172,30 +163,30 @@ export default function HomeClient({
                   Explore Showwork
                   <ArrowRight size={17} aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
-              </motion.div>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 0.8 }} className="mt-10 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#668074]">
+              </div>
+              <div className="mt-10 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#668074]">
                 <span className="h-px w-9 bg-[#B4C9BC]" />
                 Less coordination. More creation.
-              </motion.div>
+              </div>
             </div>
 
-            <motion.figure initial={{ opacity: 0, y: 48, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 1.15, delay: 0.32, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto w-full min-w-0 max-w-[600px] lg:max-w-none">
+            <figure className="relative mx-auto w-full min-w-0 max-w-[600px] lg:max-w-none">
               <div aria-hidden="true" className="absolute -inset-5 rounded-[65px] bg-[#D8F3A5]/55 blur-3xl sm:-inset-9" />
               <div aria-hidden="true" className="absolute -bottom-5 -left-4 right-5 top-6 rounded-[42px] bg-[#D8F3A5] sm:-bottom-8 sm:-left-8 sm:right-8 sm:top-9 sm:rounded-[65px]" />
-              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} className="relative overflow-hidden rounded-[34px] rounded-tr-[100px] bg-[#D8F3A5] shadow-[0_35px_90px_rgba(16,42,41,0.15)] sm:rounded-[50px] sm:rounded-tr-[145px]">
+              <div className="relative overflow-hidden rounded-[34px] rounded-tr-[100px] bg-[#D8F3A5] shadow-[0_35px_90px_rgba(16,42,41,0.15)] sm:rounded-[50px] sm:rounded-tr-[145px]">
                 <Image src={people} alt="Three teammates sharing ideas around a laptop in a blue studio." priority sizes="(max-width: 1023px) 100vw, (max-width: 1279px) 46vw, 600px" className="h-auto w-full" />
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#102A29]/20 via-transparent to-transparent" />
-              </motion.div>
+              </div>
 
-              <motion.div initial={{ opacity: 0, x: 22, y: 14 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.8, delay: 1.25 }} className="absolute -right-2 top-[12%] hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-4 py-3 shadow-[0_15px_45px_rgba(16,42,41,0.12)] sm:flex lg:-right-5">
+              <div className="absolute -right-2 top-[12%] hidden items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-4 py-3 shadow-[0_15px_45px_rgba(16,42,41,0.12)] sm:flex lg:-right-5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E6F5EB] text-[#16834B]"><CheckCheck size={18} aria-hidden="true" /></span>
                 <span className="text-xs font-semibold text-[#102A29]">Work, moving forward.</span>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, x: -18, y: 12 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: 0.8, delay: 1.48 }} className="absolute -bottom-3 left-2 flex items-center gap-2 rounded-full border border-white/80 bg-[#102A29] px-4 py-3 text-white shadow-[0_15px_40px_rgba(16,42,41,0.17)] sm:-bottom-5 sm:left-6 sm:px-5">
+              </div>
+              <div className="absolute -bottom-3 left-2 flex items-center gap-2 rounded-full border border-white/80 bg-[#102A29] px-4 py-3 text-white shadow-[0_15px_40px_rgba(16,42,41,0.17)] sm:-bottom-5 sm:left-6 sm:px-5">
                 <Sparkles size={16} className="text-[#D8F3A5]" aria-hidden="true" />
                 <span className="text-[11px] font-semibold sm:text-xs">A little more together. A lot more possible.</span>
-              </motion.div>
-            </motion.figure>
+              </div>
+            </figure>
           </div>
 
           <div className="relative mx-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#102A29]/15 py-5 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#52635E] sm:mx-8 lg:mx-14">
@@ -209,10 +200,10 @@ export default function HomeClient({
         <section
           id="ai-inbox"
           aria-labelledby="inbox-heading"
-          className="relative isolate scroll-mt-24 overflow-hidden bg-[#F8FAF5] px-5 py-20 sm:px-8 sm:py-28 lg:px-14 lg:py-32"
+          className="relative isolate scroll-mt-24 overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_850px] bg-[#F8FAF5] px-5 py-20 sm:px-8 sm:py-28 lg:px-14 lg:py-32"
         >
-          <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-0 -z-10 h-[650px] w-[650px] rounded-full bg-[#DCEFE5]/50 blur-[110px]" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-60 -left-40 -z-10 h-[500px] w-[500px] rounded-full bg-[#E4EDFA]/40 blur-[110px]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-0 -z-10 h-[650px] w-[650px] rounded-full bg-[#DCEFE5]/50 md:blur-[110px]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-60 -left-40 -z-10 h-[500px] w-[500px] rounded-full bg-[#E4EDFA]/40 md:blur-[110px]" />
 
           <div className="mx-auto grid max-w-[1160px] items-center gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-12">
             <div className="relative z-10 max-w-[535px]">
@@ -226,8 +217,8 @@ export default function HomeClient({
               </h2>
 
               <p className="mt-7 max-w-[470px] text-[16px] leading-[1.85] text-[#60716A] sm:text-[17px]">
-                Your customers reach out on Instagram, Facebook, and WhatsApp. Showwork brings supported conversations into one place, so your team never has to jump between apps. Turn on Showwork AI to draft thoughtful replies—or let it respond automatically on eligible channels while you focus on growing your business.
-              </p>
+  One inbox for Instagram, Facebook, and WhatsApp. Let Showwork AI help your team reply faster—or handle supported conversations automatically.
+</p>
 
               <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="Social messaging channels">
                 {(["Instagram", "Facebook", "WhatsApp"] as const).map((channel) => (
@@ -243,9 +234,7 @@ export default function HomeClient({
                 <ArrowUpRight size={18} className="transition-transform duration-300 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
 
-              <p className="mt-7 max-w-[470px] text-[11px] leading-[1.8] text-[#718078] sm:text-[12px]">
-                Channel connections and messaging capabilities depend on platform permissions and supported integrations. AI drafting is available on Studio and Agency; automatic replies are opt-in on Agency, subject to supported channels and plan allowances.
-              </p>
+              
             </div>
 
             <ShowworkAIConversation />
@@ -259,7 +248,7 @@ export default function HomeClient({
           {/* Sticky, viewport-sized photograph: pinned while this section scrolls.
               Unlike background-attachment: fixed, this also works on mobile Safari. */}
           <div aria-hidden="true" className="absolute inset-0 z-0">
-            <div className="sticky top-0 h-[100svh] w-full overflow-hidden bg-[#102A29]">
+            <div className="h-full w-full overflow-hidden bg-[#102A29] lg:sticky lg:top-0 lg:h-[100svh]">
               <picture>
                 <source media="(min-width: 768px)" srcSet="/images/team.webp" type="image/webp" />
                 <img
@@ -278,24 +267,16 @@ export default function HomeClient({
 
           <div className="relative z-10 mx-auto flex min-h-[max(760px,115svh)] max-w-[1440px] flex-col justify-between px-5 pb-10 pt-16 sm:min-h-[max(800px,115svh)] sm:px-8 sm:pb-14 sm:pt-20 lg:px-14 lg:pb-16 lg:pt-24">
             <div className="max-w-[850px]">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7 }}
+              <div
                 className="flex items-center gap-3"
               >
                 <span className="h-px w-9 bg-[#D8F3A5]" aria-hidden="true" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D8F3A5] sm:text-xs">
                   Good work is a team sport.
                 </p>
-              </motion.div>
-              <motion.h2
+              </div>
+              <h2
                 id="team-heading"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.9, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
                 className="mt-7 max-w-[800px] text-[clamp(2.75rem,6.1vw,6.6rem)] font-semibold leading-[0.98] tracking-[-0.065em] drop-shadow-[0_3px_20px_rgba(0,0,0,0.16)]"
               >
                 Less back-and-forth.
@@ -303,38 +284,26 @@ export default function HomeClient({
                 <em className="mt-2 block font-[var(--font-fraunces)] font-medium leading-[1.03] text-[#D8F3A5]">
                   More getting things done.
                 </em>
-              </motion.h2>
+              </h2>
             </div>
 
             {/* Small product-connected annotations; illustrative only. */}
-            <motion.div
+            <div
               aria-hidden="true"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.65, duration: 0.7 }}
-              className="absolute right-[7%] top-[49%] hidden items-center gap-2.5 rounded-full border border-white/50 bg-[#F8FAF5]/90 px-4 py-2.5 text-[#102A29] shadow-[0_14px_45px_rgba(0,0,0,0.12)] backdrop-blur-md lg:flex"
+              className="absolute right-[7%] top-[49%] hidden items-center gap-2.5 rounded-full border border-white/50 bg-[#F8FAF5]/90 px-4 py-2.5 text-[#102A29] shadow-[0_14px_45px_rgba(0,0,0,0.12)] md:backdrop-blur-md lg:flex"
             >
               <CheckCircle2 size={17} className="text-[#16834B]" />
               <span className="text-xs font-semibold">Creative review approved</span>
-            </motion.div>
-            <motion.div
+            </div>
+            <div
               aria-hidden="true"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.85, duration: 0.7 }}
-              className="absolute right-[12%] bottom-[24%] hidden items-center gap-2 rounded-full border border-white/40 bg-[#102A29]/65 px-4 py-2.5 text-white shadow-xl backdrop-blur-md xl:flex"
+              className="absolute right-[12%] bottom-[24%] hidden items-center gap-2 rounded-full border border-white/40 bg-[#102A29]/65 px-4 py-2.5 text-white shadow-xl md:backdrop-blur-md xl:flex"
             >
               <UsersRound size={16} className="text-[#D8F3A5]" />
               <span className="text-xs font-medium">One team. One shared flow.</span>
-            </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.32, duration: 0.8 }}
+            <div
               className="max-w-[550px]"
             >
               <p className="max-w-[470px] text-base leading-7 text-white/95 sm:text-lg sm:leading-8">
@@ -355,7 +324,7 @@ export default function HomeClient({
               <p className="mt-5 text-[11px] leading-5 text-white/75">
                 Illustrative collaboration experience. Team access and features vary by plan.
               </p>
-            </motion.div>
+            </div>
           </div>
         </section>
 
@@ -428,7 +397,6 @@ export default function HomeClient({
         <SiteFooter homepage />
         <BookDemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
       </main>
-    </MotionConfig>
   );
 }
 
@@ -446,7 +414,19 @@ function ShowworkAIConversation() {
   const [visible, setVisible] = useState(false);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<DemoPhase>("idle");
-  const reducedMotion = useReducedMotion();
+  const [canAnimate, setCanAnimate] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
+    const update = () => setCanAnimate(media.matches && !document.hidden);
+    update();
+    media.addEventListener("change", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      media.removeEventListener("change", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
 
   useEffect(() => {
     const node = rootRef.current;
@@ -460,7 +440,7 @@ function ShowworkAIConversation() {
   }, []);
 
   useEffect(() => {
-    if (!visible || reducedMotion !== false) return;
+    if (!visible || !canAnimate) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
     let elapsed = 0;
@@ -480,10 +460,10 @@ function ShowworkAIConversation() {
     });
 
     return () => timers.forEach(clearTimeout);
-  }, [visible, index, reducedMotion]);
+  }, [visible, index, canAnimate]);
 
   const current = demoConversations[index];
-  const staticView = reducedMotion !== false;
+  const staticView = !canAnimate;
   const showIncoming = staticView || phase !== "idle";
   const showTyping = !staticView && phase === "typing";
   const showReply = staticView || phase === "reply" || phase === "sent";
@@ -492,8 +472,8 @@ function ShowworkAIConversation() {
   return (
     <div ref={rootRef} className="relative mx-auto flex h-[475px] min-w-0 w-full max-w-[560px] items-center justify-center sm:h-[505px] lg:h-[545px]">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-[8%] top-[10%] h-64 w-64 rounded-full bg-[#BDECD5]/45 blur-[75px]" />
-        <div className="absolute bottom-[8%] right-0 h-64 w-64 rounded-full bg-[#D4E4FF]/65 blur-[85px]" />
+        <div className="absolute left-[8%] top-[10%] h-64 w-64 rounded-full bg-[#BDECD5]/45 md:blur-[75px]" />
+        <div className="absolute bottom-[8%] right-0 h-64 w-64 rounded-full bg-[#D4E4FF]/65 md:blur-[85px]" />
         <div className="absolute left-1/2 top-1/2 h-[290px] w-[290px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#CFE5D9]/60 sm:h-[410px] sm:w-[410px]" />
         <div className="absolute left-1/2 top-1/2 h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#CFE5D9]/40 sm:h-[300px] sm:w-[300px]" />
       </div>

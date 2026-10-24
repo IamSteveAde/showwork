@@ -122,18 +122,56 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
       };
     });
 
-    const posts = await db.$transaction(async (tx) => {
-      const created = [];
-      for (const data of rows) created.push(await tx.calendarPost.create({ data }));
-      return created;
-    });
+  // Bulk-insert generated drafts in one database operation.
+// This avoids sequential inserts inside a five-second transaction.
+const posts = await db.calendarPost.createManyAndReturn({
+  data: rows,
+});
+
+return NextResponse.json({
+  created: posts.length,
+  posts,
+  aiGenerationsRemaining: null,
+});
     return NextResponse.json({ created: posts.length, posts, aiGenerationsRemaining: null });
   } catch (error) {
-    await db.contentWorkspaceUsage.updateMany({ where: { creatorId: owner.id, aiGenerationsUsed: { gt: 0 } }, data: { aiGenerationsUsed: { decrement: 1 } } });
-    const timedOut = error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name);
-    const message = timedOut
-      ? "AI generation took too long. Try a shorter date range or fewer platforms. Your AI allowance has been restored."
-      : error instanceof Error ? error.message : "Failed to generate content";
-    return NextResponse.json({ error: message }, { status: timedOut ? 504 : 502 });
+  console.error("[Calendar AI Generation] Failed", {
+    calendarId: id,
+    creatorId: creator.id,
+    error,
+  });
+
+  try {
+    await db.contentWorkspaceUsage.updateMany({
+      where: {
+        creatorId: owner.id,
+        aiGenerationsUsed: { gt: 0 },
+      },
+      data: {
+        aiGenerationsUsed: { decrement: 1 },
+      },
+    });
+  } catch (refundError) {
+    console.error("[Calendar AI Generation] Allowance refund failed", {
+      calendarId: id,
+      creatorId: owner.id,
+      error: refundError,
+    });
   }
+
+  const timedOut =
+    error instanceof Error &&
+    (["TimeoutError", "AbortError"].includes(error.name) ||
+      error.message.includes("Transaction already closed") ||
+      error.message.includes("Transaction API error"));
+
+  return NextResponse.json(
+    {
+      error: timedOut
+        ? "Content generation took too long. Please try again."
+        : "We couldn't complete content generation. Please try again.",
+    },
+    { status: timedOut ? 504 : 502 }
+  );
+}
 }
