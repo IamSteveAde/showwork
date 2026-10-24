@@ -290,6 +290,21 @@ export async function listManagedPages(
       },
     );
     pages.push(...(result.data ?? []));
+    console.info("[Instagram OAuth Discovery]", {
+  graphVersion: GRAPH_API_VERSION,
+  returnedPageCount: result.data?.length ?? 0,
+  pages: (result.data ?? []).map((page) => ({
+    pageId: page.id,
+    pageName: page.name,
+    hasPageAccessToken: Boolean(page.access_token),
+    tasks: page.tasks ?? [],
+    hasInstagramBusinessAccount: Boolean(
+      page.instagram_business_account?.id
+    ),
+    instagramAccountId:
+      page.instagram_business_account?.id ?? null,
+  })),
+});
     after = result.paging?.next ? result.paging.cursors?.after : undefined;
     if (after && cursors.has(after)) throw new Error("Meta returned a repeated Page cursor.");
     if (after) cursors.add(after);

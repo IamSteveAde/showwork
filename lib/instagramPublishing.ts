@@ -79,6 +79,7 @@ export function createInstagramPublisher(database: typeof defaultDb, reporting: 
   });
 
   if (!post) throw new Error("Post not found");
+  if (post.internalReviewStatus !== "APPROVED" || post.approvalStatus !== "APPROVED" || post.isAiDraft) throw new Error("Internal and client approval are required before publishing.");
 
   const fail = async (message: string) => {
     await db.calendarPost.update({

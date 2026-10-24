@@ -243,7 +243,7 @@ export default async function SocialCalendarPage({
   },
 },
       posts: {
-        where: { isAiDraft: false },
+        where: { isAiDraft: false, internalReviewStatus: "APPROVED" },
         orderBy: { postDate: "asc" },
         include: {
           assets: { orderBy: { displayOrder: "asc" } },

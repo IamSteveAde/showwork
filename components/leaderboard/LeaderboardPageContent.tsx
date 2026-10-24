@@ -1,17 +1,12 @@
 "use client";
 
-import UiSymbol from "@/components/ui/UiSymbol";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Trophy, ArrowUpRight, ArrowRight, ExternalLink, Users } from "lucide-react";
-
-const BLUE = "#2478FF";
-const BLUE_DARK = "#0052FF";
-const BLACK = "#080808";
-const YELLOW = "#FFCC00";
-const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"];
-const RANK_COLOR = ["#FFCC00", "#68B2FF", "#0052FF"];
+import {
+  ArrowRight, ArrowUpRight, CalendarDays, ChevronDown,
+  ChevronLeft, ChevronRight, Crown, Medal, Sparkles,
+  Trophy, UsersRound, ExternalLink, MessageCircle,
+} from "lucide-react";
 
 export interface LeaderboardEntryData {
   id: string;
@@ -25,635 +20,453 @@ export interface LeaderboardEntryData {
   periodDate: string;
 }
 
+type AllTimeLeader = {
+  key: string;
+  name: string;
+  profileImageUrl: string | null;
+  portfolioUrl: string | null;
+  whatsappNumber: string | null;
+  category: string;
+  wins: number;
+  totalPoints: number;
+  mostRecentDate: string;
+};
+
+const CATEGORIES = ["Video/Motion", "Graphics Design", "Photography", "Branding/Illustration"] as const;
+const PAGE_SIZE = 10;
+
 function periodKey(iso: string): string {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function periodLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Unknown month";
+  return date.toLocaleDateString("en-US", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  });
 }
 
-// Matches the exact pattern already used on /creativo — a pre-filled
-// message referencing the Spotlight itself, not a blank chat window.
-function spotlightWhatsappHref(whatsappNumber: string, name: string): string {
+function safeUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function whatsappHref(number: string, name: string): string {
+  const digits = number.replace(/\D/g, "");
   const message = `Hi ${name}, I saw your work on the Creativo leaderboard and would love to work with you on a project.`;
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
-function EntryCard({ entry, rankIndex }: { entry: LeaderboardEntryData; rankIndex: number }) {
-  const rankColor = RANK_COLOR[rankIndex] ?? "#00000022";
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: (rankIndex % 6) * 0.06 }}
-      whileHover={{ y: -5 }}
-      className="group relative overflow-hidden rounded-2xl p-4"
-      style={{ background: rankIndex < 3 ? `${rankColor}14` : "#F7F7F5", border: rankIndex < 3 ? `1px solid ${rankColor}44` : "1px solid rgba(0,0,0,0.06)" }}
-    >
-      <div className="flex items-center gap-3.5">
-        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
-          {entry.profileImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={entry.profileImageUrl} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          )}
-          <span
-            className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-extrabold text-black"
-            style={{ background: rankIndex < 3 ? rankColor : "#FFFFFF", border: rankIndex >= 3 ? "1px solid rgba(0,0,0,0.1)" : undefined }}
-          >
-            {rankIndex + 1}
-          </span>
-        </div>
-                <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm font-bold text-black">{entry.name}</p>
-            <span className="flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold" style={{ background: `${rankColor}22`, color: rankColor }}>
-              {entry.points} pts
-            </span>
-          </div>
-          <p className="truncate text-xs text-black/45">{entry.category} — {entry.wonFor}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {entry.portfolioUrl && (
-              <a
-                href={entry.portfolioUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group/portfolio inline-flex items-center gap-1.5 rounded-full border border-[#2478FF]/15 bg-[#2478FF]/[0.07] px-3 py-1.5 text-[10px] font-extrabold text-[#0052FF] shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2478FF]/30 hover:bg-[#2478FF] hover:text-white hover:shadow-[0_8px_20px_-10px_#2478FF]"
-              >
-                View portfolio
-                <ArrowUpRight
-                  size={12}
-                  strokeWidth={2.4}
-                  className="transition-transform duration-300 group-hover/portfolio:translate-x-0.5 group-hover/portfolio:-translate-y-0.5"
-                />
-              </a>
-            )}
+function trackContact(name: string) {
+  // Preserve the original Meta Pixel event without depending on global TS declarations.
+  const fbq = (window as Window & {
+    fbq?: (event: string, action: string, data: Record<string, string>) => void;
+  }).fbq;
+  fbq?.("track", "Contact", {
+    content_name: name,
+    content_category: "CREATIVO Leaderboard",
+  });
+}
 
-                      {entry.whatsappNumber && (
-              
-                <a href={spotlightWhatsappHref(entry.whatsappNumber, entry.name)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  window.fbq?.("track", "Contact", {
-                    content_name: entry.name,
-                    content_category: "CREATIVO Leaderboard",
-                  });
-                }}
-                className="group/contact inline-flex items-center gap-1.5 rounded-full border border-black/[0.07] bg-black/[0.035] px-3 py-1.5 text-[10px] font-extrabold text-black/55 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white hover:shadow-[0_8px_20px_-10px_#25D366]"
-              >
-                Contact creator
-                <ArrowRight
-                  size={12}
-                  strokeWidth={2.4}
-                  className="transition-transform duration-300 group-hover/contact:translate-x-0.5"
-                />
-              </a>
-            )}
-          </div>
+function Avatar({
+  name, src, size = "md",
+}: {
+  name: string; src: string | null; size?: "md" | "lg" | "xl";
+}) {
+  const dimensions = size === "xl" ? "h-24 w-24 sm:h-28 sm:w-28"
+    : size === "lg" ? "h-16 w-16" : "h-12 w-12";
+  return (
+    <div className={`relative shrink-0 overflow-hidden rounded-[18px] bg-[#E6F0E9] ${dimensions}`}>
+      {src ? (
+        // External profile images can come from arbitrary community URLs.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={name} loading="lazy" decoding="async"
+          className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-2xl font-semibold text-[#16834B]">
+          {name.trim().charAt(0).toUpperCase() || "C"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Eyebrow({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
+  return (
+    <p className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] ${light ? "text-[#D8F3A5]" : "text-[#16834B]"}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${light ? "bg-[#D8F3A5]" : "bg-[#16834B]"}`} />
+      {children}
+    </p>
+  );
+}
+
+function Actions({
+  name, portfolioUrl, whatsappNumber, compact = false,
+}: {
+  name: string; portfolioUrl: string | null; whatsappNumber: string | null; compact?: boolean;
+}) {
+  const portfolio = safeUrl(portfolioUrl);
+  return (
+    <div className={`flex flex-wrap items-center ${compact ? "gap-x-4 gap-y-2" : "gap-2"}`}>
+      {portfolio && (
+        <a href={portfolio} target="_blank" rel="noopener noreferrer"
+          className={compact
+            ? "inline-flex items-center gap-1 text-xs font-semibold text-[#155FC7] hover:underline"
+            : "inline-flex items-center gap-2 rounded-full border border-[#D7E6DA] bg-white px-4 py-2.5 text-xs font-semibold text-[#102A29] transition-colors hover:border-[#155FC7] hover:text-[#155FC7]"}>
+          Portfolio <ArrowUpRight size={14} aria-hidden />
+        </a>
+      )}
+      {whatsappNumber && (
+        <a href={whatsappHref(whatsappNumber, name)} target="_blank" rel="noopener noreferrer"
+          onClick={() => trackContact(name)}
+          className={compact
+            ? "inline-flex items-center gap-1 text-xs font-semibold text-[#16834B] hover:underline"
+            : "inline-flex items-center gap-2 rounded-full bg-[#102A29] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#155FC7]"}>
+          {compact ? "Contact" : "Work together"} <ArrowUpRight size={14} aria-hidden />
+        </a>
+      )}
+    </div>
+  );
+}
+
+function FeaturedCreator({ entry, rank }: { entry: LeaderboardEntryData; rank: number }) {
+  const first = rank === 1;
+  return (
+    <article className={`relative flex h-full flex-col overflow-hidden rounded-[28px] border p-6 sm:p-7 ${
+      first ? "border-[#B7DCC1] bg-[#EAF5EC]" : "border-[#E0E9E2] bg-white"
+    }`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] ${
+          first ? "bg-[#D8F3A5] text-[#102A29]" : "bg-[#EFF4F0] text-[#64776B]"
+        }`}>
+          {first ? <Crown size={14} /> : <Medal size={14} />}
+          {rank === 1 ? "Spotlight leader" : rank === 2 ? "Second place" : "Third place"}
+        </span>
+        <span className="text-sm font-semibold tabular-nums text-[#16834B]">#{String(rank).padStart(2, "0")}</span>
+      </div>
+      <div className="mt-8"><Avatar name={entry.name} src={entry.profileImageUrl} size="xl" /></div>
+      <div className="mt-6 flex-1">
+        <h3 className="break-words text-2xl font-semibold tracking-[-0.055em] text-[#102A29]">{entry.name}</h3>
+        <p className="mt-1 text-xs font-medium text-[#738477]">{entry.category}</p>
+        <p className="mt-5 border-t border-[#CFE0D2] pt-5 text-sm leading-6 text-[#536B5C]">{entry.wonFor}</p>
+      </div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-[#CFE0D2] pt-5">
+        <div><p className="text-2xl font-semibold tabular-nums tracking-tight">{entry.points.toLocaleString()}</p><p className="text-[11px] text-[#718676]">Spotlight points</p></div>
+        <Actions name={entry.name} portfolioUrl={entry.portfolioUrl} whatsappNumber={entry.whatsappNumber} compact />
+      </div>
+    </article>
+  );
+}
+
+function CreatorRow({ entry, rank }: { entry: LeaderboardEntryData; rank: number }) {
+  return (
+    <article className="grid gap-4 rounded-[22px] border border-[#E1EAE3] bg-white p-4 transition-colors hover:border-[#BED7C4] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-5 sm:p-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <span className="w-8 shrink-0 text-center text-sm font-semibold tabular-nums text-[#8AA093]">{String(rank).padStart(2, "0")}</span>
+        <Avatar name={entry.name} src={entry.profileImageUrl} />
+        <div className="min-w-0 sm:hidden">
+          <h3 className="truncate text-sm font-semibold">{entry.name}</h3>
+          <p className="truncate text-xs text-[#75877A]">{entry.category}</p>
         </div>
       </div>
-    </motion.div>
+      <div className="hidden min-w-0 sm:block">
+        <h3 className="truncate text-sm font-semibold">{entry.name}</h3>
+        <p className="mt-1 line-clamp-1 text-xs text-[#75877A]">{entry.category} · {entry.wonFor}</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#E9F0EA] pt-3 sm:justify-end sm:border-0 sm:pt-0">
+        <span className="text-sm font-semibold tabular-nums text-[#16834B]">{entry.points.toLocaleString()} <span className="text-[11px] font-normal text-[#829487]">pts</span></span>
+        <Actions name={entry.name} portfolioUrl={entry.portfolioUrl} whatsappNumber={entry.whatsappNumber} compact />
+      </div>
+    </article>
+  );
+}
+
+function AllTimeRow({ leader, rank }: { leader: AllTimeLeader; rank: number }) {
+  return (
+    <article className={`grid gap-4 rounded-[22px] border p-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-5 sm:p-5 ${
+      rank <= 3 ? "border-[#CFE3D4] bg-[#F0F8F1]" : "border-[#E1EAE3] bg-white"
+    }`}>
+      <div className="flex min-w-0 items-center gap-4">
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-semibold tabular-nums ${
+          rank <= 3 ? "bg-[#D8F3A5] text-[#102A29]" : "bg-[#F0F4F1] text-[#789082]"
+        }`}>{String(rank).padStart(2, "0")}</span>
+        <Avatar name={leader.name} src={leader.profileImageUrl} />
+        <div className="min-w-0 sm:hidden">
+          <h3 className="truncate text-sm font-semibold">{leader.name}</h3>
+          <p className="truncate text-xs text-[#75877A]">{leader.category}</p>
+        </div>
+      </div>
+      <div className="hidden min-w-0 sm:block">
+        <h3 className="truncate text-sm font-semibold">{leader.name}</h3>
+        <p className="mt-1 truncate text-xs text-[#75877A]">{leader.category}</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#DDE9E0] pt-3 sm:justify-end sm:gap-6 sm:border-0 sm:pt-0">
+        <div className="sm:text-right">
+          <p className="text-sm font-semibold text-[#16834B]">{leader.wins} {leader.wins === 1 ? "win" : "wins"}</p>
+          <p className="text-[11px] tabular-nums text-[#829487]">{leader.totalPoints.toLocaleString()} pts total</p>
+        </div>
+        <Actions name={leader.name} portfolioUrl={leader.portfolioUrl} whatsappNumber={leader.whatsappNumber} compact />
+      </div>
+    </article>
   );
 }
 
 export default function LeaderboardPageContent({ entries }: { entries: LeaderboardEntryData[] }) {
   const [view, setView] = useState<"month" | "allTime">("month");
-  const [filterCategory, setFilterCategory] = useState<string | "All">("All");
-  const [allTimePage, setAllTimePage] = useState(1);
-  const ALL_TIME_PER_PAGE = 10;
+  const [category, setCategory] = useState<string>("All");
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const availablePeriods = useMemo(() => {
     const seen = new Map<string, string>();
-    for (const e of entries) {
-      const key = periodKey(e.periodDate);
-      if (!seen.has(key)) seen.set(key, e.periodDate);
+    for (const entry of entries) {
+      const key = periodKey(entry.periodDate);
+      if (key && !seen.has(key)) seen.set(key, entry.periodDate);
     }
-    return [...seen.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+    return [...seen].sort((a, b) => b[0].localeCompare(a[0]));
   }, [entries]);
 
-  const [filterPeriodKey, setFilterPeriodKey] = useState<string | null>(null);
-  const effectivePeriodKey = filterPeriodKey ?? availablePeriods[0]?.[0] ?? null;
+  const currentPeriod = selectedPeriod && availablePeriods.some(([key]) => key === selectedPeriod)
+    ? selectedPeriod : availablePeriods[0]?.[0] ?? null;
 
-  const monthEntries = useMemo(() => {
-    return entries
-      .filter((e) => filterCategory === "All" || e.category === filterCategory)
-      .filter((e) => effectivePeriodKey === null || periodKey(e.periodDate) === effectivePeriodKey)
-      .sort((a, b) => b.points - a.points);
-  }, [entries, filterCategory, effectivePeriodKey]);
+  const monthLeaders = useMemo(() => entries
+    .filter(entry => category === "All" || entry.category === category)
+    .filter(entry => currentPeriod === null || periodKey(entry.periodDate) === currentPeriod)
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name)),
+    [entries, category, currentPeriod]);
 
-  // Cumulative, all-time view — entries aren't tied to a real account
-  // (a manually-added winner has no creator relation at all), so a
-  // trimmed, lowercased name is the best available key to group
-  // repeat winners under. Wins are counted, not just points summed,
-  // since "won 3 separate months" is the more meaningful all-time
-  // signal than raw point totals across differently-sized fields.
   const allTimeLeaders = useMemo(() => {
-    const byName = new Map<string, { name: string; profileImageUrl: string | null; portfolioUrl: string | null; whatsappNumber: string | null; category: string; wins: number; totalPoints: number; mostRecentDate: string }>();
-
-       for (const e of entries.filter((e) => filterCategory === "All" || e.category === filterCategory)) {
-      // WhatsApp number is the primary match — a phone number is a
-      // far more reliable "same person" signal than a typed name,
-      // which can vary slightly between separate months' entries.
-      // Only falls back to name when no WhatsApp number was recorded.
-      const key = e.whatsappNumber?.trim() ? `wa:${e.whatsappNumber.trim()}` : `name:${e.name.trim().toLowerCase()}`;
-      const existing = byName.get(key);
-      if (existing) {
-        existing.wins += 1;
-        existing.totalPoints += e.points;
-        if (new Date(e.periodDate) > new Date(existing.mostRecentDate)) {
-          existing.mostRecentDate = e.periodDate;
-          existing.profileImageUrl = e.profileImageUrl;
-          existing.portfolioUrl = e.portfolioUrl;
-          existing.whatsappNumber = e.whatsappNumber;
-          existing.category = e.category;
+    const grouped = new Map<string, AllTimeLeader>();
+    for (const entry of entries) {
+      if (category !== "All" && entry.category !== category) continue;
+      const digits = entry.whatsappNumber?.replace(/\D/g, "") || "";
+      const key = digits ? `wa:${digits}` : `name:${entry.name.trim().toLowerCase()}`;
+      const current = grouped.get(key);
+      if (current) {
+        current.wins++;
+        current.totalPoints += entry.points;
+        if (+new Date(entry.periodDate) > +new Date(current.mostRecentDate)) {
+          current.name = entry.name;
+          current.profileImageUrl = entry.profileImageUrl;
+          current.portfolioUrl = entry.portfolioUrl;
+          current.whatsappNumber = entry.whatsappNumber;
+          current.category = entry.category;
+          current.mostRecentDate = entry.periodDate;
         }
       } else {
-        byName.set(key, {
-          name: e.name,
-          profileImageUrl: e.profileImageUrl,
-          portfolioUrl: e.portfolioUrl,
-          whatsappNumber: e.whatsappNumber,
-          category: e.category,
-          wins: 1,
-          totalPoints: e.points,
-          mostRecentDate: e.periodDate,
+        grouped.set(key, {
+          key, name: entry.name, profileImageUrl: entry.profileImageUrl,
+          portfolioUrl: entry.portfolioUrl, whatsappNumber: entry.whatsappNumber,
+          category: entry.category, wins: 1, totalPoints: entry.points,
+          mostRecentDate: entry.periodDate,
         });
       }
     }
+    return [...grouped.values()].sort((a, b) =>
+      b.wins - a.wins || b.totalPoints - a.totalPoints || a.name.localeCompare(b.name));
+  }, [entries, category]);
 
-    return [...byName.values()].sort((a, b) => b.wins - a.wins || b.totalPoints - a.totalPoints);
-  }, [entries, filterCategory]);
-
-  const allTimeTotalPages = Math.max(
-    1,
-    Math.ceil(allTimeLeaders.length / ALL_TIME_PER_PAGE)
-  );
-
-  const paginatedAllTimeLeaders = useMemo(() => {
-    const start = (allTimePage - 1) * ALL_TIME_PER_PAGE;
-    return allTimeLeaders.slice(start, start + ALL_TIME_PER_PAGE);
-  }, [allTimeLeaders, allTimePage]);
+  const totalPages = Math.max(1, Math.ceil(allTimeLeaders.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = allTimeLeaders.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const featured = monthLeaders.slice(0, 3);
+  const remaining = monthLeaders.slice(3);
 
   return (
-    <>
-      {/* ── HERO ── */}
-<section className="relative isolate min-h-[680px] overflow-hidden bg-[#05080F] sm:min-h-[720px]">
+    <main className="min-h-screen overflow-x-clip bg-[#F8FAF5] text-[#102A29] [font-family:var(--font-jakarta),ui-sans-serif,system-ui,sans-serif]">
+      {/* Shared site navbar should be rendered by the existing layout. */}
 
-  {/* Hero image */}
-  <div
-    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat sm:bg-center"
-    style={{
-      backgroundImage: "url('/images/hero1.png')",
-      backgroundAttachment: "scroll",
-    }}
-    aria-hidden="true"
-  />
+      <section className="relative overflow-hidden border-b border-[#DCE8DF] px-5 pb-20 pt-32 sm:px-8 lg:px-14 lg:pb-24 lg:pt-44">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-0 h-[480px] w-[480px] rounded-full bg-[#E4EDFF]/60 blur-3xl" />
+        <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+          <div>
+            <Eyebrow>Creativo · Monthly spotlight</Eyebrow>
+            <h1 className="mt-6 text-[clamp(3.6rem,7vw,7rem)] font-semibold leading-[0.96] tracking-[-0.08em]">
+              Great work<br />deserves to<br /><span className="text-[#155FC7]">be seen<span className="text-[#16834B]">.</span></span>
+            </h1>
+            <p className="mt-7 max-w-[520px] text-base leading-8 text-[#61756A] sm:text-lg">
+              Discover the creators setting the standard. Explore the spotlight leaderboard and meet the people shaping what comes next.
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link href="/creativo" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#155FC7] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#104DA8]">
+                <UsersRound size={17} /> Join the community <ArrowUpRight size={16} />
+              </Link>
+              <a href="#leaderboard" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#D5E2D9] bg-white px-6 py-3 text-sm font-semibold transition-colors hover:border-[#9DBBA6]">
+                Explore rankings <ArrowRight size={17} />
+              </a>
+            </div>
+          </div>
+          <div className="relative">
+            <div aria-hidden="true" className="absolute -right-5 -top-5 h-28 w-28 rounded-full bg-[#D8F3A5]" />
+            <div className="relative rounded-[32px] border border-[#DCE9DF] bg-white p-6 shadow-[0_20px_70px_rgba(16,42,41,0.07)] sm:p-8">
+              <div className="flex items-center justify-between gap-3 border-b border-[#E5EEE7] pb-5">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#16834B]">The latest spotlight</p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.04em]">Creators to watch</h2>
+                </div>
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E9F1FF] text-[#155FC7]"><Sparkles size={21} /></span>
+              </div>
+              <div className="mt-5 space-y-3">
+                {entries.length ? [...entries]
+                  .filter(e => availablePeriods[0]?.[0] === periodKey(e.periodDate))
+                  .sort((a, b) => b.points - a.points).slice(0, 3)
+                  .map((entry, i) => (
+                    <div key={entry.id} className="flex items-center gap-3 rounded-2xl bg-[#F6F9F6] p-3">
+                      <span className="w-6 text-center text-xs font-semibold text-[#16834B]">{String(i + 1).padStart(2, "0")}</span>
+                      <Avatar name={entry.name} src={entry.profileImageUrl} />
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{entry.name}</p><p className="truncate text-xs text-[#758679]">{entry.category}</p></div>
+                      <Trophy size={16} className="shrink-0 text-[#155FC7]" />
+                    </div>
+                  )) : null}
+                {!entries.length && <p className="py-12 text-center text-sm text-[#718375]">The next creator to be featured could be you.</p>}
+              </div>
+              <p className="mt-6 text-xs leading-6 text-[#728578]">Real work. Real creators. A spotlight earned.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-  {/* Cinematic overlay */}
-  <div
-    className="absolute inset-0 z-0"
-    style={{
-      background:
-        "linear-gradient(180deg, rgba(5,8,15,0.42) 0%, rgba(5,8,15,0.58) 45%, rgba(5,8,15,0.94) 100%)",
-    }}
-    aria-hidden="true"
-  />
-
-  {/* Blue atmospheric glow */}
-  <div
-    className="absolute inset-0 z-0"
-    style={{
-      background:
-        "radial-gradient(circle at 22% 38%, rgba(36,120,255,0.22), transparent 34%)",
-    }}
-    aria-hidden="true"
-  />
-
-  {/* Mobile-specific bottom fade */}
-  <div
-    className="absolute inset-x-0 bottom-0 z-[1] h-48 bg-gradient-to-t from-[#05080F] via-[#05080F]/45 to-transparent sm:hidden"
-    aria-hidden="true"
-  />
-
-  <div className="relative z-10 mx-auto flex min-h-[680px] max-w-7xl items-center px-5 pb-14 pt-28 sm:min-h-[720px] sm:px-8 sm:pb-16 sm:pt-32 md:px-12 lg:px-16">
-
-    <div className="w-full max-w-5xl">
-
-      {/* Eyebrow */}
-      <div className="mb-6 flex items-center gap-3 sm:mb-7">
-        <span className="h-px w-8 bg-[#FFCC00] sm:w-9" />
-
-        <span className="text-[8px] font-extrabold uppercase tracking-[0.22em] text-white/55 sm:text-[10px] sm:tracking-[0.24em]">
-          Creativo · Monthly Spotlight
-        </span>
-      </div>
-
-      {/* Headline */}
-      <h1 className="max-w-5xl text-[3.15rem] font-extrabold leading-[0.9] tracking-[-0.07em] text-white sm:text-6xl md:text-7xl lg:text-[6.5rem]">
-
-        Great work
-        <br />
-
-        deserves to
-        <br />
-
-        <span
-          className="bg-clip-text text-transparent"
-          style={{
-            backgroundImage:
-              "linear-gradient(100deg, #2478FF 0%, #68B2FF 48%, #FFCC00 100%)",
-          }}
-        >
-          be seen.
-        </span>
-
-      </h1>
-
-      {/* Description */}
-      <p className="mt-6 max-w-xl text-[13px] leading-6 text-white/55 sm:mt-7 sm:text-base sm:leading-7 md:text-lg">
-        Discover the creators setting the standard. Explore the
-        Spotlight leaderboard and join the community shaping what
-        comes next.
-      </p>
-
-      {/* CTAs */}
-      <div className="mt-8 flex w-full flex-col gap-3 sm:mt-9 sm:flex-row">
-
-        <Link
-          href="/creativo"
-          className="group inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full bg-[#2478FF] px-6 py-3.5 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF] hover:shadow-[0_24px_55px_-18px_#2478FF] sm:w-auto sm:min-w-[175px]"
-        >
-          <Users size={15} strokeWidth={2.4} />
-
-          Join the community
-
-          <ArrowRight
-            size={14}
-            strokeWidth={2.5}
-            className="transition-transform duration-300 group-hover:translate-x-1"
-          />
-        </Link>
-
-        <Link
-          href="#leaderboard"
-          className="group inline-flex min-h-[52px] w-full items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-6 py-3.5 text-xs font-extrabold text-white backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.11] sm:w-auto sm:min-w-[175px]"
-        >
-          View leaderboard
-
-          <ArrowUpRight
-            size={14}
-            strokeWidth={2.4}
-            className="text-[#FFCC00] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-          />
-        </Link>
-
-      </div>
-
-      {/* Bottom label */}
-      <div className="mt-9 flex items-center gap-3 text-white/25 sm:mt-10">
-        <span className="h-px w-7 bg-white/20 sm:w-8" />
-
-        <span className="text-[7px] font-bold uppercase tracking-[0.18em] sm:text-[8px] sm:tracking-[0.2em]">
-          The creators to watch
-        </span>
-      </div>
-
-    </div>
-  </div>
-</section>
-      {/* ── LEADERBOARD ── */}
-      <section id="leaderboard" className="relative z-10 overflow-hidden border-t border-black/[0.06] bg-[#F7F9FC] px-6 py-16 md:px-16 md:py-24">
-        <div
-          className="pointer-events-none absolute -right-40 top-[-100px] h-[520px] w-[520px] rounded-full bg-[#2478FF]/10 blur-[120px]"
-          aria-hidden="true"
-        />
-        <div
-          className="pointer-events-none absolute -left-40 bottom-[-180px] h-[480px] w-[480px] rounded-full bg-[#FFCC00]/[0.08] blur-[120px]"
-          aria-hidden="true"
-        />
-
-        <div className="relative mx-auto max-w-7xl">
-          <div className="mb-12 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <section id="leaderboard" className="scroll-mt-24 px-5 py-20 sm:px-8 lg:px-14 lg:py-28">
+        <div className="mx-auto max-w-[1240px]">
+          <div className="flex flex-col justify-between gap-7 md:flex-row md:items-end">
             <div>
-              <p className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#2478FF]">
-                The leaderboard
-              </p>
-              <h2 className="max-w-3xl text-4xl font-extrabold leading-[0.98] tracking-[-0.05em] text-[#080808] sm:text-5xl md:text-6xl">
-                The work that
-                <br />
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(100deg, #0052FF, #2478FF, #6C63FF)",
-                  }}
-                >
-                  earned the spotlight.
-                </span>
+              <Eyebrow>The leaderboard</Eyebrow>
+              <h2 className="mt-5 text-[clamp(2.7rem,5vw,5rem)] font-semibold leading-[1.03] tracking-[-0.07em]">
+                The work that<br /><span className="text-[#155FC7]">earned the spotlight.</span>
               </h2>
             </div>
-
-            <div className="max-w-md text-sm leading-6 text-black/45 lg:pb-1">
-              Explore the creators behind the standout work, compare this month with the full record, and discover who keeps showing up.
-            </div>
+            <p className="max-w-[370px] text-sm leading-7 text-[#65786B]">
+              Explore this month&apos;s standout creators, or switch to the all-time view to see who keeps showing up.
+            </p>
           </div>
 
-          <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-            <div className="inline-flex rounded-full bg-black/5 p-1">
-              <button
-                onClick={() => setView("month")}
-                className="rounded-full px-5 py-2 text-xs font-bold transition-all"
-                style={view === "month" ? { background: "#111111", color: "#FFFFFF" } : { color: "rgba(0,0,0,0.55)" }}
-              >
-                By month
-              </button>
-              <button
-                onClick={() => setView("allTime")}
-                className="rounded-full px-5 py-2 text-xs font-bold transition-all"
-                style={view === "allTime" ? { background: "#111111", color: "#FFFFFF" } : { color: "rgba(0,0,0,0.55)" }}
-              >
-                All-time
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {(["All", ...CATEGORIES] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => { setFilterCategory(c); setAllTimePage(1); }}
-                  className="rounded-full px-4 py-2 text-xs font-bold transition-all"
-                  style={filterCategory === c ? { background: BLUE, color: "#FFFFFF" } : { background: "rgba(0,0,0,0.05)", color: "rgba(0,0,0,0.55)" }}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {view === "month" && availablePeriods.length > 1 && (
-            <div className="mb-8 flex flex-wrap gap-2">
-              {availablePeriods.map(([key, iso]) => (
-                <button
-                  key={key}
-                  onClick={() => setFilterPeriodKey(key)}
-                  className="rounded-full px-4 py-2 text-xs font-bold transition-all"
-                  style={effectivePeriodKey === key ? { background: BLUE_DARK, color: "#FFFFFF" } : { background: "rgba(0,0,0,0.05)", color: "rgba(0,0,0,0.55)" }}
-                >
-                  {periodLabel(iso)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {view === "month" ? (
-            monthEntries.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-black/10 p-10 text-center text-sm text-black/35">
-                Nobody selected for{" "}
-                {filterCategory === "All" ? "this period" : filterCategory}{" "}
-                yet.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {monthEntries.map((entry, i) => (
-                  <EntryCard key={entry.id} entry={entry} rankIndex={i} />
+          <div className="mt-12 rounded-[28px] border border-[#DDE9E0] bg-white p-4 sm:p-5">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="inline-flex w-fit rounded-full bg-[#F0F5F1] p-1" role="group" aria-label="Leaderboard view">
+                <button type="button" onClick={() => setView("month")} aria-pressed={view === "month"}
+                  className={`rounded-full px-5 py-2.5 text-xs font-semibold transition-colors ${view === "month" ? "bg-[#102A29] text-white" : "text-[#687C6F] hover:text-[#102A29]"}`}>This month</button>
+                <button type="button" onClick={() => { setView("allTime"); setPage(1); }} aria-pressed={view === "allTime"}
+                  className={`rounded-full px-5 py-2.5 text-xs font-semibold transition-colors ${view === "allTime" ? "bg-[#102A29] text-white" : "text-[#687C6F] hover:text-[#102A29]"}`}>All-time</button>
+              </div>
+              <div className="flex flex-wrap gap-2" aria-label="Filter leaderboard category">
+                {(["All", ...CATEGORIES] as const).map(c => (
+                  <button key={c} type="button" aria-pressed={category === c}
+                    onClick={() => { setCategory(c); setPage(1); }}
+                    className={`rounded-full px-4 py-2.5 text-xs font-semibold transition-colors ${category === c ? "bg-[#155FC7] text-white" : "bg-[#F0F5F1] text-[#617669] hover:bg-[#E4EFE7]"}`}>
+                    {c}
+                  </button>
                 ))}
               </div>
-            )
-          ) : allTimeLeaders.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-black/10 p-10 text-center text-sm text-black/35">
-              No winners in this category yet.
-            </p>
-          ) : (
-            <>
-              <div className="flex flex-col gap-3">
-                {paginatedAllTimeLeaders.map((leader, pageIndex) => {
-                  const globalIndex =
-                    (allTimePage - 1) * ALL_TIME_PER_PAGE + pageIndex;
-
-                  return (
-                    <motion.div
-                      key={leader.name}
-                      initial={{ opacity: 0, y: 15 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-40px" }}
-                      transition={{
-                        duration: 0.4,
-                        delay: (pageIndex % 8) * 0.05,
-                      }}
-                      className="flex items-center gap-4 rounded-2xl border border-black/[0.06] bg-white p-4"
-                    >
-                      <span className="w-8 flex-shrink-0 text-center text-sm font-extrabold text-black/30">
-                        {globalIndex + 1}
-                      </span>
-
-                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-black/5">
-                        {leader.profileImageUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={leader.profileImageUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-black">
-                          {leader.name}
-                        </p>
-                        <p className="truncate text-xs text-black/45">
-                          {leader.category}
-                        </p>
-                      </div>
-
-                                           <div className="flex-shrink-0 text-right">
-                        <p
-                          className="text-sm font-extrabold"
-                          style={{ color: BLUE }}
-                        >
-                          {leader.wins}{" "}
-                          {leader.wins === 1 ? "win" : "wins"}
-                        </p>
-                        <p className="text-[11px] font-semibold text-black/40">
-                          {leader.totalPoints.toLocaleString()} pts total
-                        </p>
-
-                        <div className="mt-2 flex items-center justify-end gap-2">
-                          {leader.portfolioUrl && (
-                            <a
-                              href={leader.portfolioUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group/portfolio inline-flex items-center gap-1 rounded-full border border-[#2478FF]/15 bg-[#2478FF]/[0.07] px-2.5 py-1.5 text-[9px] font-extrabold text-[#0052FF] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#2478FF]/30 hover:bg-[#2478FF] hover:text-white"
-                            >
-                              Portfolio
-                              <ExternalLink
-                                size={11}
-                                strokeWidth={2.4}
-                                className="transition-transform group-hover/portfolio:translate-x-0.5 group-hover/portfolio:-translate-y-0.5"
-                              />
-                            </a>
-                          )}
-
-                                                    {leader.whatsappNumber && (
-                            
-                              <a href={spotlightWhatsappHref(
-                                leader.whatsappNumber,
-                                leader.name
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => {
-                                window.fbq?.("track", "Contact", {
-                                  content_name: leader.name,
-                                  content_category: "CREATIVO Leaderboard",
-                                });
-                              }}
-                              className="group/contact inline-flex items-center gap-1 rounded-full border border-black/[0.07] bg-black/[0.035] px-2.5 py-1.5 text-[9px] font-extrabold text-black/50 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#25D366]/25 hover:bg-[#25D366] hover:text-white"
-                            >
-                              Contact
-                              <ArrowRight
-                                size={11}
-                                strokeWidth={2.4}
-                                className="transition-transform group-hover/contact:translate-x-0.5"
-                              />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {allTimeTotalPages > 1 && (
-                <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-black/30">
-                    Showing{" "}
-                    {(allTimePage - 1) * ALL_TIME_PER_PAGE + 1}
-                    {"–"}
-                    {Math.min(
-                      allTimePage * ALL_TIME_PER_PAGE,
-                      allTimeLeaders.length
-                    )}{" "}
-                    of {allTimeLeaders.length} creators
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAllTimePage((page) => Math.max(1, page - 1))
-                      }
-                      disabled={allTimePage === 1}
-                      className="rounded-full border border-black/10 bg-white px-4 py-2.5 text-xs font-bold text-black/60 transition-all hover:border-black/20 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      Previous
-                    </button>
-
-                    <span className="min-w-[72px] text-center text-[10px] font-extrabold uppercase tracking-[0.12em] text-black/35">
-                      Page {allTimePage} / {allTimeTotalPages}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setAllTimePage((page) =>
-                          Math.min(allTimeTotalPages, page + 1)
-                        )
-                      }
-                      disabled={allTimePage === allTimeTotalPages}
-                      className="rounded-full bg-[#2478FF] px-4 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#0052FF] disabled:cursor-not-allowed disabled:opacity-30"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-        </div>
-      </section>
-
-      {/* ── SHOWWORK CTA ── */}
-      <section className="relative z-10 overflow-hidden bg-[#05080F] px-6 py-24 md:px-16 md:py-32">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.16]"
-          style={{ backgroundImage: "url('/images/hero1.png')" }}
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(105deg, #05080F 8%, rgba(5,8,15,0.82) 48%, rgba(5,8,15,0.9) 100%)",
-          }}
-          aria-hidden="true"
-        />
-
-        <div className="absolute left-[-100px] top-[-180px] h-[420px] w-[420px] rounded-full bg-[#2478FF]/20 blur-[120px]" aria-hidden="true" />
-        <div className="absolute right-[-80px] bottom-[-220px] h-[440px] w-[440px] rounded-full bg-[#FFCC00]/10 blur-[130px]" aria-hidden="true" />
-
-        <div className="relative mx-auto max-w-7xl">
-          <div className="overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.045] p-7 shadow-[0_30px_100px_-45px_rgba(36,120,255,0.45)] backdrop-blur-xl md:p-12 lg:p-16">
-            <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto]">
-              <div className="max-w-3xl">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#2478FF]/25 bg-[#2478FF]/10 px-3 py-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF]" />
-                  <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-[#68B2FF]">
-                    Built for creative work
-                  </span>
-                </div>
-
-                <h2 className="text-4xl font-extrabold leading-[0.98] tracking-[-0.05em] text-white sm:text-5xl md:text-6xl">
-                  Your next great project
-                  <br />
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(100deg, #2478FF, #68B2FF, #FFCC00)",
-                    }}
-                  >
-                    starts here.
-                  </span>
-                </h2>
-
-                <p className="mt-6 max-w-2xl text-sm leading-7 text-white/45 sm:text-base">
-                  Deliver projects professionally or create a portfolio that makes your work impossible to overlook. Showwork gives your creative work the space it deserves.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                <Link
-                  href="/start"
-                  className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full bg-[#2478FF] px-6 py-4 text-xs font-extrabold text-white shadow-[0_18px_45px_-18px_#2478FF] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0052FF]"
-                >
-                  Deliver a project
-                  <span className="transition-transform group-hover:translate-x-1"><><UiSymbol name="right" /></></span>
-                </Link>
-
-                <Link
-                  href="/signup?next=/dashboard/portfolio"
-                  className="group inline-flex min-w-[210px] items-center justify-center gap-3 rounded-full border border-white/15 bg-white/[0.06] px-6 py-4 text-xs font-extrabold text-white transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/10"
-                >
-                  Create your portfolio
-                  <span className="text-[#FFCC00] transition-transform group-hover:translate-x-1"><><UiSymbol name="right" /></></span>
-                </Link>
-              </div>
             </div>
+            {view === "month" && availablePeriods.length > 0 && (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#E9F0EA] pt-5">
+                <p className="text-xs text-[#758779]">{monthLeaders.length} {monthLeaders.length === 1 ? "creator" : "creators"} in this selection</p>
+                <div className="relative">
+                  <CalendarDays size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#738779]" />
+                  <select aria-label="Choose spotlight month" value={currentPeriod ?? ""}
+                    onChange={e => setSelectedPeriod(e.target.value)}
+                    className="appearance-none rounded-full border border-[#D9E6DC] bg-[#F8FAF5] py-2.5 pl-11 pr-10 text-xs font-semibold outline-none focus:border-[#155FC7]">
+                    {availablePeriods.map(([key, iso]) => <option key={key} value={key}>{periodLabel(iso)}</option>)}
+                  </select>
+                  <ChevronDown size={15} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-[9px] font-bold uppercase tracking-[0.18em] text-white/20">
-            <span>Showwork</span>
-            <span>For creators who take their work seriously.</span>
+          {view === "month" ? (
+            monthLeaders.length === 0 ? (
+              <div className="mt-8 rounded-[24px] border border-dashed border-[#CFE0D4] bg-white px-6 py-20 text-center text-sm text-[#718477]">
+                No spotlight entries yet for this selection.
+              </div>
+            ) : (
+              <>
+                <div className="mt-10 flex items-center gap-3">
+                  <Trophy size={18} className="text-[#16834B]" />
+                  <h3 className="text-lg font-semibold tracking-tight">The top three</h3>
+                  <span className="text-xs text-[#849688]">{currentPeriod ? periodLabel(availablePeriods.find(([k]) => k === currentPeriod)?.[1] ?? "") : ""}</span>
+                </div>
+                <div className="mt-5 grid items-stretch gap-4 md:grid-cols-3">
+                  {featured.map((entry, i) => <FeaturedCreator key={entry.id} entry={entry} rank={i + 1} />)}
+                </div>
+                {remaining.length > 0 && (
+                  <div className="mt-12">
+                    <div className="mb-5 flex items-center justify-between gap-4">
+                      <h3 className="text-lg font-semibold tracking-tight">More standout creators</h3>
+                      <span className="text-xs text-[#7A8C7E]">{remaining.length} more</span>
+                    </div>
+                    <div className="space-y-3">
+                      {remaining.map((entry, i) => <CreatorRow key={entry.id} entry={entry} rank={i + 4} />)}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          ) : (
+            allTimeLeaders.length === 0 ? (
+              <div className="mt-8 rounded-[24px] border border-dashed border-[#CFE0D4] bg-white px-6 py-20 text-center text-sm text-[#718477]">
+                No winners in this category yet.
+              </div>
+            ) : (
+              <div className="mt-10">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2"><Trophy size={18} className="text-[#16834B]" /><h3 className="text-lg font-semibold tracking-tight">All-time leaders</h3></div>
+                  <p className="text-xs text-[#7A8C7E]">Ranked by wins, then total points</p>
+                </div>
+                <div className="space-y-3">
+                  {paginated.map((leader, i) => <AllTimeRow key={leader.key} leader={leader} rank={(safePage - 1) * PAGE_SIZE + i + 1} />)}
+                </div>
+                {totalPages > 1 && (
+                  <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                    <p className="text-xs text-[#718477]">Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, allTimeLeaders.length)} of {allTimeLeaders.length} creators</p>
+                    <div className="flex items-center gap-3">
+                      <button type="button" disabled={safePage === 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+                        className="inline-flex items-center gap-1 rounded-full border border-[#D6E4DA] bg-white px-4 py-2.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40">
+                        <ChevronLeft size={15} /> Previous
+                      </button>
+                      <span className="text-xs tabular-nums text-[#718477]">{safePage} / {totalPages}</span>
+                      <button type="button" disabled={safePage === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#102A29] px-4 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+                        Next <ChevronRight size={15} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </div>
+      </section>
+
+      <section className="bg-[#102A29] px-5 py-20 text-white sm:px-8 lg:px-14 lg:py-28">
+        <div className="mx-auto grid max-w-[1240px] items-end gap-10 lg:grid-cols-[1fr_auto]">
+          <div>
+            <Eyebrow light>Built for creative work</Eyebrow>
+            <h2 className="mt-6 text-[clamp(2.7rem,5.4vw,5.2rem)] font-semibold leading-[1.04] tracking-[-0.07em]">
+              Your next great project<br /><span className="text-[#D8F3A5]">starts here.</span>
+            </h2>
+            <p className="mt-6 max-w-[570px] text-sm leading-7 text-white/65 sm:text-base">
+              Deliver projects professionally or create a portfolio that makes your work impossible to overlook. Showwork gives your creative work the space it deserves.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <Link href="/start" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#D8F3A5] px-6 py-3 text-sm font-semibold text-[#102A29] transition-colors hover:bg-white">
+              Deliver a project <ArrowUpRight size={17} />
+            </Link>
+            <Link href="/signup?next=/dashboard/portfolio" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/25 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+              Create your portfolio <ArrowUpRight size={17} />
+            </Link>
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

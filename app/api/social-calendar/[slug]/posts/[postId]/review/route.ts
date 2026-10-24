@@ -1,3 +1,4 @@
+import { withoutInternalReview } from "@/lib/calendarInternalReview";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
@@ -72,7 +73,7 @@ export async function POST(
     },
   });
 
-  if (!post || post.calendarId !== calendar.id || post.isAiDraft) {
+  if (!post || post.calendarId !== calendar.id || post.isAiDraft || post.internalReviewStatus !== "APPROVED") {
     return NextResponse.json(
       { error: "Post not found" },
       { status: 404 }
@@ -115,7 +116,7 @@ export async function POST(
     } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content" }, { status: 400 }); }
   }
   const updatedCount = await db.calendarPost.updateMany({
-    where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, publishingStatus(post)), ...(canSchedule ? { calendar: { autoPublishEnabled: true } } : {}) },
+    where: { id: postId, internalReviewStatus: "APPROVED", updatedAt: post.updatedAt, ...statusWhere(post.platform, publishingStatus(post)), ...(canSchedule ? { calendar: { autoPublishEnabled: true } } : {}) },
     data: {
       approvalStatus: approved ? "APPROVED" : "NEEDS_REVISION",
       approvalNote: approved ? null : typeof note === "string" ? note.trim() || null : null,
@@ -176,7 +177,7 @@ export async function POST(
   // cannot serialize BigInt values. Convert it to a number
   // before returning the post to the client.
   const serializedPost = {
-    ...updated,
+    ...withoutInternalReview(updated),
     assets: updated.assets.map((asset) => ({
       ...asset,
       sizeBytes: Number(asset.sizeBytes),

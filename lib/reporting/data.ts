@@ -93,6 +93,7 @@ export async function getCalendarReportingData(
     db.publishedSocialPost.findMany({
       where: {
         calendarId,
+        ...(!includeSyncErrors ? { calendarPost: { internalReviewStatus: "APPROVED" as const, isAiDraft: false } } : {}),
         ...(platform ? { platform } : {}),
         publishedAt: { gte: start, lte: end },
       },

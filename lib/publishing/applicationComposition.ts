@@ -1,3 +1,4 @@
+import { withoutInternalReview } from '../calendarInternalReview';
 /** Local-only route composition. Every unported path fails closed; no legacy fallback. */
 import {policyHash} from './eligibilityPolicy';
 import {calendarPostData} from '../calendarPosts';
@@ -61,13 +62,13 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
    const calendarId=await deps.resolveCalendar(request,params);
    if(path.endsWith('/social-calendar/[slug]/respond/route.ts'))return Response.json(await deps.actions.plan({operationId,calendarId,credential:await deps.viewerCredential(request),action:body.action,note:body.note}));
    if(path.includes('social-calendar/')&&path.includes('/review/')){
-    if(!['approve','request_revision'].includes(body.action))throw Error('INVALID_REVIEW_ACTION');await deps.actions.review({operationId,calendarId,postId:params.postId,credential:await deps.viewerCredential(request),approved:body.action==='approve',note:body.note});return Response.json({post:await view(calendarId,params.postId)});
+    if(!['approve','request_revision'].includes(body.action))throw Error('INVALID_REVIEW_ACTION');await deps.actions.review({operationId,calendarId,postId:params.postId,credential:await deps.viewerCredential(request),approved:body.action==='approve',note:body.note});return Response.json({post:withoutInternalReview(await view(calendarId,params.postId))});
    }
    const actor=await deps.authenticateCreator(request);if(!actor)return Response.json({error:'Unauthorized'},{status:401});
    if(path.endsWith('/tiktok/creator-info/route.ts'))return Response.json(await deps.actions.creatorMetadata(actor.id,calendarId),{headers:{'Cache-Control':'no-store'}});
    const postId=params.postId??body.postId;
    if(path.endsWith('/posts/route.ts')&&request.method==='GET'){
-    const allowed=['id','postDate','platform','postType','category','hook','script','caption','contentIdea','cta','hashtags','taggedAccounts','linkUrl','approvalStatus','approvalNote','publishStatus','publishError','publishPermalink','instagramPublishStatus','instagramPermalink','instagramPublishError','tikTokPublishStatus','tikTokPrivacyLevel','tikTokSettings','tikTokConsentAt','tikTokInitStartedAt','tikTokPublishId','tikTokPublishError'];
+    const allowed=['id','postDate','platform','postType','category','hook','script','caption','contentIdea','cta','hashtags','taggedAccounts','linkUrl','internalReviewStatus','internalReviewNote','internalReviewVersion','internalReviewedAt','approvalStatus','approvalNote','publishStatus','publishError','publishPermalink','instagramPublishStatus','instagramPermalink','instagramPublishError','tikTokPublishStatus','tikTokPrivacyLevel','tikTokSettings','tikTokConsentAt','tikTokInitStartedAt','tikTokPublishId','tikTokPublishError'];
     const rows=await deps.actions.listPosts(actor.id,calendarId);return Response.json({posts:rows.map(p=>({...Object.fromEntries(allowed.map(k=>[k,(p as Record<string,any>)[k]])),assets:p.assets.map(a=>({id:a.id,fileKey:a.fileKey,mediaType:a.mediaType,contentUrl:deps.publicUrlFor?.(a.fileKey)})),videoComments:p.videoComments,customFields:p.customFields,publishing:p.publishing}))},{headers:{'Cache-Control':'no-store'}});
    }
    if(path.endsWith('/imports/confirm/route.ts'))return Response.json(await deps.actions.importPosts(calendarId,actor.id,body),{headers:{'Cache-Control':'no-store'}});
@@ -77,6 +78,10 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
    if(postId&&request.method!=='DELETE'&&(path.includes('/posts/')||path.includes('/ai-drafts/'))){
     const scoped=await deps.database.transaction(async tx=>(await tx.query(`SELECT id FROM "CalendarPost" WHERE id=$1 AND "calendarId"=$2`,[postId,calendarId])).rows.length===1);
     if(!scoped)throw Error('POST_WORKSPACE_SCOPE_CONFLICT');
+   }
+   if(path.endsWith('/posts/[postId]/internal-review/route.ts')) {
+    await deps.actions.internalReview({operationId,actor:actor.id,calendarId,postId,body});
+    return Response.json({post:await view(calendarId,postId)});
    }
    if(path.includes('/posts/[postId]/publish/')||path.endsWith('/posts/[postId]/publish/route.ts')){
     if(request.method==='GET')return Response.json(await deps.actions.metadata(actor.id,calendarId,postId),{headers:{'Cache-Control':'no-store'}});

@@ -1,3 +1,4 @@
+import { internalReviewInput, internalReviewError } from '../calendarInternalReview';
 /** Transactional application policies for the inactive canonical route composition. */
 import { randomUUID,randomInt,createHash } from 'node:crypto';
 import { createPublishingValidationAdapters,type ValidationDependencies } from './validationAdapters';
@@ -84,6 +85,21 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
    }if(assignments.length)await tx.query(`UPDATE "CalendarPost" SET ${assignments.join(',')},"updatedAt"=clock_timestamp() WHERE id=$1`,values);
    if(input.caption!==undefined&&input.caption!==null&&typeof input.caption!=='string')throw Error('INVALID_POST_FIELD_VALUE');
    await tx.query(`UPDATE "CalendarPost" SET caption=CASE WHEN $4 THEN $2 ELSE caption END,"isAiDraft"=CASE WHEN $3 THEN false ELSE "isAiDraft" END,"approvalStatus"='PENDING',"tikTokConsentAt"=NULL,"tikTokConsentHash"=NULL,"tikTokConsentBy"=NULL,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,input.caption?.trim()||null,input.promoteAi===true,input.caption!==undefined]);return {ok:true};
+  });
+ }
+ async function internalReview(input:{operationId:string;actor:string;calendarId:string;postId:string;body:Record<string,unknown>}) {
+  const decision=internalReviewInput(input.body);
+  await permission(input.actor,input.calendarId,'delivery.manage');
+  return replay(input.operationId,input.actor,input,async tx=>{
+   const {v}=services(tx);await v.lockForPolicyChange(tx);
+   await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'delivery.manage'});
+   await tx.query(`SELECT id FROM "CalendarPost" WHERE id=$1 AND "calendarId"=$2 FOR UPDATE`,[input.postId,input.calendarId]);
+   const p=await post(tx,input.postId,input.calendarId);
+   const error=internalReviewError(p as any,decision.status);if(error)throw Error(error);
+   if(await busy(tx,p.id))throw Error('PENDING_RECONCILIATION');
+   if(p.internalReviewVersion!==decision.version)throw Error('This post changed. Refresh and review the latest version.');
+   await tx.query(`UPDATE "CalendarPost" SET "internalReviewStatus"=$2::"InternalReviewStatus","internalReviewNote"=$3,"internalReviewedAt"=clock_timestamp(),"internalReviewedBy"=$4,"internalReviewVersion"="internalReviewVersion"+1,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,decision.status,decision.note,input.actor]);
+   return {ok:true};
   });
  }
  async function review(input:{operationId:string;calendarId:string;postId:string;credential:string;approved:boolean;note?:string}){
@@ -256,6 +272,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
  async function resubmit(input:{operationId:string;actor:string;calendarId:string;postId:string}){
   await permission(input.actor,input.calendarId,'delivery.manage');return replay(input.operationId,input.actor,input,async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'delivery.manage'});const p=await post(tx,input.postId,input.calendarId);
+   if(p.internalReviewStatus!=='APPROVED')throw Error('INTERNAL_REVIEW_REQUIRED');
    if(p.approvalStatus!=='NEEDS_REVISION')throw Error('Only posts with requested changes can be resubmitted');
    if(!(await tx.query(`SELECT 1 FROM "CalendarPostAsset" WHERE "postId"=$1 LIMIT 1`,[p.id])).rows.length)throw Error('Add content to this post before resubmitting it');
    await invalidate(tx,p,input.actor,input.operationId,'delivery.manage');await tx.query(`UPDATE "CalendarPost" SET "approvalStatus"='PENDING',"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id]);return {ok:true};
@@ -275,7 +292,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
      if(duplicates.possible(candidate)&&!row.keepPossibleDuplicate)throw Error('Possible duplicate. Explicitly keep it or exclude the item.');
      const id=policyHash({requestId:input.requestId,calendarId,rowId:row.id,platform}).slice(0,40),customFields=[...row.customFields,...(row.notes.trim()?[{label:'Notes',value:row.notes}]:[]),...(row.status.trim()?[{label:'Source status',value:row.status}]:[])];
      await actions.createPost({operationId:input.requestId+'-'+postIds.length,actor,calendarId,id,platform,caption:row.caption,postDate:new Date(iso),fields:{...row,customFields}});
-     await tx.query(`UPDATE "CalendarPost" SET "approvalStatus"=$2 WHERE id=$1`,[id,approvalFor(row.status)]);
+     await tx.query(`UPDATE "CalendarPost" SET "approvalStatus"=$2 WHERE id=$1`,[id,"PENDING"]);
      postIds.push(id);duplicates.add(candidate);if(!firstDate||iso<firstDate)firstDate=iso;
     }
    }
@@ -460,5 +477,5 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
    return {ok:true,deletedCount:posts.length};
   });
  }
- return {publishing,createPost,createBatch,changeContent,review,tikTok,media,account,membership,membershipById,billing,erase,metadata,postView,resubmit,importPosts,restoreDraft,plan,generate,bindVerifiedAccount,regenerate,creatorMetadata,listPosts,deletePlanningPosts,acceptInvitation,deactivate,workspaceDetails,resetCalendar,eraseCreator,eraseAdminCreator};
+ return {internalReview,publishing,createPost,createBatch,changeContent,review,tikTok,media,account,membership,membershipById,billing,erase,metadata,postView,resubmit,importPosts,restoreDraft,plan,generate,bindVerifiedAccount,regenerate,creatorMetadata,listPosts,deletePlanningPosts,acceptInvitation,deactivate,workspaceDetails,resetCalendar,eraseCreator,eraseAdminCreator};
 }

@@ -103,7 +103,8 @@ export async function confirmImport(
             { ...row, postDate, customFields },
             platform as SocialPlatform,
           );
-          data.approvalStatus = approvalFor(row.status);
+          // Source status is retained as a custom field; imported content still needs review.
+          data.approvalStatus = "PENDING";
           const id = randomUUID();
           const { calendar, customFields: nestedFields, ...post } = data;
           posts.push({ ...post, id, calendarId });

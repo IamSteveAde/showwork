@@ -25,7 +25,7 @@ function load(file, mocks = {}, cache = new Map()) {
 const settingsModule = () => load('lib/tiktokSettings.ts');
 const creator = { creator_nickname:'Creator', creator_username:'creator', creator_avatar_url:'https://example.test/avatar', privacy_level_options:['PUBLIC_TO_EVERYONE','MUTUAL_FOLLOW_FRIENDS','SELF_ONLY'], comment_disabled:false, duet_disabled:false, stitch_disabled:false, max_video_post_duration_sec:180, accountId:'account' };
 function settings(extra = {}) { return { ...settingsModule().emptyTikTokSettings, privacyLevel:'SELF_ONLY', ...extra }; }
-function post(extra = {}) { return { id:'post', calendarId:'calendar', platform:'TIKTOK', approvalStatus:'APPROVED', isAiDraft:false, tikTokPublishStatus:'NOT_SCHEDULED', updatedAt:new Date('2026-10-08T10:00:00Z'), postDate:new Date('2026-10-09T10:00:00Z'), caption:'Caption', cta:null, hashtags:'#original', taggedAccounts:null, linkUrl:null, postType:null, tikTokSettings:null, tikTokInitStartedAt:null, tikTokPublishId:null, assets:[{ id:'asset',fileKey:'asset.mp4',mediaType:'VIDEO',displayOrder:0,contentUrl:'https://example.test/asset.mp4' }], ...extra }; }
+function post(extra = {}) { return { id:'post', calendarId:'calendar', platform:'TIKTOK', internalReviewStatus:'APPROVED', approvalStatus:'APPROVED', isAiDraft:false, tikTokPublishStatus:'NOT_SCHEDULED', updatedAt:new Date('2026-10-08T10:00:00Z'), postDate:new Date('2026-10-09T10:00:00Z'), caption:'Caption', cta:null, hashtags:'#original', taggedAccounts:null, linkUrl:null, postType:null, tikTokSettings:null, tikTokInitStartedAt:null, tikTokPublishId:null, assets:[{ id:'asset',fileKey:'asset.mp4',mediaType:'VIDEO',displayOrder:0,contentUrl:'https://example.test/asset.mp4' }], ...extra }; }
 
 test('explicit privacy, disclosure classification and inverse interaction semantics', () => {
   const m=settingsModule();
@@ -75,7 +75,7 @@ function authorization(p=post(),info=creator) {
 }
 const authorizeBody=(extra={})=>({action:'schedule',accountId:'account',settings:settings(),consent:true,...extra});
 test('authorization rejects missing consent, invalid settings, changed account and unapproved content',async()=>{
-  for(const [p,body] of [[post(),authorizeBody({consent:false})],[post(),authorizeBody({accountId:'different'})],[post(),authorizeBody({settings:settings({disclosureEnabled:true})})],[post({approvalStatus:'PENDING'}),authorizeBody()]]){
+  for(const [p,body] of [[post(),authorizeBody({consent:false})],[post(),authorizeBody({accountId:'different'})],[post(),authorizeBody({settings:settings({disclosureEnabled:true})})],[post({approvalStatus:'PENDING'}),authorizeBody()],[post({internalReviewStatus:'PENDING'}),authorizeBody()],[post({internalReviewStatus:undefined}),authorizeBody()]]){
     const h=authorization(p);assert.equal((await h.run(body)).status,400);assert.equal(h.update(),undefined);
   }
 });

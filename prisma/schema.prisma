@@ -2284,6 +2284,12 @@ model CalendarPost {
   // the post itself.
   linkUrl        String?        @db.Text
 
+  internalReviewStatus InternalReviewStatus @default(PENDING)
+  internalReviewNote String? @db.Text
+  internalReviewedAt DateTime?
+  internalReviewedBy String?
+  internalReviewVersion Int @default(0)
+
   approvalStatus PostApprovalStatus @default(PENDING)
   approvalNote   String?
   reviewedAt     DateTime?

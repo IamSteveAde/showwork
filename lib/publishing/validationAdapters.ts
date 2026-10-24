@@ -56,7 +56,7 @@ export function createPublishingValidationAdapters(deps:ValidationDependencies){
   const m=(await tx.query(`SELECT * FROM "CalendarCollaborator" WHERE "calendarId"=$1 AND "creatorId"=$2`,[s.calendar.id,principalId])).rows[0];
   ensure(m&&effectiveTeamPermissions(m.role,m.permissions,m.customPermissions).includes(permission),'WORKSPACE_PERMISSION_DENIED');return actor;
  }
- function approved(s:Awaited<ReturnType<typeof snapshot>>){ensure(!s.post.isAiDraft,'AI_DRAFT_INELIGIBLE');ensure(s.post.approvalStatus==='APPROVED','POST_APPROVAL_REQUIRED');}
+ function approved(s:Awaited<ReturnType<typeof snapshot>>){ensure(!s.post.isAiDraft,'AI_DRAFT_INELIGIBLE');ensure(s.post.internalReviewStatus==='APPROVED','INTERNAL_REVIEW_REQUIRED');ensure(s.post.approvalStatus==='APPROVED','POST_APPROVAL_REQUIRED');}
  async function account(tx:Tx,s:Awaited<ReturnType<typeof snapshot>>,d:{accountBindingId:string;accountVersion:number},now:Date){
   id(d.accountBindingId);ensure(Number.isSafeInteger(d.accountVersion)&&d.accountVersion>0,'INVALID_ACCOUNT_VERSION');
   const a=(await tx.query(`SELECT * FROM "PublishingAccountBinding" WHERE id=$1 FOR SHARE`,[d.accountBindingId])).rows[0];
@@ -128,7 +128,7 @@ export function createPublishingValidationAdapters(deps:ValidationDependencies){
  async function validateViewerApproval(tx:Tx,input:{postId:string;calendarId:string;credential:string}){
   await fence(tx,true);const s=await snapshot(tx,input.postId),now=await clock(tx);ensure(s.calendar.id===input.calendarId,'VIEWER_CALENDAR_MISMATCH');entitlement(s,now);
   const viewer=await deps.verifyViewer(tx,{calendarId:input.calendarId,credential:input.credential});
-  ensure(viewer.calendarId===s.calendar.id&&viewer.expiresAt>await clock(tx)&&viewer.principalId,'VIEWER_AUTHORITY_DENIED');ensure(!s.post.isAiDraft,'AI_DRAFT_INELIGIBLE');
+  ensure(viewer.calendarId===s.calendar.id&&viewer.expiresAt>await clock(tx)&&viewer.principalId,'VIEWER_AUTHORITY_DENIED');ensure(!s.post.isAiDraft,'AI_DRAFT_INELIGIBLE');ensure(s.post.internalReviewStatus==='APPROVED','INTERNAL_REVIEW_REQUIRED');
   ensure(!['PUBLISHING','PUBLISHED'].includes(publishingStatus(s.post as any)),'POST_ALREADY_PUBLISHING');
   const busy=(await tx.query(`SELECT 1 FROM "PublishingExternalAttempt" a JOIN "PublishingIntent" i ON i.id=a."intentId" WHERE i."postId"=$1 AND a.outcome IN ('AUTHORIZED','ACCEPTED','UNKNOWN','CONFIRMED') UNION ALL SELECT 1 FROM "PublishingRetryGeneration" a JOIN "PublishingIntent" i ON i.id=a."intentId" WHERE i."postId"=$1 AND a.outcome IN ('AUTHORIZED','ACCEPTED','UNKNOWN','CONFIRMED')`,[input.postId])).rows;
   ensure(!busy.length,'POST_EXTERNAL_CONFLICT');ensure(s.assets.length||s.post.caption?.trim()&&!['INSTAGRAM','TIKTOK'].includes(s.post.platform),'NOTHING_TO_APPROVE');

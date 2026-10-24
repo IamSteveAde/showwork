@@ -64,6 +64,10 @@ contentIdea: string | null;
   hashtags: string | null;
   taggedAccounts: string | null;
   linkUrl: string | null;
+  internalReviewStatus?: "PENDING" | "APPROVED" | "NEEDS_CHANGES";
+  internalReviewNote?: string | null;
+  internalReviewVersion?: number;
+  internalReviewedAt?: string | null;
   approvalStatus: ApprovalStatus;
   approvalNote: string | null;
   publishStatus?: InstagramPublishStatus;
@@ -3081,7 +3085,28 @@ function PostDetailPanel({
   const canDeliver = permissions ? permissions.includes("delivery.manage") : userRole === "EDIT_CALENDAR";
   const t = THEMES[theme];
   const router = useRouter();
-  const [detailTab, setDetailTab] = useState<"content" | "publishing">("content");
+  const [detailTab, setDetailTab] = useState<"content" | "internal" | "client" | "publishing">("content");
+  const [internalNote, setInternalNote] = useState(post.internalReviewNote ?? "");
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const internallyApproved = post.internalReviewStatus === "APPROVED";
+  useEffect(() => { setInternalNote(post.internalReviewNote ?? ""); }, [post.internalReviewVersion, post.internalReviewNote]);
+  async function saveInternalReview(action: "approve" | "request_changes" | "reopen") {
+    if (reviewSaving) return;
+    setReviewSaving(true); setReviewError(null);
+    try {
+      const response = await calendarMutationFetch(`/api/calendars/${calendarId}/posts/${post.id}/internal-review`, {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({action, note: internalNote, version: post.internalReviewVersion ?? 0}),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to save internal review.");
+      onUpdated(result.post);
+      setInternalNote(result.post.internalReviewNote ?? "");
+      router.refresh();
+    } catch (error) { setReviewError(error instanceof Error ? error.message : "Unable to save internal review."); }
+    finally { setReviewSaving(false); }
+  }
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -3198,6 +3223,10 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
 
     const updatedPost: CalendarPostData = {
       ...post,
+      internalReviewStatus: "PENDING",
+      internalReviewNote: null,
+      internalReviewVersion: (post.internalReviewVersion ?? 0) + 1,
+      approvalStatus: "PENDING",
       postDate: generation.postDate,
       platform: generation.platform,
       postType: generation.postType ?? null,
@@ -3216,6 +3245,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
 
     setEditingWithAI(false);
     setAiInstruction("");
+    router.refresh();
   } catch (error) {
     setAiEditError(
       error instanceof Error
@@ -3477,6 +3507,10 @@ caption: draftDetails.caption,
 
       onUpdated({
         ...post,
+        internalReviewStatus: "PENDING",
+        internalReviewNote: null,
+        internalReviewVersion: (post.internalReviewVersion ?? 0) + 1,
+        approvalStatus: "PENDING",
         assets: updatedAssets,
       });
 
@@ -3709,11 +3743,11 @@ caption: draftDetails.caption,
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2 border-b px-4 py-3 sm:px-7" style={{ borderColor: t.cardBorder }}>
-          {([ ["content", "Content & creative"], ["publishing", "Review & publishing"] ] as const).map(([value, label]) => (
+        <div className="flex shrink-0 gap-2 overflow-x-auto border-b px-4 py-3 sm:px-7" style={{ borderColor: t.cardBorder }}>
+          {([ ["content", "Content"], ["internal", "Internal review"], ["client", "Client review"], ["publishing", "Publishing"] ] as const).map(([value, label]) => (
             <button key={value} type="button" aria-pressed={detailTab === value}
               onClick={() => setDetailTab(value)}
-              className="min-h-11 rounded-xl px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+              className="min-h-11 shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
               style={{ background: detailTab === value ? "#155FC7" : t.pillBg, color: detailTab === value ? "white" : t.textMuted }}>
               {label}
             </button>
@@ -5181,13 +5215,35 @@ caption: draftDetails.caption,
               )}
             </div>
           </div>
-          <div className={detailTab === "publishing" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
-            <div>
-              <h3 className="text-lg font-semibold" style={{ color: t.text }}>From review to publishing</h3>
-              <p className="mt-2 text-sm leading-6" style={{ color: t.textMuted }}>Client approval and publishing are separate steps. Check the status and available actions below.</p>
+          <div className={detailTab === "internal" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
+            <div className="rounded-2xl border p-5" style={{borderColor:t.cardBorder,background:t.inputBg}}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{color:internallyApproved ? "#16834B" : t.textMuted}}>{internallyApproved ? "Internally approved" : post.internalReviewStatus === "NEEDS_CHANGES" ? "Changes requested" : "Awaiting internal approval"}</p>
+              <h3 className="mt-3 text-xl font-semibold" style={{color:t.text}}>{internallyApproved ? "Ready for your client" : "Keep the review inside your team"}</h3>
+              <p className="mt-3 text-sm leading-6" style={{color:t.textMuted}}>{internallyApproved ? "This post can appear in the unlocked client portal. Client approval is still required before publishing." : "This post is hidden from the client portal. An owner or teammate with delivery management permission must approve it internally first."}</p>
+              <p className="mt-3 text-xs leading-6" style={{color:t.textMuted}}>Changing the creative, caption, schedule or other content details requires fresh internal approval.</p>
             </div>
+            {canDeliver && !isApproved ? <>
+              <label className="block text-sm font-semibold" style={{color:t.text}}>Internal review note
+                <textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} maxLength={4000} rows={4}
+                  className="mt-3 w-full rounded-xl border p-3 text-sm font-normal" style={{borderColor:t.inputBorder,background:t.inputBg,color:t.text}}
+                  placeholder="Feedback for your team only. A note is required when requesting changes." />
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {!internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("approve")} className="min-h-11 rounded-xl bg-[#155FC7] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{reviewSaving ? "Saving…" : "Approve for client review"}</button>}
+                <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("request_changes")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Request changes</button>
+                {internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("reopen")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold" style={{borderColor:t.inputBorder,color:t.text}}>Return to internal review</button>}
+              </div>
+            </> : <p className="whitespace-pre-wrap text-sm leading-6" style={{color:t.textMuted}}>{post.internalReviewNote || (isApproved ? "Client-approved content is locked." : "Waiting for an internal reviewer.")}</p>}
+            {reviewError && <p role="alert" className="text-sm text-red-600">{reviewError}</p>}
+          </div>
+          <div className={detailTab === "client" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
+            <div>
+              <h3 className="text-lg font-semibold" style={{ color: t.text }}>Client review</h3>
+              <p className="mt-2 text-sm leading-6" style={{ color: t.textMuted }}>Internal approval makes this post available to the client. Their approval and feedback appear here.</p>
+            </div>
+            {!internallyApproved && <p className="rounded-xl border p-4 text-sm" style={{borderColor:t.cardBorder,color:t.textMuted}}>Hidden from client. Complete internal review before requesting client approval.</p>}
             {/* STATUS */}
-            {post.assets.length > 0 && (
+            {internallyApproved && (
               <section>
                 <div
                   className="
@@ -5323,7 +5379,11 @@ caption: draftDetails.caption,
               </section>
             )}
 
-            {canPublish && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
+          </div>
+          <div className={detailTab === "publishing" ? "mx-auto max-w-3xl space-y-6 p-4 sm:p-7" : "hidden"}>
+            <h3 className="text-lg font-semibold" style={{color:t.text}}>Publishing</h3>
+            {!internallyApproved && <p className="rounded-xl border p-4 text-sm" style={{borderColor:t.cardBorder,color:t.textMuted}}>Internal and client approval are required before scheduling or publishing.</p>}
+            {canPublish && internallyApproved && <SocialPostPublishing key={post.id + post.publishStatus + post.instagramPublishStatus + post.tikTokPublishStatus} calendarId={calendarId} post={post} />}
 
             {/* INSTAGRAM PUBLISH STATUS — only ever shown once this
                 post has actually been scheduled, published, or
@@ -5535,9 +5595,9 @@ caption: draftDetails.caption,
             </button>
           )}
           {!editingDetails && detailTab === "content" && (
-            <button type="button" onClick={() => setDetailTab("publishing")}
+            <button type="button" onClick={() => setDetailTab(internallyApproved ? "client" : "internal")}
               className="min-h-11 flex-1 rounded-xl bg-[#155FC7] px-5 py-2.5 text-xs font-semibold text-white sm:flex-none">
-              Review &amp; publishing
+              {internallyApproved ? "Client review" : "Internal review"}
             </button>
           )}
           <button

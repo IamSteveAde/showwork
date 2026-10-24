@@ -23,7 +23,7 @@ export async function POST(
   if (!(await canAccessCalendarById(calendar.id))) return NextResponse.json({ error: "This workspace is read-only. Ask the owner to subscribe or upgrade to resume approvals and feedback." }, { status: 403 });
 
   const post = await db.calendarPost.findUnique({ where: { id: postId } });
-  if (!post || post.calendarId !== calendar.id) {
+  if (!post || post.calendarId !== calendar.id || post.isAiDraft || post.internalReviewStatus !== "APPROVED") {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 

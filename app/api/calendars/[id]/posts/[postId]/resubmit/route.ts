@@ -27,6 +27,7 @@ export async function POST(
   if (!post || post.calendarId !== id) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
+  if (post.internalReviewStatus !== "APPROVED") return NextResponse.json({ error: "Approve the updated post internally before resubmitting to the client." }, { status: 409 });
   if (post.approvalStatus !== "NEEDS_REVISION") {
     return NextResponse.json({ error: "Only posts with requested changes can be resubmitted" }, { status: 409 });
   }
@@ -35,7 +36,7 @@ export async function POST(
   }
 
   const changed = await db.calendarPost.updateMany({
-    where: { id: postId, calendarId: id, approvalStatus: "NEEDS_REVISION" },
+    where: { id: postId, calendarId: id, internalReviewStatus: "APPROVED", approvalStatus: "NEEDS_REVISION" },
     data: { approvalStatus: "PENDING" },
   });
   if (changed.count !== 1) {

@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (["PUBLISHING", "PUBLISHED"].includes(status)) return NextResponse.json({ error: "This post is already publishing or published." }, { status: 409 });
   if (body.action === "cancel" && status !== "SCHEDULED") return NextResponse.json({ error: "This post is not scheduled." }, { status: 409 });
   if (body.action !== "cancel") {
-    if (post.approvalStatus !== "APPROVED" || post.isAiDraft) return NextResponse.json({ error: "Client approval is required before publishing." }, { status: 409 });
+    if (post.approvalStatus !== "APPROVED" || post.internalReviewStatus !== "APPROVED" || post.isAiDraft) return NextResponse.json({ error: "Internal and client approval are required before publishing." }, { status: 409 });
     if (status === "FAILED" && (body.action !== "retry" || body.confirmedNotPublished !== true)) return NextResponse.json({ error: "Check the platform first and confirm this post has not already published." }, { status: 409 });
     if (!await db.socialConnection.findFirst({ where: { calendarId: id, platform: post.platform, status: "CONNECTED" } })) return NextResponse.json({ error: "Connect this channel first." }, { status: 409 });
     try {

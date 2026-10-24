@@ -19,6 +19,7 @@ export function createTikTokPublisher(database: typeof defaultDb, services: { fr
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/tiktokPublishing.ts#publishPostToTikTok@17"); } /* end-canonical-integration-boundary */
 
   const post = preload ? await preload(postId) : await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
+  if (!post.tikTokPublishId && (post.internalReviewStatus !== "APPROVED" || post.approvalStatus !== "APPROVED" || post.isAiDraft)) throw new Error("Internal and client approval are required before publishing.");
   let publishId = post.tikTokPublishId;
   let attempted = !!post.tikTokInitStartedAt;
   const fail = (message: string) => db.calendarPost.update({ where: { id: postId }, data: { tikTokPublishStatus: "FAILED", tikTokPublishError: message } });

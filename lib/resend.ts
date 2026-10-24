@@ -2054,3 +2054,111 @@ export async function sendBillingBenefitEmail(input: BillingBenefitEmail, idempo
   }, idempotencyKey);
   return result?.id ?? null;
 }
+
+
+export type ShowworkDemoBooking = {
+  fullName: string;
+  email: string;
+  company: string;
+  teamSize: string;
+  interest: string;
+  preferredDate: string;
+  preferredTime: string;
+  timezone: string;
+};
+
+export async function sendDemoBookingNotificationEmail(
+  booking: ShowworkDemoBooking
+) {
+  const {
+    fullName,
+    email,
+    company,
+    teamSize,
+    interest,
+    preferredDate,
+    preferredTime,
+    timezone,
+  } = booking;
+
+  await sendEmail({
+    from: FROM,
+    to: "hello@useshowwork.com",
+    replyTo: email,
+    subject: `New Showwork demo request — ${company}`,
+    html: emailShell({
+      eyebrow: "Showwork · Demo request",
+      headline: "Someone wants to see Showwork in action.",
+      body:
+        "A new demo request has arrived. Review the details below and confirm a suitable meeting time with the prospective customer.",
+      accent: "#155FC7",
+      detailsHtml: `
+        ${infoBox("Full name", fullName)}
+        <div style="height:10px"></div>
+        ${infoBox("Work email", email)}
+        <div style="height:10px"></div>
+        ${infoBox("Company / Business", company)}
+        <div style="height:10px"></div>
+        ${infoBox("Team size", teamSize)}
+        <div style="height:10px"></div>
+        ${infoBox("Interested in", interest)}
+        <div style="height:10px"></div>
+        ${infoBox("Preferred date", preferredDate)}
+        <div style="height:10px"></div>
+        ${infoBox(
+          "Preferred time",
+          `${preferredTime} (${timezone})`
+        )}
+        <div style="margin-top:18px;padding:16px;background:#F0F6FF;border-radius:12px;color:#344054;font-family:Arial,sans-serif;font-size:13px;line-height:1.6">
+          This is a requested appointment time, not a confirmed booking.
+          Check availability and send the meeting details to the customer.
+        </div>
+      `,
+      footer:
+        "Reply directly to this email to contact the prospective customer.",
+    }),
+  });
+}
+
+export async function sendDemoBookingAcknowledgementEmail(
+  booking: ShowworkDemoBooking
+) {
+  await sendEmail({
+    from: FROM,
+    to: booking.email,
+    subject: "We've received your Showwork demo request",
+    html: emailShell({
+      eyebrow: "Showwork · Book a demo",
+      headline: "You're one step closer to better teamwork.",
+      body: `
+        Hi ${escapeHtml(firstNameOf(booking.fullName) ?? "there")},
+        <br /><br />
+        Thanks for your interest in Showwork.
+        We've received your demo request and we're excited
+        to show you how everything works together.
+        <br /><br />
+        Our team will review your preferred time and send
+        you a confirmation with the meeting details.
+      `,
+      accent: "#155FC7",
+      detailsHtml: `
+        ${infoBox("Your company", booking.company)}
+        <div style="height:10px"></div>
+        ${infoBox("What you'll explore", booking.interest)}
+        <div style="height:10px"></div>
+        ${infoBox("Requested date", booking.preferredDate)}
+        <div style="height:10px"></div>
+        ${infoBox(
+          "Requested time",
+          `${booking.preferredTime} (${booking.timezone})`
+        )}
+        <div style="margin-top:18px;padding:16px;background:#F0F6FF;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#344054">
+          Your meeting is not yet confirmed.
+          We'll email you once the time and joining details are finalised.
+        </div>
+      `,
+      footer:
+        "A quick, personalised walkthrough of Showwork. No commitment required.",
+    }),
+  });
+}

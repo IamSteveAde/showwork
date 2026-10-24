@@ -23,7 +23,7 @@ export async function runPublishJob(postId: string, platform: SocialPlatform, di
   const claimed = await db.calendarPost.updateMany({ where: {
     id: postId, OR: [{ calendar: { autoPublishEnabled: true } },
       ...(platform === "TIKTOK" ? [{ tikTokPublishId: { not: null } }] : [])],
-    ...statusWhere(platform, "PUBLISHING"), approvalStatus: "APPROVED", isAiDraft: false, publishWorkerStartedAt: null, updatedAt: dispatchedAt,
+    ...statusWhere(platform, "PUBLISHING"), approvalStatus: "APPROVED", internalReviewStatus: "APPROVED", isAiDraft: false, publishWorkerStartedAt: null, updatedAt: dispatchedAt,
   }, data: { publishWorkerStartedAt: new Date() } });
   if (claimed.count !== 1) return;
   try {
