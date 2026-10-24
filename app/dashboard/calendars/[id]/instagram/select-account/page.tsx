@@ -7,6 +7,7 @@ type Selection = {
   accounts: { accountId: string; pageId: string; name: string }[];
   expectedVersion: number;
   insightsGranted?: boolean;
+  diagnostics?: { discoveryStatus?: string };
 };
 export default function InstagramAccountSelection({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -48,7 +49,7 @@ export default function InstagramAccountSelection({ params }: { params: Promise<
         : 'Meta did not grant Instagram Insights during this authorization. Publishing and messaging can still connect; analytics access requires reauthorization with the Insights permission.'}
     </p>}
     {!options && !error && <p role="status">Loading your linked accounts…</p>}
-    {options && options.accounts.length === 0 && <p>No linked Instagram professional accounts were returned. Connect again and allow access to the appropriate Facebook Page.</p>}
+    {options && options.accounts.length === 0 && <p>{options.diagnostics?.discoveryStatus === "NO_FACEBOOK_PAGES" ? "Meta returned no accessible Facebook Pages. Check the authorizing Facebook profile’s Page access and Business Portfolio asset assignment, then restart authorization and select the Page." : "Meta returned no linked Instagram professional accounts. Check the Page-to-Instagram connection and allow access to both assets when reconnecting."}</p>}
     <fieldset className="space-y-3" disabled={busy}>
       <legend className="sr-only">Instagram accounts linked to Facebook Pages</legend>
       {options?.accounts.map(account => <label key={account.accountId} className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-300 p-4">

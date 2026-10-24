@@ -1,3 +1,4 @@
+import { MetaDiscoveryError } from "../metaPageDiscovery";
 import { linkedInCapabilities } from "@/lib/linkedin/capabilities";
 /** Existing signed OAuth/selection services, joined to canonical account actions. */
 import {NextRequest,NextResponse} from 'next/server';
@@ -36,7 +37,7 @@ export function createCanonicalShowworkOAuth(deps:{database:OwnershipDatabase;ac
    if(!selection||selection.calendarId!==params.id)return NextResponse.json({error:'The account selection expired. Reconnect Instagram.'},{status:409});
    const binding=await deps.database.transaction(async tx=>(await tx.query(`SELECT * FROM "PublishingAccountBinding" WHERE "calendarId"=$1 AND platform='INSTAGRAM'`,[params.id])).rows[0]);
    const options=selection.pages.map(page=>({...JSON.parse(page.id) as {pageId:string;accountId:string},name:page.name}));
-   if(request.method==='GET')return NextResponse.json({accounts:options,expectedVersion:binding?.currentVersion??0},{headers:{'Cache-Control':'no-store'}});
+   if(request.method==='GET')return NextResponse.json({accounts:options,insightsGranted:selection.grantedPermissions.includes('instagram_manage_insights'),expectedVersion:binding?.currentVersion??0},{headers:{'Cache-Control':'no-store'}});
    if(request.headers.get('origin')!==request.nextUrl.origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
    const body=await request.clone().json(),operationId=request.headers.get('idempotency-key'),index=options.findIndex(option=>option.accountId===body.accountId);
    if(!operationId||!Number.isSafeInteger(body.expectedVersion)||index<0)return NextResponse.json({error:'Select the exact account and current connection revision.'},{status:400});
@@ -82,8 +83,8 @@ export function createCanonicalShowworkOAuth(deps:{database:OwnershipDatabase;ac
      const candidates=pages.filter(p=>p.instagram_business_account),existing=await deps.database.transaction(async tx=>(await tx.query(`SELECT v."providerAccountId" FROM "PublishingAccountBinding" b JOIN "PublishingAccountVersion" v ON v."bindingId"=b.id AND v.version=b."currentVersion" WHERE b."calendarId"=$1 AND b.platform='INSTAGRAM'`,[calendarId])).rows[0]);
      const selected=existing?candidates.find(p=>p.instagram_business_account!.id===existing.providerAccountId):candidates.length===1?candidates[0]:undefined;
      if(!selected){
-      if(!candidates.length)throw Error('INSTAGRAM_ELIGIBLE_ACCOUNT_REQUIRED');
-      const selection=createFacebookPageSelection({calendarId,pages:candidates.map(page=>({id:JSON.stringify({pageId:page.id,accountId:page.instagram_business_account!.id}),name:page.instagram_business_account!.id,accessToken:page.access_token})),grantedPermissions:permissions,userTokenExpiresAt:expires(tokens.expires_in??60*24*60*60)?.getTime()??null});
+      if(!candidates.length)throw new MetaDiscoveryError(pages.length?'META_INSTAGRAM_RELATIONSHIP_MISSING':'META_NO_ACCESSIBLE_PAGES',pages.length?'Meta returned your Facebook Pages but no linked Instagram professional account. Check the Page-to-Instagram connection in Meta, then reconnect.':'Meta returned no accessible Facebook Pages, including the Pages in its granular grants. Check the authorizing Facebook profile’s Page access and Business Portfolio asset assignment, then reconnect and select the Page.');
+      const selection=createFacebookPageSelection({calendarId,pages:candidates.map(page=>({id:JSON.stringify({pageId:page.id,accountId:page.instagram_business_account!.id}),name:`${page.name ?? "Facebook Page"} — ${page.instagram_business_account!.username ? "@"+page.instagram_business_account!.username : "linked Instagram account"}`,accessToken:page.access_token})),grantedPermissions:permissions,userTokenExpiresAt:expires(tokens.expires_in??60*24*60*60)?.getTime()??null});
       await deps.database.transaction(async tx=>{await validation.lockForPolicyChange(tx);await validation.validateWorkspacePermission(tx,{actor:creator.id,calendarId,permission:'channels.manage'});await tx.query(`INSERT INTO "PublishingApplicationOperation"("operationId",actor,"requestHash",result) VALUES($1,$2,$3,$4)`,[operationId+'-selection',creator.id,policyHash({calendarId,channel}),{encryptedSelection:selection.value}]);});
      }else{
      const id=selected.instagram_business_account!.id,name=await bounded(()=>services.instagramUsername(id,selected.access_token));

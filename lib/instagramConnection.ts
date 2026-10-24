@@ -39,7 +39,10 @@ export async function completeInstagramConnection(calendarId: string,
       // Meta requires the Page user behind this token to have the
       // MESSAGING task for Instagram Messaging on the linked Page.
       // Publishing can still connect when that task is absent.
-      if (!pageWithInstagram.tasks?.includes("MESSAGING")) {
+      // /{page-id}?fields=access_token can return a verified Page token
+      // without the /me/accounts task list. Unknown tasks are not a denial:
+      // Meta still enforces authorization on the subscription requests below.
+      if (pageWithInstagram.tasks && !pageWithInstagram.tasks.includes("MESSAGING")) {
         await db.socialConnection.update({
           where: { id: socialConnection.id },
           data: {

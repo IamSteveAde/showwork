@@ -1,3 +1,4 @@
+import { MetaDiscoveryError } from "@/lib/metaPageDiscovery";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,7 +15,11 @@ import { verifyChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channe
 
 // OAuth exchange only; the manager explicitly selects the linked account next.
 export async function GET(req: NextRequest) {
-  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/instagram/callback/route.ts#GET@27",Array.from(arguments)); } /* end-canonical-integration-boundary */
+  /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { try { return await invokePublishingEntrypoint<never>("app/api/calendars/instagram/callback/route.ts#GET@27",Array.from(arguments)); }
+    catch (error) {
+      if (!(error instanceof MetaDiscoveryError)) throw error;
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 502, headers: { "Cache-Control": "no-store" } });
+    } } /* end-canonical-integration-boundary */
 
   const calendarId = verifyChannelOAuthState("instagram", req.nextUrl.searchParams.get("state"), req.cookies.get("showwork_instagram_oauth_state")?.value);
   const code = req.nextUrl.searchParams.get("code");

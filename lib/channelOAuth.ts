@@ -1,3 +1,4 @@
+import { discoverMetaPages } from "@/lib/metaPageDiscovery";
 import { linkedInMessagingConfigured } from "@/lib/linkedin/messagingAccess";
 import {publishingFetch as fetch} from '@/lib/publishing/executionContext';
 import { linkedInMessagingProvider } from "@/lib/linkedin/messagingProvider";
@@ -151,17 +152,8 @@ export async function exchangeChannelCode({
 }
 
 export async function getFacebookPages(userAccessToken: string) {
-  const version = process.env.META_GRAPH_API_VERSION || "v26.0";
-  const url = new URL(`https://graph.facebook.com/${version}/me/accounts`);
-  url.search = new URLSearchParams({
-    fields: "id,name,access_token",
-    access_token: userAccessToken,
-  }).toString();
-  const result = await readJson<{ data?: { id: string; name: string; access_token: string }[] }>(
-    await fetch(url, { cache: "no-store" }),
-    "Facebook Pages",
-  );
-  return result.data ?? [];
+  const { clientId, clientSecret } = credentials("facebook");
+  return discoverMetaPages(userAccessToken, { appId: clientId, appSecret: clientSecret });
 }
 
 export async function getFacebookGrantedPermissions(userAccessToken: string) {

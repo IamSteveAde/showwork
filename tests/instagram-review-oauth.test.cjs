@@ -37,7 +37,7 @@ function picker({ actor = 'reviewer', allowed = true } = {}) {
     '@/lib/publishing/applicationBoundary': { publishingIntegrationInstalled:()=>false },
     '@/lib/auth': { getCurrentCreator:async()=>({id:actor}) },
     '@/lib/calendarPermissions': { hasCalendarPermission:async()=>allowed },
-    '@/lib/instagram': { listManagedPages:async()=>[{id:'page',name:'Business Page',access_token:'secret-page-token',tasks:['MESSAGING'],instagram_business_account:{id:'ig',username:'review'}}] },
+    '@/lib/instagram': { listInstagramGrantedPermissions:async()=>['instagram_manage_insights'], listManagedPages:async()=>[{id:'page',name:'Business Page',access_token:'secret-page-token',tasks:['MESSAGING'],instagram_business_account:{id:'ig',username:'review'}}] },
     '@/lib/instagramConnection': { completeInstagramConnection:async(...args)=>calls.push(args) },
   });
   const request = (method='GET', body, origin='https://showwork.test')=>new NextRequest('https://showwork.test/api/calendars/workspace/instagram/select-account', { method, headers:{cookie:`showwork_instagram_legacy_selection=${session.value}`,origin,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{}) });
@@ -69,4 +69,11 @@ test('selected legacy account preserves publishing credentials and both messagin
   assert.equal(updates[0].data.instagramAccountId,'ig');assert.equal(updates[0].data.instagramAccessToken,'page-token');
   assert.equal(updates[1].tokenScopes,'instagram_basic,instagram_manage_insights');
   assert.deepEqual(subscriptions,[['page','page-token','INSTAGRAM'],['ig','page-token','INSTAGRAM']]);
+  subscriptions.length=0;
+  await helper.completeInstagramConnection('workspace',{id:'page',name:'Page',access_token:'page-token',instagram_business_account:{id:'ig'}},['instagram_basic'],new Date('2027-01-01'));
+  assert.deepEqual(subscriptions,[['page','page-token','INSTAGRAM'],['ig','page-token','INSTAGRAM']]);
+  subscriptions.length=0;
+  await helper.completeInstagramConnection('workspace',{id:'page',name:'Page',access_token:'page-token',tasks:['ANALYZE'],instagram_business_account:{id:'ig'}},['instagram_basic'],new Date('2027-01-01'));
+  assert.equal(subscriptions.length,0);
+
 });

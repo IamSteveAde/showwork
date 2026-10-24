@@ -1,3 +1,4 @@
+import { MetaDiscoveryError } from "@/lib/metaPageDiscovery";
 import { NextRequest, NextResponse } from "next/server";
 
 import {
@@ -44,10 +45,10 @@ async function invoke(
         `app/api/calendars/[id]/instagram/select-account/route.ts#${request.method}`,
         [request, context]
       );
-    } catch {
+    } catch (error) {
       return NextResponse.json(
         {
-          error: "Account selection failed. Please reconnect.",
+          error: error instanceof MetaDiscoveryError ? error.message : "Account selection failed. Please reconnect.",
         },
         {
           status: 409,
@@ -356,19 +357,16 @@ async function invoke(
     // ==========================================================
 
     console.error("[Instagram Account Selection]", {
-      message:
-        error instanceof Error
-          ? error.message
-          : "Unknown Instagram discovery error",
+      code: error instanceof MetaDiscoveryError ? error.code : "INSTAGRAM_DISCOVERY_FAILED",
     });
 
     // Never expose Meta access tokens or raw API errors.
     return NextResponse.json(
       {
         error:
-          "Instagram account discovery failed. Please reconnect and try again.",
+          error instanceof MetaDiscoveryError ? error.message : "Instagram account discovery failed. Please reconnect and try again.",
 
-        code: "INSTAGRAM_DISCOVERY_FAILED",
+        code: error instanceof MetaDiscoveryError ? error.code : "INSTAGRAM_DISCOVERY_FAILED",
       },
       {
         status: 502,

@@ -1,3 +1,4 @@
+import { discoverMetaPages } from "@/lib/metaPageDiscovery";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { publishingFetch as fetch } from "@/lib/publishing/executionContext";
 // ─────────────────────────────────────────────────────────────
@@ -277,83 +278,10 @@ export async function exchangeForLongLivedToken(
 export async function listManagedPages(
   userAccessToken: string
 ): Promise<FacebookPage[]> {
-  const pages: FacebookPage[] = [];
-  let after: string | undefined;
-  const cursors = new Set<string>();
-
-  do {
-    const result = await graphGet<{
-      data?: FacebookPage[];
-      paging?: {
-        next?: string;
-        cursors?: { after?: string };
-      };
-    }>("/me/accounts", {
-      access_token: userAccessToken,
-      fields: "id,name,access_token,tasks",
-      limit: "100",
-      ...(after ? { after } : {}),
-    });
-
-    pages.push(...(result.data ?? []));
-
-    after = result.paging?.next
-      ? result.paging.cursors?.after
-      : undefined;
-
-    if (after && cursors.has(after)) {
-      throw new Error("Meta returned a repeated Page cursor.");
-    }
-
-    if (after) cursors.add(after);
-  } while (after);
-
-  console.info("[Instagram Discovery] Facebook Pages", {
-    pageCount: pages.length,
-    pageIds: pages.map((page) => page.id),
-  });
-
-  const enrichedPages = await Promise.all(
-    pages.map(async (page) => {
-      try {
-        const details = await graphGet<{
-          instagram_business_account?: {
-            id: string;
-            username?: string;
-          };
-        }>(`/${page.id}`, {
-          access_token: page.access_token,
-          fields: "instagram_business_account{id,username}",
-        });
-
-        console.info("[Instagram Discovery] Page relationship", {
-          pageId: page.id,
-          hasInstagramAccount: Boolean(
-            details.instagram_business_account?.id
-          ),
-        });
-
-        return {
-          ...page,
-          instagram_business_account:
-            details.instagram_business_account,
-        };
-      } catch (error) {
-        console.error("[Instagram Discovery] Relationship failed", {
-          pageId: page.id,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Unknown Graph API error",
-        });
-
-        return page;
-      }
-    })
-  );
-
-  return enrichedPages;
+  const { APP_ID, APP_SECRET } = requireAppCredentials();
+  return discoverMetaPages(userAccessToken, { appId: APP_ID, appSecret: APP_SECRET, instagram: true });
 }
+
 export async function listInstagramGrantedPermissions(
   userAccessToken: string
 ): Promise<string[]> {
@@ -411,25 +339,11 @@ export async function listConnectedInstagramAccounts(
       continue;
     }
 
-    try {
-      const username = await getInstagramUsername(
-        instagramUserId,
-        page.access_token
-      );
-
-      accounts.push({
-        instagramUserId,
-        username,
-        facebookPageId: page.id,
-        facebookPageName: page.name,
-        pageAccessToken: page.access_token,
-      });
-    } catch (error) {
-      console.error(
-        `Unable to retrieve Instagram account for Facebook Page ${page.id}:`,
-        error
-      );
-    }
+    const username = page.instagram_business_account?.username ?? await getInstagramUsername(instagramUserId, page.access_token);
+    accounts.push({
+      instagramUserId, username, facebookPageId: page.id,
+      facebookPageName: page.name, pageAccessToken: page.access_token,
+    });
   }
 
   return accounts;
