@@ -38,6 +38,7 @@ __pycache__/
 
 # Standalone worker build artifacts
 /dist-worker/
+/dist-ai-worker/
 
 # Generated intended Netlify/VPS release inventory
 /netlify/functions-vps/

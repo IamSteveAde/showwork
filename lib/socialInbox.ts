@@ -14,6 +14,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
   const status = params.get("status")?.toUpperCase();
   const query = params.get("q")?.trim();
   const unread = params.get("unread") === "true";
+  const attention = params.get("attention") === "true";
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -32,13 +33,14 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     ...(platform ? { platform: platform as SocialPlatform } : {}),
     ...(status ? { leadStatus: status as SocialLeadStatus } : {}),
     ...(unread ? { unreadCount: { gt: 0 } } : {}),
+    ...(attention ? { aiPausedAt: { not: null }, aiHandoffAcknowledgedAt: null } : {}),
     ...(query ? { OR: [
       { participantName: { contains: query, mode: "insensitive" as const } },
       { participantUsername: { contains: query, mode: "insensitive" as const } },
       { lastMessagePreview: { contains: query, mode: "insensitive" as const } },
     ] } : {}),
   };
-  const [conversations, totalLeads, totalMessages, unreadResult, newMessages, settings, accounts] = await Promise.all([
+  const [conversations, totalLeads, totalMessages, unreadResult, newMessages, settings, accounts, needsAttention] = await Promise.all([
     db.socialLeadConversation.findMany({
       where,
       orderBy: [{ lastMessageAt: "desc" }, { createdAt: "desc" }],
@@ -58,7 +60,19 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       select: { id: true, platform: true, platformAccountId: true, accountName: true, username: true, status: true, tokenScopes: true, accessTokenExpiresAt: true, whatsappBusinessAccountId: true, messagingWebhookSubscribedAt: true, messagingWebhookError: true, messagingLastSyncAt: true, messagingSyncError: true, tikTokMessagingBusinessId: true, tikTokMessagingScopes: true, tikTokMessagingConnectedAt: true },
       orderBy: { platform: "asc" },
     }),
+    db.socialLeadConversation.count({ where: { calendarId, aiPausedAt: { not: null }, aiHandoffAcknowledgedAt: null } }),
   ]);
+  const linkedConversationId = params.get("conversation");
+  if (linkedConversationId && !conversations.some(conversation => conversation.id === linkedConversationId)) {
+    const linkedConversation = await db.socialLeadConversation.findFirst({
+      where: { ...where, id: linkedConversationId },
+      include: {
+        messages: { orderBy: { platformCreatedAt: "desc" }, take: 50 },
+        connection: { select: { id: true, accountName: true, username: true, status: true, accessToken: true, connectedAt: true, tikTokMessagingBusinessId: true } },
+      },
+    });
+    if (linkedConversation) conversations.push(linkedConversation);
+  }
   const whatsappConversationIds = conversations.filter(conversation => conversation.platform === "WHATSAPP").map(conversation => conversation.id);
   const latestWhatsAppInbound = whatsappConversationIds.length ? await db.socialLeadMessage.groupBy({ by: ["conversationId"],
     where: { direction: "INBOUND", conversationId: { in: whatsappConversationIds } },
@@ -106,7 +120,7 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
     }
   }));
   return {
-    summary: { leads: totalLeads, newMessages: unreadResult._sum.unreadCount ?? 0, messagesThisMonth: newMessages, allMessages: totalMessages },
+    summary: { leads: totalLeads, newMessages: unreadResult._sum.unreadCount ?? 0, messagesThisMonth: newMessages, allMessages: totalMessages, needsAttention },
     accounts: accounts.map(({ tokenScopes, tikTokMessagingScopes, ...account }) => ({
       ...account,
       ...(account.platform === "TIKTOK" && account.tikTokMessagingBusinessId ? { accountName: `TikTok Business Account ${account.tikTokMessagingBusinessId}`, username: null } : {}),
@@ -143,6 +157,9 @@ export async function getSocialInbox(calendarId: string, params: URLSearchParams
       const participantName = rawName && !genericNames.includes(rawName.trim().toLowerCase()) ? rawName : null;
       return ({
       id: conversation.id,
+      aiPausedAt: conversation.aiPausedAt?.toISOString() ?? null,
+      aiHandoffReason: conversation.aiHandoffReason,
+      aiHandoffAcknowledgedAt: conversation.aiHandoffAcknowledgedAt?.toISOString() ?? null,
       ...(conversation.platform === "X" && conversation.socialConnectionId && conversation.providerConversationId.startsWith("xchat:") ? { encrypted: { connectionId: conversation.socialConnectionId, conversationId: conversation.providerConversationId.slice(6) } } : {}),
       platform: conversation.platform,
       providerConversationId: conversation.providerConversationId,

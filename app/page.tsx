@@ -3,42 +3,40 @@ import { getCurrentCreator } from "@/lib/auth";
 import HomeClient from "./HomeClient";
 
 export const metadata: Metadata = {
-  title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
+  title: "Showwork | Intelligent Marketing Operations Platform",
   description:
-    "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
+    "Bring marketing operations together: business knowledge, content creation, collaboration, supported publishing, customer conversations, and performance insights.",
   keywords: [
-    "client delivery Nigeria",
-    "creator portfolio Nigeria",
-    "content creator tools Nigeria",
-    "photographer client delivery Nigeria",
-    "videographer portfolio delivery",
-    "send client work Nigeria",
-    "WeTransfer alternative Nigeria",
-    "Dropbox alternative for creators",
-    "premium client presentation Lagos",
-    "social media content approval platform",
-    "social media lead management",
-    "social media analytics and reporting",
-    "creative agency project management Nigeria",
-    "creator community Nigeria",
-    "Creativo",
+    "marketing operations platform",
+    "marketing team collaboration",
+    "business knowledge",
+    "content planning",
+    "content approval workflow",
+    "Marketing Workspace",
     "Showwork",
   ],
-    openGraph: {
-    title: "Showwork | The Platform for Creative Client Work",
+  openGraph: {
+    title: "Showwork | Intelligent Marketing Operations Platform",
     description:
-      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
+      "Bring marketing operations together: business knowledge, content creation, collaboration, supported publishing, customer conversations, and performance insights.",
     url: "/",
     siteName: "Showwork",
     locale: "en_NG",
     type: "website",
-    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and client workspaces" }],
+    images: [
+      {
+        url: "/images/work.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Showwork marketing operations platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Showwork | Portfolios, Project Delivery & Client Workspaces",
+    title: "Showwork | Intelligent Marketing Operations Platform",
     description:
-      "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
+      "Bring marketing operations together: business knowledge, content creation, collaboration, supported publishing, customer conversations, and performance insights.",
     images: ["/images/work.jpg"],
   },
   robots: {

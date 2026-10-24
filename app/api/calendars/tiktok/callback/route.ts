@@ -7,6 +7,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { exchangeCodeForTikTokTokens, getTikTokDisplayName } from "@/lib/tiktok";
 import { appUrl } from "@/lib/url";
+import { tikTokRedirectUri } from "@/lib/tiktokOAuthConfig";
 import { upsertSocialConnection } from "@/lib/socialReporting";
 
 // GET — TikTok redirects here after the manager approves (or denies)
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
     return redirectTo("/dashboard/calendars?tiktokError=not_found");
   }
 
-  const redirectUri = `${appUrl()}/api/calendars/tiktok/callback`;
+  const redirectUri = tikTokRedirectUri();
 
   try {
     const tokens = await exchangeCodeForTikTokTokens(code, redirectUri, verifier);

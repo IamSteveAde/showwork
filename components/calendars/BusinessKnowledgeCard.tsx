@@ -3,7 +3,7 @@ import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, CheckCircle2 } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, RefreshCw } from "lucide-react";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
@@ -164,6 +164,17 @@ export default function BusinessKnowledgeCard({
   const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
   const [documentsState, setDocumentsState] = useState(documents);
   const [uploading, setUploading] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
+  async function rebuildSummary() {
+    setRebuilding(true); setError(null);
+    try {
+      const response = await fetch(`/api/calendars/${calendarId}/business-documents/rebuild`, { method: "POST" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Unable to rebuild knowledge.");
+      setBusinessSummaryState(body.businessSummary); setSummaryUpdatedAtState(body.summaryUpdatedAt); router.refresh();
+    } catch (error) { setError(error instanceof Error ? error.message : "Unable to rebuild knowledge."); }
+    finally { setRebuilding(false); }
+  }
   const [uploadFile, setUploadFile] = useState<{ index: number; total: number; name: string } | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [addingWebsite, setAddingWebsite] = useState(false);
@@ -392,11 +403,11 @@ if (presignContentType.includes("application/json")) {
 
   if (compact) {
     return <div className="mt-5 border-t border-[#DCE6F3] pt-5">
-      <h4 className="text-base font-medium tracking-tight text-[#26496E]">Give AI your business documents.</h4>
-      <p className="mt-2 text-xs leading-6 text-[#6B83A3]">Add your business profile, price lists, brochures, and FAQs. Select several files together or add more later.</p>
+      <h4 className="text-base font-medium tracking-tight text-[#26496E]">Teach AI the details.</h4>
+      <p className="mt-2 text-xs leading-6 text-[#6B83A3]">Add price lists, FAQs, or a business profile. These are the facts your assistant uses.</p>
       {!aiActive && <WorkspaceFeatureNotice compact message="Activate your workspace to add business documents." />}
-      <button type="button" disabled={uploading || !aiActive || !canEdit} onClick={() => fileInputRef.current?.click()} className="mt-4 flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#9FBDEB] bg-[linear-gradient(135deg,#E8F1FF,#F7FAFF)] px-5 py-6 text-[#285B9E] transition hover:border-[#3478EC] hover:bg-[#E1EDFF] disabled:opacity-50">
-        <UploadCloud size={28} strokeWidth={1.5} aria-hidden="true" />
+      <button type="button" disabled={uploading || !aiActive || !canEdit} onClick={() => fileInputRef.current?.click()} className="mt-4 flex min-h-24 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#9FBDEB] bg-[linear-gradient(135deg,#E8F1FF,#F7FAFF)] px-5 py-6 text-[#285B9E] transition hover:border-[#3478EC] hover:bg-[#E1EDFF] disabled:opacity-50">
+        <UploadCloud size={23} strokeWidth={1.5} aria-hidden="true" />
         <span className="text-sm font-semibold">{uploading ? `File ${uploadFile?.index || 1} of ${uploadFile?.total || 1} · Uploading ${uploadPercent}% & reading…` : documentsState.length ? "Add more documents" : "Upload documents or price lists"}</span>
         <span className="text-xs text-[#6B83A3]">PDF · Word · Excel · CSV · Text</span>
       </button>
@@ -405,7 +416,7 @@ if (presignContentType.includes("application/json")) {
       {error && <p role="alert" className="mt-3 whitespace-pre-line rounded-lg bg-red-50 p-3 text-xs leading-5 text-red-700">{error}</p>}
       {businessSummaryState && !error && <p role="status" className="mt-4 flex items-center gap-2 text-xs text-[#287768]"><CheckCircle2 size={15} aria-hidden="true" />Business knowledge ready{updated ? ` · Updated ${updated}` : ""}</p>}
       {documentsState.length > 0 && <p className="mt-4 text-xs font-semibold text-[#42658D]">{documentsState.length} source {documentsState.length === 1 ? "document" : "documents"}</p>}
-      {documentsState.length > 0 && <ul className="mt-4 divide-y divide-[#DFE7F3]">{documentsState.map(document => <li key={document.id} className="flex min-w-0 items-center gap-3 py-3 text-xs text-[#4D6D94]"><FileText size={16} className="shrink-0" aria-hidden="true" /><span className="truncate" title={document.originalName}>{document.originalName}</span></li>)}</ul>}
+      {documentsState.length > 0 && <ul className="mt-3 max-h-44 overflow-y-auto divide-y divide-[#DFE7F3]">{documentsState.map(document => <li key={document.id} className="flex min-w-0 items-center gap-3 py-3 text-xs text-[#4D6D94]"><FileText size={16} className="shrink-0" aria-hidden="true" /><span className="truncate" title={document.originalName}>{document.originalName}</span></li>)}</ul>}
       <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("showwork-workspace-navigate", { detail: { id: "knowledge" } }))} className="mt-3 min-h-11 text-xs font-semibold text-[#2866BE]">Review business knowledge →</button>
     </div>;
   }
@@ -517,7 +528,7 @@ if (presignContentType.includes("application/json")) {
               </div>
 
               <p className="mt-1.5 text-xs leading-5 text-[#667085]">
-                Your AI context for this client workspace.
+                Your AI context for this marketing workspace.
               </p>
             </div>
           </div>
@@ -596,6 +607,8 @@ if (presignContentType.includes("application/json")) {
               </div>
             )}
 
+            {canEdit && aiActive && documentsState.length > 0 && <button type="button" onClick={rebuildSummary} disabled={rebuilding} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 disabled:opacity-50"><RefreshCw size={14} className={rebuilding ? "animate-spin" : ""} />{rebuilding ? "Rebuilding from current sources…" : "Rebuild from current sources"}</button>}
+            <p className="mt-3 text-xs leading-5 text-slate-500">Replies retrieve relevant passages from your current documents. Research findings are reviewed separately in the Research tab.</p>
             {(updated || researched) && (
               <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#E4E7EC] pt-4">
                 {updated && (

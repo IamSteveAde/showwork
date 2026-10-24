@@ -305,7 +305,7 @@ export default async function SocialCalendarPage({
 
   const displayDescription =
     calendar.headerDescription ||
-    "Your content workspace — everything planned, presented and ready for review.";
+    "Your marketing workspace — everything planned, presented and ready for review.";
 
   const totalPosts = calendar.posts.length;
   const approvedPosts = calendar.posts.filter(

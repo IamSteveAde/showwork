@@ -245,7 +245,7 @@ export function buildMediaKey(projectId: string, filename: string) {
 /**
  * Returns the actual size of a completed R2 object.
  *
- * This is used by Content Workspace storage accounting so the server
+ * This is used by Marketing Workspace storage accounting so the server
  * never has to trust a file size supplied by the browser.
  */
 export async function getObjectSize(key: string): Promise<number> {

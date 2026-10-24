@@ -1,3 +1,4 @@
+import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { requirePostPlatform } from "@/lib/calendarPosts";
@@ -176,7 +177,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
    * record and the current CalendarPost is updated to the newest
    * generated version.
    *
-   * AI regeneration is included in the Content Workspace subscription.
+   * AI regeneration is included in the Marketing Workspace subscription.
    *
    * Creator: 100 shared AI generations/month
    * Studio: 500 shared AI generations/month; Agency: 2,000
@@ -216,7 +217,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     }
 
     /**
-     * The Content Workspace subscription belongs to the owner of
+     * The Marketing Workspace subscription belongs to the owner of
      * the calendar. A collaborator can perform the regeneration when
      * they have EDIT_CALENDAR permission, but the usage allowance
      * belongs to the workspace owner's account.
@@ -267,7 +268,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     /**
      * Consume one included AI regeneration.
      *
-     * This also verifies that the Content Workspace is currently
+     * This also verifies that the Marketing Workspace is currently
      * accessible and that the monthly regeneration allowance has
      * not been exhausted.
      */
@@ -284,7 +285,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       );
     }
 
-    if (!calendar.aiBusinessSummary) {
+    if (!await db.calendarBusinessDocument.count({ where: { calendarId: id, extractedText: { not: null } } })) {
       /*
       * The request cannot be processed without business context, so
       * return the consumed regeneration to the account.
@@ -362,7 +363,7 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
     try {
       generated = await regeneratePost({
     clientName: calendar.clientName,
-    businessSummary: calendar.aiBusinessSummary,
+    businessSummary: await getBusinessKnowledgeContext(id, String(body.instruction ?? "Products services brand voice content strategy"), "content"),
     currentPost: current,
     instruction:
       typeof body.instruction === "string" &&

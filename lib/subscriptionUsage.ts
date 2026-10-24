@@ -25,7 +25,7 @@ export interface UsageInfo {
  * Counts how many projects a creator has created in their current
  * billing cycle and compares it against their tier's cap. An active paid
  * subscription determines the tier, including after a downgrade. Complimentary
- * Content Workspace access does not grant a Project Delivery plan. A lapsed or
+ * Marketing Workspace access does not grant a Project Delivery plan. A lapsed or
  * cancelled paid subscription is treated as FREE — subscriptionTier
  * alone is not trusted as the source of truth for access.
  * freeTierLimitOverride raises (or lowers) a specific creator's Free

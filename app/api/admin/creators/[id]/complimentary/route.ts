@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         await tx.creator.update({ where: { id }, data: { isComped: false, compedUntil: null } });
         if (!creator.compedUntil || creator.compedUntil > new Date()) await tx.billingBenefitNotification.createMany({ data: [{
           id: `legacy-stop:${id}:${requestId}`, creatorId: id, event: "STOPPED", payload: {
-            to: creator.email, name: creator.name, title: "Complimentary Content Workspace access", event: "STOPPED", product: "CONTENT_WORKSPACE", workspacePlan: "STUDIO", deliveryTier: null,
+            to: creator.email, name: creator.name, title: "Complimentary Marketing Workspace access", event: "STOPPED", product: "CONTENT_WORKSPACE", workspacePlan: "STUDIO", deliveryTier: null,
             percent: 100, durationMonths: 1, billingCycle: null, availableUntil: null, endsAt: null,
           },
         }], skipDuplicates: true });

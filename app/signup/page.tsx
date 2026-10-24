@@ -112,7 +112,7 @@ const accountOptions: Array<{
     type: "SOCIAL_MEDIA_MANAGER",
     title: "Social media manager",
     description: "Manage client content, leads and performance.",
-    detail: "Content Workspace plans start at ₦4,900/month for 1 active client workspace.",
+    detail: "Marketing Workspace plans start at ₦4,900/month for 1 active marketing workspace.",
   },
 ];
 
@@ -349,7 +349,7 @@ const referralCode = searchParams.get("ref");
             </p>
             <h1 className="text-4xl font-semibold tracking-[-0.045em]">Create your account.</h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-white/40">
-              Create your account to build a portfolio, deliver a project or set up a client workspace.
+              Create your account to build a portfolio, deliver a project or set up a marketing workspace.
             </p>
           </div>
 

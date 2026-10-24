@@ -1,9 +1,9 @@
+import { rebuildBusinessKnowledge } from "@/lib/knowledge/context";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getObjectSize, publicUrlFor } from "@/lib/r2";
 import { extractTextFromDocument } from "@/lib/documentExtraction";
-import { updateBusinessSummaryWithDocument } from "@/lib/openai";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import {
   releaseContentWorkspaceStorageReservation,
@@ -187,7 +187,7 @@ export async function POST(
 
     if (!existingDocument) {
       console.error(
-        "Content Workspace storage reservation is COMPLETED but its business document is missing:",
+        "Marketing Workspace storage reservation is COMPLETED but its business document is missing:",
         reservationId
       );
 
@@ -232,7 +232,7 @@ export async function POST(
       );
     } catch (error) {
       console.error(
-        "Failed to release expired Content Workspace storage reservation:",
+        "Failed to release expired Marketing Workspace storage reservation:",
         error
       );
     }
@@ -290,7 +290,7 @@ export async function POST(
     reservedBytes <= 0
   ) {
     console.error(
-      "Invalid Content Workspace storage reservation size:",
+      "Invalid Marketing Workspace storage reservation size:",
       reservation
     );
 
@@ -320,7 +320,7 @@ export async function POST(
       );
     } catch (releaseError) {
       console.error(
-        "Failed to release mismatched Content Workspace storage reservation:",
+        "Failed to release mismatched Marketing Workspace storage reservation:",
         releaseError
       );
     }
@@ -576,7 +576,7 @@ export async function POST(
     }
 
     console.error(
-      "Failed to finalize Content Workspace business document upload:",
+      "Failed to finalize Marketing Workspace business document upload:",
       error
     );
 
@@ -597,21 +597,7 @@ export async function POST(
    * A summary failure must never undo a successful document upload.
    */
   try {
-    const updatedSummary =
-      await updateBusinessSummaryWithDocument({
-        existingSummary: calendar.aiBusinessSummary,
-        clientName: calendar.clientName,
-        documentText: extractedText,
-      });
-
-    const summaryUpdatedAt = new Date();
-    await db.socialCalendar.update({
-      where: { id },
-      data: {
-        aiBusinessSummary: updatedSummary,
-        aiBusinessSummaryUpdatedAt: summaryUpdatedAt,
-      },
-    });
+    const { summary: updatedSummary, updatedAt: summaryUpdatedAt } = await rebuildBusinessKnowledge(id);
 
     const serializedDocument = {
   ...document,

@@ -47,7 +47,7 @@ export async function claimPublishingBatch(transaction: Prisma.TransactionClient
       SELECT p."id", p."updatedAt", p.${status}::text AS previous_status
       FROM "CalendarPost" p
       WHERE p."platform" = ${platform}::"SocialPlatform"
-        AND (p.${status} = 'SCHEDULED' ${acceptedTikTok})
+        AND ((p.${status} = 'SCHEDULED' AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled")) ${acceptedTikTok})
         AND p."approvalStatus" = 'APPROVED' AND NOT p."isAiDraft" AND p."postDate" <= (${now}::timestamptz AT TIME ZONE 'UTC') ${excludeClaimed}
       ORDER BY p."postDate", p."id" LIMIT ${limit} FOR UPDATE OF p SKIP LOCKED
     ), claimed AS (

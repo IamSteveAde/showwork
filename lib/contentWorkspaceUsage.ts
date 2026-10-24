@@ -76,7 +76,7 @@ import {isContentWorkspaceTrialActive,isComplimentaryAccessActive,canAccessConte
 export {isContentWorkspaceTrialActive,isComplimentaryAccessActive,canAccessContentWorkspace,getContentWorkspacePlan,canUseContentWorkspaceFeature,currentAiCycleStart,validateCanonicalWorkspaceUsage} from "./contentWorkspacePolicy";
 
 /**
- * Counts the creator's currently owned Content Workspaces.
+ * Counts the creator's currently owned Marketing Workspaces.
  */
 export async function getActiveWorkspaceCount(
   creatorId: string
@@ -89,7 +89,7 @@ export async function getActiveWorkspaceCount(
 }
 
 /**
- * Counts current collaborators across the creator's owned Content Workspaces.
+ * Counts current collaborators across the creator's owned Marketing Workspaces.
  */
 export async function getCollaboratorCount(
   creatorId: string
@@ -222,12 +222,12 @@ export async function getContentWorkspaceUsage(
 }
 
 /**
- * Checks whether another Content Workspace can be created.
+ * Checks whether another Marketing Workspace can be created.
  */
 /**
- * Checks whether another Content Workspace can be created.
+ * Checks whether another Marketing Workspace can be created.
  *
- * A creator who has never used their Content Workspace trial may
+ * A creator who has never used their Marketing Workspace trial may
  * create their first workspace. The creation route starts the
  * 7-day trial immediately after the workspace is created.
  */
@@ -248,7 +248,7 @@ export async function canCreateContentWorkspace(
     return {
       allowed: false,
       reason:
-        "Your Content Workspace subscription or trial is not active.",
+        "Your Marketing Workspace subscription or trial is not active.",
       usage,
     };
   }
@@ -260,7 +260,7 @@ export async function canCreateContentWorkspace(
       allowed: false,
       reason: `Your ${usage.plan} plan allows up to ${
         usage.workspaceLimit
-      } active Content Workspace${
+      } active Marketing Workspace${
         usage.workspaceLimit === 1 ? "" : "s"
       }. Upgrade to increase your allowance. Existing workspaces are preserved.`,
       usage,
@@ -287,7 +287,7 @@ export async function canAddContentWorkspaceCollaborator(
   if (!usage.hasAccess) {
     return {
       allowed: false,
-      reason: "Your Content Workspace subscription or trial is not active.",
+      reason: "Your Marketing Workspace subscription or trial is not active.",
       usage,
     };
   }
@@ -392,7 +392,7 @@ export async function reserveContentWorkspaceStorage(
   if (!plan || !canAccessContentWorkspace(creator)) {
     return {
       allowed: false,
-      reason: "Your Content Workspace subscription or trial is not active.",
+      reason: "Your Marketing Workspace subscription or trial is not active.",
       storageBytes: 0,
       storageReservedBytes: 0,
       storageLimitBytes: 0,
@@ -417,7 +417,7 @@ export async function reserveContentWorkspaceStorage(
   if (!calendar || calendar.managerId !== creatorId) {
     return {
       allowed: false,
-      reason: "Content Workspace not found.",
+      reason: "Marketing Workspace not found.",
       storageBytes: 0,
       storageReservedBytes: 0,
       storageLimitBytes,
@@ -499,7 +499,7 @@ export async function reserveContentWorkspaceStorage(
   if (!result.allowed) {
     return {
       allowed: false,
-      reason: `This upload exceeds your available Content Workspace storage. You have ${formatStorageBytes(
+      reason: `This upload exceeds your available Marketing Workspace storage. You have ${formatStorageBytes(
         Math.max(
           0,
           storageLimitBytes -
@@ -745,7 +745,7 @@ export async function releaseContentWorkspaceStorageReservation(
       return {
         success: false,
         bytes: 0,
-        error: "Content Workspace usage record not found.",
+        error: "Marketing Workspace usage record not found.",
       };
     }
 
@@ -779,7 +779,7 @@ export async function releaseContentWorkspaceStorageReservation(
 }
 
 /**
- * Removes confirmed storage usage after a Content Workspace file
+ * Removes confirmed storage usage after a Marketing Workspace file
  * is deleted.
  */
 export async function releaseContentWorkspaceStorage(
@@ -960,7 +960,7 @@ export async function consumeAiRegeneration(
   };
 }
 /**
- * Releases expired pending Content Workspace storage reservations.
+ * Releases expired pending Marketing Workspace storage reservations.
  *
  * This is intended to run from a scheduled maintenance job.
  * Each reservation is handled transactionally so its reserved bytes

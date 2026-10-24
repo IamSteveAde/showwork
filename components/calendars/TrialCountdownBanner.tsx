@@ -232,12 +232,12 @@ export default function TrialCountdownBanner({
 
   const supportingText = complimentaryAccess
     ? expired
-      ? "Subscribe to restore access to your client content workspaces."
+      ? "Subscribe to restore access to your marketing workspaces."
       : compedUntil === null
         ? `You have complimentary ${planName} access with no expiration date.`
         : `You have complimentary ${planName} access until ${endDate}.`
     : expired
-      ? "Subscribe to restore access to your client content workspaces."
+      ? "Subscribe to restore access to your marketing workspaces."
       : "Your trial includes full Agency access. Your selected plan applies when the trial ends; all existing data is preserved.";
 
   // Payment is the primary status; remaining trial benefits are an extra.
@@ -321,7 +321,7 @@ export default function TrialCountdownBanner({
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-white/35">
                 <span className="inline-flex items-center gap-1.5">
                   <CheckIcon className="text-[#4ADE80]" />
-                  Client workspaces stay yours
+                  Marketing workspaces stay yours
                 </span>
 
                 {complimentaryAccess ? (

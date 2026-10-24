@@ -1,0 +1,23 @@
+[Unit]
+Description=Showwork Next.js website and API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=showwork
+WorkingDirectory=/home/showwork/web
+EnvironmentFile=/etc/showwork/web.env
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--no-experimental-webstorage
+ExecStart=/usr/local/bin/node /home/showwork/web/node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=60
+KillSignal=SIGTERM
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

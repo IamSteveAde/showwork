@@ -71,6 +71,7 @@ export function createInactiveCanonicalWorker(deps:CanonicalWorkerDependencies){
    return observation(job.id,await providers.publish({target:claimed.target,capability:grant.capability}));
   }catch(error){
    const code=error instanceof Error?(('code'in error&&typeof error.code==='string')?error.code:error.message):'WORKER_OPERATION_FAILED';
+   if(code==='AUTO_PUBLISH_PAUSED')return result(target.jobId,'deferred',code);
    if(stage.authorizationStarted)return result(target.jobId,'outcome-unknown',code);
    if(stopping||signal.aborted)return result(target.jobId,'deferred','WORKER_STOPPING');
    if(/OWNERSHIP|EPOCH/.test(code))return result(target.jobId,'fenced',code);

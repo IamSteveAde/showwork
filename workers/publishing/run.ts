@@ -1,6 +1,11 @@
 import {publishingHostConfiguration} from '@/lib/publishing/hostConfiguration';
 /** Entry command is inert unless both --run and an explicit enable flag are supplied. */
 async function main(){
+ if (process.env.SITE_V1_WORKER_ENABLED !== "true") {
+  console.error("Publishing worker execution in site_v1 is disabled. All publishing workers run exclusively in the functions package (functions/workers/bullmq or functions/workers/publishing).");
+  process.exitCode = 1;
+  return;
+ }
  const nodeMajor = Number(process.versions.node.split('.')[0]); if (nodeMajor !== 22 && nodeMajor !== 25) throw Error('NODE_VERSION_UNSUPPORTED');
  const command=process.argv.slice(2);if(command.length!==1||!['--run','--check','--reconcile'].includes(command[0]))throw Error('NATIVE_WORKER_EXPLICIT_COMMAND_REQUIRED');
  const config=publishingHostConfiguration(process.env);

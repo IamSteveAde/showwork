@@ -2,7 +2,7 @@ import { cleanupTikTokPreparedFiles } from "@/lib/r2";
 import { NextRequest, NextResponse } from "next/server";
 import { cleanupExpiredContentWorkspaceStorageReservations } from "@/lib/contentWorkspaceUsage";
 
-// POST — releases expired Content Workspace storage reservations.
+// POST — releases expired Marketing Workspace storage reservations.
 // Protected by the same shared secret (CRON_SECRET) as every other
 // scheduled job in this app.
 //

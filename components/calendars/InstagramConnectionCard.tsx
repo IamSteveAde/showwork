@@ -42,7 +42,7 @@ export default function InstagramConnectionCard({
       const url = new URL(window.location.href);
       url.searchParams.delete("instagramError");
       url.searchParams.delete("instagramConnected");
-      router.replace(url.pathname + url.search, { scroll: false });
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -125,6 +125,11 @@ export default function InstagramConnectionCard({
       </div>
 
       <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
+        {isManager && isConnected && !confirming && (
+          <a href={`/api/calendars/${calendarId}/instagram/connect`} className="mb-3 flex justify-center rounded-xl border border-white/20 px-4 py-2.5 text-xs font-semibold text-white">
+            Reauthorize Instagram
+          </a>
+        )}
   {isManager ? (
     isConnected ? (
       confirming ? (

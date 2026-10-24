@@ -6,33 +6,25 @@ import { db } from "@/lib/db";
 import {
   exchangeCodeForToken,
   exchangeForLongLivedToken,
-  listManagedPages,
   listInstagramGrantedPermissions,
-  getInstagramUsername,
 } from "@/lib/instagram";
 import { appUrl } from "@/lib/url";
-import { upsertSocialConnection } from "@/lib/socialReporting";
-import { subscribeMetaMessagingAccount } from "@/lib/socialMessaging/meta";
+import { createFacebookPageSelection, facebookPageSelectionCookieOptions } from "@/lib/facebookPageSelection";
+import { verifyChannelOAuthState, channelOAuthCookieOptions } from "@/lib/channelOAuthState";
 
-// GET — Facebook redirects here after the manager approves (or
-// denies) access on the OAuth dialog. `state` carries the calendar id
-// the connection should attach to; the actual identity check is the
-// real session cookie, not the state value itself — state only says
-// which calendar, never who's allowed.
-//
-// NOTE: if a manager's Facebook account manages more than one Page
-// with a linked Instagram Business account, this currently connects
-// whichever one Facebook lists first. A proper "choose which account"
-// picker step is a reasonable follow-up but isn't built yet — most
-// managers only have one Page, so this covers the common case.
+// OAuth exchange only; the manager explicitly selects the linked account next.
 export async function GET(req: NextRequest) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/instagram/callback/route.ts#GET@27",Array.from(arguments)); } /* end-canonical-integration-boundary */
 
-  const calendarId = req.nextUrl.searchParams.get("state");
+  const calendarId = verifyChannelOAuthState("instagram", req.nextUrl.searchParams.get("state"), req.cookies.get("showwork_instagram_oauth_state")?.value);
   const code = req.nextUrl.searchParams.get("code");
   const oauthError = req.nextUrl.searchParams.get("error");
 
-  const redirectTo = (path: string) => NextResponse.redirect(`${appUrl()}${path}`);
+  const redirectTo = (path: string) => {
+    const response = NextResponse.redirect(`${appUrl()}${path}`);
+    response.cookies.set("showwork_instagram_oauth_state", "", channelOAuthCookieOptions("instagram", 0));
+    return response;
+  };
 
   if (!calendarId) return redirectTo("/dashboard/calendars?instagramError=missing_state");
 
@@ -60,78 +52,21 @@ export async function GET(req: NextRequest) {
     const longLived = await exchangeForLongLivedToken(shortLived.access_token);
     const grantedPermissions = await listInstagramGrantedPermissions(longLived.access_token);
 
-    const pages = await listManagedPages(longLived.access_token);
-    const pageWithInstagram = pages.find((p) => !!p.instagram_business_account);
-
-    if (!pageWithInstagram || !pageWithInstagram.instagram_business_account) {
-      return redirectTo(`${settingsPath}&instagramError=no_linked_account`);
-    }
-
-    const igUserId = pageWithInstagram.instagram_business_account.id;
-    const username = await getInstagramUsername(igUserId, pageWithInstagram.access_token);
-
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + (longLived.expires_in ?? 60 * 24 * 60 * 60));
-
-    await db.socialCalendar.update({
-      where: { id: calendarId },
-      data: {
-        instagramAccountId: igUserId,
-        instagramUsername: username,
-        instagramPageId: pageWithInstagram.id,
-        // The Page access token, not the user token — this is what
-        // every subsequent publish call actually authenticates with.
-        instagramAccessToken: pageWithInstagram.access_token,
-        instagramTokenExpiresAt: expiresAt,
-        instagramConnectedAt: new Date(),
-      },
-    });
-    const socialConnection = await upsertSocialConnection({
+    const selection = createFacebookPageSelection({
       calendarId,
-      platform: "INSTAGRAM",
-      platformAccountId: igUserId,
-      accountName: username,
-      username,
-      accessToken: pageWithInstagram.access_token,
-      accessTokenExpiresAt: expiresAt,
-      tokenScopes: grantedPermissions.join(","),
+      pages: [{ id: creator.id, name: "Instagram account selection", accessToken: longLived.access_token }],
+      grantedPermissions,
+      userTokenExpiresAt: Date.now() + (longLived.expires_in ?? 60 * 24 * 60 * 60) * 1000,
     });
-    try {
-      // Meta requires the Page user behind this token to have the
-      // MESSAGING task for Instagram Messaging on the linked Page.
-      // Publishing can still connect when that task is absent.
-      if (!pageWithInstagram.tasks?.includes("MESSAGING")) {
-        await db.socialConnection.update({
-          where: { id: socialConnection.id },
-          data: {
-            messagingWebhookSubscribedAt: null,
-            messagingWebhookError: "Instagram messaging needs the MESSAGING task on the linked Facebook Page. Reconnect with a Facebook account that has that Page task.",
-          },
-        });
-        return redirectTo(`${settingsPath}&instagramConnected=true`);
-      }
-      // Instagram is linked to this Facebook Page. Use the Page for
-      // webhook subscription and messaging sends; keep the Instagram
-      // account ID on SocialConnection for webhook matching.
-      await subscribeMetaMessagingAccount(pageWithInstagram.id, pageWithInstagram.access_token, "INSTAGRAM");
-      await db.socialConnection.update({
-        where: { id: socialConnection.id },
-        data: {
-          messagingWebhookSubscribedAt: new Date(),
-          // This field records actual subscription failures. App-level
-          // webhook capability is configured separately in Meta and is
-          // shown as a setup note in the inbox status.
-          messagingWebhookError: null,
-        },
-      });
-    } catch (error) {
-      await db.socialConnection.update({ where: { id: socialConnection.id }, data: { messagingWebhookError: error instanceof Error ? error.message.slice(0, 1500) : "Meta webhook subscription failed." } });
-      console.warn("Instagram publishing is connected, but messaging webhooks could not be enabled:", error);
-    }
-
-    return redirectTo(`${settingsPath}&instagramConnected=true`);
-  } catch (err) {
-    console.error("Instagram OAuth callback failed:", err);
+    if (selection.value.length > 3500) throw new Error("Account selection session exceeds cookie limit.");
+    const response = redirectTo(`/dashboard/calendars/${calendarId}/instagram/select-account`);
+    response.cookies.set("showwork_instagram_legacy_selection", selection.value, {
+      ...facebookPageSelectionCookieOptions(selection.maxAge),
+      path: `/api/calendars/${calendarId}/instagram/select-account`,
+    });
+    return response;
+  } catch {
+    console.error("Instagram OAuth exchange failed; reconnect to retry.");
     return redirectTo(`${settingsPath}&instagramError=connection_failed`);
   }
 }

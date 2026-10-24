@@ -195,8 +195,8 @@ export default function CalendarSettingsMenu({
             : "border-white/15 bg-white/[0.09] text-white/80 hover:border-white/25 hover:bg-white/[0.15] hover:text-white"
         }`}
       >
-        <SettingsIcon className="h-4 w-4" />
-        <span>Settings</span>
+        <SettingsIcon className="h-4 w-4" /><span className="sr-only sm:hidden">Workspace settings</span>
+        <span className="hidden sm:inline">Settings</span>
       </button>
 
       {open && (
@@ -244,7 +244,7 @@ export default function CalendarSettingsMenu({
                       </span>
 
                       <span className="mt-0.5 block text-[10px] text-[#98A2B3]">
-                        Change the client workspace name
+                        Change the marketing workspace name
                       </span>
                     </span>
                   </button>

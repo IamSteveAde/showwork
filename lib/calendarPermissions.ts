@@ -39,13 +39,13 @@ export async function hasCalendarPermission(creatorId: string, calendarId: strin
 }
 
 /**
- * Single source of truth for whether the Content Workspace / Calendar
+ * Single source of truth for whether the Marketing Workspace / Calendar
  * product is currently accessible.
  *
- * Billing is account-level: one Content Workspace subscription covers
+ * Billing is account-level: one Marketing Workspace subscription covers
  * all workspaces owned by the creator.
  *
- * This now uses the new Content Workspace billing fields rather than
+ * This now uses the new Marketing Workspace billing fields rather than
  * the legacy calendar billing fields.
  */
 export function canAccessCalendar(
@@ -57,8 +57,8 @@ export function canAccessCalendar(
 /**
  * Convenience wrapper for cases where only a calendarId is available.
  *
- * The calendar's manager owns the Content Workspace subscription, so
- * access is determined from the manager's Content Workspace billing
+ * The calendar's manager owns the Marketing Workspace subscription, so
+ * access is determined from the manager's Marketing Workspace billing
  * state.
  */
 export async function canAccessCalendarById(

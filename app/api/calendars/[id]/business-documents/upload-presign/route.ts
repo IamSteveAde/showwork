@@ -58,9 +58,9 @@ export async function POST(
   }
 
   /*
-   * Business Knowledge is included in the Content Workspace
+   * Business Knowledge is included in the Marketing Workspace
    * subscription. It is therefore gated by the workspace owner's
-   * Content Workspace access, not by the old standalone AI
+   * Marketing Workspace access, not by the old standalone AI
    * subscription.
    */
   const owner = await db.creator.findUnique({
@@ -82,7 +82,7 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Your Content Workspace subscription isn't active yet",
+          "Your Marketing Workspace subscription isn't active yet",
       },
       { status: 403 }
     );
@@ -171,7 +171,7 @@ export async function POST(
    * upload URL.
    *
    * This prevents concurrent uploads from collectively exceeding the
-   * Content Workspace storage allowance.
+   * Marketing Workspace storage allowance.
    */
   let reservation;
 
@@ -186,10 +186,10 @@ export async function POST(
     const message =
       error instanceof Error
         ? error.message
-        : "Unable to reserve Content Workspace storage";
+        : "Unable to reserve Marketing Workspace storage";
 
     console.error(
-      "Failed to reserve Content Workspace storage for business document:",
+      "Failed to reserve Marketing Workspace storage for business document:",
       error
     );
 
@@ -233,7 +233,7 @@ export async function POST(
       );
     } catch (releaseError) {
       console.error(
-        "Failed to release Content Workspace storage reservation after presign failure:",
+        "Failed to release Marketing Workspace storage reservation after presign failure:",
         releaseError
       );
     }

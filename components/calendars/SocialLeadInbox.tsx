@@ -3,19 +3,21 @@ import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import styles from "./SocialLeadInbox.module.css";
-import CustomerCareSettings, { type InboxBusinessKnowledge } from "./CustomerCareSettings";
+import Image from "next/image";
+import type { InboxBusinessKnowledge } from "./CustomerCareSettings";
+import InboxSetupPanel from "./InboxSetupPanel";
 import ReplyDraftAssistant from "./ReplyDraftAssistant";
 import { normalizeReplyProfile, type ReplyProfile } from "@/lib/socialMessaging/replyProfile";
 import XChatInbox, { type XChatInboxState } from "./XChatInbox";
 import { mergeInboxConversations, resolveSelectedInboxConversation, type UnifiedInboxConversation } from "@/lib/xChat/inbox";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowLeft, ArrowUpRight, Check, Inbox, MessageSquareText, RefreshCw, Search, Send, Settings2, Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { BellRing, UserRound, Bot, AlertCircle, ArrowLeft, ArrowUpRight, Check, Inbox, MessageSquareText, RefreshCw, Search, Send, Settings2, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 const PLATFORMS: Record<string, string> = { INSTAGRAM: "Instagram", FACEBOOK: "Facebook", TIKTOK: "TikTok", LINKEDIN: "LinkedIn", X: "X", YOUTUBE: "YouTube", WHATSAPP: "WhatsApp" };
 const STATUSES = ["NEW", "CONTACTED", "QUALIFIED", "CUSTOMER", "NOT_A_LEAD"] as const;
 type Conversation = UnifiedInboxConversation;
 type InboxData = {
-  summary: { leads: number; newMessages: number; messagesThisMonth: number; allMessages: number };
+  summary: { needsAttention?: number; leads: number; newMessages: number; messagesThisMonth: number; allMessages: number };
   accounts: Array<{ id: string; platform: string; accountName: string | null; username: string | null; status: string; messagingAvailable: boolean; messagingNote: string }>;
   settings: { clientAccessEnabled: boolean; aiAutoReplyEnabled: boolean; aiAutoReplyInstructions: string | null; aiReplyProfile: ReplyProfile };
   conversations: Conversation[];
@@ -26,6 +28,8 @@ const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map(part
 const dayLabel = (value: string) => new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 export default function SocialLeadInbox({ calendarId, slug, clientMode = false, isManager = false, canReplyFromWorkspace = false, inboxAccess = true, autoRepliesAccess = true, isOwner = false, canManageLeads = true, canViewChannels = true, businessKnowledge }: { calendarId?: string; slug?: string; clientMode?: boolean; isManager?: boolean; canReplyFromWorkspace?: boolean; inboxAccess?: boolean; autoRepliesAccess?: boolean; businessKnowledge?: InboxBusinessKnowledge; isOwner?: boolean; canManageLeads?: boolean; canViewChannels?: boolean }) {
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [xChats, setXChats] = useState<Record<string, XChatInboxState>>({});
   const updateXChat = useCallback((connectionId: string, state: XChatInboxState | null) => {
     setXChats(current => {
@@ -40,6 +44,8 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [attentionOnly, setAttentionOnly] = useState(false);
+  const [changingControl, setChangingControl] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const draft = drafts[selectedId] || "";
   const setDraft = useCallback((value: string) => setDrafts(current => ({ ...current, [selectedId]: value })), [selectedId]);
@@ -61,23 +67,30 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
   const endpoint = clientMode ? `/api/social-calendar/${encodeURIComponent(slug || "")}/inbox` : `/api/calendars/${encodeURIComponent(calendarId || "")}/inbox`;
 
   useEffect(() => {
-    setData(null); setSelectedId(""); setPinnedConversation(null); setDrafts({});
+    const params = new URLSearchParams(window.location.search);
+    setData(null); setSelectedId(params.get("conversation") || ""); setPinnedConversation(null); setDrafts({});
     setMobileChatOpen(false); setError(""); setSuccess("");
-    setPlatform(""); setStatus(""); setSearch(""); setUnreadOnly(false);
+    setPlatform(""); setStatus(""); setSearch(""); setUnreadOnly(false); setAttentionOnly(params.get("attention") === "true");
+    if (params.get("conversation")) setMobileChatOpen(true);
     lastThreadRef.current = "";
   }, [endpoint]);
 
   const load = useCallback(async (quiet = false) => {
+    // Background refreshes must not cancel a slower request before it finishes.
+    if (quiet && requestRef.current) return;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
     if (!quiet) setLoading(true);
     try {
       const query = new URLSearchParams();
+      const linkedConversation = new URLSearchParams(window.location.search).get("conversation");
+      if (linkedConversation) query.set("conversation", linkedConversation);
       if (platform) query.set("platform", platform);
       if (status) query.set("status", status);
       if (search.trim()) query.set("q", search.trim());
       if (unreadOnly) query.set("unread", "true");
+      if (attentionOnly && !clientMode) query.set("attention", "true");
       const response = await calendarMutationFetch(`${endpoint}?${query}`, { cache: "no-store", signal: controller.signal });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not load the inbox.");
@@ -86,8 +99,8 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
       setSelectedId(current => current || result.conversations[0]?.id || "");
       if (!quiet) setError("");
     } catch (err) { if (!controller.signal.aborted && !quiet) setError(err instanceof Error ? err.message : "Could not load the inbox."); }
-    finally { if (requestRef.current === controller) setLoading(false); }
-  }, [endpoint, platform, status, search, unreadOnly]);
+    finally { if (requestRef.current === controller) { requestRef.current = null; setLoading(false); } }
+  }, [endpoint, platform, status, search, unreadOnly, attentionOnly, clientMode]);
 
   const latestLoadRef = useRef(load);
   useEffect(() => { latestLoadRef.current = load; }, [load]);
@@ -101,12 +114,22 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
     window.addEventListener("showwork-inbox-leads-updated", refresh);
     return () => window.removeEventListener("showwork-inbox-leads-updated", refresh);
   }, [load]);
-  useEffect(() => { const timer = window.setInterval(() => void load(true), 30000); return () => window.clearInterval(timer); }, [load]);
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) void load(true); };
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [load]);
   const encryptedConversations = useMemo(() => Object.entries(xChats)
     .filter(([id]) => data?.accounts.some(account => account.id === id && account.status === "CONNECTED"))
     .flatMap(([, state]) => state.conversations), [data?.accounts, xChats]);
-  const conversations = useMemo(() => mergeInboxConversations(data?.conversations || [], encryptedConversations,
-    { platform, status, search, unreadOnly }), [data, encryptedConversations, platform, status, search, unreadOnly]);
+  const conversations = useMemo(() => mergeInboxConversations(data?.conversations || [], attentionOnly ? [] : encryptedConversations,
+    { platform, status, search, unreadOnly }), [data, encryptedConversations, platform, status, search, unreadOnly, attentionOnly]);
   const selected = resolveSelectedInboxConversation([...conversations, ...encryptedConversations], selectedId, pinnedConversation);
   useEffect(() => {
     const match = data?.conversations.find(item => item.id === selectedId);
@@ -154,6 +177,22 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
       const response = await calendarMutationFetch(`${endpoint}/${encodeURIComponent(conversation.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markRead: true }) });
       if (response.ok) void latestLoadRef.current(true);
     } catch { /* Keep the open chat usable if marking read briefly fails. */ }
+  }
+
+  async function changeAiControl(aiAction: "takeover" | "resume") {
+    if (!selected || selected.encrypted || clientMode || !canReplyFromWorkspace || changingControl) return;
+    setChangingControl(true); setError("");
+    try {
+      const response = await calendarMutationFetch(`${endpoint}/${encodeURIComponent(selected.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ aiAction }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Could not update AI handoff.");
+      // Refresh without the attention filter so an acknowledged thread remains up to date.
+      const fresh = await calendarMutationFetch(`${endpoint}`, { cache: "no-store" });
+      if (fresh.ok) { const inbox = await fresh.json(); const thread = inbox.conversations.find((item: Conversation) => item.id === selected.id); if (thread) setPinnedConversation(thread); }
+      await latestLoadRef.current(true);
+      setSuccess(aiAction === "resume" ? (data?.settings.aiAutoReplyEnabled ? "AI will handle the next incoming message. Earlier messages will not be replayed." : "Conversation pause cleared. Automatic replies remain off in workspace settings.") : "You have taken over. AI stays paused until you resume it.");
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not update AI handoff."); }
+    finally { setChangingControl(false); }
   }
 
   async function updateLeadStatus(value: string) {
@@ -210,15 +249,19 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
   const openConversation = (conversation: Conversation) => {
     setSelectedId(conversation.id);
     setPinnedConversation(conversation.encrypted ? null : conversation);
+    setAssistantOpen(false);
     setMobileChatOpen(true);
+    setMobileToolsOpen(false);
+    setPanel(null);
     nearBottomRef.current = true;
     setSuccess("");
     void markRead(conversation);
   };
 
   return (
-    <section className={styles.inbox} aria-label="Social leads inbox">
+    <section className={`${styles.inbox} ${mobileToolsOpen ? styles.mobileToolsOpen : ""} ${mobileChatOpen ? styles.mobileChatActive : ""} ${panel ? styles.panelOpen : ""}`} aria-label="Social leads inbox" data-showwork-inbox="true">
       {!clientMode && !inboxAccess && <WorkspaceFeatureNotice compact feature="socialInbox" />}
+      <div className={styles.mobileToolbar}><div><h2>Messages <span>{data?.summary.newMessages ? data.summary.newMessages : ""}</span></h2><p>Every conversation. One inbox.</p></div><button type="button" className={styles.mobileToolsButton} aria-label="Inbox filters and settings" aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(value => !value)}>{mobileToolsOpen ? <X size={19} aria-hidden="true" /> : <Settings2 size={19} aria-hidden="true" />}</button></div>
       <header className={styles.header}>
         <div className={styles.identity}><span className={styles.headerIcon}><MessageSquareText size={21} aria-hidden="true" /></span><div><h2>Every conversation, connected.</h2><p>Your inbox. One clear place to reply.</p></div></div>
         <div className={styles.headerActions}>
@@ -226,10 +269,12 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
           <button type="button" className={`${styles.button} ${styles.refreshButton}`} onClick={() => void load()} disabled={loading} aria-label="Refresh inbox"><RefreshCw size={15} aria-hidden="true" className={loading ? "motion-safe:animate-spin" : ""} /><span>Refresh</span></button>
           {canViewChannels && <button type="button" ref={channelsButtonRef} className={`${styles.button} ${panel === "channels" ? styles.activeButton : ""}`} aria-expanded={panel === "channels"} aria-controls="inbox-channels-panel" onClick={() => setPanel(current => current === "channels" ? null : "channels")}><SlidersHorizontal size={15} aria-hidden="true" />Channel access</button>}
           {isManager && <button type="button" ref={settingsButtonRef} className={`${styles.button} ${panel === "settings" ? styles.activeButton : ""}`} aria-expanded={panel === "settings"} aria-controls="inbox-settings-panel" onClick={() => setPanel(current => current === "settings" ? null : "settings")}><Settings2 size={15} aria-hidden="true" />AI & inbox setup</button>}
+          <a href="https://wa.me/2347018819588" target="_blank" rel="noopener noreferrer" className={`${styles.button} ${styles.mobileHelp}`}>Contact support<ArrowUpRight size={14} aria-hidden="true" /><span className="sr-only"> on WhatsApp (opens in a new tab)</span></a>
         </div>
       </header>
       {error && <div role="alert" className={styles.notice}><AlertCircle size={16} className="shrink-0" aria-hidden="true" />{error}</div>}
       {success && <div role="status" className={`${styles.notice} ${styles.success}`}><Check size={16} aria-hidden="true" />{success}</div>}
+      {!clientMode && <div className={styles.attentionBar} role="status" aria-live="polite"><BellRing size={16} aria-hidden="true" /><span><strong>{data?.summary.needsAttention || 0}</strong> conversations need a person</span><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)}>{attentionOnly ? "Show all" : "Needs attention"}</button></div>}
       <nav className={styles.channels} aria-label="Conversation channels">
         <button type="button" aria-pressed={!platform} onClick={() => setPlatform("")} className={`${styles.channel} ${!platform ? styles.channelSelected : ""}`}><Inbox size={14} aria-hidden="true" />All conversations</button>
         {channelKeys.map(key => <button type="button" key={key} aria-pressed={platform === key} onClick={() => setPlatform(key)} className={`${styles.channel} ${platform === key ? styles.channelSelected : ""}`}><span className={styles.channelDot} aria-hidden="true" />{PLATFORMS[key] || key}</button>)}
@@ -244,9 +289,9 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
           {!clientMode && isOwner && calendarId && <div className={styles.xUnlock}>{data?.accounts.filter(account => account.platform === "X" && account.status === "CONNECTED").map(account => <XChatInbox key={`${calendarId}:${account.id}`} calendarId={calendarId} connectionId={account.id} activeConversationId={selected?.encrypted?.connectionId === account.id ? selected.encrypted.conversationId : ""} onState={updateXChat} />)}</div>}
           <div className={styles.threads} aria-label="Conversations" aria-busy={loading}>
             {conversations.map(conversation => <button type="button" key={conversation.id} aria-pressed={selectedId === conversation.id} disabled={!!selectedX?.busy || (!!selectedX?.retry && conversation.id !== selectedId)} onClick={() => openConversation(conversation)} className={`${styles.thread} ${selectedId === conversation.id ? styles.threadSelected : ""}`}>
-              <div className={styles.threadTop}><span className={styles.avatar} aria-hidden="true">{initials(contactName(conversation))}</span><div className={styles.threadIdentity}><p className={styles.threadName}>{contactName(conversation)}</p><p className={styles.threadPlatform}>{PLATFORMS[conversation.platform]}</p></div>{conversation.unreadCount > 0 && <span className={styles.unreadCount} aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</span>}</div>
+              <div className={styles.threadTop}><span className={styles.avatar} aria-hidden="true">{initials(contactName(conversation))}</span><div className={styles.threadIdentity}><p className={styles.threadName}>{contactName(conversation)}</p><p className={styles.threadPlatform}>{["INSTAGRAM", "FACEBOOK", "TIKTOK", "LINKEDIN"].includes(conversation.platform) && <Image src={`/images/integrations/${conversation.platform.toLowerCase()}.svg`} width={12} height={12} alt="" aria-hidden="true" />}{PLATFORMS[conversation.platform]}</p></div>{conversation.unreadCount > 0 && <span className={styles.unreadCount} aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</span>}</div>
               <p className={`${styles.preview} ${drafts[conversation.id] ? styles.draftLabel : ""}`}>{drafts[conversation.id] ? `Draft: ${drafts[conversation.id]}` : conversation.lastMessagePreview || "Start of a conversation"}</p>
-              <div className={styles.threadFoot}><span>{conversation.encrypted ? "Encrypted" : conversation.leadStatus?.replaceAll("_", " ")}</span><span>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : ""}</span></div>
+              <div className={styles.threadFoot}><span>{conversation.encrypted ? "Encrypted" : !clientMode && conversation.aiPausedAt ? (conversation.aiHandoffAcknowledgedAt ? "Team handling" : "Needs a person") : conversation.leadStatus?.replaceAll("_", " ")}</span><span>{conversation.lastMessageAt ? new Date(conversation.lastMessageAt).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : ""}</span></div>
             </button>)}
             {!conversations.length && <div className={styles.emptyList}><Inbox size={25} className="mx-auto" aria-hidden="true" /><p>{loading ? "Loading conversations…" : "No conversations here yet."}</p>{!loading && <p>{search || status || unreadOnly || platform ? "Try another filter or search." : "Messages from connected channels will appear here."}</p>}</div>}
           </div>
@@ -261,6 +306,10 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
               </div>
               <div className={styles.chatControls}>{canManageLeads && !selected.encrypted && <select aria-label="Update lead status" value={selected.leadStatus} disabled={!inboxAccess || clientMode} onChange={event => void updateLeadStatus(event.target.value)}>{STATUSES.map(value => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</select>}</div>
             </header>
+            {!clientMode && !selected.encrypted && canReplyFromWorkspace && <div className={styles.handoffControl}>
+              <div>{selected.aiPausedAt ? <UserRound size={17} aria-hidden="true" /> : <Bot size={17} aria-hidden="true" />}<p><strong>{selected.aiPausedAt ? "Human handoff · AI paused" : data?.settings.aiAutoReplyEnabled ? "AI replies enabled" : "AI replies off"}</strong><span>{selected.aiHandoffReason || "Take over whenever this conversation needs a personal touch."}</span></p></div>
+              <div>{selected.aiPausedAt ? <>{!selected.aiHandoffAcknowledgedAt && <button type="button" disabled={changingControl} onClick={() => void changeAiControl("takeover")}>Take over</button>}<button type="button" disabled={changingControl} onClick={() => void changeAiControl("resume")}>Resume AI</button></> : <button type="button" disabled={changingControl} onClick={() => void changeAiControl("takeover")}>Take over</button>}</div>
+            </div>}
             {selectedX && <div className={styles.messageTools}><div className="flex flex-wrap gap-4"><button type="button" disabled={selectedX.busy} onClick={() => void selectedX.refresh()} className="text-blue-700">Refresh messages</button>{selectedX.cursor && <button type="button" disabled={selectedX.busy} onClick={() => void selectedX.older()} className="text-blue-700">Load older messages</button>}</div>{selectedX.error && <p role="alert" className="mt-2 text-red-700">{selectedX.error}</p>}{selectedX.notice && <p role="status" className="mt-2 text-[#667085]">{selectedX.notice}</p>}</div>}
             <div ref={historyRef} className={styles.history} aria-label="Message history" tabIndex={0} onScroll={event => { const element = event.currentTarget; nearBottomRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80; }}>
               {selected.messages.map((message, index) => <div key={message.id}>
@@ -270,19 +319,19 @@ export default function SocialLeadInbox({ calendarId, slug, clientMode = false, 
               {!selected.messages.length && <div className={styles.empty}><MessageSquareText size={28} aria-hidden="true" /><p>{selected.encrypted && selectedX?.busy ? "Loading messages…" : "No messages in this conversation yet."}</p></div>}
             </div>
             {!clientMode ? <form onSubmit={sendReply} className={styles.composer}>
-              {!selected.encrypted && canReply && data && <details className={styles.assistant} key={selected.id}><summary><Sparkles size={14} aria-hidden="true" />AI reply assistant</summary><ReplyDraftAssistant endpoint={endpoint} conversationId={selected.id} defaultTone={normalizeReplyProfile(data.settings.aiReplyProfile).tone} currentDraft={draft} latestInboundId={[...selected.messages].reverse().find(message => message.direction === "INBOUND")?.id} onUseDraft={setDraft} locked={!inboxAccess} /></details>}
+              {!selected.encrypted && canReply && data && <div className={styles.assistant}>
+                <button type="button" className={styles.assistantToggle} aria-expanded={assistantOpen} aria-controls="inbox-reply-assistant" onClick={() => setAssistantOpen(value => !value)}><Sparkles size={14} aria-hidden="true" />AI reply assistant<span aria-hidden="true">{assistantOpen ? "−" : "+"}</span></button>
+                {assistantOpen && <div id="inbox-reply-assistant" className={styles.assistantBody} role="region" aria-label="AI reply assistant controls and draft" tabIndex={0}><ReplyDraftAssistant key={selected.id} endpoint={endpoint} conversationId={selected.id} defaultTone={normalizeReplyProfile(data.settings.aiReplyProfile).tone} currentDraft={draft} latestInboundId={[...selected.messages].reverse().find(message => message.direction === "INBOUND")?.id} onUseDraft={value => { setDraft(value); setAssistantOpen(false); }} locked={!inboxAccess} /></div>}
+              </div>}
+
               <div className={styles.composerBar}><textarea aria-label={`Reply to ${contactName(selected)}`} value={draft} onChange={event => setDraft(event.target.value)} rows={2} disabled={!canReply || sending || !!selectedX?.retry || !!selectedX?.busy} maxLength={2000} placeholder={canReply ? "Write your reply…" : "Replies unavailable"} /><button type="submit" aria-label={selectedX?.retry ? "Retry reply" : "Send reply"} disabled={!canReply || sending || !!selectedX?.busy || (!draft.trim() && !selectedX?.retry)} className={styles.send}><Send size={16} aria-hidden="true" /><span>{sending || selectedX?.busy ? "Sending…" : selectedX?.retry ? "Retry" : "Send"}</span></button></div>
               <p className={styles.composerHint}>{!canReply ? replyUnavailable : selected.encrypted ? "Encrypted on this device. Excluded from shared history and AI." : `Replies sent through ${PLATFORMS[selected.platform]}${selected.connection?.username ? ` · @${selected.connection.username}` : selected.connection?.accountName ? ` · ${selected.connection.accountName}` : ""}.`}</p>
             </form> : <div className={styles.readOnly}>{replyUnavailable}</div>}
           </> : <div className={styles.empty}><span className={styles.emptyIcon}><MessageSquareText size={31} strokeWidth={1.5} aria-hidden="true" /></span><h3>{loading && !data ? "Opening your inbox…" : "A little more room to connect."}</h3><p>{loading && !data ? "Your conversations are on their way." : "Choose a conversation to read messages and keep the conversation going."}</p></div>}
         </div>
       </div>
-      {panel === "settings" && isManager && data && <section ref={panelRef} tabIndex={-1} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); closePanel(); } }} id="inbox-settings-panel" className={styles.settings} aria-label="AI and inbox setup">
-        <div className={styles.settingsHeader}><div><h3>AI & inbox setup</h3><p className="mt-1 text-xs text-[#607898]">Upload business documents and choose what clients can see.</p></div><button type="button" className={styles.button} aria-label="Close AI and inbox setup" onClick={closePanel}><X size={16} aria-hidden="true" /></button></div>
-        <div className={styles.settingsGrid}>
-          <div className={styles.settingsCard}><div className={styles.toggleRow}><div><h4>Client inbox access</h4><p>Let clients read conversations in their portal.</p></div><input aria-label="Allow client inbox access" type="checkbox" checked={data.settings.clientAccessEnabled} disabled={savingSettings || !inboxAccess} onChange={event => void saveSettings({ clientAccessEnabled: event.target.checked })} /></div>{!inboxAccess && <WorkspaceFeatureNotice compact feature="socialInbox" />}</div>
-          <div className={styles.settingsCard}><div className={styles.toggleRow}><div><h4>Automatic AI replies</h4><p>Use your uploaded business knowledge to answer incoming messages.</p></div><input aria-label="Enable AI automatic replies" type="checkbox" checked={data.settings.aiAutoReplyEnabled} disabled={savingSettings || !inboxAccess || !autoRepliesAccess} onChange={event => void saveSettings({ aiAutoReplyEnabled: event.target.checked })} /></div>{!autoRepliesAccess && <WorkspaceFeatureNotice compact feature="aiAutoReplies" />}{calendarId && businessKnowledge && <CustomerCareSettings calendarId={calendarId} knowledge={businessKnowledge} tone={normalizeReplyProfile(data.settings.aiReplyProfile).tone} saving={savingSettings} locked={!inboxAccess} onToneChange={tone => void saveSettings({ aiReplyProfile: { ...normalizeReplyProfile(data.settings.aiReplyProfile), tone } })} />}<p>Automatic replies hand uncertain requests to your team. Encrypted X chats are excluded from AI.</p></div>
-        </div>
+      {panel === "settings" && isManager && data && <section ref={panelRef} tabIndex={-1} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); closePanel(); } }} id="inbox-settings-panel" className={styles.setupPanel} aria-label="AI and inbox setup">
+        <InboxSetupPanel calendarId={calendarId} knowledge={businessKnowledge} settings={data.settings} saving={savingSettings} inboxAccess={inboxAccess} autoRepliesAccess={autoRepliesAccess} onChange={patch => void saveSettings(patch)} onClose={closePanel} />
       </section>}
       {panel === "channels" && canViewChannels && data && <section ref={panelRef} tabIndex={-1} onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); closePanel(); } }} id="inbox-channels-panel" className={styles.settings} aria-label="Channel messaging access">
         <div className={styles.settingsHeader}><div><h3>Channel access</h3><p className="mt-1 text-xs text-[#607898]">Check messaging access for your connected accounts.</p></div><button type="button" className={styles.button} aria-label="Close channel access" onClick={closePanel}><X size={16} aria-hidden="true" /></button></div>

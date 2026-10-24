@@ -33,7 +33,7 @@ const groups = [
     label: "Business",
     links: [
       ["/admin/customers", "Customers", Users],
-      ["/admin/social-calendars", "Content workspaces", CalendarDays],
+      ["/admin/social-calendars", "Marketing workspaces", CalendarDays],
       ["/admin/billing-offers", "Billing benefits", BadgePercent],
       ["/admin/partners", "Partners", Handshake],
     ],

@@ -93,6 +93,12 @@ export default function TikTokPublishing({ calendarId, post }: { calendarId: str
     ? post.tikTokPublishError : null;
   return <section className="my-4 space-y-4 rounded-2xl border border-teal-500/30 p-4 text-sm" aria-label="Post to TikTok">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">Post to TikTok</h3><button type="button" disabled={loading || busy} onClick={() => void load()} className="underline disabled:opacity-50">Refresh account settings</button></div>
+    {approved && status === "NOT_SCHEDULED" && !post.tikTokPublishId && (
+      <div role="status" className="rounded-xl border border-amber-300/40 bg-amber-50 p-3 text-slate-800">
+        <p className="font-semibold">Client approved · TikTok authorization needed</p>
+        <p className="mt-1">Choose the visibility and settings below, accept the publishing declaration, then select Authorize and schedule. Showwork will queue this post for its calendar time. Choose Authorize and publish now to send it now.</p>
+      </div>
+    )}
     {loading && <p role="status">Loading TikTok account and available settings…</p>}
     {creator && <div className="flex items-center gap-3">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={creator.creator_avatar_url} alt="" className="h-10 w-10 rounded-full" /><div><p className="font-semibold">{creator.creator_nickname}</p><p className="opacity-70">@{creator.creator_username}</p></div></div>}
     <p>Publishing: {status.toLowerCase().replaceAll("_", " ")}</p>

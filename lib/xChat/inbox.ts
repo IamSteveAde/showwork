@@ -5,6 +5,9 @@ export type UnifiedInboxConversation = {
   connection: { id?: string; accountName: string | null; username: string | null; status: string } | null;
   messages: UnifiedInboxMessage[];
   replyWindowExpiresAt?: string | null;
+  aiPausedAt?: string | null;
+  aiHandoffReason?: string | null;
+  aiHandoffAcknowledgedAt?: string | null;
   encrypted?: { connectionId: string; conversationId: string };
 };
 export function mergeInboxConversations(saved: UnifiedInboxConversation[], encrypted: UnifiedInboxConversation[], filters: { platform: string; status: string; search: string; unreadOnly: boolean }) {

@@ -12,6 +12,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model AiGenerationJob {
+  id         String   @id @default(uuid())
+  creatorId  String
+  calendarId String
+  status     String   @default("PENDING")
+  request    Json
+  result     Json?
+  httpStatus Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([creatorId, calendarId, createdAt])
+  @@index([status, createdAt])
+}
+
 // ─────────────────────────────────────────────
 // CREATOR — the Spotlite product's customer
 // (auth itself is handled by Supabase Auth; this table
@@ -1690,6 +1705,8 @@ enum CalendarBillingStatus {
 }
 
 model SocialCalendar {
+  // Workspace-wide permission to dispatch queued social posts.
+  autoPublishEnabled Boolean @default(true)
   id           String  @id @default(uuid())
   slug         String  @unique
   clientName   String
@@ -1718,9 +1735,11 @@ model SocialCalendar {
   // need, not an archive of every past version.
   aiBusinessSummary          String?   @db.Text
   aiBusinessSummaryUpdatedAt DateTime?
+  aiBusinessSummarySourceHash String? @db.VarChar(64)
   aiLastResearchedAt         DateTime?
 
   businessDocuments CalendarBusinessDocument[]
+  researchRuns BusinessResearchRun[]
 
   passwordHash String
   accessCode   String?
@@ -1832,6 +1851,24 @@ model CalendarBusinessDocument {
 
   @@unique([calendarId, websiteUrlHash])
   @@index([calendarId])
+}
+
+model BusinessResearchRun {
+  id String @id @default(uuid())
+  calendar SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  calendarId String
+  status String @default("QUEUED")
+  phase String @default("Waiting to research")
+  focus String @db.Text
+  sourceHash String? @db.VarChar(64)
+  result Json?
+  excludedFindingIds String[] @default([])
+  error String? @db.Text
+  createdAt DateTime @default(now())
+  startedAt DateTime?
+  completedAt DateTime?
+  @@index([calendarId, createdAt])
+  @@index([status, createdAt])
 }
 
 enum SocialPlatform {
@@ -1965,16 +2002,38 @@ model SocialLeadConversation {
   participantUsername    String?
   leadStatus             SocialLeadStatus    @default(NEW)
   unreadCount            Int                 @default(0)
+  aiPausedAt             DateTime?
+  aiHandoffReason        String?             @db.Text
+  aiHandoffAcknowledgedAt DateTime?
+  aiControlVersion       Int                 @default(0)
   lastMessagePreview     String?             @db.Text
   lastMessageAt          DateTime?
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
   messages               SocialLeadMessage[]
   crmLead                CalendarLead?
+  handoffNotifications   InboxHandoffNotification[]
 
   @@unique([socialConnectionId, providerConversationId])
   @@index([calendarId, lastMessageAt])
   @@index([calendarId, platform, leadStatus])
+}
+
+model InboxHandoffNotification {
+  id             String @id @default(uuid())
+  conversation   SocialLeadConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  eventVersion   Int
+  recipientId    String
+  sentAt         DateTime?
+  claimedAt      DateTime?
+  attempts       Int @default(0)
+  nextAttemptAt  DateTime @default(now())
+  lastError      String? @db.Text
+  createdAt      DateTime @default(now())
+
+  @@unique([conversationId, eventVersion, recipientId], map: "inbox_handoff_recipient_event_key")
+  @@index([sentAt, nextAttemptAt])
 }
 
 model CalendarLead {

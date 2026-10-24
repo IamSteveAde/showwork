@@ -1,3 +1,4 @@
+import BusinessResearchPanel from "@/components/calendars/BusinessResearchPanel";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -19,7 +20,6 @@ import { canUseContentWorkspaceFeature, isContentWorkspaceTrialActive } from "@/
 import { isAdminEmail } from "@/lib/admin";
 
 import CalendarGrid from "@/components/calendars/CalendarGrid";
-import CalendarPlanStatus from "@/components/calendars/CalendarPlanStatus";
 import InviteCollaboratorForm from "@/components/calendars/InviteCollaboratorForm";
 import CalendarSettingsMenu from "@/components/calendars/CalendarSettingsMenu";
 import CalendarPasswordDisplay from "@/components/calendars/CalendarPasswordDisplay";
@@ -30,7 +30,6 @@ import WhatsAppConnectionCard from "@/components/calendars/WhatsAppConnectionCar
 import BusinessKnowledgeCard from "@/components/calendars/BusinessKnowledgeCard";
 import AiContentGeneratorCard from "@/components/calendars/AiContentGeneratorCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
-import PublishTrigger from "@/components/calendars/PublishTrigger";
 import CalendarWorkspaceShell, { type WorkspaceSection } from "@/components/calendars/CalendarWorkspaceShell";
 import WorkspaceActionButton from "@/components/calendars/WorkspaceActionButton";
 import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
@@ -470,7 +469,7 @@ contentIdea: p.contentIdea,
             {[
               ["Content", calendar.posts.length, "planned across the workspace", "content"],
               ["Ready", contentCount, "posts with creative attached", "content"],
-              ["Approved", approvedCount, "cleared by the client", "publish"],
+              ["Approved", approvedCount, "cleared by the client", "content"],
               ["Team", totalMembers, "people with access", "team"],
             ].map(([label, value, note, icon]) => (
               <WorkspaceActionButton
@@ -918,6 +917,15 @@ contentIdea: p.contentIdea,
             ),
           },
           {
+            id: "research" as const,
+            label: "Research",
+            eyebrow: "AI Studio · research",
+            title: "Evidence for your next move.",
+            description: "Explore findings, follow the sources and decide what informs your content.",
+            group: "AI Studio" as const,
+            content: <BusinessResearchPanel calendarId={calendar.id} canManage={can("knowledge.manage")} />,
+          },
+          {
             id: "generate" as const,
             label: "Generate",
             eyebrow: "AI Studio · create",
@@ -931,35 +939,10 @@ contentIdea: p.contentIdea,
                 <div className="relative">
                   <AiContentGeneratorCard
                     calendarId={calendar.id}
-                    hasBusinessSummary={!!calendar.aiBusinessSummary}
+                    hasBusinessSummary={calendar.businessDocuments.length > 0}
                     performanceRecommendationsAccess={featureAccess("performanceRecommendations")}
                   />
                 </div>
-              </div>
-            ),
-          },
-          {
-            id: "publish" as const,
-            label: "Client delivery",
-            eyebrow: "Client review & delivery",
-            title: "Put the approved plan into the world.",
-            description:
-              "Control the client-facing plan, header and publication state from one focused publishing room.",
-            group: "Publishing" as const,
-            content: (
-              <div
-                id="publish"
-                className="overflow-hidden rounded-[26px] border border-[#DFE6EF] bg-white p-2 shadow-[0_14px_44px_rgba(15,23,42,0.045)]"
-              >
-                <CalendarPlanStatus
-                  calendarId={calendar.id}
-                  planStatus={calendar.planStatus}
-                  planApprovalNote={calendar.planApprovalNote}
-                  headerTitle={calendar.headerTitle}
-                  headerDescription={calendar.headerDescription}
-                  headerBannerDesktopUrl={calendar.headerBannerDesktopUrl}
-                  headerBannerMobileUrl={calendar.headerBannerMobileUrl}
-                />
               </div>
             ),
           },
@@ -972,6 +955,7 @@ contentIdea: p.contentIdea,
     <CalendarPaymentCallbackHandler />
     <CalendarWorkspaceShell
       clientName={calendar.clientName}
+      calendarId={calendar.id}
       clientUrl={can("delivery.manage") ? clientUrl : ""}
       isManager={isManager}
       settings={can("workspace.manage") ?
@@ -982,15 +966,8 @@ contentIdea: p.contentIdea,
           isManager={isOwner}
         /> : undefined
       }
-     publishAction={
-  can("delivery.manage") && workspaceActive ? (
-    <PublishTrigger className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#1768E8] px-4 py-3 text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(23,104,232,0.20)] transition-all hover:-translate-y-0.5 hover:bg-[#125CCF] hover:shadow-[0_14px_30px_rgba(23,104,232,0.24)]">
-      Publish workspace <span aria-hidden><><UiSymbol name="right" /></></span>
-    </PublishTrigger>
-  ) : undefined
-}
       sections={sections.filter(section => {
-        const required: Record<string, TeamPermission> = { overview: "workspace.manage", content: "calendar.view", team: "people.view", analytics: "analytics.view", inbox: "inbox.view", leads: "leads.view", access: "delivery.manage", channels: "channels.view", knowledge: "knowledge.view", generate: "ai.generate", publish: "delivery.manage" };
+        const required: Record<string, TeamPermission> = { overview: "workspace.manage", content: "calendar.view", team: "people.view", analytics: "analytics.view", inbox: "inbox.view", leads: "leads.view", access: "delivery.manage", channels: "channels.view", knowledge: "knowledge.view", research: "knowledge.view", generate: "ai.generate" };
         if (section.id === "overview") return can("workspace.manage") && can("calendar.view") && can("analytics.view") && can("inbox.view") && can("leads.view");
         return can(required[section.id]);
       }).map(section => ({ ...section, content: (

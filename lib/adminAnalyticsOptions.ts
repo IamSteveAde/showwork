@@ -3,7 +3,7 @@ export const ADMIN_TOOLS = {
   delivery: "Project Delivery",
   projects: "Project Management",
   portfolio: "Portfolio",
-  workspace: "Content Workspace",
+  workspace: "Marketing Workspace",
   ai: "AI Assistant",
   community: "Community",
   unattributed: "Unattributed payments",

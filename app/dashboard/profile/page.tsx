@@ -704,7 +704,7 @@ export default async function ProfilePage() {
                   </div>
                 </section>
 
-                {/* CONTENT WORKSPACE */}
+                {/* MARKETING WORKSPACE */}
                 <section className="rounded-[24px] border border-black/[0.07] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.025)] sm:p-6">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
@@ -715,7 +715,7 @@ export default async function ProfilePage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-[16px] font-semibold text-[#101828]">
-                            Content Workspace
+                            Marketing Workspace
                           </h3>
 
                           {workspacePlan && (
@@ -835,7 +835,7 @@ export default async function ProfilePage() {
                     href="/dashboard/calendars"
                     className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-[#2478FF] px-3.5 text-[11px] font-semibold text-white transition hover:bg-[#1769E8]"
                   >
-                    Open Content Workspace
+                    Open Marketing Workspace
                     <ArrowUpRightIcon className="h-3.5 w-3.5" />
                   </Link>
                 </section>
@@ -1013,7 +1013,7 @@ export default async function ProfilePage() {
                 >
                   <div>
                     <p className="text-[11px] font-semibold text-[#344054]">
-                      Content Workspace
+                      Marketing Workspace
                     </p>
 
                     <p className="mt-1 text-[10px] text-[#98A2B3]">
@@ -1103,7 +1103,7 @@ export default async function ProfilePage() {
               ) : (
                 <div className="mt-5 rounded-xl bg-[#F8FAFC] p-4">
                   <p className="text-[11px] font-semibold text-[#344054]">
-                    No active Content Workspace.
+                    No active Marketing Workspace.
                   </p>
 
                   <p className="mt-1 text-[10px] leading-5 text-[#98A2B3]">
@@ -1137,7 +1137,7 @@ export default async function ProfilePage() {
                   className="flex items-center justify-between rounded-xl px-3 py-3 transition hover:bg-white/[0.06]"
                 >
                   <span className="text-[11px] font-medium text-white/75">
-                    Content Workspace
+                    Marketing Workspace
                   </span>
 
                   <ArrowUpRightIcon className="h-3.5 w-3.5 text-white/30" />

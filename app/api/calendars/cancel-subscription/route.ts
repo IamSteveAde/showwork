@@ -5,14 +5,14 @@ import { db } from "@/lib/db";
 import { cancelSubscription } from "@/lib/paystack";
 
 // POST — deliberate, self-service cancellation of the account-level
-// Content Workspace subscription.
+// Marketing Workspace subscription.
 //
 // A deliberate cancellation is different from a failed renewal:
 // - OFFLINE = payment failed
 // - PENDING_SETUP = subscription deliberately cancelled
 //
-// Cancelling the Content Workspace subscription affects the whole
-// Content Workspace product for the account, including all workspaces
+// Cancelling the Marketing Workspace subscription affects the whole
+// Marketing Workspace product for the account, including all workspaces
 // and included AI access.
 export async function POST(req: NextRequest) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/cancel-subscription/route.ts#POST@16")) { return await invokePublishingEntrypoint<never>("app/api/calendars/cancel-subscription/route.ts#POST@16",Array.from(arguments)); } } /* end-canonical-integration-boundary */
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "You don't have an active Content Workspace subscription to cancel",
+          "You don't have an active Marketing Workspace subscription to cancel",
       },
       { status: 400 }
     );
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       );
     } catch (error) {
       console.error(
-        "Failed to cancel Content Workspace subscription with Paystack:",
+        "Failed to cancel Marketing Workspace subscription with Paystack:",
         error
       );
 
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
    *
    * PENDING_SETUP means there is no active paid subscription.
    * The plan itself is retained so that when the customer subscribes
-   * again, we know which Content Workspace plan they were using.
+   * again, we know which Marketing Workspace plan they were using.
    */
   await db.creator.update({
     where: {

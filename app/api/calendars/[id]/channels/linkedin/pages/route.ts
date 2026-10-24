@@ -1,10 +1,9 @@
+import { linkedInCapabilities } from "@/lib/linkedin/capabilities";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
-import { linkedInMessagingAccess } from "@/lib/linkedin/messagingAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { canAccessCalendarById } from "@/lib/calendarPermissions";
 import { freshConnection } from "@/lib/socialTokens";
 import { linkedInPages } from "@/lib/linkedin/pages";
 import { getLinkedInMember } from "@/lib/channelOAuth";
@@ -14,7 +13,7 @@ type Context = { params: Promise<{ id: string }> };
 async function account(context: Context) {
   const creator = await getCurrentCreator();
   const { id } = await context.params;
-  if (!creator || !(await hasCalendarPermission(creator.id, id, "channels.manage")) || !(await canAccessCalendarById(id))) throw new Error("Only a workspace owner or authorized manager can manage LinkedIn Pages.");
+  if (!creator || !(await hasCalendarPermission(creator.id, id, "channels.manage"))) throw new Error("Only a workspace owner or authorized manager can manage LinkedIn Pages.");
   const stored = await db.socialConnection.findFirst({ where: { calendarId: id, platform: "LINKEDIN", status: "CONNECTED" } });
   if (!stored) throw new Error("Connect LinkedIn before choosing a Page.");
   return freshConnection(stored);
@@ -23,15 +22,15 @@ const json = (value: unknown, status = 200) => NextResponse.json(value, { status
 export async function GET(req: NextRequest, context: Context) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return invokePublishingEntrypoint<Response>('app/api/calendars/[id]/channels/linkedin/pages/route.ts#GETcanonical',Array.from(arguments)); } /* end-canonical-integration-boundary */
   try {
-    const connection = await account(context);
     if (req.nextUrl.searchParams.get("capabilities") === "true") {
-      const scopes = new Set((connection.tokenScopes || "").split(/[\s,]+/));
-      const page = connection.platformAccountId.startsWith("urn:li:organization:");
-      return json({ accountType: page ? "Company Page" : "Personal profile",
-        publishing: scopes.has(page ? "w_organization_social" : "w_member_social"),
-        analytics: scopes.has(page ? "rw_organization_admin" : "r_member_postAnalytics"),
-        messaging: linkedInMessagingAccess(connection).available, messagingNote: linkedInMessagingAccess(connection).reason });
+      const creator = await getCurrentCreator();
+      const { id } = await context.params;
+      if (!creator) return json({ error: "Unauthorized" }, 401);
+      if (!await hasCalendarPermission(creator.id, id, "channels.view")) return json({ error: "Access denied." }, 403);
+      const connection = await db.socialConnection.findFirst({ where: { calendarId: id, platform: "LINKEDIN", status: "CONNECTED" } });
+      return json(linkedInCapabilities(connection));
     }
+    const connection = await account(context);
     return json({ pages: await linkedInPages(connection) });
   }
   catch (error) { return json({ error: error instanceof Error ? error.message : "Could not load LinkedIn Pages." }, 400); }

@@ -13,7 +13,9 @@ export async function ingestSocialMessage(connection: SocialConnection, event: I
     });
     const inserted = await tx.socialLeadMessage.createMany({ data: [{ conversationId: conversation.id, providerMessageId: event.messageId, direction: event.outbound ? "OUTBOUND" : "INBOUND", status: event.outbound ? "SENT" : "RECEIVED", text: event.text, platformCreatedAt: event.createdAt, autoReplyEligible: !event.outbound && !!event.autoReplyEligible }], skipDuplicates: true });
     if (!inserted.count) return false;
-    if (!event.outbound) await tx.socialLeadConversation.update({ where: { id: conversation.id }, data: { unreadCount: { increment: 1 } } });
+    if (!event.outbound) await tx.socialLeadConversation.update({ where: { id: conversation.id }, data: {
+      unreadCount: { increment: 1 }, ...(conversation.aiPausedAt ? { aiHandoffAcknowledgedAt: null } : {}),
+    } });
     await tx.socialLeadConversation.updateMany({ where: { id: conversation.id, OR: [{ lastMessageAt: null }, { lastMessageAt: { lte: event.createdAt } }] }, data: { lastMessageAt: event.createdAt, lastMessagePreview: event.text.slice(0, 500), ...(event.name ? { participantName: event.name } : {}), ...(event.username ? { participantUsername: event.username } : {}) } });
     const phone = connection.platform === "WHATSAPP" ? `+${event.participantId}` : undefined;
     if (!event.outbound) await tx.calendarLead.upsert({ where: { socialConversationId: conversation.id }, create: { calendarId: connection.calendarId, socialConversationId: conversation.id, name: event.name || event.username || `${connection.platform} contact`, username: event.username, phone, status: socialStatusToPipeline(conversation.leadStatus), source: "SOCIAL" }, update: { ...(event.name ? { name: event.name } : {}), ...(event.username ? { username: event.username } : {}), ...(phone ? { phone } : {}) } });

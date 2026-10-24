@@ -9,9 +9,7 @@ import { hasCalendarPermission } from "@/lib/calendarPermissions";
 // record and its underlying R2 file.
 //
 // The document's recorded size is also returned to the Content
-// Workspace storage allowance. The AI business summary deliberately
-// remains unchanged because it is a rolling, cumulative understanding
-// built from documents processed over time.
+// Workspace storage allowance. Invalidate the summary so deleted facts cannot remain.
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; documentId: string }> }
@@ -159,6 +157,8 @@ export async function DELETE(
         }
       }
 
+      await tx.socialCalendar.update({ where: { id }, data: { aiBusinessSummary: null, aiBusinessSummarySourceHash: null, aiBusinessSummaryUpdatedAt: null } });
+
       await tx.calendarBusinessDocument.delete({
         where: {
           id: documentId,
@@ -194,7 +194,7 @@ export async function DELETE(
         "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
     ) {
       console.error(
-        `Failed to release Content Workspace storage for business document ${documentId}:`,
+        `Failed to release Marketing Workspace storage for business document ${documentId}:`,
         error
       );
 

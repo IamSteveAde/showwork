@@ -31,7 +31,7 @@ const PORTFOLIO_PLAN_CODE = process.env.PAYSTACK_PORTFOLIO_PLAN_CODE;
 // LEGACY CALENDAR BILLING
 // -----------------------------------------------------------------------------
 // These are intentionally retained for existing legacy subscriptions.
-// New Content Workspace subscriptions do NOT use these plan codes.
+// New Marketing Workspace subscriptions do NOT use these plan codes.
 const CALENDAR_INDIVIDUAL_PLAN_CODE =
   process.env.PAYSTACK_CALENDAR_INDIVIDUAL_PLAN_CODE;
 
@@ -305,7 +305,7 @@ export async function POST(req: NextRequest) {
     const planCode = extractPlanCode(data);
 
     // -------------------------------------------------------------------------
-    // CONTENT WORKSPACE
+    // MARKETING WORKSPACE
     // -------------------------------------------------------------------------
     const contentWorkspacePlan = await getContentWorkspacePlanFromData(data);
 
@@ -331,7 +331,7 @@ export async function POST(req: NextRequest) {
 
       if (!creator) {
         console.error(
-          "Paystack webhook: Content Workspace subscription.create with no matching creator",
+          "Paystack webhook: Marketing Workspace subscription.create with no matching creator",
           {
             creatorId,
             customerEmail,
@@ -341,7 +341,7 @@ export async function POST(req: NextRequest) {
         /*
          * Safety net:
          *
-         * If this account already has a different Content Workspace
+         * If this account already has a different Marketing Workspace
          * subscription, cancel it before accepting the new one.
          *
          * This protects against duplicate active subscriptions when
@@ -361,7 +361,7 @@ export async function POST(req: NextRequest) {
             );
           } catch (err) {
             console.error(
-              "Failed to cancel previous Content Workspace subscription during switch:",
+              "Failed to cancel previous Marketing Workspace subscription during switch:",
               err,
             );
           }
@@ -413,7 +413,7 @@ export async function POST(req: NextRequest) {
 
           if (!reference) {
             console.error(
-              `Paystack webhook: Content Workspace subscription.create for creator ${updated.id} has no payment reference — PaymentRecord not created`,
+              `Paystack webhook: Marketing Workspace subscription.create for creator ${updated.id} has no payment reference — PaymentRecord not created`,
             );
           } else {
             const existingPaymentRecord = await db.paymentRecord.findUnique({
@@ -445,12 +445,12 @@ export async function POST(req: NextRequest) {
           }
         } catch (err) {
           console.error(
-            `Paystack webhook: failed to create PaymentRecord for Content Workspace subscription.create (creator ${updated.id})`,
+            `Paystack webhook: failed to create PaymentRecord for Marketing Workspace subscription.create (creator ${updated.id})`,
             err,
           );
         }
         console.log(
-          "Paystack webhook: Content Workspace subscription activated",
+          "Paystack webhook: Marketing Workspace subscription activated",
           {
             creatorId: updated.id,
             plan,
@@ -796,7 +796,7 @@ export async function POST(req: NextRequest) {
         })
       : null;
     // -------------------------------------------------------------------------
-    // CONTENT WORKSPACE
+    // MARKETING WORKSPACE
     // -------------------------------------------------------------------------
     const contentWorkspacePlan = planCode
       ? await resolveWorkspacePlan(planCode)
@@ -819,7 +819,7 @@ export async function POST(req: NextRequest) {
 
       if (!creator) {
         console.error(
-          `Paystack webhook: Content Workspace renewal charge.success with no matching account (subscription_code: ${subscriptionCode})`,
+          `Paystack webhook: Marketing Workspace renewal charge.success with no matching account (subscription_code: ${subscriptionCode})`,
         );
       } else {
         await db.creator.update({
@@ -842,7 +842,7 @@ export async function POST(req: NextRequest) {
 
           if (!reference) {
             console.error(
-              `Paystack webhook: Content Workspace renewal for creator ${creator.id} has no payment reference — PaymentRecord not created`,
+              `Paystack webhook: Marketing Workspace renewal for creator ${creator.id} has no payment reference — PaymentRecord not created`,
             );
           } else {
             const existingPaymentRecord = await db.paymentRecord.findUnique({
@@ -864,7 +864,7 @@ export async function POST(req: NextRequest) {
           }
         } catch (err) {
           console.error(
-            `Paystack webhook: failed to create PaymentRecord for Content Workspace renewal (creator ${creator.id})`,
+            `Paystack webhook: failed to create PaymentRecord for Marketing Workspace renewal (creator ${creator.id})`,
             err,
           );
         }
@@ -1075,7 +1075,7 @@ export async function POST(req: NextRequest) {
       extractPlanCode(event.data) ?? extractPlanCode(event.data?.subscription);
 
     // -------------------------------------------------------------------------
-    // CONTENT WORKSPACE
+    // MARKETING WORKSPACE
     // -------------------------------------------------------------------------
     const contentWorkspacePlan = planCode
       ? await resolveWorkspacePlan(planCode)
@@ -1109,13 +1109,13 @@ export async function POST(req: NextRequest) {
             });
           } catch (err) {
             console.error(
-              `Failed to send Content Workspace payment-failed email (creator ${creator.id})`,
+              `Failed to send Marketing Workspace payment-failed email (creator ${creator.id})`,
               err,
             );
           }
         } else {
           console.error(
-            `Paystack webhook: Content Workspace invoice.payment_failed with no matching account (subscription_code: ${subscriptionCode})`,
+            `Paystack webhook: Marketing Workspace invoice.payment_failed with no matching account (subscription_code: ${subscriptionCode})`,
           );
         }
       }
@@ -1291,7 +1291,7 @@ export async function POST(req: NextRequest) {
       });
 
       // -----------------------------------------------------------------------
-      // CONTENT WORKSPACE
+      // MARKETING WORKSPACE
       // -----------------------------------------------------------------------
       const contentWorkspaceAccount = !portfolio
         ? await db.creator.findFirst({

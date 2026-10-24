@@ -10,6 +10,15 @@ const APP_URL =
 const FROM =
   process.env.RESEND_FROM_EMAIL ?? "Showwork <onboarding@resend.dev>";
 
+export async function sendInboxHandoffEmail({ to, calendarId, conversationId, notificationId }: { to: string; calendarId: string; conversationId: string; notificationId: string }) {
+  const url = `${APP_URL}/dashboard/calendars/${encodeURIComponent(calendarId)}?view=inbox&conversation=${encodeURIComponent(conversationId)}`;
+  await sendEmail({ from: FROM, to, subject: "A conversation needs your team · Showwork", html: emailShell({
+    eyebrow: "Inbox · Human handoff", headline: "Your team is needed.",
+    body: "An inbox conversation needs a person. Automatic replies are paused until your team explicitly resumes them. Open Showwork to review the reason and continue the conversation. Customer messages and sensitive details are kept out of this email.",
+    ctaLabel: "Open conversation", ctaUrl: url,
+  }) }, `inbox-handoff-${notificationId}`);
+}
+
 const SHOWWORK_LOGO_URL =
   "https://useshowwork.com/images/logo/sw.png";
 
@@ -717,9 +726,9 @@ export async function sendWelcomeEmail({
         ? `Good to have you here, ${firstName}.`
         : "Good to have you here.",
       body: `
-        Showwork helps creators and agencies build portfolios, deliver projects and manage client accounts. Content Workspace brings content, approvals, conversations, leads and analytics together for each client.
+        Showwork helps creators and agencies build portfolios, deliver projects and manage client accounts. Marketing Workspace brings content, approvals, conversations, leads and analytics together for each client.
         <br /><br />
-        Your account is ready. Build a portfolio, create a project delivery or start a client workspace from your dashboard.
+        Your account is ready. Build a portfolio, create a project delivery or start a marketing workspace from your dashboard.
       `,
       detailsHtml: `
         <div style="padding:18px;background:#F6F8FB;border:1px solid #E3E8EF;border-radius:16px;">
@@ -1256,7 +1265,7 @@ export async function sendDiscountGrantedEmail({
 }
 
 /* -------------------------------------------------------------------------- */
-/* CLIENT WORKSPACE / CALENDAR                                                  */
+/* MARKETING WORKSPACE / CALENDAR                                                  */
 /* -------------------------------------------------------------------------- */
 
 export async function sendCalendarInviteEmail({
@@ -1279,9 +1288,9 @@ export async function sendCalendarInviteEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: `${invitedByName} invited you to ${clientName}'s client workspace`,
+    subject: `${invitedByName} invited you to ${clientName}'s marketing workspace`,
     html: emailShell({
-      eyebrow: "Content Workspace · You're invited",
+      eyebrow: "Marketing Workspace · You're invited",
       headline: `${invitedByName} wants you in ${clientName}'s workspace.`,
       body: `
         You've been invited to help create and manage content for <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> on Showwork.
@@ -1289,7 +1298,7 @@ export async function sendCalendarInviteEmail({
         Everything you need for the client stays together — content, feedback, approvals and the people working on it.
       `,
       detailsHtml: `
-        ${infoBox("Client workspace", clientName)}
+        ${infoBox("Marketing workspace", clientName)}
         <div style="margin-top:14px;padding:15px 17px;background:#F4F8FF;border:1px solid #D8E7FF;border-radius:14px;">
           <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#344054;">
             Your role: ${escapeHtml(roleLabel || "Creative Contributor")}. You can review your assigned feature access before joining.
@@ -1329,7 +1338,7 @@ export async function sendCalendarPostReviewedEmail({
         ? `${clientName} approved the latest content.`
         : `${clientName} has feedback on the latest content.`,
       body: `
-        A new client review has landed in the <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> client workspace.
+        A new client review has landed in the <strong style="color:#FFFFFF;">${escapeHtml(clientName)}</strong> marketing workspace.
         ${approved ? "The post has been approved." : "Take a look at the note and keep the next revision moving."}
       `,
       detailsHtml: note
@@ -1338,7 +1347,7 @@ export async function sendCalendarPostReviewedEmail({
             <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.65;color:${approved ? "#166534" : "#7C2D12"};">“${escapeHtml(note)}”</p>
           </div>`
         : infoBox("Workspace", clientName, approved ? "#16A34A" : "#F97316"),
-      ctaLabel: "Open client workspace",
+      ctaLabel: "Open marketing workspace",
       ctaUrl: calendarUrl,
       heroImage: true,
       accent: approved ? "#16A34A" : "#F97316",
@@ -1362,8 +1371,8 @@ export async function sendCalendarPostResubmittedEmail({
     html: emailShell({
       eyebrow: "Ready for review",
       headline: `${clientName} has updated content for you.`,
-      body: `The changes you requested have been made. Open your client workspace to review the updated post and approve it or request another revision.`,
-      detailsHtml: infoBox("Client workspace", clientName, "#2478FF"),
+      body: `The changes you requested have been made. Open your marketing workspace to review the updated post and approve it or request another revision.`,
+      detailsHtml: infoBox("Marketing workspace", clientName, "#2478FF"),
       ctaLabel: "Review updated content",
       ctaUrl: clientUrl,
       heroImage: true,
@@ -1382,13 +1391,13 @@ export async function sendCalendarPaymentFailedEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Payment failed — your Content Workspace is offline",
+    subject: "Payment failed — your Marketing Workspace is offline",
     html: emailShell({
-      eyebrow: "Content Workspace · Payment issue",
-      headline: "Your client workspaces need your attention.",
+      eyebrow: "Marketing Workspace · Payment issue",
+      headline: "Your marketing workspaces need your attention.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your recurring Content Workspace payment didn't go through, so the workspaces covered by that subscription are currently offline.
+        Your recurring Marketing Workspace payment didn't go through, so the workspaces covered by that subscription are currently offline.
         <br /><br />
         Your content is not deleted. Resolve the billing issue and pick up where you left off.
       `,
@@ -1402,7 +1411,7 @@ export async function sendCalendarPaymentFailedEmail({
       ctaLabel: "Open billing",
       ctaUrl: `${APP_URL}/dashboard/billing?product=content-workspace#content-workspace-plans`,
       accent: "#F97316",
-      footer: "Billing notice from Showwork Content Workspace.",
+      footer: "Billing notice from Showwork Marketing Workspace.",
     }),
   });
 }
@@ -1436,13 +1445,13 @@ export async function sendCalendarTrial2DaysLeftEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "2 days left on your Showwork Content Workspace trial",
+    subject: "2 days left on your Showwork Marketing Workspace trial",
     html: emailShell({
-      eyebrow: "Content Workspace · 2 days left",
+      eyebrow: "Marketing Workspace · 2 days left",
       headline: "Your trial is almost at the finish line.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        You have <strong style="color:#FFFFFF;">2 days left</strong> on your free Content Workspace trial.
+        You have <strong style="color:#FFFFFF;">2 days left</strong> on your free Marketing Workspace trial.
         <br /><br />
         Keep your client work moving without interruption by choosing your plan before the trial ends.
       `,
@@ -1474,9 +1483,9 @@ export async function sendCalendarTrialFollowUpEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Content Workspace trial ends tomorrow",
+    subject: "Your Marketing Workspace trial ends tomorrow",
     html: emailShell({
-      eyebrow: "Content Workspace · Tomorrow",
+      eyebrow: "Marketing Workspace · Tomorrow",
       headline: "Still thinking about it?",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
@@ -1511,13 +1520,13 @@ export async function sendCalendarTrialEndsTodayEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork Content Workspace trial ends today",
+    subject: "Your Showwork Marketing Workspace trial ends today",
     html: emailShell({
-      eyebrow: "Content Workspace · Ends today",
+      eyebrow: "Marketing Workspace · Ends today",
       headline: "Today is the last day of your trial.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your free Content Workspace trial ends today.
+        Your free Marketing Workspace trial ends today.
         <br /><br />
         Subscribe now and keep your client work accessible without interruption.
       `,
@@ -1549,13 +1558,13 @@ export async function sendCalendarTrialEndedEmail({
   await sendEmail({
     from: FROM,
     to,
-    subject: "Your Showwork Content Workspace trial has ended",
+    subject: "Your Showwork Marketing Workspace trial has ended",
     html: emailShell({
-      eyebrow: "Content Workspace · Trial ended",
+      eyebrow: "Marketing Workspace · Trial ended",
       headline: "Your work is still here. Your trial has simply ended.",
       body: `
         Hi ${escapeHtml(firstNameOf(name) ?? "there")},<br /><br />
-        Your free trial has ended and your Content Workspace access is currently locked until you subscribe.
+        Your free trial has ended and your Marketing Workspace access is currently locked until you subscribe.
         <br /><br />
         Your content hasn't gone anywhere. Subscribe and everything can continue from where you left off.
       `,
@@ -1650,9 +1659,9 @@ export async function sendPartnerCommissionEarnedEmail({
 
   const paymentLabel =
     paymentType === "CONTENT_WORKSPACE_SUBSCRIPTION_INITIAL"
-      ? "Content Workspace subscription"
+      ? "Marketing Workspace subscription"
       : paymentType === "CONTENT_WORKSPACE_SUBSCRIPTION_RENEWAL"
-        ? "Content Workspace renewal"
+        ? "Marketing Workspace renewal"
         : paymentType === "SUBSCRIPTION_INITIAL"
           ? "Showwork subscription"
           : paymentType === "SUBSCRIPTION_RENEWAL"
@@ -1969,7 +1978,7 @@ export async function sendPartnerWelcomeEmail({
           </p>
 
           <p style="margin:0 0 11px;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
-            <strong>1 month complimentary Content Workspace Studio access</strong> has been added to your account.
+            <strong>1 month complimentary Marketing Workspace Studio access</strong> has been added to your account.
           </p>
 
           <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#344054;">
@@ -2028,7 +2037,7 @@ export async function sendBillingBenefitEmail(input: BillingBenefitEmail, idempo
   const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" });
   const products = [
     ...(input.product !== "CONTENT_WORKSPACE" ? [`Project Delivery · ${input.deliveryTier ? deliveryNames[input.deliveryTier] : "all eligible paid plans"}`] : []),
-    ...(input.product !== "DELIVERY" ? [`Content Workspace · ${input.workspacePlan ? CONTENT_WORKSPACE_PLANS[input.workspacePlan as keyof typeof CONTENT_WORKSPACE_PLANS].name : "all eligible paid plans"}`] : []),
+    ...(input.product !== "DELIVERY" ? [`Marketing Workspace · ${input.workspacePlan ? CONTENT_WORKSPACE_PLANS[input.workspacePlan as keyof typeof CONTENT_WORKSPACE_PLANS].name : "all eligible paid plans"}`] : []),
   ];
   const terms = stopped
     ? (free ? "This complimentary grant has ended. Any other active benefits and paid subscriptions remain available according to their terms." : "This offer is no longer available for new activation. Discounts already activated keep their agreed terms.")

@@ -13,7 +13,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const featureLock = await calendarFeatureGate(calendarId, "socialInbox");
   if (featureLock) return featureLock;
 
-  const body = await req.json().catch(() => null) as { leadStatus?: unknown; markRead?: unknown } | null;
+  const body = await req.json().catch(() => null) as { leadStatus?: unknown; markRead?: unknown; aiAction?: unknown } | null;
+  if (body?.aiAction !== undefined) {
+    if (typeof body.aiAction !== "string" || !["takeover", "resume"].includes(body.aiAction)) return NextResponse.json({ error: "Choose a valid handoff action." }, { status: 400 });
+    const resume = body.aiAction === "resume";
+    const now = new Date();
+    const updated = await db.$transaction(async tx => {
+      const result = await tx.socialLeadConversation.updateMany({
+        where: { id: conversationId, calendarId },
+        data: {
+          aiPausedAt: resume ? null : now,
+          aiHandoffReason: resume ? null : "A team member took over this conversation.",
+          aiHandoffAcknowledgedAt: resume ? null : now,
+          aiControlVersion: { increment: 1 },
+        },
+      });
+      if (result.count) await tx.socialLeadMessage.updateMany({
+        where: { conversationId, direction: "INBOUND", autoReplyEligible: true, autoReplyHandledAt: null },
+        data: { autoReplyHandledAt: now, autoReplyClaimedAt: null, autoReplyHandoffReason: resume ? "Earlier messages were handled by the team. AI resumes on the next incoming message." : "The team is handling this conversation." },
+      });
+      return result;
+    });
+    if (!updated.count) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
+    return NextResponse.json({ ok: true });
+  }
   if (body?.markRead === true) {
     const updated = await db.socialLeadConversation.updateMany({ where: { id: conversationId, calendarId }, data: { unreadCount: 0 } });
     if (!updated.count) return NextResponse.json({ error: "Conversation not found." }, { status: 404 });

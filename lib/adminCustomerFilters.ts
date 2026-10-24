@@ -2,7 +2,7 @@ export const CUSTOMER_PRODUCTS = {
   all: "All products",
   delivery: "Project Delivery",
   portfolio: "Portfolio",
-  workspace: "Content Workspace",
+  workspace: "Marketing Workspace",
   ai: "AI Assistant",
   unattributed: "Unattributed payments",
 } as const;

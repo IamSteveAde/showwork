@@ -39,7 +39,7 @@ export const metadata: Metadata = {
       "Build a portfolio, deliver projects and manage client content, approvals, conversations, leads and analytics. Showwork is built for creators, agencies and social media teams.",
     url: "/",
     locale: "en_NG",
-    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and client workspaces" }],
+    images: [{ url: "/images/work.jpg", width: 1200, height: 630, alt: "Showwork portfolios, project delivery and marketing workspaces" }],
   },
   twitter: {
     card: "summary_large_image",

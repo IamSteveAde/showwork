@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Moon, Sun } from "lucide-react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
 import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
 import ClientCalendarView from "@/components/calendars/ClientCalendarView";
@@ -311,19 +312,12 @@ export default function ClientCalendarWorkspace({
   );
   const [previewPostId, setPreviewPostId] = useState<string>();
   const [calendarVisited, setCalendarVisited] = useState(false);
-  const [activeView, setActiveView] = useState<WorkspaceView>("overview");
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const validViews: WorkspaceView[] = ["overview", "calendar", "instagram", "tiktok", "linkedin", "facebook", "x", "review", "analytics"];
+  const activeView: WorkspaceView = validViews.includes(requestedView as WorkspaceView)
+    ? requestedView as WorkspaceView : "overview";
   useEffect(() => { if (activeView === "calendar") setCalendarVisited(true); }, [activeView]);
-
-  useEffect(() => {
-    const syncView = () => {
-      const view = new URLSearchParams(window.location.search).get("view");
-      const valid = ["overview", "calendar", "instagram", "tiktok", "linkedin", "facebook", "x", "review", "analytics"];
-      setActiveView(valid.includes(view || "") ? view as WorkspaceView : "overview");
-    };
-    syncView();
-    window.addEventListener("popstate", syncView);
-    return () => window.removeEventListener("popstate", syncView);
-  }, []);
 
   // Keyboard navigation makes the workspace feel like an application rather than
   // a collection of page anchors.
@@ -373,11 +367,10 @@ export default function ClientCalendarWorkspace({
 
   const navigate = (view: WorkspaceView) => {
     setMobileOpen(false);
-    setActiveView(view);
     const url = new URL(window.location.href);
     if (url.searchParams.get("view") !== view) {
       url.searchParams.set("view", view);
-      window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     contentScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -481,7 +474,7 @@ export default function ClientCalendarWorkspace({
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
             <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
-              Client workspace
+              Marketing workspace
             </p>
           </div>
           {themeToggle}
@@ -490,7 +483,7 @@ export default function ClientCalendarWorkspace({
 
       </header>
 
-      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Client workspace" className="bg-[rgb(var(--client-panel))] text-[rgb(var(--client-ink))]">{sidebar}</MobileDrawer>
+      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Marketing workspace" className="bg-[rgb(var(--client-panel))] text-[rgb(var(--client-ink))]">{sidebar}</MobileDrawer>
 
       <div className="flex min-h-screen lg:h-full lg:min-h-0">
         {/* Persistent desktop navigation */}
@@ -499,7 +492,7 @@ export default function ClientCalendarWorkspace({
         </aside>
 
         {/* Everything below stays mounted. Only the active workspace view changes. */}
-        <section ref={contentScrollRef} aria-label="Client workspace content" tabIndex={0} className="min-w-0 flex-1 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+        <section ref={contentScrollRef} aria-label="Marketing workspace content" tabIndex={0} className="min-w-0 flex-1 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
           <header className="sticky top-0 z-30 hidden h-[68px] items-center border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/90 px-6 backdrop-blur-2xl lg:flex xl:px-9">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
@@ -560,7 +553,7 @@ export default function ClientCalendarWorkspace({
               <div className="max-w-4xl">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--client-ink))]/[0.09] bg-black/30 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--client-muted))] backdrop-blur-xl">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#43E097] shadow-[0_0_10px_rgba(67,224,151,0.65)]" />
-                  Client content workspace
+                  Marketing workspace
                 </div>
                 <h1 className="mt-5 max-w-3xl text-[2.2rem] font-semibold leading-[1] tracking-[-0.055em] text-[rgb(var(--client-ink))] sm:text-5xl xl:text-6xl">
                   {displayTitle}

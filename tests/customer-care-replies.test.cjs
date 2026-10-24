@@ -34,6 +34,24 @@ function fakeModel(value, capture = () => {}) {
   return load('lib/openai.ts').generateSocialInboxAutoReply;
 }
 const generationInput = extra => ({ clientName: 'Studio', businessSummary: 'General business facts', instructions: null, profile: profile(), conversation: [{ direction: 'INBOUND', text: 'I need portraits in Lagos on Friday.', createdAt: '2026-10-02T10:00:00Z' }], latestInbound: 'How much is the portrait package?', ...extra });
+test('reply model is independent of the batch model and supports a dedicated override', async () => {
+  const general = process.env.OPENAI_MODEL;
+  const reply = process.env.OPENAI_REPLY_MODEL;
+  try {
+    process.env.OPENAI_MODEL = 'batch-model';
+    delete process.env.OPENAI_REPLY_MODEL;
+    let body;
+    const generate = fakeModel({ shouldReply: true, replyText: 'Hello!', handoffReason: null }, value => { body = value; });
+    await generate(generationInput());
+    assert.equal(body.model, 'gpt-4.1-mini');
+    process.env.OPENAI_REPLY_MODEL = 'reply-override';
+    await generate(generationInput());
+    assert.equal(body.model, 'reply-override');
+  } finally {
+    if (general === undefined) delete process.env.OPENAI_MODEL; else process.env.OPENAI_MODEL = general;
+    if (reply === undefined) delete process.env.OPENAI_REPLY_MODEL; else process.env.OPENAI_REPLY_MODEL = reply;
+  }
+});
 test('profiles default legacy settings and reject invalid or oversized input', () => {
   const api = profileApi();
   assert.equal(api.normalizeReplyProfile(null).tone, 'professional');
@@ -92,7 +110,7 @@ function draftRoute({ signedIn = true, authorized = true, active = true, quotaAl
     { id: 'earlier', direction: 'INBOUND', text: 'Friday in Lagos', platformCreatedAt: new Date('2026-10-02T10:00:00Z') },
   ] } : override;
   const db = { socialLeadConversation: { findFirst: async args => { calls.push({ db: args }); return conversation; } }, socialInboxSettings: { findUnique: async () => ({ aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis.' }) } };
-  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
+  const mod = load('app/api/calendars/[id]/inbox/[conversationId]/draft/route.ts', { '@/lib/knowledge/context': { getBusinessKnowledgeContext: async () => 'Facts from current documents' }, '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 500 }) },
     '@/lib/auth': { getCurrentCreator: async () => signedIn ? ({ id: 'creator' }) : null }, '@/lib/db': { db },
     '@/lib/calendarPermissions': { calendarFeatureGate: async () => null, hasCalendarPermission: async (...args) => { assert.equal(args[2], 'inbox.reply'); return authorized; }, canAccessCalendarById: async () => active },
     '@/lib/openai': { generateSocialInboxAutoReply: async args => { calls.push({ ai: args }); return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } },
@@ -138,11 +156,11 @@ function workerFixture({ superseded = false, answered = false, quotaAllowed = tr
       { id: 'inbound', direction: 'INBOUND', status: 'RECEIVED', text: 'How much?', platformCreatedAt: time },
     ],
   } };
-  const db = { socialInboxSettings: { findMany: async () => [{ calendarId: 'workspace' }], findUnique: async () => ({ aiAutoReplyEnabled: true, aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis' }) },
-    socialLeadMessage: { findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => updates.push(args.data) },
+  const db = { socialLeadConversation: { findUniqueOrThrow: async () => ({ aiPausedAt: null, aiControlVersion: 0 }) }, socialInboxSettings: { findMany: async () => [{ calendarId: 'workspace' }], findUnique: async () => ({ aiAutoReplyEnabled: true, aiReplyProfile: profile(), aiAutoReplyInstructions: 'No emojis' }) },
+    socialLeadMessage: { findFirst: async () => null, findMany: async () => [inbound], updateMany: async () => ({ count: 1 }), update: async args => updates.push(args.data) },
     $transaction: async fn => fn({ socialLeadMessage: { createMany: async () => ({count:1}), update: async args => updates.push(args.data) }, socialLeadConversation: { update: async () => {} } }),
   };
-  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
+  const api = load('lib/socialMessaging/autoReply.ts', { '@/lib/knowledge/context': { getBusinessKnowledgeContext: async () => 'Facts from current documents' }, '@/lib/socialMessaging/handoffNotifications': { deliverHandoffNotifications: async () => {} }, '@/lib/contentWorkspaceUsage': { consumeCalendarAiGeneration: async () => ({ allowed: quotaAllowed, limit: 2000 }) }, '@/lib/calendarPermissions': { canUseCalendarFeature: async () => true }, '@/lib/db': { db }, '@/lib/openai': { generateSocialInboxAutoReply: async input => { generated=input; return { shouldReply: true, replyText: 'NGN 50,000.', handoffReason: null }; } }, '@/lib/socialMessaging/whatsapp': { whatsappAutoReplyHandoff: async () => null }, '@/lib/socialMessaging/registry': { supportsMessaging: () => true, sendSocialInboxMessage: async () => { sent++; return 'sent-id'; } } });
   return { ...api, updates, getGenerated: () => generated, getSent: () => sent };
 }
 test('automatic replies use saved tone and business facts with the customer identity', async () => {

@@ -29,7 +29,7 @@ function resolveBillingCycle(
   return fallback === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 }
 
-// POST — switches to any lower Content Workspace plan after checking its workspace limit.
+// POST — switches to any lower Marketing Workspace plan after checking its workspace limit.
 export async function POST(req: NextRequest) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { if (!nativePolicyExecutionAllowed("app/api/calendars/downgrade-to-individual/route.ts#POST@32")) { return await invokePublishingEntrypoint<never>("app/api/calendars/downgrade-to-individual/route.ts#POST@32",Array.from(arguments)); } } /* end-canonical-integration-boundary */
 
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace Creator Paystack plan code is not configured:",
+      "Marketing Workspace Creator Paystack plan code is not configured:",
       error
     );
 
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === "BILLING_QUOTE_CHANGED") return NextResponse.json({ error: "Your offer changed. Refresh the price and confirm again." }, { status: 409 });
     console.error(
-      "Content Workspace Creator downgrade checkout initialize error:",
+      "Marketing Workspace Creator downgrade checkout initialize error:",
       error
     );
 

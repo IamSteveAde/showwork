@@ -1,0 +1,60 @@
+.panel { border: 1px solid #dce4ef; border-radius: 22px; overflow: hidden; background: #f8fafc; box-shadow: 0 12px 40px -30px #17376150; color: #203653; }
+.header { display: flex; align-items: center; gap: 16px; padding: 26px 28px; background: radial-gradient(ellipse at 100% 0, #e7eeff, transparent 60%), #fff; border-bottom: 1px solid #e3e9f2; }
+.headerIcon { flex-shrink: 0; display: grid; place-items: center; width: 49px; height: 49px; border: 1px solid #d2dff5; border-radius: 16px; background: #edf3ff; color: #3266b6; }
+.headerCopy { flex: 1; min-width: 0; }
+.eyebrow { font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .12em; color: #7b8a9f; }
+.headerCopy h3 { font-size: clamp(20px, 2.2vw, 26px); line-height: 1.2; letter-spacing: -.04em; font-weight: 550; margin-top: 5px; }
+.headerCopy > p:last-child { font-size: 12px; line-height: 1.7; color: #75859b; margin-top: 7px; }
+.close { display: grid; place-items: center; align-self: start; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: #ffffffb0; border: 1px solid #dde5f0; color: #6a7d96; }
+.layout { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); align-items: start; gap: 26px; padding: 26px 28px; }
+.controls, .knowledgeColumn { min-width: 0; }
+.sectionLabel { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 600; letter-spacing: .015em; color: #6d7e96; margin-bottom: 13px; }
+.sectionLabel > span { font-size: 9px; color: #8b9cb3; font-variant-numeric: tabular-nums; }
+.controlCard, .voiceCard, .knowledgeCard { border: 1px solid #e0e7f0; border-radius: 15px; background: #fff; }
+.controlCard { padding: 19px; }
+.controlRow { display: flex; align-items: start; gap: 12px; }
+.controlIcon, .bookIcon { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px; background: #f0f3f8; color: #6f839f; }
+.aiIcon { background: #eef2ff; color: #6d72b7; }
+.controlCopy { flex: 1; min-width: 0; }
+.controlCopy h4 { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; font-size: 13px; line-height: 1.5; font-weight: 600; }
+.controlCopy p { font-size: 11px; line-height: 1.8; color: #7c8ba0; margin-top: 4px; }
+.controlDivider { height: 1px; background: #edf0f5; margin: 19px 0; }
+.pill { font-size: 8px; line-height: 1; padding: 4px 6px; color: #7c8ba0; border-radius: 5px; background: #f1f4f8; font-weight: 650; }
+.enabled { color: #357c65; background: #eaf6ef; }
+.switch { position: relative; flex-shrink: 0; display: inline-flex; width: 36px; height: 44px; margin-top: -5px; align-items: center; cursor: pointer; }
+.switch input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.switch > span { pointer-events: none; display: block; width: 36px; height: 21px; border-radius: 30px; background: #d9e0ea; transition: background .15s; }
+.switch > span::after { content: ''; display: block; width: 15px; height: 15px; margin: 3px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0002; transition: transform .15s; }
+.switch input:checked + span { background: #2869d5; }
+.switch input:checked + span::after { transform: translateX(15px); }
+.switch input:focus-visible + span { outline: 3px solid #a7c7fa; outline-offset: 4px; }
+.switch input:disabled { cursor: not-allowed; }
+.switch input:disabled + span { opacity: .5; }
+.voiceCard { margin-top: 16px; padding: 20px; background: linear-gradient(125deg, #fff, #f7f8ff); }
+.voiceHeader { display: flex; justify-content: space-between; gap: 14px; color: #8588b0; }
+.voiceHeader h4 { font-size: 15px; line-height: 1.4; letter-spacing: -.02em; font-weight: 550; margin-top: 5px; color: #354661; }
+.fieldLabel { display: block; font-size: 10px; font-weight: 600; color: #6e7b91; margin: 19px 0 7px; }
+.select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #d9e0ee; border-radius: 9px; background: #fff; color: #3f526f; font-size: 12px; }
+.select:disabled { opacity: .6; }
+.toneDescription { margin-top: 8px; min-height: 32px; font-size: 11px; line-height: 1.7; color: #7b88a0; }
+.voiceFoot { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 9px; color: #8d97ab; }
+.safeguard { display: flex; gap: 10px; padding: 16px 3px 0; color: #8596a9; }
+.safeguard svg { flex-shrink: 0; margin-top: 2px; }
+.safeguard p { font-size: 10px; line-height: 1.8; }
+.safeguard strong { font-weight: 600; color: #62798c; }
+.knowledgeCard { padding: 21px; }
+.knowledgeHeader { display: flex; gap: 12px; align-items: center; }
+.bookIcon { width: 40px; height: 40px; background: #eaf3ee; color: #668976; }
+.knowledgeHeader h4 { font-size: 15px; font-weight: 550; letter-spacing: -.025em; }
+.knowledgeHeader p { font-size: 10px; line-height: 1.6; margin-top: 4px; color: #8a96a5; }
+.knowledgeFoot { display: flex; align-items: center; gap: 7px; font-size: 9px; line-height: 1.7; color: #909eac; padding-top: 15px; margin-top: 15px; border-top: 1px solid #edf0f4; }
+.knowledgeFoot svg { flex-shrink: 0; }
+.knowledgeEmpty { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 35px 15px; font-size: 12px; color: #8595aa; }
+.footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 13px 28px; border-top: 1px solid #e3e9f2; font-size: 9px; color: #8b9aad; background: #fff; }
+.footer > span:first-child { display: inline-flex; align-items: center; gap: 6px; color: #648674; }
+.savingDot { width: 5px; height: 5px; border-radius: 50%; background: #b3914d; }
+.close:focus-visible, .select:focus-visible { outline: 3px solid #9fc3fb; outline-offset: 3px; }
+.close:hover { background: #edf3fb; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 23px; } }
+@media (max-width: 600px) { .header { padding: 20px; gap: 11px; align-items: start; } .headerIcon { display: none; } .headerCopy h3 { font-size: 21px; } .layout { padding: 20px; } .controlCard, .voiceCard, .knowledgeCard { padding: 16px; } .footer { padding: 13px 20px; } .footer > span:last-child { display: none; } }
+@media (prefers-reduced-motion: reduce) { .switch > span, .switch > span::after { transition: none; } }

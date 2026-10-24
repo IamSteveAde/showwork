@@ -1,4 +1,5 @@
 "use client";
+import { readCalendarJson } from "@/lib/calendarReadRequests";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -21,11 +22,11 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
   const [accessToken, setAccessToken] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const load = useCallback(async () => {
+  const load = useCallback(async (fresh = false) => {
     setLoading(true);
     try {
-      const response = await calendarMutationFetch(endpoint, { cache: "no-store" });
-      const data = await response.json();
+      const response = await readCalendarJson(endpoint, fresh);
+      const data = response.data;
       if (!response.ok) throw new Error(data.error || "Could not load WhatsApp connection.");
       setConfigured(data.configured);
       setConnection(data.connection);

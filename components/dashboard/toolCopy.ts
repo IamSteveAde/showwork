@@ -1,7 +1,7 @@
 // Shared wording keeps dashboard and signup tool choices aligned.
 export const TOOL_COPY = {
   workspace: {
-    product: "Client Workspace",
+    product: "Marketing Workspace",
     title: "Plan. Approve. Publish.",
     description: "AI content, client approvals, conversations, leads, and insights. One space per client.",
     createAction: "Create a workspace",

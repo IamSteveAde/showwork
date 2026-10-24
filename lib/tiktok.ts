@@ -31,6 +31,8 @@ function requireAppCredentials() {
 
 // user.info.basic — for the account's display name/username.
 // video.publish — the actual Direct Post permission.
+// The Live app now supports account statistics and public video analytics.
+// Keep Direct Post permission alongside analytics when reconnecting.
 export const TIKTOK_OAUTH_SCOPES = "user.info.basic,user.info.stats,video.list,video.publish";
 
 /** Builds the TikTok authorization page URL the manager is redirected to. */

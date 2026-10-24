@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runScheduledAiBusinessResearch } from "@/lib/aiResearchScheduler";
 
+export const maxDuration = 180;
+
 // POST — runs the weekly AI business research check once. Protected
 // by the same shared secret (CRON_SECRET) as every other scheduled
 // job in this app.

@@ -107,7 +107,7 @@ export async function POST(
     return NextResponse.json({ error: "This post is already publishing or published and cannot be reviewed again." }, { status: 409 });
   }
   const connection = await db.socialConnection.findFirst({ where: { calendarId: calendar.id, platform: post.platform, status: "CONNECTED" } });
-  const canSchedule = approved && !post.isAiDraft && !!connection && PUBLISHING_PLATFORMS.includes(post.platform) && post.platform !== "TIKTOK";
+  const canSchedule = calendar.autoPublishEnabled !== false && approved && !post.isAiDraft && !!connection && PUBLISHING_PLATFORMS.includes(post.platform) && post.platform !== "TIKTOK";
   if (canSchedule) {
     try {
       validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType);
@@ -115,7 +115,7 @@ export async function POST(
     } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content" }, { status: 400 }); }
   }
   const updatedCount = await db.calendarPost.updateMany({
-    where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, publishingStatus(post)) },
+    where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, publishingStatus(post)), ...(canSchedule ? { calendar: { autoPublishEnabled: true } } : {}) },
     data: {
       approvalStatus: approved ? "APPROVED" : "NEEDS_REVISION",
       approvalNote: approved ? null : typeof note === "string" ? note.trim() || null : null,

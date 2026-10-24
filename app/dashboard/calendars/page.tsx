@@ -183,9 +183,9 @@ export default async function CalendarsPage({
           <svg className={styles.heroArt} viewBox="0 0 660 460" fill="none" aria-hidden="true">
             {Array.from({ length: 10 }, (_, i) => <path key={i} d={`M${80 + i * 32} -50 C${-120 + i * 24} 200 ${680 + i * 15} 60 ${320 + i * 30} 500`} stroke="#a7caff" strokeWidth="1" />)}
           </svg>
-          <div><p className={styles.eyebrow}>One client. One space.</p><h1>Client workspaces</h1><p>Content, approvals, and conversations. Keep every client moving.</p></div>
+          <div><p className={styles.eyebrow}>One client. One space.</p><h1>Marketing workspaces</h1><p>Content, approvals, and conversations. Keep every client moving.</p></div>
           <div className={styles.heroStats}>
-            <div><strong>{totalCalendars.toString().padStart(2, "0")}</strong><span>{totalCalendars === 1 ? "Client workspace" : "Client workspaces"}</span></div>
+            <div><strong>{totalCalendars.toString().padStart(2, "0")}</strong><span>{totalCalendars === 1 ? "Marketing workspace" : "Marketing workspaces"}</span></div>
             <div><strong className={styles.plan}>{planName}</strong><span>{billingSummary || "Choose your plan"}</span></div>
           </div>
         </header>
@@ -207,7 +207,7 @@ export default async function CalendarsPage({
         <section
           data-onboarding="create-workspace"
           className={styles.create}
-          aria-label="Create a client workspace"
+          aria-label="Create a marketing workspace"
         >
           <div className={styles.createIntro}>
             <span className={styles.createIcon}><Users size={20} aria-hidden="true" /></span>
@@ -248,7 +248,7 @@ export default async function CalendarsPage({
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]"
                   />
                   <input
-                    aria-label="Search client workspaces"
+                    aria-label="Search marketing workspaces"
                     name="q"
                     defaultValue={query}
                     placeholder="Search clients"
@@ -307,7 +307,7 @@ export default async function CalendarsPage({
           )}
           {totalPages > 1 && (
             <nav
-              aria-label="Client workspace pagination"
+              aria-label="Marketing workspace pagination"
               className="mt-5 flex items-center justify-between gap-2 border-t border-[#E4E7EC] pt-4"
             >
               <Link
@@ -372,7 +372,7 @@ export default async function CalendarsPage({
             </div>
           </section>
         )}
-        <footer className={styles.footer}><span>Showwork / Client Workspace</span><Link href="/dashboard">Back to your dashboard</Link></footer>
+        <footer className={styles.footer}><span>Showwork / Marketing Workspace</span><Link href="/dashboard">Back to your dashboard</Link></footer>
         <WorkspaceOnboarding
           isFirstWorkspace={totalCalendars === 0}
           hasExistingPlan={Boolean(billing?.contentWorkspacePlan)}

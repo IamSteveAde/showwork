@@ -111,7 +111,7 @@ export default function ShowworkSupport() {
   return (
     <>
       {/* Desktop / tablet edge control */}
-      <div
+      <div data-showwork-support="true"
         className={`
           fixed right-0 top-1/2 z-[90]
           hidden -translate-y-1/2 sm:block
@@ -251,7 +251,7 @@ export default function ShowworkSupport() {
       </div>
 
       {/* Mobile edge control */}
-      <div
+      <div data-showwork-support="true"
         className="
           fixed right-0 top-1/2 z-[90]
           -translate-y-1/2

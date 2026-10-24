@@ -1,3 +1,4 @@
+import DashboardResources from "@/components/dashboard/DashboardResources";
 import { TOOL_COPY } from "@/components/dashboard/toolCopy";
 import WorkspaceCard from "@/components/dashboard/WorkspaceCard";
 import workspaceStyles from "@/components/dashboard/WorkspaceCard.module.css";
@@ -8,9 +9,6 @@ import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
 import { isAdminEmail } from "@/lib/admin";
-
-const COMMUNITY_URL =
-  "https://chat.whatsapp.com/GVRHGFaFW5Z0yOOWbWmrn0?mode=gi_t";
 
 /* -------------------------------------------------------------------------- */
 /*                                  HELPERS                                   */
@@ -463,36 +461,14 @@ export default async function DashboardPage() {
           </div>
           <div className={workspaceStyles.heroAside}>
             <p className={workspaceStyles.asideLabel}>Your workspace at a glance</p>
-            <div className={workspaceStyles.statusRow}><span>Client Workspace</span><b>{calendar ? "Ready to open" : "Ready to create"}</b></div>
+            <div className={workspaceStyles.statusRow}><span>Marketing Workspace</span><b>{calendar ? "Ready to open" : "Ready to create"}</b></div>
             <div className={workspaceStyles.statusRow}><span>Project Delivery</span><b>{projectCount} {projectCount === 1 ? "project" : "projects"}</b></div>
             <div className={workspaceStyles.statusRow}><span>Portfolio</span><b>{portfolio ? "Created" : "Free to create"}</b></div>
             <p className={workspaceStyles.asideFoot}>Start where you need us.<br />The rest is here when you’re ready.</p>
           </div>
         </section>
         <BillingBenefits creator={creator} />
-        <div className={workspaceStyles.resources}>
-          <section className={workspaceStyles.resource} aria-label="Optional Client Workspace tutorial">
-            <p className={workspaceStyles.resourceLabel}>A little guidance</p>
-            <details>
-              <summary>Meet your Client Workspace</summary>
-              <p>Optional tour for social media managers: planning, approvals, and publishing.</p>
-              <iframe className={workspaceStyles.resourceVideo} loading="lazy" src="https://www.youtube.com/embed/2UFJNWqFnxQ" title="Showwork Content Workspace tutorial" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
-            </details>
-            <p>Get familiar with your tools, at your own pace.</p>
-          </section>
-          <section className={workspaceStyles.resource}>
-            <p className={workspaceStyles.resourceLabel}>Good company</p>
-            <h2>Creative work, shared.</h2>
-            <p>Find your people in Creativo. Exchange ideas with other creators building their businesses.</p>
-            <a href={COMMUNITY_URL} target="_blank" rel="noopener noreferrer" className={workspaceStyles.resourceAction}>Join on WhatsApp <ArrowUpRightIcon /><span className="sr-only">Opens in a new tab</span></a>
-          </section>
-          <section className={workspaceStyles.resource}>
-            <p className={workspaceStyles.resourceLabel}>A real helping hand</p>
-            <h2>Let’s find your starting point.</h2>
-            <p>Tell us what you’re working on. Our team will help you choose the right tool.</p>
-            <a href="https://wa.me/2347018819588?text=Hello%20Showwork%2C%20I%27d%20like%20help%20choosing%20where%20to%20start." target="_blank" rel="noopener noreferrer" className={workspaceStyles.resourceAction}>Talk to our team <ArrowUpRightIcon /><span className="sr-only">Opens WhatsApp in a new tab</span></a>
-          </section>
-        </div>
+        <DashboardResources />
         <footer className={workspaceStyles.footer}>
           <div className="flex items-center gap-4"><Logo /><span>A little more room to create.</span></div>
           <div className={workspaceStyles.footerLinks}><Link href="/dashboard/profile">Account</Link><Link href="/dashboard/billing">Billing</Link><a href="mailto:hello@useshowwork.com">Support</a></div>

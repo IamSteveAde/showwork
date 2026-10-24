@@ -44,7 +44,7 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return rows[0] ?? null;
   }
   async function scheduledWorkExists() {
-    const rows = await query<{ needed: boolean }[]>(Prisma.sql`SELECT EXISTS(SELECT 1 FROM "CalendarPost" p WHERE p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND p."postDate"<=clock_timestamp() AT TIME ZONE 'UTC'
+    const rows = await query<{ needed: boolean }[]>(Prisma.sql`SELECT EXISTS(SELECT 1 FROM "CalendarPost" p WHERE p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled") AND p."postDate"<=clock_timestamp() AT TIME ZONE 'UTC'
       AND (p.platform='INSTAGRAM' AND p."instagramPublishStatus"='SCHEDULED' OR p.platform='TIKTOK' AND p."tikTokPublishStatus"='SCHEDULED' OR p.platform IN ('FACEBOOK','LINKEDIN','X') AND p."publishStatus"='SCHEDULED')) AS needed`);
     return !!rows[0]?.needed;
   }
@@ -73,7 +73,7 @@ export function createReliablePublishingStore(database: Database, options: { dat
       unlocked AS MATERIALIZED (SELECT j.id FROM "PublishingJob" j JOIN requested r ON r.id=j.id FOR UPDATE OF j SKIP LOCKED)
       UPDATE "PublishingJob" j SET phase='PREPARED',"workerToken"=r.token,"workerUntil"=clock_timestamp()+interval '3 minutes',"consumerSlot"=${consumer?.id ?? null},"consumerEpoch"=${consumer?.epoch ?? null},"consumerOwner"=${consumer?.owner ?? null},"updatedAt"=clock_timestamp()
       FROM requested r,unlocked u,"CalendarPost" p WHERE j.id=r.id AND j.id=u.id AND p.id=j."postId" AND p.platform=j.platform AND p."updatedAt"=j.lease
-        AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND p."publishWorkerStartedAt" IS NULL
+        AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled") AND p."publishWorkerStartedAt" IS NULL
         AND CASE WHEN p.platform='INSTAGRAM' THEN p."instagramPublishStatus"::text WHEN p.platform='TIKTOK' THEN p."tikTokPublishStatus"::text ELSE p."publishStatus"::text END='PUBLISHING'
         AND ${consumerGuard(consumer)} AND j."availableAt"<=clock_timestamp() AND (j.phase='READY' OR j.phase='PREPARED' AND j."workerUntil"<=clock_timestamp() AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id=j."consumerSlot" AND c.owner=j."consumerOwner" AND c.epoch=j."consumerEpoch" AND c."leaseUntil">clock_timestamp()))
       RETURNING j.id,j."postId",j.platform,j.lease,j.phase,j."workerToken"`, consumer);
@@ -140,13 +140,13 @@ export function createReliablePublishingStore(database: Database, options: { dat
     return budget(l ? "admission" : "worker", async tx => tx.$queryRaw<DurableJob[]>(Prisma.sql`
       WITH operation AS (INSERT INTO "PublishingAdmission"(id,platform) VALUES(${admissionId},${platform}::"SocialPlatform") ON CONFLICT DO NOTHING RETURNING id),
       candidates AS (SELECT p.id,p."updatedAt" FROM "CalendarPost" p WHERE EXISTS(SELECT 1 FROM operation)
-        AND p.platform=${platform}::"SocialPlatform" AND p.${status}='SCHEDULED' AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft"
+        AND p.platform=${platform}::"SocialPlatform" AND p.${status}='SCHEDULED' AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled")
         AND (${onlyPostId ?? null}::text IS NULL OR p.id=${onlyPostId ?? null})
         AND NOT EXISTS(SELECT 1 FROM "PublishingJob" j WHERE j."postId"=p.id AND j.platform=p.platform AND j.phase<>'CANCELLED')
         AND p."postDate"<=(${now}::timestamptz AT TIME ZONE 'UTC') ORDER BY p."postDate",p.id LIMIT ${limit} FOR UPDATE OF p SKIP LOCKED),
       claimed AS (UPDATE "CalendarPost" p SET ${status}='PUBLISHING',"publishWorkerStartedAt"=NULL,
         "updatedAt"=GREATEST(date_trunc('milliseconds',clock_timestamp() AT TIME ZONE 'UTC'),p."updatedAt"+interval '1 millisecond')
-        FROM candidates c WHERE p.id=c.id AND p."updatedAt"=c."updatedAt" AND p.${status}='SCHEDULED' AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft"
+        FROM candidates c WHERE p.id=c.id AND p."updatedAt"=c."updatedAt" AND p.${status}='SCHEDULED' AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled")
         RETURNING p.id,p.platform,p."updatedAt"),
       jobs AS (INSERT INTO "PublishingJob"(id,"admissionId","postId",platform,lease,phase)
         SELECT ${admissionId}||':'||c.id,${admissionId},c.id,c.platform,c."updatedAt",'READY' FROM claimed c
@@ -161,6 +161,7 @@ export function createReliablePublishingStore(database: Database, options: { dat
     field(platform);
     if (!Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error("Invalid worker batch size");
     return query<DurableJob[]>(Prisma.sql`SELECT id,"postId",platform,lease,phase,"workerToken" FROM "PublishingJob" WHERE platform=${platform}::"SocialPlatform"
+      AND EXISTS (SELECT 1 FROM "CalendarPost" p JOIN "SocialCalendar" w ON w.id=p."calendarId" WHERE p.id="PublishingJob"."postId" AND w."autoPublishEnabled")
       AND "availableAt"<=clock_timestamp() AND (phase='READY' OR phase='PREPARED' AND "workerUntil"<=clock_timestamp() AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id="PublishingJob"."consumerSlot" AND c.owner="PublishingJob"."consumerOwner" AND c.epoch="PublishingJob"."consumerEpoch" AND c."leaseUntil">clock_timestamp())) ORDER BY "createdAt",id LIMIT ${limit}`);
   }
   async function readyFair(rotation = 0) {
@@ -169,7 +170,8 @@ export function createReliablePublishingStore(database: Database, options: { dat
     // Five index-supported oldest-job selections share one control query.
     return query<DurableJob[]>(Prisma.sql`SELECT j.* FROM unnest(ARRAY[${Prisma.join(order)}]::"SocialPlatform"[]) WITH ORDINALITY AS p(platform,n)
       CROSS JOIN LATERAL (SELECT id,"postId",platform,lease,phase,"workerToken" FROM "PublishingJob" WHERE platform=p.platform
-        AND "availableAt"<=clock_timestamp() AND (phase='READY' OR phase='PREPARED' AND "workerUntil"<=clock_timestamp() AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id="PublishingJob"."consumerSlot" AND c.owner="PublishingJob"."consumerOwner" AND c.epoch="PublishingJob"."consumerEpoch" AND c."leaseUntil">clock_timestamp())) ORDER BY "createdAt",id LIMIT 1) j ORDER BY p.n`);
+        AND EXISTS (SELECT 1 FROM "CalendarPost" p JOIN "SocialCalendar" w ON w.id=p."calendarId" WHERE p.id="PublishingJob"."postId" AND w."autoPublishEnabled")
+      AND "availableAt"<=clock_timestamp() AND (phase='READY' OR phase='PREPARED' AND "workerUntil"<=clock_timestamp() AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id="PublishingJob"."consumerSlot" AND c.owner="PublishingJob"."consumerOwner" AND c.epoch="PublishingJob"."consumerEpoch" AND c."leaseUntil">clock_timestamp())) ORDER BY "createdAt",id LIMIT 1) j ORDER BY p.n`);
   }
   async function readLiveAuthorization(job: DurableJob, connectionId?: string) {
     // A fixed read-only autocommit snapshot; it does not consume an interactive
@@ -252,7 +254,7 @@ export function createReliablePublishingStore(database: Database, options: { dat
         CROSS JOIN LATERAL (SELECT COALESCE(j."accountId",CASE WHEN j.platform='TIKTOK' THEN p."tikTokConsentAccountId" ELSE
           (SELECT s."platformAccountId" FROM "SocialConnection" s WHERE s."calendarId"=p."calendarId" AND s.platform=j.platform AND s.status='CONNECTED' ORDER BY s.id LIMIT 1) END,
           CASE WHEN j.platform='INSTAGRAM' THEN c."instagramAccountId" END,p.id) AS account) a
-        WHERE j.platform=r.platform AND j."availableAt"<=clock_timestamp() AND (j.phase='READY' OR j.phase='PREPARED' AND j."workerUntil"<=clock_timestamp()
+        WHERE c."autoPublishEnabled" AND j.platform=r.platform AND j."availableAt"<=clock_timestamp() AND (j.phase='READY' OR j.phase='PREPARED' AND j."workerUntil"<=clock_timestamp()
           AND NOT EXISTS(SELECT 1 FROM "PublishingConsumerLease" x WHERE x.id=j."consumerSlot" AND x.owner=j."consumerOwner" AND x.epoch=j."consumerEpoch" AND x."leaseUntil">clock_timestamp()))
           AND NOT EXISTS(SELECT 1 FROM "PublishingAccountLease" l WHERE l.platform=j.platform AND l."accountId"=a.account AND l."leaseUntil">clock_timestamp())
         ORDER BY a.account,j."createdAt",j.id) candidates ORDER BY candidates."createdAt",candidates.id LIMIT 2) j
@@ -266,14 +268,20 @@ export function createReliablePublishingStore(database: Database, options: { dat
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#beginExternal@243"); } /* end-canonical-integration-boundary */
 
     const status = field(job.platform);
-    return transition<{ id: string }[]>(Prisma.sql`WITH locked AS MATERIALIZED (SELECT * FROM "PublishingJob" WHERE id=${job.id} FOR UPDATE),
+    const result = await transition<{ id: string }[]>(Prisma.sql`WITH locked AS MATERIALIZED (SELECT * FROM "PublishingJob" WHERE id=${job.id} FOR UPDATE),
       stamp AS (SELECT date_trunc('milliseconds',clock_timestamp() AT TIME ZONE 'UTC') AS started),marked AS (
       UPDATE "CalendarPost" p SET "publishWorkerStartedAt"=stamp.started,"tikTokInitStartedAt"=CASE WHEN ${tikTokInit} AND p.platform='TIKTOK' THEN stamp.started ELSE p."tikTokInitStartedAt" END FROM locked j,stamp
       WHERE ${consumerGuard(consumer)} AND j.id=${job.id} AND j.phase='PREPARED' AND j."workerToken"=${token} AND (j."workerUntil">clock_timestamp() OR EXISTS(SELECT 1 FROM "PublishingConsumerLease" c WHERE c.id=j."consumerSlot" AND c.owner=j."consumerOwner" AND c.epoch=j."consumerEpoch" AND c."leaseUntil">clock_timestamp()))
         AND p.id=j."postId" AND p.platform=j.platform AND p."updatedAt"=j.lease AND p.${status}='PUBLISHING'
-        AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND p."publishWorkerStartedAt" IS NULL AND (NOT ${tikTokInit} OR p."tikTokInitStartedAt" IS NULL) RETURNING p.id)
+        AND p."approvalStatus"='APPROVED' AND NOT p."isAiDraft" AND EXISTS (SELECT 1 FROM "SocialCalendar" w WHERE w.id=p."calendarId" AND w."autoPublishEnabled") AND p."publishWorkerStartedAt" IS NULL AND (NOT ${tikTokInit} OR p."tikTokInitStartedAt" IS NULL) RETURNING p.id)
       UPDATE "PublishingJob" SET phase='EXTERNAL_PENDING',"accountId"=COALESCE(${accountId ?? null},"accountId"),"startedAt"=stamp.started,"workerUntil"=clock_timestamp()+interval '14 minutes',"updatedAt"=clock_timestamp() FROM stamp
       WHERE id=${job.id} AND "workerToken"=${token} AND EXISTS(SELECT 1 FROM marked) RETURNING id`, consumer);
+    if (!result.length) {
+      const paused = await query<{ paused: boolean }[]>(Prisma.sql`SELECT NOT c."autoPublishEnabled" AS paused
+        FROM "CalendarPost" p JOIN "SocialCalendar" c ON c.id=p."calendarId" WHERE p.id=${job.postId}`);
+      if (paused[0]?.paused) throw new PublishingDeferred("Automatic publishing is paused for this workspace.");
+    }
+    return result;
   }
   async function finish(job: DurableJob, token: string, remoteId: string, reportingComplete = false) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { await assertLegacyPublishingAllowed("lib/publishing/reliableStore.ts#finish@254"); } /* end-canonical-integration-boundary */

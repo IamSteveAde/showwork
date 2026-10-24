@@ -140,7 +140,7 @@ export async function runCalendarTrialEmailCheck() {
       }
     } catch (err) {
       console.error(
-        `Content Workspace trial email check failed for creator ${creator.id}:`,
+        `Marketing Workspace trial email check failed for creator ${creator.id}:`,
         err
       );
 

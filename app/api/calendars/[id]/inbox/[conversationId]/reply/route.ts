@@ -4,6 +4,7 @@ import { getCurrentCreator } from "@/lib/auth";
 import { canAccessCalendarById, hasCalendarPermission } from "@/lib/calendarPermissions";
 import { db } from "@/lib/db";
 import { sendSocialInboxMessage, supportsMessaging } from "@/lib/socialMessaging/registry";
+import { MetaMessagingWindowClosedError } from "@/lib/socialMessaging/meta";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string; conversationId: string }> }) {
   const creator = await getCurrentCreator();
@@ -27,6 +28,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
   const now = new Date();
   try {
+    // A staff reply is a takeover, including while an AI draft is in flight.
+    await db.socialLeadConversation.update({ where: { id: conversationId }, data: {
+      aiPausedAt: conversation.aiPausedAt || now,
+      aiHandoffReason: conversation.aiHandoffReason || "A team member replied. AI stays paused until explicitly resumed.",
+      aiHandoffAcknowledgedAt: now,
+      aiControlVersion: { increment: 1 },
+    } });
     const providerMessageId = await sendSocialInboxMessage({
       connection: conversation.connection,
       instagramPageId: conversation.calendar.instagramPageId,
@@ -50,6 +58,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Could not send this reply.";
     await db.socialLeadMessage.create({ data: { conversationId, direction: "OUTBOUND", status: "FAILED", text, platformCreatedAt: now, sentByCreatorId: creator.id, sendError: reason.slice(0, 1500) } }).catch(() => undefined);
+    if (error instanceof MetaMessagingWindowClosedError) {
+      return NextResponse.json({ error: reason, code: error.code }, { status: 409 });
+    }
     return NextResponse.json({ error: reason }, { status: 502 });
   }
 }

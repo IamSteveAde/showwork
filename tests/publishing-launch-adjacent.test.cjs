@@ -31,7 +31,7 @@ test('auxiliary refresh preserves identity, returns no capability, and rejects r
 test('business-document deletion retains native authorization scope and delegates cleanup',async()=>{
  const boundary=load('lib/publishing/applicationBoundary.ts');const entry='app/api/calendars/[id]/business-documents/[documentId]/route.ts#DELETE@14';
  const removed=[],data={id:'doc',calendarId:'calendar',fileKey:'calendars/calendar/business-documents/one',sizeBytes:5n,calendar:{managerId:'owner'}};
- const db={calendarBusinessDocument:{findUnique:async()=>data,delete:async()=>removed.push('row')},contentWorkspaceUsage:{updateMany:async()=>({count:1})},$transaction:async fn=>fn(db)};
+ const db={socialCalendar:{update:async({data})=>{assert.equal(data.aiBusinessSummary,null);assert.equal(data.aiBusinessSummarySourceHash,null);}},calendarBusinessDocument:{findUnique:async()=>data,delete:async()=>removed.push('row')},contentWorkspaceUsage:{updateMany:async()=>({count:1})},$transaction:async fn=>fn(db)};
  const route=load('app/api/calendars/[id]/business-documents/[documentId]/route.ts',{'@/lib/auth':{getCurrentCreator:async()=>({id:'owner'})},'@/lib/db':{db},'@/lib/calendarPermissions':{hasCalendarPermission:async()=>true},'@/lib/r2':{deleteObject:async key=>removed.push(key)}});
  const uninstall=boundary.installDisabledPublishingApplication({host:'NEXT',publishingEnabled:false,invoke:async()=>{throw Error('RECURSIVE_ROUTE');}});
  try{const result=await boundary.runNativePublishingPolicy(entry,()=>route.DELETE(new Request('https://synthetic.invalid'),{params:Promise.resolve({id:'calendar',documentId:'doc'})}));assert.equal(result.status,200);assert.deepEqual(removed,[data.fileKey,'row']);}finally{uninstall();}
@@ -57,7 +57,7 @@ test('legacy upsert callers divert to canonical routes or retired factories; int
 test('trial notifications and AI research no longer need publication authority',async()=>{
  const deny={publishingIntegrationInstalled:()=>{throw Error('UNEXPECTED_PUBLICATION_AUTH');}};
  let writes=0;
- const research=load('lib/aiResearchScheduler.ts',{'@/lib/publishing/applicationBoundary':deny,'@/lib/db':{db:{socialCalendar:{findMany:async()=>[{id:'calendar',manager:{},clientName:'synthetic',aiBusinessSummary:'old'}],update:async({data})=>{assert.deepEqual(Object.keys(data).sort(),['aiBusinessSummary','aiBusinessSummaryUpdatedAt','aiLastResearchedAt']);writes++;}}}},'@/lib/openai':{runWeeklyBusinessResearch:async()=> 'new'},'@/lib/contentWorkspaceUsage':{canAccessContentWorkspace:()=>true}});
+ const research=load('lib/aiResearchScheduler.ts',{'@/lib/publishing/applicationBoundary':deny,'@/lib/db':{db:{socialCalendar:{findMany:async()=>[{id:'calendar',manager:{},clientName:'synthetic'}]},businessResearchRun:{findUnique:async()=>({status:'SUCCEEDED'})}}},'@/lib/knowledge/research':{queueBusinessResearch:async()=>({id:'run'}),executeBusinessResearch:async()=>{writes++;}},'@/lib/contentWorkspaceUsage':{canAccessContentWorkspace:()=>true}});
  assert.equal((await research.runScheduledAiBusinessResearch()).researched,1);assert.equal(writes,1);
  const emails=load('lib/calendarTrialEmails.ts',{'@/lib/publishing/applicationBoundary':deny,'@/lib/db':{db:{creator:{findMany:async()=>[]}}},'@/lib/resend':{}});assert.equal((await emails.runCalendarTrialEmailCheck()).checked,0);
 });
