@@ -196,3 +196,25 @@ test('a stale Prisma client returns a controlled unavailable error before any te
   await assert.rejects(service.teamAccess('owner', 'workspace'), error => error.status === 503 && /temporarily unavailable|outdated Prisma client/.test(error.message));
   assert.equal(lookups, 0);
 });
+
+test('internal review defaults to owners and managers, and is explicitly delegable except to viewers', async () => {
+ const key='internal_review.manage';
+ for(const role of ['MANAGER','SOCIAL_MEDIA_MANAGER','CREATIVE_CONTRIBUTOR','INBOX_AGENT','VIEWER','EDIT_CALENDAR','ADD_CONTENT','VIEW_ONLY']){
+  const f=accessFixture(role);
+  assert.equal(await f.api.hasCalendarPermission('member','workspace',key),role==='MANAGER');
+  assert.equal(await f.api.hasCalendarPermission('owner','workspace',key),true);
+ }
+ for(const role of ['SOCIAL_MEDIA_MANAGER','CREATIVE_CONTRIBUTOR','INBOX_AGENT']){
+  const permissions=policy.toggleTeamPermission([...policy.TEAM_ROLES[role].defaults],key,true);
+  assert.ok(permissions.includes('calendar.view'));
+  assert.ok(!('error' in policy.validateTeamAssignment({role,permissions,customPermissions:true})));
+  assert.equal(await accessFixture(role,permissions,true).api.hasCalendarPermission('member','workspace',key),true);
+ }
+ const revoked=policy.toggleTeamPermission(policy.TEAM_ROLES.MANAGER.defaults,key,false);
+ assert.equal(await accessFixture('MANAGER',revoked,true).api.hasCalendarPermission('member','workspace',key),false);
+ for(const role of ['VIEWER','VIEW_ONLY']){
+  assert.ok('error' in policy.validateTeamAssignment({role,permissions:['calendar.view',key],customPermissions:true}));
+  assert.ok(!policy.effectiveTeamPermissions(role,['calendar.view',key],true).includes(key));
+ }
+ assert.ok(!policy.effectiveTeamPermissions('MANAGER',[key],true).includes(key));
+});

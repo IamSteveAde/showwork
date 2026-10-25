@@ -12,13 +12,10 @@ export async function POST(req: NextRequest, context: {params: Promise<{id: stri
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({error:'Unauthorized'}, {status:401});
   const {id, postId} = await context.params;
-  const canDeliver = await hasCalendarPermission(creator.id,id,'delivery.manage');
-  const canComment = canDeliver || await hasCalendarPermission(creator.id,id,'creatives.upload') || await hasCalendarPermission(creator.id,id,'calendar.edit');
-  if (!canComment) return NextResponse.json({error:'You do not have permission for internal reviews.'},{status:403});
+  if (!await hasCalendarPermission(creator.id,id,'internal_review.manage')) return NextResponse.json({error:'You do not have permission for internal reviews.'},{status:403});
 
   try {
     const decision = internalReviewInput(await req.json());
-    if (decision.status !== undefined && !canDeliver) return NextResponse.json({error:'You do not have permission to approve internal reviews.'},{status:403});
     const post = await db.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "CalendarPost" WHERE id=${postId} AND "calendarId"=${id} FOR UPDATE`;
       const current = await tx.calendarPost.findFirst({where:{id:postId,calendarId:id}});

@@ -3,6 +3,7 @@ export const TEAM_PERMISSIONS = {
   'calendar.edit': { label: 'Plan and edit content', group: 'Content' },
   'creatives.upload': { label: 'Upload creatives to planned posts', group: 'Content' },
   'publishing.manage': { label: 'Publish to social channels', group: 'Content' },
+  'internal_review.manage': { label: 'Internal review (feedback and approval)', group: 'Content' },
   'delivery.manage': { label: 'Deliver content for client review', group: 'Content' },
   'analytics.view': { label: 'View analytics and reports', group: 'Insights' },
   'analytics.manage': { label: 'Sync and analyze performance', group: 'Insights' },
@@ -26,9 +27,9 @@ const SOCIAL: TeamPermission[] = ['calendar.view', 'calendar.edit', 'creatives.u
 export const TEAM_ROLES: Record<TeamRole, { label: string; description: string; defaults: readonly TeamPermission[]; allowed: readonly TeamPermission[] }> = {
   OWNER: { label: 'Owner', description: 'Owns the workspace, billing, and all access decisions.', defaults: ALL_TEAM_PERMISSIONS, allowed: ALL_TEAM_PERMISSIONS },
   MANAGER: { label: 'Manager', description: 'Runs this workspace, its team, channels, and business knowledge. Billing and ownership stay with the owner.', defaults: ALL_TEAM_PERMISSIONS, allowed: ALL_TEAM_PERMISSIONS },
-  SOCIAL_MEDIA_MANAGER: { label: 'Social Media Manager', description: 'Plans content, delivers it for client review, publishes, and tracks results.', defaults: SOCIAL, allowed: [...SOCIAL, 'inbox.view', 'inbox.reply', 'leads.view', 'leads.manage'] },
-  CREATIVE_CONTRIBUTOR: { label: 'Creative Contributor', description: 'Views planned content and uploads creative assets. Cannot edit the calendar or publish.', defaults: ['calendar.view', 'creatives.upload'], allowed: ['calendar.view', 'creatives.upload'] },
-  INBOX_AGENT: { label: 'Inbox Agent', description: 'Reads and replies to messages only. No calendar, leads, reports, documents, or team access.', defaults: ['inbox.view', 'inbox.reply'], allowed: ['inbox.view', 'inbox.reply'] },
+  SOCIAL_MEDIA_MANAGER: { label: 'Social Media Manager', description: 'Plans content, delivers it for client review, publishes, and tracks results.', defaults: SOCIAL, allowed: [...SOCIAL, 'internal_review.manage', 'inbox.view', 'inbox.reply', 'leads.view', 'leads.manage'] },
+  CREATIVE_CONTRIBUTOR: { label: 'Creative Contributor', description: 'Views planned content and uploads creative assets. Cannot edit the calendar or publish.', defaults: ['calendar.view', 'creatives.upload'], allowed: ['calendar.view', 'creatives.upload', 'internal_review.manage'] },
+  INBOX_AGENT: { label: 'Inbox Agent', description: 'Reads and replies to messages. Calendar viewing and internal review can be granted separately.', defaults: ['inbox.view', 'inbox.reply'], allowed: ['inbox.view', 'inbox.reply', 'calendar.view', 'internal_review.manage'] },
   VIEWER: { label: 'Viewer', description: 'Reads the selected areas without making changes.', defaults: ['calendar.view'], allowed: ['calendar.view', 'analytics.view', 'inbox.view', 'leads.view', 'knowledge.view', 'channels.view'] },
 };
 export const INVITABLE_TEAM_ROLES = ['MANAGER', 'SOCIAL_MEDIA_MANAGER', 'CREATIVE_CONTRIBUTOR', 'INBOX_AGENT', 'VIEWER'] as const;
@@ -39,6 +40,7 @@ export function normalizeTeamRole(role: string): TeamRole | null {
   return Object.hasOwn(TEAM_ROLES, role) ? role as TeamRole : null;
 }
 const DEPENDENCIES: Partial<Record<TeamPermission, TeamPermission>> = {
+  'internal_review.manage': 'calendar.view',
   'calendar.edit': 'calendar.view', 'creatives.upload': 'calendar.view', 'publishing.manage': 'calendar.view', 'delivery.manage': 'calendar.view',
   'workspace.manage': 'calendar.view', 'analytics.manage': 'analytics.view', 'inbox.reply': 'inbox.view', 'leads.manage': 'leads.view', 'people.manage': 'people.view', 'channels.manage': 'channels.view', 'knowledge.manage': 'knowledge.view', 'ai.generate': 'calendar.edit',
 };

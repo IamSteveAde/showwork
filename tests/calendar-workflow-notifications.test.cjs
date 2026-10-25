@@ -16,8 +16,8 @@ test('recipients include owner, managers and creative roles, deduplicate and res
  const {workflowRecipients}=load('lib/calendarReviewNotifications.ts');
  const row=(role,email,extra={})=>({role,email,owner:false,permissions:[],customPermissions:false,...extra});
  assert.deepEqual(workflowRecipients([
-  row('OWNER','Owner@example.test',{owner:true}),row('MANAGER','manager@example.test'),row('SOCIAL_MEDIA_MANAGER','social@example.test'),row('CREATIVE_CONTRIBUTOR','designer@example.test'),row('ADD_CONTENT','designer@example.test'),row('EDIT_CALENDAR','legacy@example.test'),row('VIEWER','viewer@example.test'),row('INBOX_AGENT','inbox@example.test'),row('MANAGER','restricted@example.test',{customPermissions:true,permissions:['calendar.view']}),
- ]),['owner@example.test','manager@example.test','social@example.test','designer@example.test','legacy@example.test']);
+  row('INBOX_AGENT','reviewer@example.test',{customPermissions:true,permissions:['calendar.view','internal_review.manage']}),row('OWNER','Owner@example.test',{owner:true}),row('MANAGER','manager@example.test'),row('SOCIAL_MEDIA_MANAGER','social@example.test'),row('CREATIVE_CONTRIBUTOR','designer@example.test'),row('ADD_CONTENT','designer@example.test'),row('EDIT_CALENDAR','legacy@example.test'),row('VIEWER','viewer@example.test'),row('INBOX_AGENT','inbox@example.test'),row('MANAGER','restricted@example.test',{customPermissions:true,permissions:['calendar.view']}),
+ ]),['reviewer@example.test','owner@example.test','manager@example.test','social@example.test','designer@example.test','legacy@example.test']);
 });
 test('notifications retry per recipient after commit and report failures without undoing the review',async()=>{
  const calls=[];let retry=0;
@@ -40,11 +40,11 @@ test('email escapes private feedback, links to exact post and uses stable recipi
 test('feedback requires a note and preserves approval state rather than granting approval',()=>{
  const {internalReviewInput}=load('lib/calendarInternalReview.ts');assert.throws(()=>internalReviewInput({action:'feedback',version:0,note:''}));assert.equal(internalReviewInput({action:'feedback',version:0,note:'Please check the typography'}).status,undefined);
 });
-test('legacy API lets designers leave feedback but reserves approval for reviewers and sends only after commit',async()=>{
- for(const [role,action,expected] of [['designer','feedback',200],['designer','approve',403],['manager','approve',200]]) {
+test('legacy API requires explicit internal review access for feedback and approval and sends only after commit',async()=>{
+ for(const [role,action,expected] of [['designer','feedback',403],['designer','approve',403],['manager','approve',200],['manager','feedback',200],['reviewer','feedback',200],['reviewer','approve',200]]) {
   let committed=false,notifications=0;const current={id:'post',calendarId:'workspace',approvalStatus:'PENDING',internalReviewStatus:'PENDING',internalReviewVersion:0,internalReviewedBy:'original-reviewer',internalReviewedAt:'2026-10-24T00:00:00Z',assets:[],videoComments:[],customFields:[]};
   const {POST}=load('app/api/calendars/[id]/posts/[postId]/internal-review/route.ts',{
-   '@/lib/auth':{getCurrentCreator:async()=>({id:role})},'@/lib/calendarPermissions':{hasCalendarPermission:async(_actor,_calendar,permission)=>role==='manager'||permission==='creatives.upload'},
+   '@/lib/auth':{getCurrentCreator:async()=>({id:role})},'@/lib/calendarPermissions':{hasCalendarPermission:async(_actor,_calendar,permission)=>permission==='internal_review.manage' && (role==='manager'||role==='reviewer')},
    '@/lib/publishing/applicationBoundary':{publishingIntegrationInstalled:()=>false},'@/lib/r2':{publicUrlFor:()=>''},
    '@/lib/calendarReviewNotifications':{notifyInternalReview:async event=>{assert(committed);notifications++;assert.equal(event.version,1);return {sent:3,failed:0};}},
    '@/lib/db':{db:{$transaction:async fn=>{const result=await fn({$queryRaw:async()=>[],calendarPost:{findFirst:async()=>current,update:async({data})=>({...current,...data,internalReviewVersion:1})}});committed=true;return result;}}},

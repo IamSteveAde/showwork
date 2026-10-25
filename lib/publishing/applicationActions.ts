@@ -89,16 +89,11 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
  }
  async function internalReview(input:{operationId:string;actor:string;calendarId:string;postId:string;body:Record<string,unknown>}) {
   const decision=internalReviewInput(input.body);
-  let reviewPermission = 'delivery.manage';
-  if (decision.status === undefined) {
-   for (const candidate of ['creatives.upload','calendar.edit','delivery.manage']) {
-    try { await permission(input.actor,input.calendarId,candidate); reviewPermission=candidate; break; }
-    catch (error) { if (candidate==='delivery.manage') throw error; }
-   }
-  } else await permission(input.actor,input.calendarId,reviewPermission);
+  const reviewPermission = 'internal_review.manage';
+  await permission(input.actor,input.calendarId,reviewPermission);
   return replay(input.operationId,input.actor,input,async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);
-   await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:reviewPermission as any});
+   await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:reviewPermission});
    await tx.query(`SELECT id FROM "CalendarPost" WHERE id=$1 AND "calendarId"=$2 FOR UPDATE`,[input.postId,input.calendarId]);
    const p=await post(tx,input.postId,input.calendarId);
    const error=internalReviewError(p as any,decision.status);if(error)throw Error(error);

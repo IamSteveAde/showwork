@@ -59,7 +59,7 @@ test('PostgreSQL migration enforces visibility lifecycle and stale-review protec
  CREATE TABLE "PublishingJob"("postId" TEXT,phase TEXT);
  INSERT INTO "CalendarPost"(id,"calendarId",caption) VALUES('canonical','workspace','Ready for internal review');`);
  const {createCanonicalApplicationActions}=load('lib/publishing/applicationActions.ts',{'./validationAdapters':{
-  createPublishingValidationAdapters:()=>({lockForPolicyChange:async()=>{},validateWorkspacePermission:async(_tx,input)=>{if(input.actor!=='owner')throw Error('WORKSPACE_PERMISSION_DENIED');}})
+  createPublishingValidationAdapters:()=>({lockForPolicyChange:async()=>{},validateWorkspacePermission:async(_tx,input)=>{assert.equal(input.permission,'internal_review.manage');if(input.actor!=='owner')throw Error('WORKSPACE_PERMISSION_DENIED');}})
  }});
  const actions=createCanonicalApplicationActions({database:{transaction:fn=>db.transaction(tx=>fn(tx))},policy:{}});
  const request={operationId:'internal-1',actor:'owner',calendarId:'workspace',postId:'canonical',body:{action:'approve',version:0,note:'Team-only'}};

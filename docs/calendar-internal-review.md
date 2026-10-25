@@ -1,7 +1,7 @@
 # Calendar internal review
 
 Posts now have separate Content, Internal review, Client review and Publishing views.
-Owners and team members with `delivery.manage` may internally approve, request changes
+Owners and team members with `internal_review.manage` may internally approve, request changes
 (with a required private note), or return an unapproved-by-client post to internal review.
 Internal approval does not grant client approval, enable auto-publishing, or bypass platform consent.
 
@@ -54,3 +54,7 @@ It covers migration backfill, hidden new posts, approval and scheduling rejectio
 media invalidation, locked approved content, canonical internal decisions, idempotent replay,
 stale decisions, cross-workspace access and permission rejection. UI checks use temporary
 sample posts and mocked requests at 320, 390 and 1440 pixels.
+
+### Internal review access
+
+Feedback, approval, requesting changes, and reopening all require `internal_review.manage`. Owners always retain it. Managers receive it by default; custom manager permissions can remove it. Other non-viewer roles must receive it explicitly through invitation or Edit access. Viewer roles cannot receive it. Calendar viewing is required and selected automatically. Existing custom permission lists remain unchanged; grant the new permission explicitly where needed. No database migration is required.

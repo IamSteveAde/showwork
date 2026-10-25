@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import UiSymbol from "@/components/ui/UiSymbol";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -209,6 +210,17 @@ export default function CalendarWorkspaceShell({
   const activeId = sections.find(section => section.id === requestedView)?.id
     ?? sections[0]?.id ?? "overview";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    try { setSidebarCollapsed(localStorage.getItem("showwork-workspace-sidebar-collapsed") === "true"); } catch {}
+  }, []);
+  const toggleSidebar = () => {
+    setSidebarCollapsed(current => {
+      const next = !current;
+      try { localStorage.setItem("showwork-workspace-sidebar-collapsed", String(next)); } catch {}
+      return next;
+    });
+  };
   const [tourId, setTourId] = useState<WorkspaceSectionId | null>(null);
   const [mountedInsightViews, setMountedInsightViews] = useState<Set<WorkspaceSectionId>>(() => new Set());
 
@@ -244,6 +256,7 @@ export default function CalendarWorkspaceShell({
 
   useEffect(() => {
     if (!tourId) return;
+    setSidebarCollapsed(false);
     const media = window.matchMedia("(min-width: 1024px)");
     const resize = () => setMobileOpen(!media.matches);
     media.addEventListener("change", resize);
@@ -611,10 +624,35 @@ export default function CalendarWorkspaceShell({
 
 </header>
 
-      <div className="mx-auto grid max-w-[1800px] lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]">
+      <div className={`mx-auto grid max-w-[1800px] ${sidebarCollapsed ? "lg:grid-cols-[76px_minmax(0,1fr)]" : "lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]"}`}>
         {/* QUIET LEFT RAIL */}
         <aside className="sticky top-[72px] hidden h-[calc(100dvh-72px)] flex-col border-r border-[#E4EAF2] bg-[#FAFBFD] lg:flex">
-          {sidebar}
+          <div className={`flex shrink-0 items-center border-b border-[#E7ECF3] p-3 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
+            {!sidebarCollapsed && <span className="pl-2 text-[10px] font-semibold uppercase tracking-widest text-[#667085]">Workspace menu</span>}
+            <button type="button" onClick={toggleSidebar} aria-expanded={!sidebarCollapsed} aria-controls="workspace-desktop-navigation"
+              aria-label={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"}
+              title={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#526780] transition hover:bg-[#EAF2FF] hover:text-[#1768E8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+              {sidebarCollapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}
+            </button>
+          </div>
+          <div id="workspace-desktop-navigation" className="flex min-h-0 flex-1 flex-col">
+            {sidebarCollapsed ? <>
+              <nav aria-label="Workspace sections" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+                {nav.map(cluster => <div key={cluster.label} className="space-y-1 border-b border-[#E7ECF3] py-2 last:border-0">
+                  {cluster.items.map(item => <button key={item.id} type="button" onClick={() => select(item.id)}
+                    data-tour-target={item.id} title={item.label} aria-label={item.label} aria-current={item.id === active.id ? "page" : undefined}
+                    className={`flex h-11 w-full items-center justify-center rounded-xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 ${item.id === active.id ? "bg-[#1768E8] text-white shadow-sm" : "text-[#667085] hover:bg-[#EAF2FF] hover:text-[#1768E8]"}`}>
+                    <SectionIcon name={item.id} className="h-5 w-5" />
+                  </button>)}
+                </div>)}
+              </nav>
+              {clientUrl && <div className="shrink-0 border-t border-[#E7ECF3] p-3">
+                <a href={clientUrl} target="_blank" rel="noopener noreferrer" title="Open client view" aria-label="Open client view"
+                  className="flex h-11 items-center justify-center rounded-xl bg-white text-[#1768E8] hover:bg-[#EAF2FF]"><ArrowUpRight className="h-5 w-5" /></a>
+              </div>}
+            </> : sidebar}
+          </div>
         </aside>
 
         {/* ACTIVE WORKSPACE */}

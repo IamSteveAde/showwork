@@ -5,7 +5,7 @@ export type ReviewNotice = {calendarId:string;postId:string;version:number;actio
 type Recipient = {email:string;owner:boolean;role:string;permissions:string[];customPermissions:boolean};
 export function workflowRecipients(rows: Recipient[]) {
  return [...new Set(rows.filter(row => row.owner || effectiveTeamPermissions(row.role,row.permissions,row.customPermissions)
-  .some(permission=>['calendar.edit','creatives.upload','delivery.manage','publishing.manage','workspace.manage'].includes(permission)))
+  .some(permission=>['internal_review.manage','calendar.edit','creatives.upload','delivery.manage','publishing.manage','workspace.manage'].includes(permission)))
   .map(row=>row.email.trim().toLowerCase()).filter(Boolean))];
 }
 export async function notifyInternalReview(

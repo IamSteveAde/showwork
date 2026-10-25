@@ -3085,6 +3085,7 @@ function PostDetailPanel({
   const canEdit = permissions ? permissions.includes("calendar.edit") : userRole === "EDIT_CALENDAR";
   const canAiEdit = canEdit && (!permissions || permissions.includes("ai.generate"));
   const canPublish = permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR";
+  const canInternalReview = permissions?.includes("internal_review.manage") === true;
   const canDeliver = permissions ? permissions.includes("delivery.manage") : userRole === "EDIT_CALENDAR";
   const t = THEMES[theme];
   const router = useRouter();
@@ -3098,6 +3099,7 @@ function PostDetailPanel({
   const internallyApproved = post.internalReviewStatus === "APPROVED";
   useEffect(() => { setInternalNote(post.internalReviewNote ?? ""); }, [post.internalReviewVersion, post.internalReviewNote]);
   async function saveInternalReview(action: "approve" | "request_changes" | "reopen" | "feedback") {
+    if (!canInternalReview) return;
     if (reviewSaving) return;
     setReviewSaving(true); setReviewError(null); setReviewNotice(null);
     try {
@@ -5229,10 +5231,10 @@ caption: draftDetails.caption,
             <div className="rounded-2xl border p-5 sm:p-6" style={{borderColor:t.cardBorder,background:t.inputBg}}>
               <p className="text-xs font-semibold uppercase tracking-wide" style={{color:internallyApproved ? "#16834B" : t.textMuted}}>{internallyApproved ? "Internally approved" : post.internalReviewStatus === "NEEDS_CHANGES" ? "Changes requested" : "Pending internal review"}</p>
               <h3 className="mt-3 text-xl font-semibold" style={{color:t.text}}>{internallyApproved ? "Ready for your client" : "Keep the review inside your team"}</h3>
-              <p className="mt-3 text-sm leading-6" style={{color:t.textMuted}}>{internallyApproved ? "This post can appear in the unlocked client portal. Client approval is still required before publishing." : "This post is hidden from the client portal. An owner or teammate with delivery management permission must approve it internally first."}</p>
+              <p className="mt-3 text-sm leading-6" style={{color:t.textMuted}}>{internallyApproved ? "This post can appear in the unlocked client portal. Client approval is still required before publishing." : "This post is hidden from the client portal. An owner or teammate with Internal review permission must approve it internally first."}</p>
               <p className="mt-3 text-xs leading-6" style={{color:t.textMuted}}>Changing the creative, caption, schedule or other content details requires fresh internal approval.</p>
             </div>
-            {(canDeliver || canUpload || canEdit) && !isApproved ? <>
+            {canInternalReview && !isApproved ? <>
               <label className="block text-sm font-semibold" style={{color:t.text}}>Private team feedback
                 <textarea value={internalNote} onChange={e=>setInternalNote(e.target.value)} maxLength={4000} rows={4}
                   className="mt-3 w-full rounded-2xl border p-4 text-sm font-normal leading-6 outline-none transition-shadow focus:ring-4 focus:ring-blue-500/10" style={{borderColor:t.inputBorder,background:t.inputBg,color:t.text}}
@@ -5240,12 +5242,12 @@ caption: draftDetails.caption,
               </label>
               <p className="text-xs leading-5" style={{color:t.textMuted}}>Shared with your workspace’s content team by email. Clients never receive internal feedback.</p>
               <div className="flex flex-wrap gap-3">
-                {canDeliver && !internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("approve")} className="min-h-11 rounded-xl bg-[#155FC7] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{reviewSaving ? "Saving…" : "Approve for client review"}</button>}
-                {canDeliver && <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("request_changes")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Request changes</button>}
+                {canInternalReview && !internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("approve")} className="min-h-11 rounded-xl bg-[#155FC7] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{reviewSaving ? "Saving…" : "Approve for client review"}</button>}
+                {canInternalReview && <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("request_changes")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Request changes</button>}
                 <button type="button" disabled={reviewSaving || !internalNote.trim()} onClick={()=>saveInternalReview("feedback")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold disabled:opacity-50" style={{borderColor:t.inputBorder,color:t.text}}>Share internal feedback</button>
-                {canDeliver && internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("reopen")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold" style={{borderColor:t.inputBorder,color:t.text}}>Return to internal review</button>}
+                {canInternalReview && internallyApproved && <button type="button" disabled={reviewSaving} onClick={()=>saveInternalReview("reopen")} className="min-h-11 rounded-xl border px-4 py-3 text-sm font-semibold" style={{borderColor:t.inputBorder,color:t.text}}>Return to internal review</button>}
               </div>
-            </> : <p className="whitespace-pre-wrap text-sm leading-6" style={{color:t.textMuted}}>{post.internalReviewNote || (isApproved ? "Client-approved content is locked." : "Waiting for an internal reviewer.")}</p>}
+            </> : <p className="whitespace-pre-wrap text-sm leading-6" style={{color:t.textMuted}}>{post.internalReviewNote || (isApproved ? "Client-approved content is locked." : "You need Internal review access to give feedback or approve this post. Ask the workspace owner or manager to update your access.")}</p>}
             {reviewNotice && <p role="status" className="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">{reviewNotice}</p>}
             {reviewError && <p role="alert" className="text-sm text-red-600">{reviewError}</p>}
           </div>
