@@ -63,7 +63,7 @@ export function createCapabilityProviderIntegration(deps:{environment:'isolated-
    check(bound&&bound.connectionId===target.connectionId&&bound.providerAccountId===target.providerAccountId,'REFRESH_DESTINATION_CHANGED');
   });await io.refresh(target);const {post,assets}=await snapshot(target);
   if(existing){check(existing.targetHash===policyHash(target),'PREPARATION_TARGET_CONFLICT');return {prepared:true,maySend:false as const};}
-  validatePublishContent(target.platform,assets as {mediaType:string}[],buildCaption(post as any),post.postType);
+  validatePublishContent(target.platform,assets as {mediaType:string}[],buildCaption(post as any),post.postType,!post.creativeBrief||!!post.caption?.trim());
   const video=assets.some(a=>a.mediaType==='VIDEO'),caption=buildCaption(post as any);let refs:string[]=[];let creator:TikTokCreator|undefined;
   if(target.platform==='TIKTOK'){await io.reserveRate(target,'creator');creator=await io.creatorInfo(target);validateTikTokSettings(parseTikTokSettings(post.tikTokSettings),creator,video);}
   const media=await io.media(target,assets,creator);

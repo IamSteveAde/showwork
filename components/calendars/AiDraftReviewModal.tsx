@@ -1,4 +1,6 @@
 "use client";
+import CreativeBriefEditor from "./CreativeBriefEditor";
+import type { CreativeBrief, CreativeDevelopment } from "@/lib/content/brief";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
@@ -7,6 +9,9 @@ import UiSymbol from "@/components/ui/UiSymbol";
 import { useEffect, useMemo, useState } from "react";
 
 interface DraftPost {
+  updatedAt?: string;
+  creativeBrief?: CreativeBrief | null;
+  creativeDevelopment?: CreativeDevelopment | null;
   id: string;
   postDate: string;
   platform: string;
@@ -618,7 +623,7 @@ export default function AiDraftReviewModal({
                       <span className="ml-auto text-[10px] text-[#98A2B3]">#{index + 1}</span>
                     </div>
                     <p className="mt-3 line-clamp-2 text-[11px] leading-relaxed text-[#667085]">
-                      {draft.caption || "No caption yet"}
+                      {draft.creativeBrief?.title || draft.caption || "No caption yet"}
                     </p>
                   </button>
                 );
@@ -656,7 +661,7 @@ export default function AiDraftReviewModal({
             )}
 
             {selected ? (
-              <div className="mx-auto w-full max-w-[920px] p-4 sm:p-5 lg:p-10">
+              <div className="mx-auto w-full max-w-[1120px] p-3 sm:p-5 lg:p-8">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[#EEF5FF] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#2478FF]">
                     {meta?.label}
@@ -674,85 +679,7 @@ export default function AiDraftReviewModal({
                   </span>
                 </div>
 
-                <section className="mt-5 rounded-[28px] border border-[#E1E7EF] bg-white shadow-[0_20px_60px_rgba(16,24,40,0.07)]">
-                  <div className="border-b border-[#EEF2F6] px-5 py-5 lg:px-7">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#98A2B3]">
-                          Draft editor
-                        </p>
-                        <h2 className="mt-1 text-lg font-semibold tracking-[-0.025em] text-[#101828]">
-                          Make it yours
-                        </h2>
-                      </div>
-                      <span className="rounded-full bg-[#F2F4F7] px-2.5 py-1 text-[10px] font-semibold text-[#667085]">
-                        Generation {generationIndex >= 0 ? generationIndex + 1 : "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5 p-5 lg:p-7">
-                    {(
-                     [
-                      ["hook", "Hook", "The opening line or idea that grabs attention."],
-                      ["script", "Script", "A timed shoot-and-edit script with visuals, spoken lines, text and audio cues."],
-                      ["caption", "Caption", "Write the final words your audience will see."],
-                      ["contentIdea", "Creative direction", "A detailed shot, styling and editing brief for the designer or video editor."],
-                      ["cta", "Call to action", "What should the audience do next?"],
-                      ["hashtags", "Hashtags", "Add relevant hashtags, separated by spaces."],
-                    ] as [EditableKey, string, string][]
-                    ).map(([field, label, hint]) => (
-                      <label key={field} className="block">
-                        <span className="text-xs font-bold text-[#101828]">{label}</span>
-                        <span className="ml-2 text-[10px] text-[#98A2B3]">{hint}</span>
-                        <textarea
-                          value={selected[field] ?? ""}
-                          onChange={(e) => updateField(field, e.target.value)}
-                          rows={
-                            field === "script"
-                              ? 16
-                              : field === "contentIdea"
-                                ? 12
-                                : field === "caption"
-                                  ? 8
-                                  : 4
-                          }
-                          className="mt-2 w-full resize-y rounded-2xl border border-[#D9E1EA] bg-[#FBFCFE] px-4 py-3 text-sm leading-relaxed text-[#101828] outline-none transition focus:border-[#2478FF] focus:bg-white focus:ring-4 focus:ring-[#2478FF]/10"
-                        />
-                      </label>
-                    ))}
-
-                    <div className="rounded-2xl border border-[#DDE8F8] bg-[#F4F8FF] p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#2478FF] text-xs text-white">
-                          <UiSymbol name="sparkles" />
-                        </span>
-                        <div>
-                          <p className="text-xs font-bold text-[#101828]">Ask AI to take another pass</p>
-                          <p className="text-[10px] text-[#667085]">
-                            Be specific. You can regenerate as many times as you need.
-                          </p>
-                        </div>
-                      </div>
-
-                      <textarea
-                        value={instruction}
-                        onChange={(e) => setInstruction(e.target.value)}
-                        rows={3}
-                        placeholder="e.g. Make the opening stronger, sound more premium, and use a softer CTA."
-                        className="mt-3 w-full resize-none rounded-xl border border-[#D5E1F2] bg-white px-3.5 py-3 text-xs text-[#101828] outline-none focus:border-[#2478FF] focus:ring-4 focus:ring-[#2478FF]/10"
-                      />
-
-                      <button
-                        onClick={regenerate}
-                        disabled={busy}
-                        className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-2.5 text-xs font-bold text-white shadow-[0_8px_24px_rgba(36,120,255,0.22)] hover:bg-[#1768EA] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {busy ? "Creating a new version…" : "Regenerate this post"}
-                      </button>
-                    </div>
-                  </div>
-                </section>
+                <CreativeBriefEditor key={selected.id} calendarId={calendarId} post={{...selected}} onUpdated={post=>{setDrafts(current=>current?.map(d=>d.id===post.id?{...d,...post}:d)||null);void loadGenerations(post.id);}} />
 
                 {generations.length > 0 && (
                   <section className="mt-5 rounded-[24px] border border-[#E1E7EF] bg-white p-5 lg:p-6">
@@ -821,13 +748,6 @@ export default function AiDraftReviewModal({
                   </button>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">
-                    <button
-                      onClick={saveEdits}
-                      disabled={saving}
-                      className="w-full rounded-xl border border-[#D9E1EA] bg-white px-4 py-3 text-xs font-bold text-[#101828] hover:bg-[#F7F9FC] disabled:opacity-50 sm:w-auto"
-                    >
-                      {saving ? "Saving…" : "Save edits"}
-                    </button>
                     <button
                       onClick={() => confirmDraft(selected.id)}
                       disabled={saving}

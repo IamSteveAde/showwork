@@ -7,14 +7,16 @@ import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 export default function InboxHandoffAlert({ calendarId }: { calendarId: string }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    let stopped = false, pending = false;
+    let stopped = false, pending = false, failures = 0, nextAttempt = 0;
     const refresh = async () => {
-      if (document.hidden || pending) return;
+      if (stopped || document.hidden || pending || Date.now() < nextAttempt) return;
       pending = true;
       try {
         const response = await calendarMutationFetch(`/api/calendars/${encodeURIComponent(calendarId)}/inbox/handoffs`, { cache: "no-store" });
+        if (!response.ok) { failures++; nextAttempt = Date.now() + Math.min(120000, 15000 * 2 ** failures); return; }
+        failures = 0; nextAttempt = 0;
         if (response.ok) { const result = await response.json(); if (!stopped) setCount(result.count); }
-      } catch { /* Keep the last confirmed alert until the next refresh. */ }
+      } catch { failures++; nextAttempt = Date.now() + Math.min(120000, 15000 * 2 ** failures); /* Keep the last confirmed count. */ }
       finally { pending = false; }
     };
     void refresh(); const timer = window.setInterval(refresh, 15000);

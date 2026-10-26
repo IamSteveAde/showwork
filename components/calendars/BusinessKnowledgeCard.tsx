@@ -1,4 +1,6 @@
 "use client";
+import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
+import KnowledgeIndexStatus from "./KnowledgeIndexStatus";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
@@ -162,7 +164,7 @@ export default function BusinessKnowledgeCard({
 
   const [businessSummaryState, setBusinessSummaryState] = useState(businessSummary);
   const [summaryUpdatedAtState, setSummaryUpdatedAtState] = useState(summaryUpdatedAt);
-  const [documentsState, setDocumentsState] = useState(documents);
+  const [documentsState, setDocumentsState] = useState(documents.filter(doc => doc.id !== brandPersonalityDocumentId(calendarId)));
   const [uploading, setUploading] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   async function rebuildSummary() {
@@ -189,7 +191,7 @@ export default function BusinessKnowledgeCard({
   useEffect(() => {
     setBusinessSummaryState(businessSummary);
     setSummaryUpdatedAtState(summaryUpdatedAt);
-    setDocumentsState(documents);
+    setDocumentsState(documents.filter(doc => doc.id !== brandPersonalityDocumentId(calendarId)));
   }, [businessSummary, summaryUpdatedAt, documents]);
 
   const uploadOne = async (file: File) => {
@@ -398,12 +400,13 @@ if (presignContentType.includes("application/json")) {
     }
   };
 
+  const indexStatus = <KnowledgeIndexStatus calendarId={calendarId} revision={documentsState.map(d=>d.id).join(",") + summaryUpdatedAtState} />;
   const updated = formatDate(summaryUpdatedAtState);
   const researched = formatDate(lastResearchedAt);
 
   if (compact) {
     return <div className="mt-5 border-t border-[#DCE6F3] pt-5">
-      <h4 className="text-base font-medium tracking-tight text-[#26496E]">Teach AI the details.</h4>
+      <h4 className="text-base font-medium tracking-tight text-[#26496E]">Teach AI the details.</h4>{indexStatus}
       <p className="mt-2 text-xs leading-6 text-[#6B83A3]">Add price lists, FAQs, or a business profile. These are the facts your assistant uses.</p>
       {!aiActive && <WorkspaceFeatureNotice compact message="Activate your workspace to add business documents." />}
       <button type="button" disabled={uploading || !aiActive || !canEdit} onClick={() => fileInputRef.current?.click()} className="mt-4 flex min-h-24 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#9FBDEB] bg-[linear-gradient(135deg,#E8F1FF,#F7FAFF)] px-5 py-6 text-[#285B9E] transition hover:border-[#3478EC] hover:bg-[#E1EDFF] disabled:opacity-50">
@@ -545,6 +548,7 @@ if (presignContentType.includes("application/json")) {
           </div>
         </div>
 
+        {indexStatus}
         {error && (
           <div
             role="alert"

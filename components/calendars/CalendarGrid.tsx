@@ -1,4 +1,6 @@
 "use client";
+import CreativeBriefEditor from "./CreativeBriefEditor";
+import type { CreativeBrief, CreativeDevelopment } from "@/lib/content/brief";
 import { FilePenLine, ShieldCheck, Users, Send, X } from "lucide-react";
 import ContentWorkflow from "@/components/calendars/ContentWorkflow";
 import { calendarWorkflow } from "@/lib/calendarWorkflow";
@@ -54,6 +56,9 @@ type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PUBLI
 type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 
 export interface CalendarPostData {
+  updatedAt?: string;
+  creativeBrief?: CreativeBrief | null;
+  creativeDevelopment?: CreativeDevelopment | null;
   id: string;
   postDate: string;
   platform: Platform;
@@ -3083,7 +3088,7 @@ function PostDetailPanel({
 }) {
   const canUpload = permissions ? permissions.includes("creatives.upload") : userRole !== "VIEW_ONLY";
   const canEdit = permissions ? permissions.includes("calendar.edit") : userRole === "EDIT_CALENDAR";
-  const canAiEdit = canEdit && (!permissions || permissions.includes("ai.generate"));
+  const canAiEdit = false;
   const canPublish = permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR";
   const canInternalReview = permissions?.includes("internal_review.manage") === true;
   const canDeliver = permissions ? permissions.includes("delivery.manage") : userRole === "EDIT_CALENDAR";
@@ -3313,7 +3318,7 @@ const [aiEditFields, setAiEditFields] = useState<string[]>([]);
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
+          body: JSON.stringify(post.creativeBrief ? {postDate:draftDetails.postDate?new Date(draftDetails.postDate).toISOString():undefined,platform:draftDetails.platform,taggedAccounts:draftDetails.taggedAccounts,linkUrl:draftDetails.linkUrl} : {
             postDate: draftDetails.postDate
               ? new Date(draftDetails.postDate).toISOString()
               : undefined,
@@ -4362,7 +4367,6 @@ caption: draftDetails.caption,
   <div className="flex flex-wrap gap-2">
     {[
       { value: "hook", label: "Hook" },
-      { value: "script", label: "Script" },
       { value: "caption", label: "Caption" },
       { value: "contentIdea", label: "Creative direction" },
       { value: "cta", label: "CTA" },
@@ -4446,6 +4450,8 @@ caption: draftDetails.caption,
 </button>
     </div>
   </div>
+) : !editingDetails ? (
+  <CreativeBriefEditor key={post.id} calendarId={calendarId} post={{...post}} readOnly={!canEdit||isApproved} onUpdated={updated=>onUpdated({...post,...updated})}/>
 ) : editingDetails ? (
                 <div
                   className="rounded-2xl border p-4 sm:p-5"
@@ -4519,7 +4525,8 @@ caption: draftDetails.caption,
                       </select>
                     </label>
 
-                    <label className="block">
+                    {!post.creativeBrief && <>
+<label className="block">
                       <span
                         className="mb-1.5 block text-[10px] font-bold uppercase"
                         style={{
@@ -4616,34 +4623,7 @@ caption: draftDetails.caption,
   />
 </label>
 
-<label className="block sm:col-span-2">
-  <span
-    className="mb-1.5 block text-[10px] font-bold uppercase"
-    style={{
-      color: t.textFaint,
-      letterSpacing: "0.08em",
-    }}
-  >
-    Script
-  </span>
-  <textarea
-    value={draftDetails.script}
-    onChange={(e) =>
-      setDraftDetails((prev) => ({
-        ...prev,
-        script: e.target.value,
-      }))
-    }
-    rows={16}
-    placeholder="Build a timecoded shoot-and-edit script: runtime, format, visual/action, exact dialogue, on-screen text and audio/edit cues for every beat."
-    className="w-full resize-y rounded-xl border px-3.5 py-3 text-sm leading-relaxed outline-none"
-    style={{
-      background: t.modalBg,
-      borderColor: t.inputBorder,
-      color: t.text,
-    }}
-  />
-</label>
+
 
                     <label className="block sm:col-span-2">
                       <span
@@ -4764,6 +4744,7 @@ caption: draftDetails.caption,
                         }}
                       />
                     </label>
+</>}
 
                     <label className="block">
                       <span
@@ -4906,32 +4887,7 @@ caption: draftDetails.caption,
   </div>
 )}
 
-{post.script && (
-  <div
-    className="rounded-2xl border p-4"
-    style={{
-      background: t.inputBg,
-      borderColor: t.inputBorder,
-    }}
-  >
-    <p
-      className="mb-2 text-[10px] font-bold uppercase"
-      style={{
-        color: t.textFaint,
-        letterSpacing: "0.08em",
-      }}
-    >
-      Script
-    </p>
 
-    <p
-      className="whitespace-pre-wrap break-words text-sm leading-relaxed"
-      style={{ color: t.textMuted }}
-    >
-      {post.script}
-    </p>
-  </div>
-)}
                   {post.caption && (
                     <div className="rounded-2xl border p-4" style={{ background: t.inputBg, borderColor: t.inputBorder }}>
                       <p className="mb-2 text-[10px] font-bold uppercase" style={{ color: t.textFaint, letterSpacing: "0.08em" }}>

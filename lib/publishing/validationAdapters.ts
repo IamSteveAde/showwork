@@ -70,7 +70,7 @@ export function createPublishingValidationAdapters(deps:ValidationDependencies){
   const scopes=new Set((c.tokenScopes??'').split(/[\s,]+/));
   const required:Record<string,string[]>={INSTAGRAM:['instagram_content_publish'],TIKTOK:['video.publish'],FACEBOOK:['pages_manage_posts','pages_read_engagement'],X:['tweet.write',...(s.assets.length?['media.write']:[])],LINKEDIN:[c.platformAccountId.startsWith('urn:li:organization:')?'w_organization_social':'w_member_social']};
   ensure(required[s.post.platform]?.every(scope=>scopes.has(scope)),'SOCIAL_PERMISSION_MISSING');
-  validatePublishContent(s.post.platform,s.assets as {mediaType:string}[],buildCaption(s.post as any),s.post.postType);
+  validatePublishContent(s.post.platform,s.assets as {mediaType:string}[],buildCaption(s.post as any),s.post.postType,!s.post.creativeBrief||!!s.post.caption?.trim());
   if(s.post.platform==='TIKTOK'){
    await creator(tx,s,s.post.tikTokConsentBy,'publishing.manage');
    const settings=parseTikTokSettings(s.post.tikTokSettings);

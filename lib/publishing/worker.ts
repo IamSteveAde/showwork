@@ -28,7 +28,7 @@ export async function runPublishJob(postId: string, platform: SocialPlatform, di
   if (claimed.count !== 1) return;
   try {
     const post = await db.calendarPost.findUniqueOrThrow({ where: { id: postId }, include: { assets: { orderBy: { displayOrder: "asc" } } } });
-    validatePublishContent(platform, post.assets, buildCaption(post), post.postType);
+    validatePublishContent(platform, post.assets, buildCaption(post), post.postType, !post.creativeBrief || !!post.caption?.trim());
     if (!(await canAccessCalendarById(post.calendarId))) throw new Error("This workspace is no longer active. Renew access before publishing.");
     if (platform === "INSTAGRAM") await publishPostToInstagram(postId);
     else if (platform === "TIKTOK") { await publishPostToTikTok(postId); return; }

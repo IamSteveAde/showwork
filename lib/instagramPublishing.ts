@@ -103,6 +103,7 @@ export function createInstagramPublisher(database: typeof defaultDb, reporting: 
     return fail("This post has no uploaded content to publish.");
   }
 
+  if (post.creativeBrief && !post.caption?.trim() && !post.assets.length) throw new Error("Add finished media to this creative brief before publishing.");
   const caption = buildCaption(post);
 
   try {

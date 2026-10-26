@@ -43,7 +43,7 @@ export function createPlatformIntegration(port: Port, options: { verifyPublicati
       const cached = snapshots.get(job.id); snapshots.delete(job.id);
       const post = cached && cached.expires > Date.now() ? cached.post : await readPost(job.postId, job.platform);
       if (post.platform !== job.platform || post.updatedAt.getTime() !== job.lease.getTime() || post.approvalStatus !== "APPROVED" || post.isAiDraft || publishingStatus(post) !== "PUBLISHING") throw new Error("Publishing approval or lease changed");
-      validatePublishContent(job.platform, post.assets, buildCaption(post), post.postType);
+      validatePublishContent(job.platform, post.assets, buildCaption(post), post.postType, !post.creativeBrief || !!post.caption?.trim());
       if (job.platform === "TIKTOK" && post.tikTokInitStartedAt && !post.tikTokPublishId) throw new UncertainPublication(null);
       if ((!cached || cached.expires <= Date.now()) && !await canAccessCalendarById(post.calendarId, db)) throw new Error("This workspace is no longer active. Renew access before publishing.");
       return { post, connection: post.calendar.socialConnections.find(c => c.platform === job.platform && c.status === "CONNECTED") };

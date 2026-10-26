@@ -17,7 +17,7 @@ export async function publishFacebook(post: Post, connection: SocialConnection, 
   const base = `https://graph.facebook.com/${process.env.META_GRAPH_API_VERSION || "v26.0"}`;
   const page = encodeURIComponent(connection.platformAccountId);
   const caption = buildCaption(post);
-  validatePublishContent("FACEBOOK", post.assets, caption, post.postType);
+  validatePublishContent("FACEBOOK", post.assets, caption, post.postType, !post.creativeBrief || !!post.caption?.trim());
   const send = (path: string, body: Record<string, unknown>) => providerJson<{ id?: string; post_id?: string }>(`${base}/${path}`, {
     method: "POST", headers: { Authorization: `Bearer ${connection.accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
@@ -99,7 +99,7 @@ export async function publishX(post: Post, connection: SocialConnection): Promis
 
   requireScopes(connection, ["tweet.write", ...(post.assets.length ? ["media.write"] : [])]);
   const text = buildCaption(post);
-  validatePublishContent("X", post.assets, text, post.postType);
+  validatePublishContent("X", post.assets, text, post.postType, !post.creativeBrief || !!post.caption?.trim());
   const ids = [];
   for (const asset of post.assets) ids.push(await uploadXMedia(asset, connection.accessToken!));
   const result = await providerJson<{ data: { id: string } }>("https://api.x.com/2/tweets", {
@@ -150,7 +150,7 @@ export async function publishLinkedIn(post: Post, connection: SocialConnection):
   const author = connection.platformAccountId.startsWith("urn:li:") ? connection.platformAccountId : `urn:li:person:${connection.platformAccountId}`;
   requireScopes(connection, [author.startsWith("urn:li:organization:") ? "w_organization_social" : "w_member_social"]);
   const commentary = buildCaption(post);
-  validatePublishContent("LINKEDIN", post.assets, commentary, post.postType);
+  validatePublishContent("LINKEDIN", post.assets, commentary, post.postType, !post.creativeBrief || !!post.caption?.trim());
   const media = [];
   for (const asset of post.assets) media.push(await uploadLinkedIn(asset, author, connection.accessToken!));
   const content = media.length > 1 ? { multiImage: { images: media.map(id => ({ id })) } } : media.length ? { media: { id: media[0] } } : undefined;

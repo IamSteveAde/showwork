@@ -37,7 +37,7 @@ export async function authorizeTikTokPost(post: CalendarPost & { assets: Calenda
         if (post.approvalStatus !== "APPROVED" || post.internalReviewStatus !== "APPROVED" || post.isAiDraft) throw new Error("Internal and client approval are required before publishing.");
         if (post.tikTokPublishStatus === "FAILED" && (action !== "retry" || body.confirmedNotPublished !== true)) throw new Error("Check TikTok and confirm this post has not published before retrying.");
         if (body.consent !== true) throw new Error("Review the declaration and explicitly authorize TikTok publishing.");
-        validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType);
+        validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType, !post.creativeBrief || !!post.caption?.trim());
         await validateTikTokMedia(post.assets, info);
         data.tikTokConsentAt = new Date(); data.tikTokConsentBy = actorId;
         data.tikTokConsentAccountId = connection.platformAccountId;

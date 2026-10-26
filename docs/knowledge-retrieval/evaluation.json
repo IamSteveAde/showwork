@@ -1,0 +1,613 @@
+{
+  "fixture": "Synthetic development collection v1; labelled evidence spans; K=3; precision uses fixed K denominator; unanswerable queries excluded from aggregate ranking metrics. Not a production accuracy claim.",
+  "live": true,
+  "createdAt": "2026-10-25T18:24:56.635Z",
+  "models": {
+    "embedding": "text-embedding-3-small",
+    "dimensions": 512,
+    "version": "1",
+    "rerank": "gpt-4.1-mini"
+  },
+  "parameters": {
+    "rrfK": 60,
+    "contextWeight": 0.15,
+    "semanticWeight": 1
+  },
+  "totals": {
+    "legacy": {
+      "recall": 0.725,
+      "precision": 0.5666666666666667,
+      "mrr": 1,
+      "ndcg": 0.8287736933485403,
+      "latencyMs": 2.8036344545454828
+    },
+    "hybrid": {
+      "recall": 0.7666666666666666,
+      "precision": 0.6,
+      "mrr": 0.7,
+      "ndcg": 0.7151159342131838,
+      "latencyMs": 879.0909090909091
+    },
+    "reranked": {
+      "recall": 0.8083333333333332,
+      "precision": 0.6000000000000001,
+      "mrr": 1,
+      "ndcg": 0.8562196330227836,
+      "latencyMs": 3092.7272727272725
+    }
+  },
+  "contextRelevance": 0.4616161616161616,
+  "crossWorkspaceLeakage": 0,
+  "usage": {
+    "indexInput": 0,
+    "queryInput": 1398,
+    "rerankInput": 29748,
+    "rerankOutput": 2334,
+    "embeddingRequests": 22,
+    "rerankRequests": 11
+  },
+  "costNote": "Actual API token usage reported. Dollar cost requires current account rates; cached embeddings have zero new input tokens. Failed attempts may incur additional usage.",
+  "rows": [
+    {
+      "case": "exact",
+      "relevant": [
+        "catalogue",
+        "pricing",
+        "website"
+      ],
+      "legacy": {
+        "recall": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7653606369886217,
+        "ids": [
+          "catalogue",
+          "pricing",
+          "audience"
+        ],
+        "abstained": false,
+        "latencyMs": 23.583380000000034
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 1,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "website",
+          "catalogue",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 5614,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 1,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "catalogue",
+          "website",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 5987,
+        "status": "model"
+      },
+      "contextRelevance": 1,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "semantic",
+      "relevant": [
+        "profile",
+        "catalogue",
+        "audience"
+      ],
+      "legacy": {
+        "recall": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7653606369886217,
+        "ids": [
+          "profile",
+          "audience",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 1.0630500000006577
+      },
+      "hybrid": {
+        "recall": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg": 0.5307212739772434,
+        "ids": [
+          "profile",
+          "audience",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 425,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 1,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "catalogue",
+          "profile",
+          "audience"
+        ],
+        "abstained": false,
+        "latencyMs": 3488,
+        "status": "model"
+      },
+      "contextRelevance": 0.5,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "onboarding",
+      "relevant": [
+        "profile",
+        "catalogue"
+      ],
+      "legacy": {
+        "recall": 0.5,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 0.6131471927654584,
+        "ids": [
+          "profile",
+          "audience",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 0.6852140000009967
+      },
+      "hybrid": {
+        "recall": 0,
+        "precision": 0,
+        "mrr": 0,
+        "ndcg": 0,
+        "ids": [
+          "profile",
+          "audience",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 437,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.9197207891481876,
+        "ids": [
+          "profile",
+          "audience",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 2777,
+        "status": "model"
+      },
+      "contextRelevance": 0.25,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "pricing",
+      "relevant": [
+        "pricing"
+      ],
+      "legacy": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "pricing",
+          "catalogue",
+          "website"
+        ],
+        "abstained": false,
+        "latencyMs": 0.6162830000030226
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 0.5,
+        "ndcg": 0.6309297535714575,
+        "ids": [
+          "website",
+          "pricing",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 396,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "pricing",
+          "catalogue",
+          "website"
+        ],
+        "abstained": false,
+        "latencyMs": 2669,
+        "status": "model"
+      },
+      "contextRelevance": 0.3333333333333333,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "brand",
+      "relevant": [
+        "brand"
+      ],
+      "legacy": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "brand",
+          "catalogue",
+          "injection"
+        ],
+        "abstained": false,
+        "latencyMs": 0.7605419999999867
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "brand",
+          "brand",
+          "profile"
+        ],
+        "abstained": false,
+        "latencyMs": 392,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "brand",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 2916,
+        "status": "model"
+      },
+      "contextRelevance": 0.5,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "audience",
+      "relevant": [
+        "audience",
+        "catalogue",
+        "pricing"
+      ],
+      "legacy": {
+        "recall": 0.6666666666666666,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7653606369886217,
+        "ids": [
+          "audience",
+          "catalogue",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 0.8165200000003097
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 1,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "audience",
+          "catalogue",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 427,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 0.3333333333333333,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 0.46927872602275644,
+        "ids": [
+          "audience",
+          "website",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 3109,
+        "status": "model"
+      },
+      "contextRelevance": 0.3,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "campaign",
+      "relevant": [
+        "catalogue",
+        "pricing",
+        "audience",
+        "brand"
+      ],
+      "legacy": {
+        "recall": 0.5,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7653606369886217,
+        "ids": [
+          "pricing",
+          "catalogue",
+          "old-policy"
+        ],
+        "abstained": false,
+        "latencyMs": 0.5661419999996724
+      },
+      "hybrid": {
+        "recall": 0.5,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7653606369886217,
+        "ids": [
+          "catalogue",
+          "audience",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 403,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 0.25,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 0.46927872602275644,
+        "ids": [
+          "catalogue",
+          "pricing",
+          "website"
+        ],
+        "abstained": false,
+        "latencyMs": 2514,
+        "status": "model"
+      },
+      "contextRelevance": 0.4444444444444444,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "conflict",
+      "relevant": [
+        "website",
+        "old-policy"
+      ],
+      "legacy": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "website",
+          "old-policy",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 0.49489400000311434
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg": 0.6934264036172708,
+        "ids": [
+          "catalogue",
+          "old-policy",
+          "website"
+        ],
+        "abstained": false,
+        "latencyMs": 399,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "old-policy",
+          "website",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 2159,
+        "status": "model"
+      },
+      "contextRelevance": 0.5,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "deep",
+      "relevant": [
+        "profile",
+        "pricing"
+      ],
+      "legacy": {
+        "recall": 0.5,
+        "precision": 0.3333333333333333,
+        "mrr": 1,
+        "ndcg": 0.6131471927654584,
+        "ids": [
+          "pricing",
+          "profile",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 0.9647909999985131
+      },
+      "hybrid": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "profile",
+          "pricing",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 371,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 1,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "profile",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 2777,
+        "status": "model"
+      },
+      "contextRelevance": 1,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "missing",
+      "relevant": [],
+      "legacy": {
+        "recall": null,
+        "precision": null,
+        "mrr": null,
+        "ndcg": null,
+        "ids": [
+          "catalogue",
+          "injection",
+          "pricing"
+        ],
+        "abstained": false,
+        "latencyMs": 0.5486439999949653
+      },
+      "hybrid": {
+        "recall": null,
+        "precision": null,
+        "mrr": null,
+        "ndcg": null,
+        "ids": [
+          "pricing",
+          "profile",
+          "injection"
+        ],
+        "abstained": false,
+        "latencyMs": 372,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": null,
+        "precision": null,
+        "mrr": null,
+        "ndcg": null,
+        "ids": [
+          "brand",
+          "audience",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 3087,
+        "status": "model"
+      },
+      "contextRelevance": 0,
+      "leakage": false,
+      "fallbacks": []
+    },
+    {
+      "case": "empty",
+      "relevant": [
+        "profile",
+        "catalogue",
+        "audience",
+        "brand"
+      ],
+      "legacy": {
+        "recall": 0.75,
+        "precision": 1,
+        "mrr": 1,
+        "ndcg": 1,
+        "ids": [
+          "audience",
+          "brand",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 0.7405189999990398
+      },
+      "hybrid": {
+        "recall": 0.5,
+        "precision": 0.6666666666666666,
+        "mrr": 0.5,
+        "ndcg": 0.5307212739772434,
+        "ids": [
+          "catalogue",
+          "profile",
+          "brand"
+        ],
+        "abstained": false,
+        "latencyMs": 434,
+        "mode": "hybrid"
+      },
+      "reranked": {
+        "recall": 0.5,
+        "precision": 0.6666666666666666,
+        "mrr": 1,
+        "ndcg": 0.7039180890341347,
+        "ids": [
+          "audience",
+          "profile",
+          "catalogue"
+        ],
+        "abstained": false,
+        "latencyMs": 2537,
+        "status": "model"
+      },
+      "contextRelevance": 0.25,
+      "leakage": false,
+      "fallbacks": []
+    }
+  ]
+}

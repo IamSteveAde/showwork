@@ -1,3 +1,5 @@
+import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
+import BrandPersonalityCard from "@/components/calendars/BrandPersonalityCard";
 import BusinessResearchPanel from "@/components/calendars/BusinessResearchPanel";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
@@ -904,6 +906,8 @@ contentIdea: p.contentIdea,
               "Keep the client's brand, products, voice and source material close to every generation.",
             group: "AI Studio" as const,
             content: (
+              <>
+              <BrandPersonalityCard key={calendar.id} calendarId={calendar.id} canEdit={can("knowledge.manage")} />
               <BusinessKnowledgeCard
                 canEdit={can("knowledge.manage")}
                 calendarId={calendar.id}
@@ -918,6 +922,7 @@ contentIdea: p.contentIdea,
                   websiteUrl: doc.websiteUrl,
                 }))}
               />
+              </>
             ),
           },
           {
@@ -943,7 +948,7 @@ contentIdea: p.contentIdea,
                 <div className="relative">
                   <AiContentGeneratorCard
                     calendarId={calendar.id}
-                    hasBusinessSummary={calendar.businessDocuments.length > 0}
+                    hasBusinessSummary={calendar.businessDocuments.some(doc => doc.id !== brandPersonalityDocumentId(calendar.id))}
                     performanceRecommendationsAccess={featureAccess("performanceRecommendations")}
                   />
                 </div>

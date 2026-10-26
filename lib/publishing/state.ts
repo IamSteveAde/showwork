@@ -18,7 +18,8 @@ export function buildCaption(post: { caption: string | null; cta: string | null;
   const mentions = post.taggedAccounts?.split(/[\s,]+/).filter(Boolean).map(value => value.startsWith("@") ? value : `@${value}`).join(" ");
   return [post.caption, mentions, post.cta, post.hashtags, post.linkUrl].map(value => value?.trim()).filter(Boolean).join("\n\n");
 }
-export function validatePublishContent(platform: SocialPlatform, assets: { mediaType: string }[], caption: string, postType?: string | null) {
+export function validatePublishContent(platform: SocialPlatform, assets: { mediaType: string }[], caption: string, postType?: string | null, executionReady = true) {
+  if (!executionReady && !assets.length) throw new Error("This creative brief needs finished copy or the required media before publishing. Open Creative development to prepare it.");
   if (!PUBLISHING_PLATFORMS.includes(platform)) throw new Error("Publishing is not available for this channel.");
   if (/story/i.test(postType ?? "")) throw new Error("Automatic Story publishing is not supported for this channel. Choose a feed post or video.");
   if (assets.some(asset => !["PHOTO", "VIDEO"].includes(asset.mediaType))) throw new Error("Only photos and videos can be published through this integration.");

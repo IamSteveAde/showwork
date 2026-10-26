@@ -1,3 +1,12 @@
+import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
+import { databaseUnavailable } from "@/lib/databaseAvailability";
+import { ContentGenerationError } from "@/lib/content/generationError";
+import { AiProviderError } from "@/lib/content/providerError";
+import { checkBriefStorage } from "@/lib/content/briefStorage";
+import { scheduledContentDate, generationCount } from "@/lib/content/schedule";
+import { parseCreativeBrief } from "@/lib/content/brief";
+import { recentContentMemory } from "@/lib/content/creativeGeneration";
+import { sourceFingerprint } from "@/lib/knowledge/retrieval";
 import { getBusinessKnowledgeContext } from "@/lib/knowledge/context";
 import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
 import { calendarFeatureGate } from "@/lib/calendarPermissions";
@@ -7,7 +16,7 @@ import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { consumeAiGeneration, getContentWorkspacePlan } from "@/lib/contentWorkspaceUsage";
 import { generateContentCalendar } from "@/lib/openai";
-import type { SocialPlatform } from "@prisma/client";
+import type { Prisma, SocialPlatform } from "@prisma/client";
 
 const VALID_PLATFORMS: SocialPlatform[] = ["INSTAGRAM", "TIKTOK", "YOUTUBE", "FACEBOOK", "X", "LINKEDIN"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -71,9 +80,16 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
     return NextResponse.json({ error: "Content groups are malformed." }, { status: 400 });
   }
 
+  let expectedDrafts: number;
+  try {
+    expectedDrafts = generationCount(String(startDate), String(endDate), (postsPerWeek as number|undefined) ?? 3, platforms as string[], contentStrategy as string|undefined, contentGroups as string[][]|undefined).drafts;
+    scheduledContentDate(String(startDate), "09:00", typeof body.timeZone === "string" ? body.timeZone : "UTC");
+    if (!expectedDrafts) throw Error("No publishing slots fall in this range.");
+    if (body.campaignObjective !== undefined && (typeof body.campaignObjective !== "string" || body.campaignObjective.length>300)) throw Error("Choose a concise campaign objective.");
+  } catch(error) { return NextResponse.json({error:error instanceof Error?error.message:"Invalid publishing rhythm."},{status:400}); }
   const calendar = await db.socialCalendar.findUnique({ where: { id } });
   if (!calendar) return NextResponse.json({ error: "Calendar not found" }, { status: 404 });
-  if (!await db.calendarBusinessDocument.count({ where: { calendarId: id, extractedText: { not: null } } })) {
+  if (!await db.calendarBusinessDocument.count({ where: { calendarId: id, id: { not: brandPersonalityDocumentId(id) }, extractedText: { not: null } } })) {
     return NextResponse.json({ error: "Upload at least one business document first, so the AI understands what to create content about" }, { status: 400 });
   }
   const owner = await db.creator.findUnique({
@@ -81,6 +97,18 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
     select: { id: true, contentWorkspacePlan: true, contentWorkspaceBillingStatus: true, contentWorkspaceBillingCycle: true, contentWorkspaceTrialEndsAt: true, ...complimentaryAccessSelect, isComped: true, compedUntil: true },
   });
   if (!owner) return NextResponse.json({ error: "Calendar owner not found" }, { status: 404 });
+
+  if (typeof body.knowledgeSourceHash === "string") {
+    const currentSources = await db.calendarBusinessDocument.findMany({ where: { calendarId: id }, select: { id: true, originalName: true, extractedText: true, websiteUrl: true } });
+    if (sourceFingerprint(currentSources) !== body.knowledgeSourceHash) return NextResponse.json({ code: "KNOWLEDGE_CHANGED", error: "Business knowledge changed while this request was waiting. Please generate again so we can check the current facts. No generation allowance was used." }, { status: 409 });
+  }
+
+  if (!await checkBriefStorage(db, id)) {
+    return NextResponse.json({
+      code: "AI_STORAGE_NOT_READY",
+      error: "Content storage is not ready. The administrator must regenerate Prisma, apply the creative briefs database migration if pending, and restart the application. No generation allowance was used.",
+    }, { status: 503 });
+  }
 
   const plan = getContentWorkspacePlan(owner);
   const consumed = await consumeAiGeneration(owner.id);
@@ -91,10 +119,13 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
     }, { status: 403 });
   }
 
+  let generationPhase = "generation";
   try {
     const ideas = await generateContentCalendar({
       clientName: calendar.clientName,
-      businessSummary: await getBusinessKnowledgeContext(id, String(customInstructions ?? "Business audience products services brand voice content strategy"), "content"),
+      recentContent: await recentContentMemory(id),
+      campaignObjective: body.campaignObjective as string|undefined,
+      businessSummary: await getBusinessKnowledgeContext(id, String(customInstructions ?? ""), "content", { platforms: platforms as string[], contentStrategy: contentStrategy as string | undefined }),
       startDate,
       endDate,
       postsPerWeek: (postsPerWeek as number | undefined) ?? 3,
@@ -105,16 +136,32 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
       scheduleStrategy: scheduleStrategy as "SAME_TIME" | "SAME_DAY" | "CUSTOM" | undefined,
       platformSchedules: schedules as Record<string, { date: string; time: string }>,
     });
-    if (ideas.length === 0) throw new Error("The AI returned no content. Please try again.");
+    generationPhase = "validation";
+    for (const idea of ideas) {
+      let brief;
+      try { brief = parseCreativeBrief(idea.creativeBrief); }
+      catch { throw new ContentGenerationError("AI_CONTENT_INVALID", "Generated content is missing required fields. No incomplete drafts were saved."); }
+      if (brief.version !== 2 || !brief.objective.trim() || !brief.targetAudience.trim()) {
+        throw new ContentGenerationError("AI_CONTENT_INVALID", "Generated content is missing its objective or target audience. No incomplete drafts were saved.");
+      }
+    }
+    if (ideas.length !== expectedDrafts) throw new Error("The generated draft count does not match the planned publishing slots.");
+    const dailySlots = new Map<string,number>();
+    const plannedSlots = generationCount(String(startDate),String(endDate),(postsPerWeek as number|undefined)??3,platforms as string[],contentStrategy as string|undefined,contentGroups as string[][]|undefined).slots;
+    const remaining=new Map<string,number>();for(const day of plannedSlots)for(const platform of platforms as string[]){const key=`${platform}:${day}`;remaining.set(key,(remaining.get(key)||0)+1);}
+    for(const idea of ideas){const key=`${idea.platform}:${idea.postDate}`;if(!remaining.get(key))throw Error("Generated content does not match the planned dates and platforms.");remaining.set(key,remaining.get(key)!-1);}
 
     const rows = ideas.map((idea) => {
       if (!isRealDate(idea.postDate)) throw new Error("The generated content contains an invalid date. Please try again.");
       const postTime = schedules[idea.platform]?.time ?? "09:00";
       if (typeof postTime !== "string" || !TIME_RE.test(postTime)) throw new Error(`The scheduled time for ${idea.platform} is invalid.`);
-      const postDate = new Date(`${idea.postDate}T${postTime}:00.000Z`);
+      const slotKey = `${idea.platform}:${idea.postDate}`;
+      const ordinal = dailySlots.get(slotKey) || 0; dailySlots.set(slotKey, ordinal+1);
+      const postDate = scheduledContentDate(idea.postDate,postTime,typeof body.timeZone==="string"?body.timeZone:"UTC",ordinal);
       if (!Number.isFinite(postDate.getTime())) throw new Error(`The scheduled date for ${idea.platform} is invalid.`);
       return {
         calendarId: id, postDate, platform: idea.platform,
+        ...(idea.creativeBrief ? {creativeBrief:parseCreativeBrief(idea.creativeBrief) as unknown as Prisma.InputJsonValue} : {}),
         postType: idea.postType || null, category: idea.category || null,
         hook: idea.hook || null, script: idea.script || null,
         caption: idea.caption || null, contentIdea: idea.contentIdea || null,
@@ -122,23 +169,28 @@ export async function generateCalendarDrafts(req: NextRequest, { params }: { par
       };
     });
 
-  // Bulk-insert generated drafts in one database operation.
-// This avoids sequential inserts inside a five-second transaction.
-const posts = await db.calendarPost.createManyAndReturn({
-  data: rows,
-});
+  // Two bulk writes atomically preserve the initial brief and its version history.
+generationPhase = "persistence";
+const posts = await db.$transaction(async tx=>{
+  const created=await tx.calendarPost.createManyAndReturn({data:rows});
+  const snapshots=created.filter(post=>post.creativeBrief).map(post=>({postId:post.id,generationNumber:1,postDate:post.postDate,platform:post.platform,postType:post.postType,category:post.category,hook:post.hook,script:post.script,caption:post.caption,contentIdea:post.contentIdea,cta:post.cta,hashtags:post.hashtags,creativeBrief:post.creativeBrief as Prisma.InputJsonValue}));
+  if(snapshots.length)await tx.calendarPostAiGeneration.createMany({data:snapshots});
+  return created;
+},{timeout:20000});
 
 return NextResponse.json({
   created: posts.length,
   posts,
   aiGenerationsRemaining: null,
 });
-    return NextResponse.json({ created: posts.length, posts, aiGenerationsRemaining: null });
+
   } catch (error) {
   console.error("[Calendar AI Generation] Failed", {
     calendarId: id,
     creatorId: creator.id,
-    error,
+    phase: generationPhase,
+    errorType: error instanceof Error ? error.name : "UnknownError",
+    code: typeof error === "object" && error !== null && "code" in error ? String(error.code) : undefined,
   });
 
   try {
@@ -155,8 +207,24 @@ return NextResponse.json({
     console.error("[Calendar AI Generation] Allowance refund failed", {
       calendarId: id,
       creatorId: owner.id,
-      error: refundError,
+      errorType: refundError instanceof Error ? refundError.name : "UnknownError",
     });
+  }
+
+  if (error instanceof Error && error.name === "KnowledgeCoverageError") {
+    return NextResponse.json({ code: "KNOWLEDGE_COVERAGE_REQUIRED", error: error.message }, { status: 422 });
+  }
+
+  if (error instanceof AiProviderError) {
+    return NextResponse.json({ code: error.code, error: error.message, requestId: error.requestId }, { status: error.status === 429 ? 429 : 502 });
+  }
+
+  if (error instanceof ContentGenerationError) {
+    return NextResponse.json({ code: error.code, error: error.message }, { status: 422 });
+  }
+
+  if (databaseUnavailable(error)) {
+    return NextResponse.json({ code: "AI_STORAGE_TEMPORARILY_UNAVAILABLE", error: "The database became unavailable during generation or saving. Check your drafts before starting another batch." }, { status: 503 });
   }
 
   const timedOut =

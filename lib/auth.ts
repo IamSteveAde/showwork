@@ -1,3 +1,4 @@
+import { databaseUnavailable } from "@/lib/databaseAvailability";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
@@ -53,7 +54,7 @@ export function clearSessionCookie(response: NextResponse) {
  * Reads the session cookie and returns the logged-in Creator, or null.
  * Use this at the top of any server component/route that needs auth.
  */
-export async function getCurrentCreator() {
+export async function getCurrentCreator(options?: { throwOnDatabaseUnavailable?: boolean }) {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -64,7 +65,8 @@ export async function getCurrentCreator() {
       where: { id: payload.creatorId },
     });
     return creator;
-  } catch {
+  } catch (error) {
+    if (options?.throwOnDatabaseUnavailable && databaseUnavailable(error)) throw error;
     return null; // invalid/expired token
   }
 }

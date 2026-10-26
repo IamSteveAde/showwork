@@ -1,10 +1,12 @@
+import { databaseUnavailable, retryDatabaseRead } from "@/lib/databaseAvailability";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { db } from "@/lib/db";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string; jobId: string }> }) {
-  const creator = await getCurrentCreator();
+  try { return await retryDatabaseRead(async () => {
+  const creator = await getCurrentCreator({ throwOnDatabaseUnavailable: true });
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id, jobId } = await params;
   if (!(await hasCalendarPermission(creator.id, id, "ai.generate"))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -27,4 +29,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Generation was interrupted. Check your drafts before trying again." }, { status: 504 });
   }
   return NextResponse.json({ jobId, status: job.status }, { status: 202, headers: { "Cache-Control": "no-store" } });
+  }); } catch(error) {
+    if (!databaseUnavailable(error)) throw error;
+    console.warn("DATABASE_TEMPORARILY_UNAVAILABLE", { endpoint: "ai_generation_status", code: (error as {code?:string}).code });
+    return NextResponse.json({code:"DATABASE_TEMPORARILY_UNAVAILABLE",error:"The database is temporarily unavailable. Please wait; this does not mean your generation failed."},{status:503,headers:{"Retry-After":"15","Cache-Control":"no-store, private"}});
+  }
+
 }

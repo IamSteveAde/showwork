@@ -1,3 +1,6 @@
+import { brandPersonalityDocumentId } from "../knowledge/brandPersonality";
+import { parseCreativeBrief } from "../content/brief";
+import { generationCount, scheduledContentDate } from "../content/schedule";
 import { internalReviewInput, internalReviewError } from '../calendarInternalReview';
 /** Transactional application policies for the inactive canonical route composition. */
 import { randomUUID,randomInt,createHash } from 'node:crypto';
@@ -67,6 +70,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
     for(const field of [...POST_TEXT_FIELDS,'tikTokPrivacyLevel'] as const){values.push(data[field]??null);assignments.push(`"${field}"=$${values.length}`);}
     await tx.query(`UPDATE "CalendarPost" SET ${assignments.join(',')},"updatedAt"=clock_timestamp() WHERE id=$1`,values);
     const custom=(data.customFields as {create:{label:string;value:string}[]}).create;for(const field of custom)await tx.query(`INSERT INTO "CalendarPostCustomField"(id,"postId",label,value) VALUES($1,$2,$3,$4)`,[randomUUID(),input.id,field.label,field.value]);
+    if(input.fields.creativeBrief){const brief=parseCreativeBrief(input.fields.creativeBrief);await tx.query(`UPDATE "CalendarPost" SET "creativeBrief"=$2::jsonb WHERE id=$1`,[input.id,JSON.stringify(brief)]);await tx.query(`INSERT INTO "CalendarPostAiGeneration"(id,"postId","generationNumber","postDate",platform,"postType",category,hook,script,caption,"contentIdea",cta,hashtags,"creativeBrief") SELECT $2,id,1,"postDate",platform,"postType",category,hook,script,caption,"contentIdea",cta,hashtags,"creativeBrief" FROM "CalendarPost" WHERE id=$1`,[input.id,randomUUID()]);}
    }return {ok:true,postId:input.id};
   });
  }
@@ -74,9 +78,12 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
   await permission(input.actor,input.calendarId,'calendar.edit');return replay(input.operationId,input.actor,input,async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'calendar.edit'});const p=await post(tx,input.postId,input.calendarId);
    if(p.approvalStatus==='APPROVED')throw Error('APPROVED_CONTENT_LOCKED');if(p.publishWorkerStartedAt||p.tikTokInitStartedAt||p.tikTokPublishId||p.instagramMediaId||p.platformPostId)throw Error('PENDING_RECONCILIATION');await invalidate(tx,p,input.actor,input.operationId);
-   const patch=input.patch??{};const allowed=['postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags','taggedAccounts','linkUrl','tikTokPrivacyLevel'];
-   const assignments:string[]=[],values:unknown[]=[p.id];for(const [key,value] of Object.entries(patch)){if(!allowed.includes(key))throw Error('UNSUPPORTED_POST_FIELD');let normalized:unknown=value;
-    if(key==='postDate'){normalized=new Date(String(value));if(!Number.isFinite((normalized as Date).getTime()))throw Error('INVALID_POST_DATE');}
+   const patch=input.patch??{};const allowed=['postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags','taggedAccounts','linkUrl','tikTokPrivacyLevel','creativeBrief','creativeDevelopment','expectedUpdatedAt'];
+   if(patch.expectedUpdatedAt && new Date(String(patch.expectedUpdatedAt)).getTime()!==new Date(p.updatedAt).getTime())throw Error('CONTENT_CHANGED_RELOAD_REQUIRED');
+   const assignments:string[]=[],values:unknown[]=[p.id];for(const [key,value] of Object.entries(patch)){if(key==='expectedUpdatedAt')continue;if(!allowed.includes(key))throw Error('UNSUPPORTED_POST_FIELD');let normalized:unknown=value;
+    if(key==='creativeBrief'){normalized=value===null?null:JSON.stringify(parseCreativeBrief(value));}
+    else if(key==='creativeDevelopment'){if(value!==null&&(typeof value!=='object'||Array.isArray(value)||JSON.stringify(value).length>150000))throw Error('INVALID_CREATIVE_DEVELOPMENT');normalized=value===null?null:JSON.stringify(value);}
+    else if(key==='postDate'){normalized=new Date(String(value));if(!Number.isFinite((normalized as Date).getTime()))throw Error('INVALID_POST_DATE');}
     else if(key==='platform'){if(!['INSTAGRAM','TIKTOK','FACEBOOK','LINKEDIN','X','YOUTUBE'].includes(String(value)))throw Error('INVALID_PLATFORM');}
     else if(key==='tikTokPrivacyLevel'){if(value!==null&&!['PUBLIC_TO_EVERYONE','MUTUAL_FOLLOW_FRIENDS','FOLLOWER_OF_CREATOR','SELF_ONLY'].includes(String(value)))throw Error('INVALID_TIKTOK_PRIVACY');}
     else if(value!==null&&typeof value!=='string')throw Error('INVALID_POST_FIELD_VALUE');
@@ -84,7 +91,10 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
     values.push(normalized);assignments.push(`"${key}"=$${values.length}`);
    }if(assignments.length)await tx.query(`UPDATE "CalendarPost" SET ${assignments.join(',')},"updatedAt"=clock_timestamp() WHERE id=$1`,values);
    if(input.caption!==undefined&&input.caption!==null&&typeof input.caption!=='string')throw Error('INVALID_POST_FIELD_VALUE');
-   await tx.query(`UPDATE "CalendarPost" SET caption=CASE WHEN $4 THEN $2 ELSE caption END,"isAiDraft"=CASE WHEN $3 THEN false ELSE "isAiDraft" END,"approvalStatus"='PENDING',"tikTokConsentAt"=NULL,"tikTokConsentHash"=NULL,"tikTokConsentBy"=NULL,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,input.caption?.trim()||null,input.promoteAi===true,input.caption!==undefined]);return {ok:true};
+   await tx.query(`UPDATE "CalendarPost" SET caption=CASE WHEN $4 THEN $2 ELSE caption END,"isAiDraft"=CASE WHEN $3 THEN false ELSE "isAiDraft" END,"approvalStatus"='PENDING',"tikTokConsentAt"=NULL,"tikTokConsentHash"=NULL,"tikTokConsentBy"=NULL,"updatedAt"=clock_timestamp() WHERE id=$1`,[p.id,input.caption?.trim()||null,input.promoteAi===true,input.caption!==undefined]);
+   if('creativeBrief' in patch || 'creativeDevelopment' in patch)await tx.query(`UPDATE "CalendarPost" SET "internalReviewStatus"='PENDING',"internalReviewVersion"="internalReviewVersion"+1,"internalReviewedAt"=NULL,"internalReviewedBy"=NULL WHERE id=$1`,[p.id]);
+   if('creativeBrief' in patch || 'creativeDevelopment' in patch)await tx.query(`INSERT INTO "CalendarPostAiGeneration"(id,"postId","generationNumber","postDate",platform,"postType",category,hook,script,caption,"contentIdea",cta,hashtags,"creativeBrief","creativeDevelopment") SELECT $2,p.id,(SELECT COALESCE(max("generationNumber"),0)+1 FROM "CalendarPostAiGeneration" WHERE "postId"=p.id),p."postDate",p.platform,p."postType",p.category,p.hook,p.script,p.caption,p."contentIdea",p.cta,p.hashtags,p."creativeBrief",p."creativeDevelopment" FROM "CalendarPost" p WHERE p.id=$1`,[p.id,randomUUID()]);
+   return {ok:true};
   });
  }
  async function internalReview(input:{operationId:string;actor:string;calendarId:string;postId:string;body:Record<string,unknown>}) {
@@ -132,7 +142,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
  async function media(input:{operationId:string;actor:string;calendarId:string;postId:string;assetId:string;remove?:boolean;upload?:unknown},verifyUpload:(upload:unknown)=>Promise<{fileKey:string;objectVersion:string;contentSha256:string;mediaType:'PHOTO'|'VIDEO';sizeBytes:string;verifiedFor:{calendarId:string;postId:string};reservationId?:string;sourceAssetId?:string;sourcePostId?:string}>){
   const access=input.remove?'calendar.edit':'creatives.upload';await permission(input.actor,input.calendarId,access);const verified=input.remove?null:await verifyUpload({upload:input.upload,calendarId:input.calendarId,postId:input.postId,actor:input.actor});
   return replay(input.operationId,input.actor,{...input,upload:verified},async tx=>{
-   const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:access});const p=await post(tx,input.postId,input.calendarId);if(p.approvalStatus==='APPROVED'||p.publishWorkerStartedAt||p.tikTokInitStartedAt||p.tikTokPublishId||p.instagramMediaId||p.platformPostId||await busy(tx,p.id))throw Error('MEDIA_LOCKED');
+   const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:access});const p=await post(tx,input.postId,input.calendarId);if(p.creativeBrief)throw Error('Use the creative brief editor to develop this content');if(p.approvalStatus==='APPROVED'||p.publishWorkerStartedAt||p.tikTokInitStartedAt||p.tikTokPublishId||p.instagramMediaId||p.platformPostId||await busy(tx,p.id))throw Error('MEDIA_LOCKED');
    // Cancellation requires publishing.manage. Contributors cannot invalidate a publisher's live intent silently.
    if((await tx.query(`SELECT 1 FROM "PublishingIntent" WHERE "postId"=$1 AND state='ACTIVE'`,[p.id])).rows.length)await invalidate(tx,p,input.actor,input.operationId,access);
    if(!input.remove){if(!verified||!/^\d+$/.test(verified.sizeBytes)||BigInt(verified.sizeBytes)>BigInt(Number.MAX_SAFE_INTEGER))throw Error('VERIFIED_UPLOAD_SIZE_REQUIRED');
@@ -305,7 +315,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
    const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'calendar.edit'});const p=await post(tx,input.postId,input.calendarId);if(!p.isAiDraft)throw Error('AI draft not found');
    const generation=(await tx.query(`SELECT * FROM "CalendarPostAiGeneration" WHERE id=$1 AND "postId"=$2`,[input.generationId,p.id])).rows[0];if(!generation)throw Error('Generation not found');
    const scoped={transaction:<T>(fn:(t:OwnershipTransaction)=>Promise<T>)=>fn(tx)},actions=createCanonicalApplicationActions({...deps,database:scoped});
-   await actions.changeContent({operationId:input.operationId+'-restore',actor:input.actor,calendarId:input.calendarId,postId:p.id,caption:generation.caption,patch:Object.fromEntries(['postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags'].map(k=>[k,generation[k]]))});return {ok:true};
+   await actions.changeContent({operationId:input.operationId+'-restore',actor:input.actor,calendarId:input.calendarId,postId:p.id,caption:generation.caption,patch:Object.fromEntries(['postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags','creativeBrief','creativeDevelopment'].map(k=>[k,generation[k]??null]))});return {ok:true};
   });
  }
  async function plan(input:{operationId:string;actor?:string;credential?:string;calendarId:string;action:string;note?:string}){
@@ -331,24 +341,28 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
   const b=input.body,date=(s:unknown)=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const parsed=new Date(s+'T00:00:00Z');return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===s;};
   if(!date(b.startDate)||!date(b.endDate)||b.endDate<b.startDate||!Array.isArray(b.platforms)||!b.platforms.length||b.platforms.some((p:string)=>!['INSTAGRAM','TIKTOK','FACEBOOK','LINKEDIN','X','YOUTUBE'].includes(p))||b.postsPerWeek!==undefined&&(!Number.isFinite(b.postsPerWeek)||b.postsPerWeek<1||b.postsPerWeek>14))throw Error('Invalid generation dates, platforms or frequency');
   if(b.customInstructions!==undefined&&typeof b.customInstructions!=='string'||b.contentStrategy!==undefined&&!['SAME_CONTENT','DIFFERENT_CONTENT','CUSTOM_GROUPS'].includes(b.contentStrategy)||b.scheduleStrategy!==undefined&&!['SAME_TIME','SAME_DAY','CUSTOM'].includes(b.scheduleStrategy)||b.contentGroups!==undefined&&(!Array.isArray(b.contentGroups)||b.contentGroups.some((g:unknown)=>!Array.isArray(g)||g.some(p=>typeof p!=='string'))))throw Error('Invalid generation strategy');
+  const planned=generationCount(b.startDate,b.endDate,b.postsPerWeek??3,b.platforms,b.contentStrategy,b.contentGroups);
+  if(!planned.drafts)throw Error('No publishing slots fall in this range');
   const hash=policyHash(input),reservation=await deps.database.transaction(async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'ai.generate'});
    const old=(await tx.query(`SELECT * FROM "PublishingApplicationOperation" WHERE "operationId"=$1`,[input.operationId])).rows[0];if(old){if(old.actor!==input.actor||old.requestHash!==hash)throw Error('OPERATION_CONFLICT');return {completed:old.result};}
    if((await tx.query(`SELECT 1 FROM "PublishingApplicationOperation" WHERE "operationId"=$1`,[input.operationId+'-quota'])).rows.length)throw Error('AI_GENERATION_PENDING_RECONCILIATION');
-   const calendar=(await tx.query(`SELECT * FROM "SocialCalendar" WHERE id=$1`,[input.calendarId])).rows[0];if(!calendar||!(await tx.query(`SELECT 1 FROM "CalendarBusinessDocument" WHERE "calendarId"=$1 AND NULLIF(TRIM("extractedText"),'') IS NOT NULL LIMIT 1`,[input.calendarId])).rows.length)throw Error('Upload a business document before generating content');
+   const calendar=(await tx.query(`SELECT * FROM "SocialCalendar" WHERE id=$1`,[input.calendarId])).rows[0];if(!calendar||!(await tx.query(`SELECT 1 FROM "CalendarBusinessDocument" WHERE "calendarId"=$1 AND id<>$2 AND NULLIF(TRIM("extractedText"),'') IS NOT NULL LIMIT 1`,[input.calendarId,brandPersonalityDocumentId(input.calendarId)])).rows.length)throw Error('Upload a business document before generating content');
    if(b.usePerformanceRecommendations===true){const owner=(await tx.query(`SELECT * FROM "Creator" WHERE id=$1`,[calendar.managerId])).rows[0] as ContentWorkspaceAccount;if(!canUseContentWorkspaceFeature(owner,'performanceRecommendations'))throw Error('Upgrade to Studio to use performance recommendations');}
    await deps.validateUsage(tx,{actor:input.actor,calendarId:input.calendarId,kind:'AI_DRAFT'});
    await tx.query(`INSERT INTO "PublishingApplicationOperation"("operationId",actor,"requestHash",result) VALUES($1,$2,$3,$4)`,[input.operationId+'-quota',input.actor,hash,{reserved:true}]);return {calendar};
   });if('completed'in reservation)return reservation.completed;
   const ideas=await deps.generateContent({...b,calendarId:input.calendarId,clientName:reservation.calendar.clientName,businessSummary:reservation.calendar.aiBusinessSummary});
-  if(!Array.isArray(ideas)||!ideas.length||ideas.length>500)throw Error('AI returned invalid content');
+  if(!Array.isArray(ideas)||ideas.length!==planned.drafts||ideas.length>500)throw Error('AI returned invalid content');
+  const remaining=new Map<string,number>();for(const day of planned.slots)for(const platform of b.platforms){const key=platform+':'+day;remaining.set(key,(remaining.get(key)||0)+1);}for(const idea of ideas){const key=idea.platform+':'+idea.postDate;if(!remaining.get(key))throw Error('AI returned an unplanned publishing slot');remaining.set(key,remaining.get(key)!-1);}
   return replay(input.operationId,input.actor,input,async tx=>{
    const {v}=services(tx);await v.lockForPolicyChange(tx);await v.validateWorkspacePermission(tx,{actor:input.actor,calendarId:input.calendarId,permission:'ai.generate'});
-   const scoped={transaction:<T>(fn:(t:OwnershipTransaction)=>Promise<T>)=>fn(tx)},actions=createCanonicalApplicationActions({...deps,database:scoped}),posts=[];
+   const scoped={transaction:<T>(fn:(t:OwnershipTransaction)=>Promise<T>)=>fn(tx)},actions=createCanonicalApplicationActions({...deps,database:scoped}),posts=[],dailySlots=new Map<string,number>();
    for(const [index,idea]of ideas.entries()){
     if(!date(idea.postDate)||!b.platforms.includes(idea.platform))throw Error('Generated date/platform is invalid');
     const time=b.platformSchedules?.[idea.platform]?.time??'09:00';if(typeof time!=='string'||!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Generated schedule time is invalid');
-    const id=policyHash({operationId:input.operationId,index}).slice(0,40),postDate=new Date(idea.postDate+'T'+time+':00Z');
+    const key=idea.platform+':'+idea.postDate,ordinal=dailySlots.get(key)||0;dailySlots.set(key,ordinal+1);
+    const id=policyHash({operationId:input.operationId,index}).slice(0,40),postDate=scheduledContentDate(idea.postDate,time,b.timeZone??'UTC',ordinal);
     await actions.createPost({operationId:input.operationId+'-'+index,actor:input.actor,calendarId:input.calendarId,id,platform:idea.platform,caption:idea.caption??'',postDate,fields:idea,aiDraft:true,usageAlreadyReserved:true});posts.push((await tx.query(`SELECT * FROM "CalendarPost" WHERE id=$1`,[id])).rows[0]);
    }return {created:posts.length,posts,aiGenerationsRemaining:null};
   });
@@ -392,7 +406,7 @@ export function createCanonicalApplicationActions(deps:{database:OwnershipDataba
    const old=(await tx.query(`SELECT * FROM "PublishingApplicationOperation" WHERE "operationId"=$1`,[input.operationId])).rows[0];if(old){if(old.actor!==input.actor||old.requestHash!==hash)throw Error('OPERATION_CONFLICT');return {completed:old.result};}
    if((await tx.query(`SELECT 1 FROM "PublishingApplicationOperation" WHERE "operationId"=$1`,[input.operationId+'-quota'])).rows.length)throw Error('AI_REGENERATION_PENDING_RECONCILIATION');
    const p=await post(tx,input.postId,input.calendarId);if(p.approvalStatus==='APPROVED'||p.publishWorkerStartedAt||p.tikTokInitStartedAt||p.platformPostId||p.instagramMediaId||p.tikTokPublishId||await busy(tx,p.id))throw Error('APPROVED_CONTENT_LOCKED');
-   const calendar=(await tx.query(`SELECT * FROM "SocialCalendar" WHERE id=$1`,[input.calendarId])).rows[0];if(!calendar||!(await tx.query(`SELECT 1 FROM "CalendarBusinessDocument" WHERE "calendarId"=$1 AND NULLIF(TRIM("extractedText"),'') IS NOT NULL LIMIT 1`,[input.calendarId])).rows.length)throw Error('Upload a business document before generating content');
+   const calendar=(await tx.query(`SELECT * FROM "SocialCalendar" WHERE id=$1`,[input.calendarId])).rows[0];if(!calendar||!(await tx.query(`SELECT 1 FROM "CalendarBusinessDocument" WHERE "calendarId"=$1 AND id<>$2 AND NULLIF(TRIM("extractedText"),'') IS NOT NULL LIMIT 1`,[input.calendarId,brandPersonalityDocumentId(input.calendarId)])).rows.length)throw Error('Upload a business document before generating content');
    await deps.validateUsage(tx,{actor:input.actor,calendarId:input.calendarId,kind:'AI_REGENERATION'});await tx.query(`INSERT INTO "PublishingApplicationOperation"("operationId",actor,"requestHash",result) VALUES($1,$2,$3,$4)`,[input.operationId+'-quota',input.actor,hash,{reserved:true}]);return {p,calendar};
   });if('completed'in reservation)return reservation.completed;
   const p=reservation.p,currentPost={...Object.fromEntries(['platform','postType','category','caption','contentIdea','hook','script','cta','hashtags'].map(k=>[k,p[k]??''])),postDate:p.postDate.toISOString().slice(0,10)};

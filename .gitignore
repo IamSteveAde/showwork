@@ -51,3 +51,5 @@ dist-vps-native-disabled/
 
 ._*
 dump*
+
+/dist-knowledge/

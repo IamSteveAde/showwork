@@ -1,8 +1,10 @@
 "use client";
+import { generationCount } from "@/lib/content/schedule";
+import KnowledgeClarification, { type ClarificationPrompt, type ClarificationResponse } from "./KnowledgeClarification";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import { readAiGenerationResponse, waitForAiGeneration } from "@/lib/aiGenerationResponse";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { consumeReportingRecommendation, REPORTING_RECOMMENDATION_EVENT } from "@/lib/reporting/recommendationHandoff";
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 import AiDraftReviewModal from "@/components/calendars/AiDraftReviewModal";
@@ -65,6 +67,9 @@ export default function AiContentGeneratorCard({
   const [startDate, setStartDate] = useState(defaultStart);
   const [endDate, setEndDate] = useState(defaultEnd);
   const [postsPerWeek, setPostsPerWeek] = useState(3);
+  const [campaignObjective,setCampaignObjective]=useState("");
+  const [timeZone,setTimeZone]=useState("UTC");
+  useEffect(()=>{setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC");},[]);
   const [customInstructions, setCustomInstructions] = useState("");
   const [reportingRecommendationLoaded, setReportingRecommendationLoaded] = useState(false);
  const [platforms, setPlatforms] = useState<string[]>(["INSTAGRAM"]);
@@ -88,6 +93,10 @@ const [platformSchedules, setPlatformSchedules] = useState<
     ])
   )
 );
+  const [clarification, setClarification] = useState<ClarificationPrompt | null>(null);
+  const [knowledgeAnswers, setKnowledgeAnswers] = useState<ClarificationResponse["knowledgeAnswers"]>([]);
+  useEffect(() => { setClarification(null); setKnowledgeAnswers([]); }, [calendarId, customInstructions]);
+  const expected = useMemo(()=>{try{return generationCount(startDate,endDate,postsPerWeek,platforms,contentStrategy,contentGroups);}catch{return null;}},[startDate,endDate,postsPerWeek,platforms,contentStrategy,contentGroups]);
   const [generating, setGenerating] = useState(false);
   const [hasBusinessSummaryState, setHasBusinessSummaryState] = useState(hasBusinessSummary);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +155,7 @@ const togglePlatform = (platform: string) => {
   });
 };
 
-  const generate = async () => {
+  const generate = async (resolution?: ClarificationResponse) => {
     if (platforms.length === 0) {
       setError("Choose at least one platform.");
       return;
@@ -162,6 +171,7 @@ const togglePlatform = (platform: string) => {
       return;
     }
 
+    if (!expected?.drafts) {setError("Choose a range with publishing slots and valid platform groups.");return;}
     setGenerating(true);
     setError(null);
     setBillingBlocked(false);
@@ -176,8 +186,13 @@ const togglePlatform = (platform: string) => {
   startDate,
   endDate,
   postsPerWeek,
+  campaignObjective,
+  timeZone,
   platforms,
   customInstructions,
+  knowledgeAnswers: resolution?.knowledgeAnswers ?? knowledgeAnswers,
+  omitUnsupportedDetails: resolution?.omitUnsupportedDetails ?? false,
+  useAvailableKnowledge: resolution?.useAvailableKnowledge ?? false,
   usePerformanceRecommendations: reportingRecommendationLoaded,
   contentStrategy,
   contentGroups,
@@ -193,11 +208,19 @@ const togglePlatform = (platform: string) => {
         data = completed.data;
       }
 
+      if (data.code === "KNOWLEDGE_CLARIFICATION_REQUIRED" && Array.isArray(data.gaps)) {
+        if (resolution) setKnowledgeAnswers(resolution.knowledgeAnswers);
+        setClarification({ gaps: data.gaps, incomplete: data.incomplete === true, canSave: data.canSave === true });
+        requestAnimationFrame(() => { const panel = document.getElementById("knowledge-clarification"); panel?.scrollIntoView({ behavior: "smooth", block: "center" }); panel?.focus({ preventScroll: true }); });
+        return;
+      }
       if (!res.ok) {
         setBillingBlocked(res.status === 402 || (res.status === 403 && !!(data.requiresUpgrade || data.code === "WORKSPACE_FEATURE_LOCKED" || /subscription|allowance|limit|upgrade|trial/i.test(data.error || ""))));
         throw new Error(data.error ?? "Failed to generate content");
       }
 
+      setClarification(null);
+      setKnowledgeAnswers([]);
       setReviewOpen(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -230,7 +253,7 @@ const togglePlatform = (platform: string) => {
                   </span>
                 </div>
                 <p className="mt-1.5 text-xs leading-5 text-[#667085]">
-                  Turn your client knowledge into a ready-to-review batch.
+                  Turn business knowledge into distinctive, review-ready content.
                 </p>
               </div>
             </div>
@@ -347,6 +370,11 @@ const togglePlatform = (platform: string) => {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900" role="status">{expected ? `${expected.ideas} creative ideas · ${expected.drafts} calendar drafts` : "Complete your dates and platform groups to preview the draft count."}<p className="mt-1 text-xs text-blue-700">Monday-based weekly rhythm; partial weeks include only selected publishing days. {postsPerWeek>7?"Two daily slots are used where needed.":"One slot per publishing day, per platform."} Times use {timeZone}.</p></div>
+              <label className="mt-4 block text-xs font-semibold text-slate-700">Campaign objective <span className="font-normal text-slate-400">Optional</span><select value={campaignObjective} onChange={e=>setCampaignObjective(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm"><option value="">Let the strategy follow my business knowledge</option>{["Brand Awareness","Engagement","Audience Education","Lead Generation","Product Adoption","Sales / Conversion","Custom Objective"].map(objective=><option key={objective}>{objective}</option>)}</select></label>
+              {campaignObjective==="Custom Objective"&&<p className="mt-1 text-xs text-slate-500">Describe your objective in Creative direction below.</p>}
+              {clarification && <KnowledgeClarification calendarId={calendarId} prompt={clarification} busy={generating} onContinue={resolution => void generate(resolution)} />}
 
               {error && (
                 <div
@@ -998,7 +1026,7 @@ const togglePlatform = (platform: string) => {
                   value={customInstructions}
                   onChange={(event) => { setCustomInstructions(event.target.value); if (!event.target.value.trim()) setReportingRecommendationLoaded(false); }}
                   rows={4}
-                  placeholder="e.g. Focus on our new product launch, keep the tone playful, avoid discussing pricing…"
+                  placeholder="What should this campaign achieve? Share priorities, audience needs, tone or exclusions. AI will generate hooks, specific objectives, audiences, complete captions, flexible creative direction, CTAs and relevant hashtags. Scripts are optional."
                   className="mt-3 w-full resize-none rounded-2xl border border-[#D9E2EC] bg-white px-4 py-3.5 text-[11px] leading-6 text-[#344054] outline-none transition-all placeholder:text-[#98A2B3] hover:border-[#B9C7D8] focus:border-[#2478FF] focus:ring-4 focus:ring-[#2478FF]/10"
                 />
                 <div className="mt-1.5 text-right text-[9px] text-[#98A2B3]">

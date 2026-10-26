@@ -1833,9 +1833,12 @@ model CalendarBusinessDocument {
   sizeBytes      BigInt  @default(0)
   extractedText  String? @db.Text
 
+  knowledgeIndex KnowledgeSourceIndex?
+
   createdAt DateTime @default(now())
 
   @@unique([calendarId, websiteUrlHash])
+  @@unique([id, calendarId])
   @@index([calendarId])
 }
 
@@ -2256,6 +2259,8 @@ enum PostApprovalStatus {
 }
 
 model CalendarPost {
+  creativeBrief Json?
+  creativeDevelopment Json?
   id         String         @id @default(uuid())
   calendar   SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
   calendarId String
@@ -2374,6 +2379,8 @@ model CalendarPost {
 // move backwards/forwards through generations and restore a version.
 // ─────────────────────────────────────────────
 model CalendarPostAiGeneration {
+  creativeBrief Json?
+  creativeDevelopment Json?
   id     String       @id @default(uuid())
   post   CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId String
@@ -2784,4 +2791,44 @@ model AiGenerationJob {
 @@index([creatorId, calendarId, createdAt])
   @@index([calendarId], map: "idx_ai_gen_job_calendar")
   @@index([status, createdAt], map: "idx_ai_gen_job_status")
+}
+// Extension-free exact semantic index; scoped by the source/workspace composite FK.
+model KnowledgeSourceIndex {
+  sourceId String @id
+  calendarId String
+  source CalendarBusinessDocument @relation(fields: [sourceId, calendarId], references: [id, calendarId], onDelete: Cascade, onUpdate: Cascade)
+  revision Int @default(1)
+  sourceHash String?
+  indexKey String?
+  model String?
+  modelVersion String?
+  dimensions Int?
+  status String @default("PENDING")
+  leaseToken String?
+  leaseUntil DateTime? @db.Timestamp(3)
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now()) @db.Timestamp(3)
+  errorCode String?
+  inputTokens Int @default(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(3)
+  passages KnowledgePassage[]
+  @@unique([sourceId, calendarId])
+  @@index([status, nextAttemptAt], map: "KnowledgeSourceIndex_queue_idx")
+  @@index([calendarId, indexKey], map: "KnowledgeSourceIndex_workspace_idx")
+}
+model KnowledgePassage {
+  id String @id
+  sourceId String
+  calendarId String
+  source KnowledgeSourceIndex @relation(fields: [sourceId, calendarId], references: [sourceId, calendarId], onDelete: Cascade, onUpdate: Cascade)
+  revision Int
+  ordinal Int
+  title String
+  url String?
+  heading String
+  start Int
+  end Int
+  text String
+  embedding Float[] @default([])
+  @@index([calendarId, sourceId, revision], map: "KnowledgePassage_workspace_idx")
 }

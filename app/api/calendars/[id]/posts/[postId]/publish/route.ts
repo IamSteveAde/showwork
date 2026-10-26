@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (status === "FAILED" && (body.action !== "retry" || body.confirmedNotPublished !== true)) return NextResponse.json({ error: "Check the platform first and confirm this post has not already published." }, { status: 409 });
     if (!await db.socialConnection.findFirst({ where: { calendarId: id, platform: post.platform, status: "CONNECTED" } })) return NextResponse.json({ error: "Connect this channel first." }, { status: 409 });
     try {
-      validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType);
+      validatePublishContent(post.platform, post.assets, buildCaption(post), post.postType, !post.creativeBrief || !!post.caption?.trim());
     } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid content" }, { status: 400 }); }
   }
   const updated = await db.calendarPost.updateMany({ where: { id: postId, updatedAt: post.updatedAt, ...statusWhere(post.platform, status), approvalStatus: post.approvalStatus }, data: {

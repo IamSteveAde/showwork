@@ -70,7 +70,7 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
    if(path.endsWith('/tiktok/creator-info/route.ts'))return Response.json(await deps.actions.creatorMetadata(actor.id,calendarId),{headers:{'Cache-Control':'no-store'}});
    const postId=params.postId??body.postId;
    if(path.endsWith('/posts/route.ts')&&request.method==='GET'){
-    const allowed=['id','postDate','platform','postType','category','hook','script','caption','contentIdea','cta','hashtags','taggedAccounts','linkUrl','internalReviewStatus','internalReviewNote','internalReviewVersion','internalReviewedAt','approvalStatus','approvalNote','publishStatus','publishError','publishPermalink','instagramPublishStatus','instagramPermalink','instagramPublishError','tikTokPublishStatus','tikTokPrivacyLevel','tikTokSettings','tikTokConsentAt','tikTokInitStartedAt','tikTokPublishId','tikTokPublishError'];
+    const allowed=['id','updatedAt','creativeBrief','creativeDevelopment','postDate','platform','postType','category','hook','script','caption','contentIdea','cta','hashtags','taggedAccounts','linkUrl','internalReviewStatus','internalReviewNote','internalReviewVersion','internalReviewedAt','approvalStatus','approvalNote','publishStatus','publishError','publishPermalink','instagramPublishStatus','instagramPermalink','instagramPublishError','tikTokPublishStatus','tikTokPrivacyLevel','tikTokSettings','tikTokConsentAt','tikTokInitStartedAt','tikTokPublishId','tikTokPublishError'];
     const rows=await deps.actions.listPosts(actor.id,calendarId);return Response.json({posts:rows.map(p=>({...Object.fromEntries(allowed.map(k=>[k,(p as Record<string,any>)[k]])),assets:p.assets.map(a=>({id:a.id,fileKey:a.fileKey,mediaType:a.mediaType,contentUrl:deps.publicUrlFor?.(a.fileKey)})),videoComments:p.videoComments,customFields:p.customFields,publishing:p.publishing}))},{headers:{'Cache-Control':'no-store'}});
    }
    if(path.endsWith('/imports/confirm/route.ts'))return Response.json(await deps.actions.importPosts(calendarId,actor.id,body),{headers:{'Cache-Control':'no-store'}});
@@ -108,7 +108,7 @@ export function createCanonicalRouteDispatcher(deps:{actions:ReturnType<typeof c
     if(request.method==='POST'&&postId)return Response.json(await deps.actions.regenerate({operationId,actor:actor.id,calendarId,postId,body}));
    }
    if(path.endsWith('/posts/[postId]/route.ts')){
-    if(request.method==='PATCH'&&Object.keys(body).some(k=>!['operationId','caption','postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags','taggedAccounts','linkUrl','tikTokPrivacyLevel'].includes(k)))return Response.json({error:'Canonical metadata-field adapter required'},{status:503});
+    if(request.method==='PATCH'&&Object.keys(body).some(k=>!['operationId','caption','postDate','platform','postType','category','hook','script','contentIdea','cta','hashtags','taggedAccounts','linkUrl','tikTokPrivacyLevel','creativeBrief','creativeDevelopment','expectedUpdatedAt'].includes(k)))return Response.json({error:'Canonical metadata-field adapter required'},{status:503});
     if(request.method==='PATCH'){await deps.actions.changeContent({operationId,actor:actor.id,calendarId,postId,caption:body.caption,patch:Object.fromEntries(Object.entries(body).filter(([k])=>!['operationId','caption'].includes(k)))});return Response.json({post:await view(calendarId,postId)});}
     if(request.method==='DELETE'){await deps.actions.deletePlanningPosts({operationId,actor:actor.id,calendarId,postId});return Response.json({ok:true});}
    }

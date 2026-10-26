@@ -6,7 +6,7 @@ const { NextRequest, NextResponse } = require('next/server');
 function load(file, deps = {}) {
   const module = { exports: {} };
   const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
-  new Function('require', 'module', 'exports', js)(name => name in deps ? deps[name] : require(name), module, module.exports);
+  new Function('require', 'module', 'exports', js)(name => name in deps ? deps[name] : name.startsWith("@/") ? load(name.slice(2) + ".ts", deps) : require(name), module, module.exports);
   return module.exports;
 }
 function fixture(generate = async () => NextResponse.json({ created: 12 })) {
@@ -151,4 +151,36 @@ test('legacy worker facade maps request to payload and stores failures in the mo
  const job=await api.getAiGenerationJob('job');assert.deepEqual(job.payload,{startDate:'2026-10-23'});assert.equal(job.status,'PROCESSING');
  await api.updateAiGenerationJob('job',{status:'FAILED',error:'Generation failed'});
  assert.equal(update.status,'FAILED');assert.equal(update.httpStatus,500);assert.deepEqual(update.result,{error:'Generation failed'});
+});
+test('local admission never exposes pending work to a shared VPS worker and executes once on replay', async () => {
+  const old=process.env.NODE_ENV;process.env.NODE_ENV='development';
+  let row, calls=0, finish;
+  const completed = new Promise(resolve=>{finish=resolve;});
+  const api=load('lib/aiGenerationJobs.ts',{
+    '@/lib/calendarPermissions':{hasCalendarPermission:async()=>true},
+    '@/lib/calendarAiGeneration':{generateCalendarDrafts:async()=>{calls++;return NextResponse.json({created:3});}},
+    '@/lib/db':{db:{
+      aiGenerationJob:{
+        createMany:async({data})=>{assert.equal(data[0].status,'RUNNING');if(row)return {count:0};row={...data[0]};return {count:1};},
+        findUnique:async()=>row,
+        update:async({data})=>{Object.assign(row,data);finish();return row;},
+      },
+      creator:{findUnique:async()=>({id:'owner'})},
+    }},
+  });
+  const request=()=>new NextRequest('http://localhost/api',{method:'POST',headers:{'idempotency-key':'same-local-request'},body:'{}'});
+  try{
+    const first=await api.enqueueAiGeneration(request(),'calendar','owner',true);
+    const second=await api.enqueueAiGeneration(request(),'calendar','owner',true);
+    await completed;
+    assert.equal(first.status,202);assert.equal((await first.json()).jobId,(await second.json()).jobId);
+    assert.equal(calls,1);assert.equal(row.status,'COMPLETED');
+  }finally{if(old===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=old;}
+});
+test('status polling survives a temporary database outage without submitting generation again', async()=>{
+ const {waitForAiGeneration}=load('lib/aiGenerationResponse.ts');
+ const oldFetch=global.fetch,oldTimer=global.setTimeout;let calls=0;
+ global.setTimeout=fn=>{fn();return 0;};
+ global.fetch=async(_url,options)=>{assert.equal(options.method,undefined);calls++;return calls===1?Response.json({code:'DATABASE_TEMPORARILY_UNAVAILABLE'},{status:503}):calls===2?Response.json({status:'RUNNING'},{status:202}):Response.json({created:14});};
+ try{const result=await waitForAiGeneration('calendar','job');assert.equal(result.data.created,14);assert.equal(calls,3);}finally{global.fetch=oldFetch;global.setTimeout=oldTimer;}
 });

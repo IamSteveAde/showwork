@@ -2,48 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 
 const ROOT_DOMAIN = "useshowwork.com";
 
-/**
- * Subdomain-based portfolio routing. A visit to
- * spotlite-africa.useshowwork.com should show exactly what
- * useshowwork.com/p/spotlite-africa shows — this rewrites the request
- * internally to that route without changing what's in the address
- * bar. The root domain itself, www, and normal localhost dev traffic
- * are left completely alone.
- *
- * Local dev note: modern browsers resolve *.localhost to 127.0.0.1
- * automatically (no hosts-file editing needed), so
- * spotlite-africa.localhost:3000 works the same way locally as the
- * real subdomain does in production.
- */
+/** Old and new portfolio hosts resolve to the same database-backed slug route. */
 export function middleware(req: NextRequest) {
-  const host = req.headers.get("host") || "";
-  const hostname = host.split(":")[0]; // strip the port for local dev
+  const authority = req.headers.get("host") || "";
+  // Do not interpret forwarded hosts, arbitrary origins, nested hosts or malformed DNS labels as tenants.
+  if (!/^[a-z\d.-]+(?::\d+)?$/i.test(authority)) return NextResponse.next();
+  const hostname = authority.replace(/:\d+$/, "").replace(/\.$/, "").toLowerCase();
+  if ([ROOT_DOMAIN, `www.${ROOT_DOMAIN}`, "localhost", "127.0.0.1"].includes(hostname)) return NextResponse.next();
 
-  const isRootDomain = hostname === ROOT_DOMAIN || hostname === `www.${ROOT_DOMAIN}`;
-  const isPlainLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+  const suffix = hostname.endsWith(`.${ROOT_DOMAIN}`) ? `.${ROOT_DOMAIN}`
+    : hostname.endsWith(".localhost") ? ".localhost" : null;
+  if (!suffix) return NextResponse.next();
+  const slug = hostname.slice(0, -suffix.length);
+  if (!/^[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?$/.test(slug)) return NextResponse.next();
 
-  if (isRootDomain || isPlainLocalhost) {
-    return NextResponse.next();
-  }
+  const path = req.nextUrl.pathname;
+  // Keep shared assets and APIs at their actual routes, even when middleware is invoked directly.
+  if (/^\/(?:_next|api|images)(?:\/|$)/.test(path)
+    || /\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|map|woff2?|ttf|otf|txt|xml|webmanifest)$/i.test(path)) return NextResponse.next();
 
-  let subdomain: string | null = null;
-  if (hostname.endsWith(`.${ROOT_DOMAIN}`)) {
-    subdomain = hostname.slice(0, -(ROOT_DOMAIN.length + 1));
-  } else if (hostname.endsWith(".localhost")) {
-    subdomain = hostname.slice(0, -".localhost".length);
-  }
-
-  if (subdomain) {
-    const url = req.nextUrl.clone();
-    url.pathname = `/portfolio/${subdomain}${url.pathname === "/" ? "" : url.pathname}`;
-    return NextResponse.rewrite(url);
-  }
-
-  return NextResponse.next();
+  const prefix = `/portfolio/${slug}`;
+  if (path === prefix || path.startsWith(`${prefix}/`)) return NextResponse.next();
+  const url = req.nextUrl.clone();
+  url.pathname = `${prefix}${path === "/" ? "" : path}`;
+  return NextResponse.rewrite(url);
 }
 
 export const config = {
-  // Skip Next's internals, API routes, and static files — only real
-  // page requests need the subdomain check.
   matcher: ["/((?!_next|api|favicon.ico|images).*)"],
 };

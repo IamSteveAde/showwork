@@ -75,3 +75,22 @@ test('PDF price lists still provide readable business and pricing information', 
   const text = await extraction().extractTextFromDocument('https://example.test/prices.pdf', 'application/pdf');
   assert.match(text, /Portrait package/); assert.match(text, /NGN 50,000/); assert.match(text, /10 edited photos/);
 });
+
+test('multi-page PDF extraction retains the beginning middle and final page for full-context generation', async () => {
+  const PDFDocument = require('pdfkit');
+  const bytes = await new Promise(resolve => {
+    const document = new PDFDocument(); const chunks = [];
+    document.on('data', chunk => chunks.push(chunk));
+    document.on('end', () => resolve(Buffer.concat(chunks)));
+    document.text('FIRST_PAGE positioning for independent studios.');
+    document.addPage().text('MIDDLE_PAGE target audience: collaborative agency teams.');
+    document.addPage().text('LAST_PAGE distinct offering and creative brand voice.');
+    document.end();
+  });
+  fileResponse(bytes);
+  const text = await extraction().extractTextFromDocument('https://example.test/full-business.pdf', 'application/pdf');
+  for (const marker of ['FIRST_PAGE','MIDDLE_PAGE','LAST_PAGE']) assert.ok(text.includes(marker));
+  const {fullDocumentEvidence} = require('./helpers/load-typescript.cjs').load('lib/knowledge/fullDocuments.ts');
+  const context=fullDocumentEvidence([{id:'pdf',originalName:'full-business.pdf',extractedText:text}]);
+  assert.ok(context.includes(text));
+});

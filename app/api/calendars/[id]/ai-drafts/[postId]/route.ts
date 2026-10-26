@@ -216,6 +216,8 @@ import { requirePostPlatform } from "@/lib/calendarPosts";
       );
     }
 
+    if(access.post.creativeBrief)return NextResponse.json({error:"Use the creative brief editor to revise ideas or develop execution material."},{status:409});
+
     /**
      * The Marketing Workspace subscription belongs to the owner of
      * the calendar. A collaborator can perform the regeneration when

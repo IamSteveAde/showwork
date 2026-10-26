@@ -38,7 +38,7 @@ export function createTikTokPublisher(database: typeof defaultDb, services: { fr
       const creator = await queryTikTokCreatorInfo(accessToken);
       const video = post.assets.some(a => a.mediaType === "VIDEO");
       validateTikTokSettings(settings, creator, video);
-      validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType);
+      validatePublishContent("TIKTOK", post.assets, buildCaption(post), post.postType, !post.creativeBrief || !!post.caption?.trim());
       const preparedAssets = await validateTikTokMedia(post.assets, creator, { publish: true });
       await reserveTikTokRequest(connection.platformAccountId, "init");
       // Recheck both the connection and the post immediately before transfer.

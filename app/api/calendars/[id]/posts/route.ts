@@ -48,6 +48,9 @@ export async function GET(
     {
       posts: posts.map((post) => ({
         id: post.id,
+        updatedAt: post.updatedAt.toISOString(),
+        creativeBrief: post.creativeBrief,
+        creativeDevelopment: post.creativeDevelopment,
         postDate: post.postDate.toISOString(),
         platform: post.platform,
         postType: post.postType,

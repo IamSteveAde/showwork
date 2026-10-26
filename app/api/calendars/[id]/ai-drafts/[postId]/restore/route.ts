@@ -1,4 +1,5 @@
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -60,6 +61,8 @@ export async function POST(
   contentIdea: generation.contentIdea,
   cta: generation.cta,
   hashtags: generation.hashtags,
+  creativeBrief: generation.creativeBrief ?? Prisma.DbNull,
+  creativeDevelopment: generation.creativeDevelopment ?? Prisma.DbNull,
 },
   });
 
