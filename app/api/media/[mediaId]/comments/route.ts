@@ -1,12 +1,11 @@
+import { deliveryAccess } from "@/lib/deliveryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendVideoCommentNotificationEmail } from "@/lib/resend";
 import { appUrl } from "@/lib/url";
 
-// PUBLIC route — same reasoning as the review routes: the person
-// calling this already passed the project's password and the
-// mandatory name+email gate to see the media at all, and the media
-// id itself is a UUID, not guessable. No creator auth check here.
+// Signed viewer sessions or authorized creators are required for comments.
+// Request-body emails are checked against that server-verified identity.
 //
 // Unlike a review, there's no limit on how many of these one person
 // can leave — each comment is independent, pinned to its own moment
@@ -43,6 +42,8 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const access = await deliveryAccess(media.project);
+  if (!access || access.email.toLowerCase() !== String(viewerEmail).toLowerCase()) return NextResponse.json({ error: "Unlock this delivery as the reviewer before continuing" }, { status: 403 });
   const comment = await db.videoComment.create({
     data: {
       mediaId,
@@ -104,6 +105,8 @@ export async function GET(
 ) {
   const { mediaId } = await params;
 
+  const media = await db.media.findUnique({ where: { id: mediaId }, include: { project: true } });
+  if (!media || !await deliveryAccess(media.project)) return NextResponse.json({ error: "Unlock this delivery first" }, { status: 403 });
   const comments = await db.videoComment.findMany({
     where: { mediaId },
     orderBy: { createdAt: "asc" },

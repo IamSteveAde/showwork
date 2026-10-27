@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import UiSymbol from "@/components/ui/UiSymbol";
 import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
 
@@ -584,6 +585,7 @@ function TiledTile({
   width,
   height,
   onOpen,
+  onAspectRatio,
 }: {
   item: PortfolioMediaItem;
   index: number;
@@ -591,9 +593,10 @@ function TiledTile({
   width: number;
   height: number;
   onOpen: () => void;
+  onAspectRatio: (ratio: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const nearView = useInView(containerRef, { once: true, margin: "-20%" });
+  const nearView = useInView(containerRef, { once: true, margin: "300px" });
   const [shouldLoad, setShouldLoad] = useState(false);
 
   useEffect(() => {
@@ -622,6 +625,8 @@ function TiledTile({
         shouldLoad && (
           <PortfolioAutoplayVideo
             src={item.url}
+            poster={item.posterUrl}
+            onAspectRatio={onAspectRatio}
             className="absolute inset-0 h-full w-full object-cover transition-all duration-500 ease-out [@media(hover:hover)]:brightness-[0.55] [@media(hover:hover)]:saturate-[0.85] [@media(hover:hover)]:group-hover:brightness-100 [@media(hover:hover)]:group-hover:saturate-[1.05]"
             // The dimmed → awake effect only applies on devices that
             // genuinely support hover ([@media(hover:hover)]) — on
@@ -632,7 +637,10 @@ function TiledTile({
         )
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
+          fill
+          sizes={`${Math.ceil(width)}px`}
+          onLoad={event => { const image = event.currentTarget; if (image.naturalHeight) onAspectRatio(image.naturalWidth / image.naturalHeight); }}
           src={item.url}
           alt={item.caption || ""}
           loading="lazy"
@@ -724,14 +732,14 @@ function MiniSectionCard({
     >
       {cover ? (
         cover.type === "VIDEO" ? (
-          <PortfolioAutoplayVideo src={cover.url} className="absolute inset-0 h-full w-full object-cover" />
+          <PortfolioAutoplayVideo poster={cover.posterUrl} src={cover.url} className="absolute inset-0 h-full w-full object-cover" />
         ) : isDocType ? (
           <div className="absolute inset-0 flex items-center justify-center bg-white/[0.06]">
             <IconDocument className="h-8 w-8 text-white/25" />
           </div>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <Image fill sizes="(max-width: 640px) 224px, 288px" src={cover.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )
       ) : (
         <div className="absolute inset-0 bg-white/5" />
@@ -773,6 +781,7 @@ function CategoryCard({
         cover.type === "VIDEO" ? (
           <PortfolioAutoplayVideo
             src={cover.url}
+            poster={cover.posterUrl}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
           />
         ) : isDocType ? (
@@ -781,7 +790,9 @@ function CategoryCard({
           </div>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
             src={cover.url}
             alt=""
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
@@ -824,31 +835,6 @@ function CategoryCard({
       </div>
     </motion.div>
   );
-}
-
-// Detects a file's real aspect ratio (width/height) without rendering
-// it visibly — a plain in-memory Image for photos, and a detached
-// <video> listening for loadedmetadata for videos, since there's no
-// built-in equivalent of `new Image()` for video.
-function detectAspectRatio(item: PortfolioMediaItem): Promise<number> {
-  return new Promise((resolve) => {
-    if (item.type === "VIDEO") {
-      const vid = document.createElement("video");
-      vid.preload = "metadata";
-      vid.src = item.url;
-      vid.onloadedmetadata = () => {
-        resolve(vid.videoWidth && vid.videoHeight ? vid.videoWidth / vid.videoHeight : 1);
-      };
-      vid.onerror = () => resolve(1);
-    } else {
-      const img = new window.Image();
-      img.onload = () => {
-        resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1);
-      };
-      img.onerror = () => resolve(1);
-      img.src = item.url;
-    }
-  });
 }
 
 interface JustifiedRow {
@@ -933,26 +919,12 @@ function JustifiedGallery({
     return () => observer.disconnect();
   }, []);
 
-  // Runs detection only for the items that actually need it — most
-  // items already have a real, stored ratio and never touch this at
-  // all. Never blocks anything: the gallery below renders immediately
-  // using a reasonable guess for whichever items are still pending,
-  // then quietly corrects just those specific tiles as their real
-  // shape comes in.
-  useEffect(() => {
-    let cancelled = false;
-    items.forEach((item) => {
-      if (item.aspectRatio !== null) return;
-      if (detectedRatios[item.id] !== undefined) return;
-      detectAspectRatio(item).then((ratio) => {
-        if (!cancelled) setDetectedRatios((prev) => ({ ...prev, [item.id]: ratio }));
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
+  // Learn missing legacy dimensions from the media already being displayed,
+  // never a second detached downloader for every file in the portfolio.
+  const rememberRatio = (item: PortfolioMediaItem, ratio: number) => {
+    if (item.aspectRatio || !Number.isFinite(ratio) || ratio <= 0) return;
+    setDetectedRatios(previous => previous[item.id] !== undefined ? previous : { ...previous, [item.id]: ratio });
+  };
 
   // Every item gets a usable ratio immediately: its real stored
   // value, a value already detected for it, or — while detection for
@@ -991,6 +963,7 @@ function JustifiedGallery({
                 width={row.widths[i]}
                 height={row.height}
                 onOpen={() => onOpen(idx)}
+                onAspectRatio={ratio => rememberRatio(item, ratio)}
               />
             );
           })}
@@ -1208,7 +1181,7 @@ export default function PortfolioContent({
                 )}
               </>
             ) : heroMedia!.type === "VIDEO" ? (
-              <PortfolioAutoplayVideo src={heroMedia!.url} enabled={!scrolled} className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
+              <PortfolioAutoplayVideo poster={heroMedia!.posterUrl} src={heroMedia!.url} enabled={!scrolled} className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={heroMedia!.url} alt="" className="h-full w-full object-cover" style={{ opacity: 0.85 }} />
@@ -1430,6 +1403,7 @@ export default function PortfolioContent({
                   <PortfolioAutoplayVideo
                     key={selectedCover.url}
                     src={selectedCover.url}
+                    poster={selectedCover.posterUrl}
                     className="h-full w-full object-cover"
                     style={{ opacity: 0.8 }}
                   />

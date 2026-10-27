@@ -9,6 +9,7 @@ export interface PortfolioMediaItem {
   id: string;
   type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   url: string;
+  posterUrl?: string | null;
   caption: string | null;
   // Stored at upload time (width ÷ height) — null for anything
   // uploaded before this existed, or a video that hasn't been
@@ -96,6 +97,7 @@ export default function PortfolioMediaModal({
         {item.type === "VIDEO" ? (
           <PortfolioAutoplayVideo
             src={item.url}
+            poster={item.posterUrl}
             controls
             className="max-h-[85dvh] max-w-[92vw] object-contain"
           />

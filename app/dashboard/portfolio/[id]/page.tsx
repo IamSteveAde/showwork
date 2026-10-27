@@ -901,6 +901,7 @@ export default async function PortfolioDetailPage({
                                 key={m.id}
                                 mediaId={m.id}
                                 url={publicUrlFor(m.fileKey)}
+                                posterUrl={m.posterFileKey ? publicUrlFor(m.posterFileKey) : null}
                                 filename={m.fileKey.split("/").pop() ?? "file"}
                                 type={m.type}
                                 sectionId={section.id}

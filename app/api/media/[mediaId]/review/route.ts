@@ -1,13 +1,10 @@
+import { deliveryAccess } from "@/lib/deliveryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sendReviewNotificationEmail } from "@/lib/resend";
 
-// PUBLIC route — called from the client-facing delivery page, not the
-// creator dashboard. Deliberately no creator auth check here: the
-// person calling this already passed the project's password (and the
-// mandatory name+email gate) to even see the media in the first place.
-// The media id itself is a UUID, not guessable, matching the same
-// security model the rest of the public delivery flow relies on.
+// Delivery viewer session (or authorized creator) must match the reviewer.
+// A body-supplied email alone never authorizes feedback.
 //
 // One reviewer can only ever have a single current verdict on a file —
 // submitting the exact same verdict again is rejected as a duplicate;
@@ -43,6 +40,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const access = await deliveryAccess(media.project);
+  if (!access || access.email.toLowerCase() !== String(viewerEmail).toLowerCase()) return NextResponse.json({ error: "Unlock this delivery as the reviewer before continuing" }, { status: 403 });
   const existingReview = await db.mediaReview.findUnique({
     where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
   });
@@ -163,6 +162,9 @@ export async function DELETE(
     return NextResponse.json({ error: "viewerEmail is required" }, { status: 400 });
   }
 
+  const media = await db.media.findUnique({ where: { id: mediaId }, include: { project: true } });
+  const access = media ? await deliveryAccess(media.project) : null;
+  if (!access || access.email.toLowerCase() !== String(viewerEmail).toLowerCase()) return NextResponse.json({ error: "Unlock this delivery as the reviewer before continuing" }, { status: 403 });
   const existing = await db.mediaReview.findUnique({
     where: { mediaId_reviewerEmail: { mediaId, reviewerEmail: viewerEmail } },
   });

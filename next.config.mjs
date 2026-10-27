@@ -30,6 +30,11 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
+      // Include the configured public media domain as well as R2's defaults.
+      ...(process.env.R2_PUBLIC_URL ? (() => {
+        try { const url = new URL(process.env.R2_PUBLIC_URL); return [{ protocol: url.protocol.slice(0, -1), hostname: url.hostname, port: url.port, pathname: `${url.pathname.replace(/\/$/, "")}/**` }]; }
+        catch { return []; }
+      })() : []),
       { protocol: "https", hostname: "*.r2.dev" },
       { protocol: "https", hostname: "*.r2.cloudflarestorage.com" },
     ],

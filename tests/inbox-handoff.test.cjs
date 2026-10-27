@@ -108,9 +108,12 @@ test('a manual staff reply pauses AI before contacting the platform, even if sen
 test('paused inbox presents the reason, attention queue and explicit takeover/resume actions',()=>{
   const React=require('react');const {renderToStaticMarkup}=require('react-dom/server');let index=0;
   const thread={id:'thread',platform:'INSTAGRAM',participantPlatformId:'person',participantName:'Ada',participantUsername:null,leadStatus:'NEW',unreadCount:1,lastMessageAt:new Date().toISOString(),lastMessagePreview:'Ready to buy',connection:{id:'channel',status:'CONNECTED'},aiPausedAt:new Date().toISOString(),aiHandoffReason:'Buying or payment request: the team needs to guide the next step.',aiHandoffAcknowledgedAt:null,messages:[]};
-  const inbox={summary:{newMessages:1,leads:1,needsAttention:1,messagesThisMonth:1,allMessages:1},accounts:[{id:'channel',platform:'INSTAGRAM',status:'CONNECTED',messagingAvailable:true}],settings:{aiAutoReplyEnabled:true,clientAccessEnabled:true},conversations:[thread]};
+  const inbox={summary:{newMessages:1,leads:1,needsAttention:1,messagesThisMonth:1,allMessages:1},accounts:[{id:'channel',platform:'INSTAGRAM',status:'CONNECTED',messagingAvailable:true},{id:'x-channel',platform:'X',status:'CONNECTED',messagingAvailable:true}],settings:{aiAutoReplyEnabled:true,clientAccessEnabled:true},conversations:[thread]};
   const stub={__esModule:true,default:()=>null};
-  const Component=load('components/calendars/SocialLeadInbox.tsx',{'react':{...React,useState:initial=>{const position=index++;return [position===3?inbox:position===4?'thread':typeof initial==='function'?initial():initial,()=>{}]}},'next/image':{__esModule:true,default:props=>React.createElement('img',props)},'@/lib/publishing/clientRequests':{},'@/components/calendars/WorkspaceFeatureNotice':stub,'./InboxSetupPanel':stub,'./ReplyDraftAssistant':stub,'./XChatInbox':stub}).default;
-  const html=renderToStaticMarkup(React.createElement(Component,{calendarId:'workspace',canReplyFromWorkspace:true}));
+  const Component=load('components/calendars/SocialLeadInbox.tsx',{'react':{...React,useState:initial=>{const position=index++;return [position===3?inbox:position===4?'thread':typeof initial==='function'?initial():initial,()=>{}]}},'next/image':{__esModule:true,default:props=>React.createElement('img',props)},'@/lib/publishing/clientRequests':{},'@/components/calendars/WorkspaceFeatureNotice':stub,'./InboxSetupPanel':stub,'./ReplyDraftAssistant':stub,'./XChatInbox':{__esModule:true,default:()=>React.createElement('div',null,'X unlock controls')}}).default;
+  const html=renderToStaticMarkup(React.createElement(Component,{calendarId:'workspace',canReplyFromWorkspace:true,isOwner:true}));
   for(const text of ['Needs attention','Human handoff','AI paused','Buying or payment request','Take over','Resume AI'])assert.ok(html.includes(text),text);
+  assert.ok(html.includes('Encrypted X messages'));
+  assert.ok(html.indexOf('X unlock controls') < html.indexOf('<aside'), 'X tools must sit outside the conversation list');
+  assert.ok(html.includes('Expand conversation view'));
 });

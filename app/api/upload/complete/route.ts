@@ -1,3 +1,4 @@
+import { deliverySession, verifyDeliveryObject, matchesDeliveryType } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -6,9 +7,9 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, fileKey, type, caption, displayOrder, sectionId, folderId } = await req.json();
+  const { projectId, fileKey, type, caption, displayOrder, sectionId, folderId, aspectRatio } = await req.json();
 
-  if (!projectId || !fileKey || !type) {
+  if (typeof projectId !== "string" || typeof fileKey !== "string" || typeof type !== "string") {
     return NextResponse.json(
       { error: "projectId, fileKey, and type are required" },
       { status: 400 }
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -39,6 +40,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const session = await deliverySession(projectId, creator.id, fileKey);
+  if (!session) return NextResponse.json({ error: "This upload session has expired. Start a new upload.", code: "UPLOAD_SESSION_EXPIRED" }, { status: 409 });
+  if (!matchesDeliveryType(session.contentType, type)) return NextResponse.json({ error: "The file type does not match this upload" }, { status: 400 });
+  const existing = await db.media.findUnique({ where: { uploadSessionId: session.id } });
+  if (existing) return NextResponse.json({ media: existing });
   // If a sectionId was passed, confirm it actually belongs to this
   // project before attaching — otherwise a file could get silently
   // tied to a section from a completely different project.
@@ -62,23 +68,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const media = await db.media.create({
-    data: {
-      projectId,
-      fileKey,
-      type,
-      caption: caption ?? null,
-      displayOrder: displayOrder ?? 0,
-      sectionId: sectionId ?? null,
-      folderId: folderId ?? null,
-      // The actual point of the collaboration feature — every file
-      // now remembers exactly who uploaded it, whether that's the
-      // project owner or a collaborator. This is what will let client
-      // feedback get routed to the right specific person instead of
-      // always going to the project owner.
-      uploadedByCreatorId: creator.id,
-    },
-  });
+  let sizeBytes: number;
+  try { sizeBytes = await verifyDeliveryObject(session); }
+  catch { return NextResponse.json({ error: "The uploaded file could not be verified. Retry the transfer.", code: "UPLOAD_NOT_VERIFIED" }, { status: 409 }); }
 
+  const data = {
+    projectId, fileKey, type: type as "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF", caption: typeof caption === "string" ? caption : null,
+    displayOrder: typeof displayOrder === "number" ? displayOrder : 0,
+    sectionId: sectionId ?? null, folderId: folderId ?? null,
+    uploadedByCreatorId: creator.id, uploadSessionId: session.id, sizeBytes,
+    aspectRatio: typeof aspectRatio === "number" && Number.isFinite(aspectRatio) && aspectRatio > 0 && aspectRatio < 100 ? aspectRatio : null,
+  };
+  const media = await db.$transaction(async tx => {
+    const saved = await tx.media.upsert({ where: { uploadSessionId: session.id }, create: data, update: {} });
+    await tx.deliveryUploadSession.update({ where: { id: session.id }, data: { state: "COMPLETE", mediaId: saved.id } });
+    return saved;
+  });
   return NextResponse.json({ media });
 }

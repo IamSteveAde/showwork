@@ -194,6 +194,7 @@ function Hero({
         {heroMedia.type === "VIDEO" ? (
           <PortfolioAutoplayVideo
             src={heroMedia.url}
+            poster={heroMedia.posterUrl}
             className="h-full w-full object-cover"
             style={{ opacity: 0.9 }}
           />
@@ -258,26 +259,7 @@ function officeViewerUrl(url: string) {
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 }
 
-function detectAspectRatio(item: MediaItem): Promise<number> {
-  return new Promise((resolve) => {
-    if (item.type === "VIDEO") {
-      const vid = document.createElement("video");
-      vid.preload = "metadata";
-      vid.src = item.url;
-      vid.onloadedmetadata = () => {
-        resolve(vid.videoWidth && vid.videoHeight ? vid.videoWidth / vid.videoHeight : 1);
-      };
-      vid.onerror = () => resolve(1);
-    } else {
-      const img = new window.Image();
-      img.onload = () => {
-        resolve(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1);
-      };
-      img.onerror = () => resolve(1);
-      img.src = item.url;
-    }
-  });
-}
+
 
 interface JustifiedRow {
   items: MediaItem[];
@@ -360,29 +342,19 @@ function JustifiedWallGallery({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    items.forEach((item) => {
-      if (aspectRatios[item.id] !== undefined) return;
-      detectAspectRatio(item).then((ratio) => {
-        if (!cancelled) setAspectRatios((prev) => ({ ...prev, [item.id]: ratio }));
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items]);
-
-  const allKnown = items.every((item) => aspectRatios[item.id] !== undefined);
+  const rememberRatio = (item: MediaItem, ratio: number) => {
+    if (item.aspectRatio || !Number.isFinite(ratio) || ratio <= 0) return;
+    setAspectRatios(previous => previous[item.id] !== undefined ? previous : { ...previous, [item.id]: ratio });
+  };
+  const effectiveRatios = useMemo(() => Object.fromEntries(items.map(item => [item.id, item.aspectRatio || aspectRatios[item.id] || 1])), [items, aspectRatios]);
   const gap = 1;
   const targetRowHeight = 340;
   const maxPerRow = isMobile ? 1 : 4;
 
   const rows = useMemo(() => {
-    if (!allKnown || containerWidth === 0) return [];
-    return computeJustifiedRows(items, aspectRatios, containerWidth, targetRowHeight, gap, maxPerRow);
-  }, [allKnown, containerWidth, items, aspectRatios, maxPerRow]);
+    if (containerWidth === 0) return [];
+    return computeJustifiedRows(items, effectiveRatios, containerWidth, targetRowHeight, gap, maxPerRow);
+  }, [containerWidth, items, effectiveRatios, maxPerRow]);
 
   let runningIndex = 0;
 
@@ -402,6 +374,7 @@ function JustifiedWallGallery({
                 width={row.widths[i]}
                 height={row.height}
                 onOpen={() => onOpen(item)}
+                onAspectRatio={ratio => rememberRatio(item, ratio)}
                 onReview={(status, note) => onReview(item.id, status, note)}
                 onDeleteReview={() => onDeleteReview(item.id)}
               />
@@ -422,6 +395,7 @@ function WallTile({
   width,
   height,
   onOpen,
+  onAspectRatio,
   onReview,
   onDeleteReview,
 }: {
@@ -432,11 +406,12 @@ function WallTile({
   width: number;
   height: number;
   onOpen: () => void;
+  onAspectRatio: (ratio: number) => void;
   onReview: (status: "APPROVED" | "NEEDS_REVISION", note?: string) => void;
   onDeleteReview: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const nearView = useInView(containerRef, { once: true, margin: "-20%" });
+  const nearView = useInView(containerRef, { once: true, margin: "300px" });
   const [shouldLoad, setShouldLoad] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -466,6 +441,8 @@ function WallTile({
           shouldLoad ? (
             <PortfolioAutoplayVideo
               src={item.url}
+              poster={item.posterUrl}
+              onAspectRatio={onAspectRatio}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out"
               style={{ transform: hovered ? "scale(1.045)" : "scale(1)" }}
             />
@@ -474,7 +451,10 @@ function WallTile({
           )
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
+            fill
+            sizes={`${Math.ceil(width)}px`}
+            onLoad={event => { const image = event.currentTarget; if (image.naturalHeight) onAspectRatio(image.naturalWidth / image.naturalHeight); }}
             src={item.url}
             alt={item.caption}
             loading="lazy"
@@ -572,9 +552,9 @@ function DocTile({
     >
       <div onClick={onOpen} className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-slate-100">
         {doc.type === "PDF" ? (
-          <iframe src={`${doc.url}#toolbar=0&navpanes=0&page=1`} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
+          <iframe loading="lazy" src={`${doc.url}#toolbar=0&navpanes=0&page=1`} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
         ) : (
-          <iframe src={officeViewerUrl(doc.url)} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
+          <iframe loading="lazy" src={officeViewerUrl(doc.url)} title={doc.caption || "Document"} className="pointer-events-none h-full w-full border-0" />
         )}
 
         <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/[0.035]" />

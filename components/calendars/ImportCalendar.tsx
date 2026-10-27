@@ -353,7 +353,7 @@ export default function ImportCalendar({
 
   return (
     <>
-      <button type="button" onClick={begin} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#1768E8]/25 bg-[#1768E8]/10 px-4 text-sm font-semibold text-[#1768E8] transition hover:bg-[#1768E8]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1768E8]">
+      <button data-content-toolbar-action="import" type="button" onClick={begin} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[#1768E8]/25 bg-[#1768E8]/10 px-4 text-sm font-semibold text-[#1768E8] transition hover:bg-[#1768E8]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1768E8]">
         <UploadCloud className="h-4 w-4" /> Import calendar
       </button>
       <dialog

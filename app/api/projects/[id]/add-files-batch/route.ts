@@ -55,12 +55,11 @@ export async function POST(
     );
   }
 
-  const updated = await db.project.update({
-    where: { id },
+  const reserved = await db.project.updateMany({
+    where: { id, additionalUploadCount: { lt: MAX_ADDITIONAL_UPLOAD_BATCHES } },
     data: { additionalUploadCount: { increment: 1 } },
   });
-
-  return NextResponse.json({
-    remaining: MAX_ADDITIONAL_UPLOAD_BATCHES - updated.additionalUploadCount,
-  });
+  if (!reserved.count) return NextResponse.json({ error: "You've used all 3 add-more-files sessions for this project." }, { status: 403 });
+  const updated = await db.project.findUniqueOrThrow({ where: { id } });
+  return NextResponse.json({ remaining: Math.max(0, MAX_ADDITIONAL_UPLOAD_BATCHES - updated.additionalUploadCount) });
 }

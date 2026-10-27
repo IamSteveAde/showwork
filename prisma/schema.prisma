@@ -986,6 +986,10 @@ model TaskAsset {
   task                Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
   taskId              String
   fileKey             String
+  uploadSessionId String? @unique
+  aspectRatio Float?
+  posterFileKey String?
+  sizeBytes Float?
   filename            String?
   // The file's actual type — carried through to the promoted Media
   // row at publish time, so a video uploaded to a task doesn't
@@ -1037,6 +1041,10 @@ model Media {
   projectId    String
   type         MediaType
   fileKey      String // R2 object key, e.g. "projects/{projectId}/video/invisible.mp4"
+  uploadSessionId String? @unique
+  aspectRatio Float?
+  posterFileKey String?
+  sizeBytes Float?
   caption      String?
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
@@ -1524,6 +1532,7 @@ model PortfolioMedia {
   section      PortfolioSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   sectionId    String?
   type         MediaType
+  posterFileKey String?
   fileKey      String
   // Computed once, client-side, at upload time from the local file
   // (width ÷ height) — never re-computed at view time. This is what
@@ -1691,6 +1700,7 @@ enum CalendarBillingStatus {
 }
 
 model SocialCalendar {
+  researchPlan Json?
   // Workspace-wide permission to dispatch queued social posts.
   autoPublishEnabled Boolean @default(true)
   id           String  @id @default(uuid())
@@ -1843,6 +1853,7 @@ model CalendarBusinessDocument {
 }
 
 model BusinessResearchRun {
+  findingFeedback Json?
   id String @id @default(uuid())
   calendar SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
   calendarId String
@@ -2831,4 +2842,23 @@ model KnowledgePassage {
   text String
   embedding Float[] @default([])
   @@index([calendarId, sourceId, revision], map: "KnowledgePassage_workspace_idx")
+}
+
+// Durable recovery between direct object transfer and Media registration.
+model DeliveryUploadSession {
+  id String @id @default(uuid())
+  projectId String
+  creatorId String
+  fileKey String @unique
+  uploadId String?
+  expectedBytes BigInt
+  contentType String
+  purpose String @default("NEW")
+  targetId String?
+  state String @default("OPEN")
+  mediaId String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([projectId, creatorId])
+  @@index([state, expiresAt])
 }

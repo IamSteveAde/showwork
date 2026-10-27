@@ -13,3 +13,9 @@ export function calendarWorkflow(post: WorkflowPost) {
   if (statuses.includes('FAILED')) return { stage: 3, label: 'Publishing needs attention', detail: 'Approved content could not be published. Check the publishing details.', tone: 'amber' } as const;
   return { stage: 3, label: 'Ready to publish', detail: 'Both reviews are complete. Scheduling depends on auto-publish and platform settings.', tone: 'green' } as const;
 }
+
+export type CalendarStageFilter = "all" | "internal" | "client" | "publishing";
+export function matchesCalendarStage(post: WorkflowPost, filter: CalendarStageFilter) {
+  const stage = calendarWorkflow(post).stage;
+  return filter === "all" || (filter === "internal" ? stage === 1 : filter === "client" ? stage === 2 : stage >= 3);
+}

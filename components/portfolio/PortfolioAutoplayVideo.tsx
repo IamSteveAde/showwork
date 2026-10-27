@@ -39,20 +39,24 @@ export function resumeVisibleAutoplayVideo() {
 
 export default function PortfolioAutoplayVideo({
   src,
+  poster,
   className,
   style,
   enabled = true,
   controls = false,
   muted = true,
   onClick,
+  onAspectRatio,
 }: {
   src: string;
+  poster?: string | null;
   className?: string;
   style?: React.CSSProperties;
   enabled?: boolean;
   controls?: boolean;
   muted?: boolean;
   onClick?: () => void;
+  onAspectRatio?: (ratio: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const visibleRef = useRef(false);
@@ -64,10 +68,22 @@ export default function PortfolioAutoplayVideo({
       return;
     }
 
+    // Fetch metadata only near the viewport. Offscreen/hidden videos must
+    // not compete with visible photos or the active video's playback.
+    const previewObserver = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || poster) return;
+      if (video.getAttribute("src") !== src) {
+        video.preload = "metadata";
+        video.src = src;
+        video.load();
+      }
+    }, { rootMargin: "300px" });
+    previewObserver.observe(video);
     const observer = new IntersectionObserver(
       ([entry]) => {
         visibleRef.current = entry.isIntersecting && entry.intersectionRatio >= 0.35;
         if (visibleRef.current) {
+          if (video.getAttribute("src") !== src) { video.src = src; video.load(); }
           visibleVideos.add(video);
           const isDesktopHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
           if (!isDesktopHover || !activeVideo || activeVideo === video) activate(video);
@@ -78,15 +94,21 @@ export default function PortfolioAutoplayVideo({
     observer.observe(video);
     return () => {
       observer.disconnect();
+      previewObserver.disconnect();
       visibleRef.current = false;
       pause(video);
     };
-  }, [enabled, src]);
+  }, [enabled, src, poster]);
 
   return (
     <video
       ref={videoRef}
-      src={src}
+      src={controls ? src : undefined}
+      poster={poster || undefined}
+      onLoadedMetadata={event => {
+        const video = event.currentTarget;
+        if (video.videoWidth && video.videoHeight) onAspectRatio?.(video.videoWidth / video.videoHeight);
+      }}
       controls={controls}
       autoPlay={false}
       muted={muted}

@@ -1,3 +1,4 @@
+import { sourceAllowed, type ResearchPlan } from "./researchPlan";
 import { brandPersonalityDocumentId, readBrandPersonality, brandPersonalityContext } from "./brandPersonality";
 import { fullDocumentEvidence } from "./fullDocuments";
 import type { RetrievalRequest } from "./hybrid/query";
@@ -8,7 +9,7 @@ import { updateBusinessSummaryWithDocument } from "@/lib/openai";
 export async function getBusinessKnowledgeContext(calendarId: string, query: string, purpose: "reply" | "content" | "analytics" = "reply", request: RetrievalRequest = {}) {
   const [sources, calendar] = await Promise.all([
     db.calendarBusinessDocument.findMany({ where: { calendarId }, select: { id: true, originalName: true, extractedText: true, websiteUrl: true } }),
-    db.socialCalendar.findUnique({ where: { id: calendarId }, select: { aiBusinessSummary: true, aiBusinessSummarySourceHash: true } }),
+    db.socialCalendar.findUnique({ where: { id: calendarId }, select: { aiBusinessSummary: true, aiBusinessSummarySourceHash: true, researchPlan: true } }),
   ]);
   const hash = sourceFingerprint(sources);
   const profileId = brandPersonalityDocumentId(calendarId);
@@ -30,7 +31,7 @@ export async function getBusinessKnowledgeContext(calendarId: string, query: str
   if (purpose !== "reply") {
     const run = await db.businessResearchRun.findFirst({ where: { calendarId, status: "SUCCEEDED", sourceHash: hash, completedAt: { gte: new Date(Date.now() - 30 * 86400000) } }, orderBy: { createdAt: "desc" } });
     const result = run?.result as { findings?: { id: string; title: string; learning: string; application: string; sourceUrls: string[] }[] } | null;
-    const findings = result?.findings?.filter(f => !run?.excludedFindingIds.includes(f.id)) ?? [];
+    const findings = result?.findings?.filter(f => !run?.excludedFindingIds.includes(f.id) && f.sourceUrls.some(url => sourceAllowed(url, (calendar?.researchPlan as ResearchPlan | null)?.excludedDomains ?? []))).map(f => ({ ...f, sourceUrls: f.sourceUrls.filter(url => sourceAllowed(url, (calendar?.researchPlan as ResearchPlan | null)?.excludedDomains ?? [])) })) ?? [];
     if (findings.length) context += `\n\nEXTERNAL RESEARCH — hypotheses for content experiments only, not verified business facts or proof of account performance. Observed analytics take precedence. Cite the sources when discussing these findings:\n${JSON.stringify(findings).slice(0, 14000)}`;
   }
   return context;

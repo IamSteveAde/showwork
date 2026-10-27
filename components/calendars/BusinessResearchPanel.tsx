@@ -1,16 +1,26 @@
 "use client";
+import researchStyles from "./ResearchStudio.module.css";
 
-import { useCallback, useEffect, useState } from "react";
-import { Search, ArrowUpRight, BookOpen, CheckCircle2, CircleHelp, Loader2, RefreshCw, FlaskConical } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Search, ArrowUpRight, BookOpen, ChevronDown, Loader2, RefreshCw, SlidersHorizontal, ArrowRight, History, MessageSquare, ScanSearch, Lightbulb, Link2 } from "lucide-react";
+import { opportunityInstructions, queueResearchBrief } from "@/lib/knowledge/researchHandoff";
+import { sourceAllowed, type ResearchPlan, type ResearchFeedback } from "@/lib/knowledge/researchPlan";
 import type { BusinessResearchResult } from "@/lib/openai";
 
-type Run = { id: string; status: string; phase: string; focus: string; sourceHash: string | null; result: BusinessResearchResult | null; excludedFindingIds: string[]; error: string | null; createdAt: string; completedAt: string | null };
-type Snapshot = { runs: Run[]; sourceHash: string; sourceCount: number };
-export default function BusinessResearchPanel({ calendarId, canManage }: { calendarId: string; canManage: boolean }) {
+type Run = { id: string; status: string; phase: string; focus: string; sourceHash: string | null; result: BusinessResearchResult | null; findingFeedback?: ResearchFeedback | null; excludedFindingIds: string[]; error: string | null; createdAt: string; completedAt: string | null };
+type Snapshot = { plan: ResearchPlan | null; runs: Run[]; sourceHash: string; sourceCount: number };
+export default function BusinessResearchPanel({ calendarId, canManage, canGenerate = false }: { calendarId: string; canManage: boolean; canGenerate?: boolean }) {
+  const questionRef = useRef<HTMLTextAreaElement>(null);
   const [data, setData] = useState<Snapshot | null>(null);
+  const [plan, setPlan] = useState<ResearchPlan>({ goal: "", audience: "", priorities: "", excludedDomains: [] });
+  const [planLoaded, setPlanLoaded] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [feedbackNotes, setFeedbackNotes] = useState<Record<string, string>>({});
+  useEffect(() => { if (data && !planLoaded) { if (data.plan) setPlan(data.plan); setPlanLoaded(true); } }, [data, planLoaded]);
   const [focus, setFocus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const endpoint = `/api/calendars/${calendarId}/research`;
   const refresh = useCallback(async () => {
@@ -30,6 +40,7 @@ export default function BusinessResearchPanel({ calendarId, canManage }: { calen
   }, [pending?.id, refresh]);
   const latest = data?.runs.find(r => r.status === "SUCCEEDED");
   const run = data?.runs.find(r => r.id === selected) ?? latest;
+  useEffect(() => { setShowAll(false); }, [run?.id]);
   const fresh = !!run && run.sourceHash === data?.sourceHash && !!run.completedAt && Date.now() - Date.parse(run.completedAt) < 30 * 86400000;
   const activeRun = data?.runs.find(r => r.status === "SUCCEEDED" && r.sourceHash === data.sourceHash && !!r.completedAt && Date.now() - Date.parse(r.completedAt) < 30 * 86400000);
   const active = run?.id === activeRun?.id && fresh;
@@ -43,45 +54,92 @@ export default function BusinessResearchPanel({ calendarId, canManage }: { calen
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to start research."); }
     finally { setBusy(false); }
   }
-  async function toggle(findingId: string, excluded: boolean) {
+  async function toggle(findingId: string, excluded: boolean, verdict?: "useful" | "irrelevant" | "incorrect") {
     if (!run) return;
-    setBusy(true);
+    setBusy(true); setError("");
     try {
-      const response = await fetch(endpoint, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: run.id, findingId, excluded }) });
+      const response = await fetch(endpoint, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: run.id, findingId, excluded, verdict, note: feedbackNotes[`${run.id}:${findingId}`] ?? run.findingFeedback?.[findingId]?.note ?? "" }) });
       if (!response.ok) throw new Error("Could not update this finding.");
       await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to update finding."); }
     finally { setBusy(false); }
   }
-  return <div className="min-w-0 space-y-6 text-slate-800">
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#102D50] via-[#164B91] to-[#1768E8] p-6 text-white sm:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.18em] text-blue-100"><FlaskConical size={17} /> Research studio</span><span className="rounded-full bg-white/10 px-3 py-1 text-xs">{data ? `${data.sourceCount} business sources` : "Loading sources"}</span></div>
-      <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">A clearer view. A smarter next move.</h2>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100">Explore your audience and market. Turn cited findings into content experiments, grounded in what your business actually does.</p>
-      {canManage && <div className="mt-6 max-w-3xl">
-        <label htmlFor="research-focus" className="mb-2 block text-sm font-medium">What should we investigate?</label>
-        <textarea id="research-focus" value={focus} onChange={e => setFocus(e.target.value)} maxLength={1200} rows={3} placeholder="Include your public website, industry and audience. For example: what questions do first-time customers ask before booking a photographer in Lagos?" className="w-full min-w-0 resize-y rounded-2xl border border-white/20 bg-white p-4 text-sm leading-6 text-slate-900 placeholder:text-slate-500" />
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><span className="text-xs text-blue-100">Use public topics. Keep private customer details out of research.</span><button onClick={start} disabled={busy || !!pending || focus.trim().length < 10 || !data?.sourceCount} className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-blue-700 disabled:opacity-50">{busy || pending ? <Loader2 size={17} className="animate-spin" /> : <Search size={17} />} {pending ? "Research in progress" : "Start research"}</button></div>
+  async function savePlan() {
+    setBusy(true); setError("");
+    try { const response = await fetch(endpoint, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "savePlan", plan }) });
+      const body = await response.json(); if (!response.ok) throw Error(body.error); setNotice("Research plan saved. Future runs will use it."); await refresh();
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not save plan."); } finally { setBusy(false); }
+  }
+  const fieldClass = "mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50";
+  const secondaryClass = "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:border-blue-200 hover:text-blue-700 disabled:opacity-40";
+  return <div className={researchStyles.studio}>
+    <section className={researchStyles.hero} aria-labelledby="research-question-title">
+      <div className={researchStyles.heroHeading}>
+        <div><p className={researchStyles.eyebrow}><ScanSearch size={15}/> AI Studio / Research</p><h1 id="research-question-title">A better question.<br/><span>A sharper next move.</span></h1><p className={researchStyles.heroCopy}>Understand your audience, explore your market and find a fresh angle for your next creative brief.</p></div>
+        <div className={researchStyles.researchArt} aria-hidden="true"><span/><div><ScanSearch size={38} strokeWidth={1.4}/></div><span><Lightbulb size={18}/></span></div>
+      </div>
+      {canManage && <div className={researchStyles.questionBox}>
+        <label className="sr-only" htmlFor="research-focus">Your research question</label>
+        <textarea ref={questionRef} id="research-focus" value={focus} onChange={e => setFocus(e.target.value)} maxLength={1200} rows={3} placeholder="For example: What stops small businesses in Nigeria from hiring a social media manager?" className={researchStyles.questionInput} />
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className={researchStyles.questionHint}>Your knowledge provides context. Keep private details out of the question.</p>
+          <button onClick={start} disabled={busy || !!pending || focus.trim().length < 10 || !data?.sourceCount} className={researchStyles.startButton}>{busy || pending ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} {pending ? "Researching…" : "Start research"}</button>
+        </div>
+        {data?.sourceCount === 0 && <p className="mt-3 text-sm text-amber-700">Add a document or website in Knowledge to get started.</p>}
       </div>}
+      <div className={researchStyles.contextLine}><span><BookOpen size={13}/>{data ? `${data.sourceCount} business sources` : "Loading workspace…"}</span><span><Link2 size={13}/>Source links included in findings</span></div>
+      <details className={`${researchStyles.preferences} group`}>
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-slate-600 [&::-webkit-details-marker]:hidden"><SlidersHorizontal size={16} aria-hidden="true" /> Research preferences <span className="ml-auto text-xs font-normal text-slate-400">Optional</span><ChevronDown size={16} className="transition group-open:rotate-180" /></summary>
+        <p className="mt-4 text-xs leading-5 text-slate-500">Set these once to guide future research. These fields are included in public research requests, so keep private details out.</p>
+        <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
+          {([["goal", "Your marketing goal", "What are you trying to achieve?"], ["audience", "Your audience", "Who do you want to understand?"], ["priorities", "Topics to focus on", "Questions that matter to your business"]] as const).map(([key, label, placeholder]) => <label key={key} className="min-w-0 text-sm font-medium">{label}<textarea disabled={!canManage || busy} placeholder={placeholder} maxLength={1200} rows={2} value={plan[key]} onChange={e => setPlan(p => ({ ...p, [key]: e.target.value }))} className={fieldClass} /></label>)}
+          <label className="min-w-0 text-sm font-medium">Sources to avoid<textarea disabled={!canManage || busy} rows={2} value={plan.excludedDomains.join("\n")} placeholder="example.com — one domain per line" onChange={e => setPlan(p => ({ ...p, excludedDomains: e.target.value.split("\n") }))} className={fieldClass} /></label>
+        </div>
+        {canManage && <button disabled={busy} onClick={savePlan} className={secondaryClass + " mt-4"}>Save preferences</button>}
+      </details>
     </section>
-    {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error} <button onClick={() => void refresh()} className="ml-2 underline">Refresh</button></p>}
-    {pending && <div role="status" aria-live="polite" className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-5"><Loader2 className="mt-1 shrink-0 animate-spin text-blue-600" size={20}/><div className="min-w-0"><p className="font-semibold">{pending.phase}</p><p className="mt-1 break-words text-sm text-slate-600">{pending.focus}</p><p className="mt-2 text-xs text-slate-500">This can take a few minutes. You can leave this tab and return.</p></div></div>}
+    {notice && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{notice}</p>}
+    {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error} <button onClick={() => void refresh()} className="ml-2 underline">Try loading again</button></p>}
+    {pending && <div role="status" aria-live="polite" className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-5"><Loader2 className="mt-1 shrink-0 animate-spin text-blue-600" size={20}/><div className="min-w-0"><p className="text-sm font-semibold">{pending.phase}</p><p className="mt-1 break-words text-sm text-slate-600">{pending.focus}</p><p className="mt-2 text-xs text-slate-500">You can leave this page and return when it’s ready.</p></div></div>}
     {data?.runs[0]?.status === "FAILED" && <p role="status" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">{data.runs[0].error}</p>}
-    <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-xl font-semibold">What we’ve learned</h3><button onClick={() => void refresh()} className="inline-flex items-center gap-2 text-sm text-blue-700"><RefreshCw size={15}/> Refresh</button></div>
-    {run?.result ? <>
-      <div className="rounded-2xl border border-blue-100 bg-white p-5"><div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-700"><BookOpen size={16}/>{active ? "Informing content & analytics" : "Research archive · not currently used"}</div><p className="text-sm leading-6">{run.result.summary}</p><p className="mt-3 text-xs leading-5 text-slate-500">{!fresh ? "Business sources changed or this research is over 30 days old. Run fresh research to use these insights." : "Research suggests experiments. It does not establish prices, policies or customer commitments, and is not used as factual evidence in inbox replies."}</p></div>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">{run.result.findings.map((finding, i) => {
-        const excluded = run.excludedFindingIds.includes(finding.id);
-        return <article key={finding.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-          <div className="mb-4 flex items-center justify-between gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-sm font-semibold text-blue-700">{String(i + 1).padStart(2, "0")}</span><span className="text-xs text-slate-500">{excluded ? "Excluded" : active ? "In use" : "Saved finding"}</span></div>
-          <h4 className="text-lg font-semibold leading-snug">{finding.title}</h4><p className="mt-3 text-sm leading-6 text-slate-600">{finding.learning}</p>
-          <div className="mt-4 rounded-xl bg-blue-50 p-4"><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">An experiment to try</p><p className="text-sm leading-6">{finding.application}</p></div>
-          <div className="mt-4 flex flex-wrap gap-2">{finding.sourceUrls.map((url, index) => <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-blue-700"><span className="truncate">{run.result?.sources.find(s => s.url === url)?.title || `Source ${index + 1}`}</span><ArrowUpRight size={13} className="shrink-0"/></a>)}</div>
-          {canManage && <label className="mt-5 flex cursor-pointer items-center gap-2 border-t border-slate-100 pt-4 text-sm"><input type="checkbox" checked={!excluded} disabled={busy} onChange={() => void toggle(finding.id, !excluded)} className="h-4 w-4 accent-blue-600"/> Include in recommendations</label>}
+    {run?.result ? <section aria-labelledby="research-findings-title" className={researchStyles.results}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0"><p className={researchStyles.eyebrow}><Lightbulb size={14}/> What we found</p><h2 id="research-findings-title" className={researchStyles.resultsTitle}>Ideas with a reason behind them.</h2><p className="mt-1 break-words text-sm text-slate-500">{run.focus}</p><p className="mt-2 text-xs text-slate-400">{new Date(run.createdAt).toLocaleDateString()} · {run.result.findings.length} findings · {active ? "Available to AI Studio" : "Archived research"}</p></div>
+        <button aria-label="Refresh research results" onClick={() => void refresh()} className={secondaryClass + " shrink-0"}><RefreshCw size={16} /></button>
+      </div>
+      {!fresh && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">This research is over 30 days old or your knowledge has changed. Run new research before using it for a brief.</p>}
+      <details className={`${researchStyles.disclosure} group`}><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium [&::-webkit-details-marker]:hidden"><span className="flex items-center gap-2"><BookOpen size={16} className="text-blue-600" /> Read the summary</span><ChevronDown size={16} className="transition group-open:rotate-180" /></summary><p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-600">{run.result.summary}</p></details>
+      <div className={researchStyles.findingGrid}>{run.result.findings.slice(0, showAll ? undefined : 4).map((finding, i) => {
+        const sourceUrls = finding.sourceUrls.filter(url => sourceAllowed(url, data?.plan?.excludedDomains ?? []));
+        const excluded = run.excludedFindingIds.includes(finding.id) || !sourceUrls.length;
+        const key = `${run.id}:${finding.id}`;
+        return <article key={key} className={researchStyles.finding} data-excluded={excluded}>
+          <div className={researchStyles.findingTop}><span className={researchStyles.findingMark}><ScanSearch size={17}/><span>{String(i + 1).padStart(2, "0")}</span></span><span className={researchStyles.findingStatus}>{excluded ? "Excluded" : active ? "Ready to explore" : "Saved finding"}</span></div>
+          <h4 className={researchStyles.findingTitle}>{finding.title}</h4>
+          <p className={researchStyles.learning}>{finding.learning}</p>
+          <div className={researchStyles.application}><p><Lightbulb size={13}/> An idea to try</p><p>{finding.application}</p></div>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3"><span className={researchStyles.sourceCount}><Link2 size={13}/>{sourceUrls.length} {sourceUrls.length === 1 ? "source" : "sources"}</span>{canManage && canGenerate && <button disabled={excluded || !active || busy} title={!active ? "Run current research to use this finding" : excluded ? "Include this finding before creating a brief" : undefined} onClick={() => { queueResearchBrief(calendarId, opportunityInstructions({ ...finding, sourceUrls })); window.dispatchEvent(new CustomEvent("showwork-workspace-navigate", { detail: { id: "generate" } })); }} className={researchStyles.createBrief}>Create brief <ArrowRight size={15}/></button>}</div>
+          <details className={`${researchStyles.findingDetails} group`}><summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium text-slate-500 [&::-webkit-details-marker]:hidden">Details & sources <ChevronDown size={15} className="transition group-open:rotate-180" /></summary>
+            <div className="mt-4 space-y-4 text-sm leading-6 text-slate-600"><p className="whitespace-pre-line">{finding.learning}</p><div><p className="font-medium text-slate-800">Suggested next step</p><p className="whitespace-pre-line">{finding.application}</p></div>
+              {finding.relevance && <div><p className="font-medium text-slate-800">Why it matters for you</p><p>{finding.relevance}</p></div>}
+              {finding.uncertainty && <div><p className="font-medium text-slate-800">What needs checking</p><p>{finding.uncertainty}</p></div>}
+              {finding.successMeasure && <div><p className="font-medium text-slate-800">How to measure it</p><p>{finding.successMeasure}</p></div>}
+              <p className="text-xs text-slate-400">Evidence date: {finding.evidenceDate || "Not available"}</p>
+              <div className="space-y-2">{sourceUrls.map((url, index) => <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-start gap-2 text-sm text-blue-700 hover:underline"><ArrowUpRight size={15} className="mt-1 shrink-0" /><span className="min-w-0 break-words">{run.result?.sources.find(s => s.url === url)?.title || `Source ${index + 1}`}</span></a>)}</div>
+              {canManage && <button disabled={busy} className={secondaryClass} onClick={() => { setFocus(`Investigate further: ${finding.title}. ${finding.application}`.slice(0, 1200)); setNotice("Follow-up question ready. Review it above, then start research."); questionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }); questionRef.current?.focus({ preventScroll: true }); }}>Explore this further <ArrowUpRight size={15}/></button>}
+            </div>
+          </details>
+          {canManage && <details className={`${researchStyles.findingDetails} group`}><summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-medium text-slate-500 [&::-webkit-details-marker]:hidden"><span className="flex items-center gap-2"><MessageSquare size={14}/> {run.findingFeedback?.[finding.id] ? "Your feedback" : "Improve this finding"}</span><ChevronDown size={15} className="transition group-open:rotate-180" /></summary>
+            <label className="mt-4 block text-xs text-slate-500">What should we know? (optional)<textarea rows={2} maxLength={600} value={feedbackNotes[key] ?? run.findingFeedback?.[finding.id]?.note ?? ""} onChange={e => setFeedbackNotes(p => ({ ...p, [key]: e.target.value }))} className={fieldClass} /></label>
+            <div className="mt-3 flex flex-wrap gap-2">{(["useful", "irrelevant", "incorrect"] as const).map(verdict => <button key={verdict} disabled={busy} onClick={() => void toggle(finding.id, verdict !== "useful", verdict)} aria-pressed={run.findingFeedback?.[finding.id]?.verdict === verdict} className="rounded-lg border border-slate-200 px-3 py-2 text-xs capitalize aria-pressed:border-blue-500 aria-pressed:bg-blue-50">{verdict}</button>)}</div>
+            <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-slate-500"><input type="checkbox" checked={!excluded} disabled={busy || !sourceUrls.length} onChange={() => void toggle(finding.id, !excluded)} className="mt-1 h-4 w-4 shrink-0 accent-blue-600"/> Use in AI recommendations</label>
+          </details>}
         </article>;
       })}</div>
-      <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5"><h4 className="flex items-center gap-2 font-semibold"><CircleHelp size={18}/> What we still don’t know</h4><ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6">{run.result.unknowns.length ? run.result.unknowns.map((item, i) => <li key={i}>{item}</li>) : <li>No additional gaps were reported by this run. Findings still require judgment and testing.</li>}</ul></section>
-    </> : !pending && <div className="rounded-2xl border border-dashed border-blue-200 bg-white p-8 text-center"><BookOpen className="mx-auto text-blue-600" size={28}/><h4 className="mt-3 font-semibold">Build a research library with evidence.</h4><p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">Add business sources in Knowledge, then choose a research question. Findings, sources and unanswered questions will appear here.</p></div>}
-    {!!data?.runs.length && <section className="rounded-2xl border border-slate-200 bg-white p-5"><h4 className="mb-3 font-semibold">Research history</h4><div className="divide-y divide-slate-100">{data.runs.map(item => <button key={item.id} disabled={!item.result} onClick={() => setSelected(item.id)} className="flex w-full min-w-0 items-start gap-3 py-3 text-left disabled:cursor-default"><CheckCircle2 size={16} className="mt-1 shrink-0 text-blue-600"/><span className="min-w-0"><span className="block break-words text-sm">{item.focus}</span><span className="mt-1 block text-xs text-slate-500">{new Date(item.createdAt).toLocaleDateString()} · {item.phase}</span></span></button>)}</div></section>}
+      {run.result.findings.length > 4 && <div className="text-center"><button className={secondaryClass} onClick={() => setShowAll(value => !value)}>{showAll ? "Show fewer findings" : `Show all ${run.result.findings.length} findings`}<ChevronDown size={15} className={showAll ? "rotate-180" : ""}/></button></div>}
+      {!!run.result.unknowns.length && <details className={`${researchStyles.disclosure} group`}><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm text-slate-600 [&::-webkit-details-marker]:hidden">Open questions ({run.result.unknowns.length})<ChevronDown size={16} className="transition group-open:rotate-180"/></summary><ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-500">{run.result.unknowns.map((item, i) => <li key={i}>{item}</li>)}</ul></details>}
+      <p className="px-1 text-xs leading-5 text-slate-400">Research suggests ideas to test. Your business knowledge remains the source of truth.</p>
+    </section> : !pending && data && <div className={researchStyles.empty}><Search className="mx-auto text-blue-500" size={25}/><h3 className="mt-3 font-semibold">Your next idea starts with a question.</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Ask above. We’ll bring back findings, sources and practical ideas for your content.</p></div>}
+    {!!data?.runs.length && <details className={`${researchStyles.disclosure} group`}><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-500 [&::-webkit-details-marker]:hidden"><span className="flex items-center gap-2"><History size={16}/> Previous research</span><ChevronDown size={16} className="transition group-open:rotate-180"/></summary><div className="mt-3 divide-y divide-slate-100">{data.runs.map(item => <button key={item.id} disabled={!item.result} onClick={() => setSelected(item.id)} className="block w-full min-w-0 rounded-lg py-3 text-left disabled:opacity-50"><span className="block break-words text-sm text-slate-700">{item.focus}</span><span className="mt-1 block text-xs text-slate-400">{new Date(item.createdAt).toLocaleDateString()} · {item.phase}</span></button>)}</div></details>}
   </div>;
 }

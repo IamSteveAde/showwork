@@ -14,6 +14,7 @@ type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 interface FileGridItemProps {
   mediaId: string;
   url: string;
+  posterUrl?: string | null;
   filename: string;
   caption: string | null;
   type: MediaKind;
@@ -41,6 +42,7 @@ function officeViewerUrl(url: string) {
 export default function FileGridItem({
   mediaId,
   url,
+  posterUrl,
   filename,
   caption,
   type,
@@ -94,10 +96,11 @@ export default function FileGridItem({
           <video
             ref={videoRef}
             src={url}
+            poster={posterUrl || undefined}
             muted
             loop
             playsInline
-            preload="metadata"
+            preload={posterUrl ? "none" : "metadata"}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : type === "PHOTO" ? (
@@ -115,12 +118,14 @@ export default function FileGridItem({
           // preview rather than a static icon. #toolbar=0 hides Chrome's
           // PDF toolbar so it reads as a clean preview, not a full app.
           <iframe
+            loading="lazy"
             src={`${url}#toolbar=0&navpanes=0&page=1`}
             title={filename}
             className="pointer-events-none h-full w-full border-0"
           />
         ) : (
           <iframe
+            loading="lazy"
             src={officeViewerUrl(url)}
             title={filename}
             className="pointer-events-none h-full w-full border-0 bg-white"

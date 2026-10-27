@@ -1,4 +1,7 @@
 "use client";
+import channelStyles from "./ChannelsStudio.module.css";
+import ChannelCapabilities from "./ChannelCapabilities";
+import PlatformBrandIcon from "./PlatformBrandIcon";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import TikTokMessagingPanel from "./TikTokMessagingPanel";
@@ -86,59 +89,54 @@ export default function TikTokConnectionCard({
   const isConnected = !!username;
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-[24px] border border-[#263449] bg-[#0B111B] shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+    <div className={channelStyles.connectionCard}>
       <div className="min-w-0 p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black text-white">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
-                <path d="M16.6 2h-3.3v13.8c0 1.5-1.2 2.7-2.7 2.7a2.7 2.7 0 0 1 0-5.4c.3 0 .5 0 .8.1V9.8a6.1 6.1 0 0 0-.8 0A6.1 6.1 0 1 0 16.6 15.9V8.5a8 8 0 0 0 4.6 1.5V6.7a4.8 4.8 0 0 1-4.6-4.7Z" />
-              </svg>
-            </div>
+            <div className={channelStyles.platformLogo}><PlatformBrandIcon platform="TIKTOK" size={25}/></div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold leading-5 text-white">TikTok publishing</p>
-              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#718096]">
-                Schedule approved posts
+              <p className="truncate text-sm font-semibold leading-5 text-white">TikTok</p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#8295AF]">
+                Content & business tools
               </p>
             </div>
           </div>
 
-          {isConnected && (
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300">
+          {isConnected ? (<span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#398D78]">
               Connected
-            </span>
-          )}
+            </span>) : <span className={channelStyles.disconnected}>Not connected</span>}
         </div>
 
-        {messagingConnected && <p role="status" className="mt-4 text-xs text-emerald-300">TikTok Business Messaging connected. Manage DMs, leads and AI replies in Inbox.</p>}
+        {messagingConnected && <p role="status" className="mt-4 text-xs text-[#398D78]">TikTok Business Messaging connected. Manage DMs, leads and AI replies in Inbox.</p>}
         {justConnected && (
-          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] text-emerald-300">
+          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] text-[#398D78]">
             TikTok connected successfully.
           </p>
         )}
         {error && (
-          <p className="mt-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] text-red-300">
+          <p className="mt-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] text-[#AE6760]">
             {error}
           </p>
         )}
 
+        <ChannelCapabilities platform="tiktok"/>
         {isConnected ? (
           <>
             <p className="mt-4 text-sm font-medium text-white">{username}</p>
-            <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
+            <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#71849E]">
               After client approval, review TikTok settings and authorize each post to publish at its scheduled time.
               {connectedAt && ` Connected ${new Date(connectedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}
             </p>
 
           </>
         ) : (
-          <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
+          <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#71849E]">
             Connect this calendar to a client&apos;s TikTok account — once connected, review the settings and authorize each approved TikTok post for scheduled publishing.
           </p>
         )}
         {isManager && isConnected && <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3">
           <p className="text-xs font-semibold text-white">TikTok analytics</p>
-          <p className="mt-1 text-[11px] leading-5 text-[#AAB4C3]">{analyticsAccess === true
+          <p className="mt-1 text-[11px] leading-5 text-[#71849E]">{analyticsAccess === true
             ? "Analytics permissions granted. Open Analytics & Reporting, select TikTok, and sync data to retrieve current statistics."
             : analyticsAccess === false
               ? "Reconnect this account and grant profile statistics and video access to enable analytics. Publishing stays connected."
@@ -148,12 +146,12 @@ export default function TikTokConnectionCard({
         {isManager && isConnected && <TikTokMessagingPanel calendarId={calendarId} />}
       </div>
 
-      <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
+      <div className="border-t border-[#E4EBF6] bg-[#F7FAFF] p-4 sm:p-5">
   {isManager ? (
     isConnected ? (
       confirming ? (
         <div className="flex flex-col gap-2.5">
-          <p className="text-[11px] text-[#AAB4C3]">
+          <p className="text-[11px] text-[#71849E]">
             Disconnect this TikTok account? Already-published posts stay published.
           </p>
           <div className="flex items-center gap-2">
@@ -175,7 +173,7 @@ export default function TikTokConnectionCard({
       ) : (
         <button
           onClick={() => setConfirming(true)}
-          className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-400/10"
+          className="w-full rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-2.5 text-xs font-semibold text-[#AE6760] transition-colors hover:bg-red-400/10"
         >
           Disconnect TikTok
         </button>
@@ -189,10 +187,10 @@ export default function TikTokConnectionCard({
       </a>
     )
   ) : (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center text-[11px] font-medium text-[#718096]">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-center text-[11px] font-medium text-[#8295AF]">
       {isConnected
-        ? "Connected — channel management is restricted to the workspace owner."
-        : "Channel connection is restricted to the workspace owner."}
+        ? "Connected — channel-management permission is required."
+        : "Channel-management permission is required to connect this account."}
     </div>
   )}
 </div>

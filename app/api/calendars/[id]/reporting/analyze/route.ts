@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     const params = new URLSearchParams({ from: body.from, to: body.to });
     if (typeof body.platform === "string" && body.platform) {
-      if (!PLATFORMS.has(body.platform)) return NextResponse.json({ error: "Choose a supported platform." }, { status: 400 });
+      if (body.platform.split(",").some(value => !PLATFORMS.has(value))) return NextResponse.json({ error: "Choose a supported platform." }, { status: 400 });
       params.set("platform", body.platform);
     }
     const { start, end } = reportingPeriod(params);
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }],
       posts,
     });
-    const selectedPlatform = typeof body.platform === "string" && body.platform ? body.platform as SocialPlatform : undefined;
+    const selectedPlatform = typeof body.platform === "string" && body.platform ? { in: body.platform.split(",") as SocialPlatform[] } : undefined;
     await db.$transaction(async (tx) => {
       await tx.reportingInsight.deleteMany({
         where: {

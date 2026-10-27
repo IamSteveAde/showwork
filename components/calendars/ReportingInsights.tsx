@@ -1,4 +1,5 @@
 "use client";
+import PlatformBrandIcon from "./PlatformBrandIcon";
 import { ArrowUpRight, ArrowRight, Sparkles, TrendingUp, Target, Lightbulb, LockKeyhole, Check } from "lucide-react";
 import WorkspaceFeatureNotice from "./WorkspaceFeatureNotice";
 import type { Report } from "./CalendarReportingPanel";
@@ -16,7 +17,7 @@ export default function ReportingInsights({ insights, total, filter, onFilter, a
     {analyzing&&<p role="status" className={styles.infoNotice}>Finding patterns in your data and preparing your next content experiments…</p>}
     {insights.length?<div className={styles.insightGrid}>{insights.map((insight,index)=>{const kind=kinds[insight.type]||kinds.RECOMMENDATION;const Icon=kind.icon;return <article key={insight.id} className={styles.insightCard} data-tone={kind.tone}>
       <div className={styles.insightMeta}><span><Icon size={13} aria-hidden="true"/>{kind.label}</span><span className={styles.insightNumber}>{String(index+1).padStart(2,'0')}</span></div>
-      <p className={styles.insightPlatform}>{insight.platform?insight.platform==='X'?'X':insight.platform.charAt(0)+insight.platform.slice(1).toLowerCase():'Across your channels'}</p>
+      <p className={styles.insightPlatform}>{insight.platform && <PlatformBrandIcon platform={insight.platform} size={13}/>}{insight.platform?insight.platform==='X'?'X':insight.platform.charAt(0)+insight.platform.slice(1).toLowerCase():'Across your channels'}</p>
       <h5>{insight.title}</h5>
       <details className={styles.evidence}><summary>Explore the evidence <ArrowRight size={13} aria-hidden="true"/></summary><p>{insight.description}</p></details>
       {insight.recommendation?.trim()&&(access?<div className={styles.nextStep}><p><Check size={12} aria-hidden="true"/>Your next experiment</p><div>{insight.recommendation}</div>{!client&&<button type="button" disabled={!canApply} onClick={()=>onApply(insight.title,insight.description,insight.recommendation)}>Create content from this insight <ArrowUpRight size={14} aria-hidden="true"/></button>}</div>:<div className={`${styles.nextStep} ${styles.lockedStep}`}><div aria-hidden={true} className="pointer-events-none min-h-[160px] select-none blur-sm"><p>Recommended next step</p><div>{insight.recommendation}</div>{!client && <button type="button" disabled onClick={()=>onApply(insight.title,insight.description,insight.recommendation)}>Create content from this insight</button>}</div><div className={styles.lockOverlay}><LockKeyhole size={18} aria-hidden="true"/><p>Upgrade to Studio to view and use AI recommendations.</p><a href="/dashboard/billing?product=content-workspace#content-workspace-plans">Upgrade to Studio</a></div></div>)}

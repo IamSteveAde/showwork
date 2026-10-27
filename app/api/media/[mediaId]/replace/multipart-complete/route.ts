@@ -1,3 +1,5 @@
+import { parseDeliveryParts } from "@/lib/deliveryUploads";
+import { validDeliveryKey, deliverySession, verifyDeliveryObject, registerDeliveryReplacement, matchesDeliveryType } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
@@ -29,12 +31,8 @@ export async function POST(
   if (!fileKey || !uploadId || !Array.isArray(parts) || parts.length === 0) {
     return NextResponse.json({ error: "fileKey, uploadId, and parts are required" }, { status: 400 });
   }
-  const typedParts: { partNumber: number; etag: string }[] = parts.map(
-    (p: { partNumber: unknown; etag: unknown }) => ({
-      partNumber: Number(p.partNumber),
-      etag: String(p.etag),
-    })
-  );
+  const typedParts = parseDeliveryParts(parts);
+  if (!typedParts) return NextResponse.json({error:"Upload parts must be a contiguous, unique list"},{status:400});
 
   const media = await db.media.findUnique({
     where: { id: mediaId },
@@ -61,6 +59,10 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const session = await deliverySession(media.projectId, creator.id, fileKey, uploadId, {purpose:"REPLACE",targetId:mediaId});
+  if (!session) return NextResponse.json({error:"Upload session expired. Restart this transfer.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+  if (media.fileKey === fileKey) return NextResponse.json({media});
+  if (!matchesDeliveryType(session.contentType, media.type)) return NextResponse.json({error:"Replacement must have the original media type"},{status:400});
   if (media.approvalStatus !== "NEEDS_REVISION") {
     return NextResponse.json(
       { error: "Only files flagged for revision can be replaced" },
@@ -78,32 +80,26 @@ export async function POST(
     );
   }
 
+  if (!validDeliveryKey(fileKey, media.projectId)) return NextResponse.json({ error: "Invalid upload key" }, { status: 400 });
   // The call that actually turns however many separately-uploaded
   // chunks into one real, complete file in R2 — nothing before this
   // point is a usable object yet.
-  await completeMultipartUpload(fileKey, uploadId, typedParts);
+  // Completion below first checks for an already completed storage object.
 
   const oldFileKey = media.fileKey;
   const notifyEmail = media.reviewerEmail; // whoever flagged this specific file
 
-  const updated = await db.media.update({
-    where: { id: mediaId },
-    data: {
-      fileKey,
-      approvalStatus: "PENDING",
-      approvalNote: null,
-      reviewedAt: null,
-      reviewerEmail: null,
-      uploadedByCreatorId: creator.id,
-    },
-  });
-
-  await db.project.update({
-    where: { id: media.projectId },
-    data: { replaceCount: { increment: 1 } },
-  });
-
-  deleteObject(oldFileKey).catch((err) => console.error("Failed to delete old file:", err));
+  let sizeBytes: number;
+  try {
+    try { sizeBytes = await verifyDeliveryObject(session); }
+    catch { await completeMultipartUpload(fileKey, uploadId, typedParts); sizeBytes = await verifyDeliveryObject(session); }
+  } catch { return NextResponse.json({error:"Replacement file could not be verified",code:"UPLOAD_NOT_VERIFIED"},{status:409}); }
+  let updated;
+  try { updated = await registerDeliveryReplacement({mediaId,projectId:media.projectId,oldFileKey,fileKey,creatorId:creator.id,sessionId:session.id,sizeBytes,unlimited:hasDeliveryPaidAccess(media.project.creator)}); }
+  catch { return NextResponse.json({error:"The file or replacement allowance changed. Reload this project before retrying."},{status:409}); }
+  // Promoted task originals/previews are shared with internal review history.
+  if (media.posterFileKey && validDeliveryKey(media.posterFileKey, media.projectId)) deleteObject(media.posterFileKey).catch(() => {});
+  if (validDeliveryKey(oldFileKey, media.projectId)) deleteObject(oldFileKey).catch((err) => console.error("Failed to delete old file:", err));
 
   if (notifyEmail) {
     try {

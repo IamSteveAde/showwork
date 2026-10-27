@@ -1,10 +1,12 @@
 "use client";
+import channelStyles from "./ChannelsStudio.module.css";
+import ChannelCapabilities from "./ChannelCapabilities";
+import PlatformBrandIcon from "./PlatformBrandIcon";
 import { readCalendarJson } from "@/lib/calendarReadRequests";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { MessageCircle } from "lucide-react";
 
 type Connection = { id: string; accountName: string | null; username: string | null; status: string; connectedAt: string;
   platformAccountId: string; whatsappBusinessAccountId: string | null; messagingWebhookError: string | null; accessTokenExpiresAt: string | null };
@@ -62,34 +64,35 @@ export default function WhatsAppConnectionCard({ calendarId, isManager }: { cale
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not disconnect WhatsApp."); }
     finally { setBusy(false); }
   }
-  const inputClass = "mt-1 w-full rounded-lg border border-[#334155] bg-[#101828] px-3 py-2 text-xs text-white outline-none focus:border-emerald-400";
+  const inputClass = "mt-1 w-full rounded-lg border border-[#DCE5F2] bg-white px-3 py-2 text-xs text-white outline-none focus:border-emerald-400";
   const expired = !!connection?.accessTokenExpiresAt && Date.parse(connection.accessTokenExpiresAt) <= Date.now();
   const connected = connection?.status === "CONNECTED" && !expired;
-  return <section className="w-full min-w-0 overflow-hidden rounded-[24px] border border-[#263449] bg-[#0B111B] shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+  return <section className={channelStyles.connectionCard}>
     <div className="p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#128C7E] text-white"><MessageCircle className="h-6 w-6" /></span><div><p className="text-sm font-semibold text-white">WhatsApp Business</p><p className="mt-0.5 text-[10px] uppercase tracking-wider text-[#718096]">Messaging · Leads · AI replies</p></div></div>
-        {connection && <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${connected ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300"}`}>{connected ? "Connected" : "Reconnect"}</span>}
+        <div className="flex min-w-0 items-center gap-3"><span className={channelStyles.platformLogo}><PlatformBrandIcon platform="WHATSAPP" size={26}/></span><div><p className="text-sm font-semibold text-white">WhatsApp Business</p><p className="mt-0.5 text-[10px] uppercase tracking-wider text-[#8295AF]">Messaging · Leads · AI replies</p></div></div>
+        {connection && <span className={`rounded-full px-2.5 py-1 text-[9px] font-bold ${connected ? "bg-emerald-400/10 text-[#398D78]" : "bg-amber-400/10 text-[#AA8244]"}`}>{connected ? "Connected" : "Reconnect"}</span>}{!connection && <span className={channelStyles.disconnected}>{loading ? "Checking…" : "Not connected"}</span>}
       </div>
-      <p className="mt-4 text-[11px] leading-5 text-[#AAB4C3]">Receive WhatsApp enquiries in your inbox, capture leads, and reply manually or with AI using your business knowledge. Customer messages open a 24-hour reply window.</p>
-      {connection && <div className="mt-4"><p className="text-sm font-medium text-white">{connection.accountName}</p><p className="mt-1 text-xs text-[#AAB4C3]">{connection.username}</p></div>}
-      {connection?.messagingWebhookError && <p className="mt-3 text-xs text-amber-300">{connection.messagingWebhookError}</p>}
-      {expired && <p className="mt-3 text-xs text-amber-300">The access token has expired. Update the connection to resume replies.</p>}
-      {error && <p role="alert" className="mt-3 text-xs leading-5 text-red-300">{error}</p>}
-      {notice && <p role="status" className="mt-3 text-xs leading-5 text-emerald-300">{notice}</p>}
-      {!loading && !configured && <p className="mt-3 text-xs leading-5 text-amber-300">Ask your administrator to configure the WhatsApp app and messaging webhook before connecting.</p>}
+      <ChannelCapabilities platform="whatsapp"/>
+      <p className="mt-4 text-[11px] leading-5 text-[#71849E]">Receive WhatsApp enquiries in your inbox, capture leads, and reply manually or with AI using your business knowledge. Customer messages open a 24-hour reply window.</p>
+      {connection && <div className="mt-4"><p className="text-sm font-medium text-white">{connection.accountName}</p><p className="mt-1 text-xs text-[#71849E]">{connection.username}</p></div>}
+      {connection?.messagingWebhookError && <p className="mt-3 text-xs text-[#AA8244]">{connection.messagingWebhookError}</p>}
+      {expired && <p className="mt-3 text-xs text-[#AA8244]">The access token has expired. Update the connection to resume replies.</p>}
+      {error && <p role="alert" className="mt-3 text-xs leading-5 text-[#AE6760]">{error}</p>}
+      {notice && <p role="status" className="mt-3 text-xs leading-5 text-[#398D78]">{notice}</p>}
+      {!loading && !configured && <p className="mt-3 text-xs leading-5 text-[#AA8244]">Ask your administrator to configure the WhatsApp app and messaging webhook before connecting.</p>}
     </div>
-    <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
-      {loading ? <p className="text-xs text-[#AAB4C3]">Loading WhatsApp…</p> : !isManager ? <p className="text-xs text-[#718096]">Only the workspace owner can manage this connection.</p> : editing ?
+    <div className="border-t border-[#E4EBF6] bg-[#F7FAFF] p-4 sm:p-5">
+      {loading ? <p className="text-xs text-[#71849E]">Loading WhatsApp…</p> : !isManager ? <p className="text-xs text-[#8295AF]">Channel-management permission is required to manage this connection.</p> : editing ?
         <form onSubmit={connect} className="space-y-3">
-          <p className="text-[11px] leading-5 text-[#AAB4C3]"><>{"Use a registered Cloud API number and a system-user access token from your Meta app. Find the IDs in WhatsApp "}<UiSymbol name="right" />{" API Setup in Meta."}</></p>
-          <label className="block text-xs text-[#AAB4C3]">WhatsApp Business Account ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={businessAccountId} onChange={e => setBusinessAccountId(e.target.value)} disabled={busy} className={inputClass} /></label>
-          <label className="block text-xs text-[#AAB4C3]">Phone Number ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={phoneNumberId} onChange={e => setPhoneNumberId(e.target.value)} disabled={busy} className={inputClass} /></label>
-          <label className="block text-xs text-[#AAB4C3]">Access token<input required type="password" autoComplete="new-password" maxLength={4096} value={accessToken} onChange={e => setAccessToken(e.target.value)} disabled={busy} className={inputClass} /></label>
-          <div className="flex gap-2"><button disabled={busy || !configured} className="rounded-lg bg-[#128C7E] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{busy ? "Connecting…" : "Save connection"}</button><button type="button" disabled={busy} onClick={() => { setEditing(false); setAccessToken(""); }} className="rounded-lg border border-[#334155] px-3 py-2 text-xs text-[#AAB4C3]">Cancel</button></div>
-        </form> : confirming ? <div><p className="mb-3 text-xs text-[#AAB4C3]">Disconnect WhatsApp? Incoming messages and AI replies will stop. Existing leads and history stay available.</p><div className="flex gap-2"><button disabled={busy} onClick={() => void disconnect()} className="rounded-lg bg-red-500 px-3 py-2 text-xs text-white">{busy ? "Disconnecting…" : "Disconnect"}</button><button disabled={busy} onClick={() => setConfirming(false)} className="rounded-lg border border-[#334155] px-3 py-2 text-xs text-[#AAB4C3]">Keep connected</button></div></div>
-        : <div className="flex flex-wrap gap-2"><button disabled={!configured} onClick={() => setEditing(true)} className="rounded-lg bg-[#128C7E] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{connection ? "Update connection" : "Connect WhatsApp"}</button>{connection && <><button onClick={() => window.dispatchEvent(new CustomEvent("showwork-workspace-navigate", { detail: { id: "inbox" } }))} className="rounded-lg border border-[#334155] px-3 py-2 text-xs text-[#AAB4C3]">Open inbox</button><button onClick={() => setConfirming(true)} className="rounded-lg border border-[#334155] px-3 py-2 text-xs text-[#AAB4C3]">Disconnect</button></>}</div>}
-      {!loading && error && !connection && !editing && <button onClick={() => void load()} className="mt-3 text-xs text-blue-300 underline">Retry loading</button>}
+          <p className="text-[11px] leading-5 text-[#71849E]"><>{"Use a registered Cloud API number and a system-user access token from your Meta app. Find the IDs in WhatsApp "}<UiSymbol name="right" />{" API Setup in Meta."}</></p>
+          <label className="block text-xs text-[#71849E]">WhatsApp Business Account ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={businessAccountId} onChange={e => setBusinessAccountId(e.target.value)} disabled={busy} className={inputClass} /></label>
+          <label className="block text-xs text-[#71849E]">Phone Number ID<input required inputMode="numeric" pattern="[0-9]{5,30}" value={phoneNumberId} onChange={e => setPhoneNumberId(e.target.value)} disabled={busy} className={inputClass} /></label>
+          <label className="block text-xs text-[#71849E]">Access token<input required type="password" autoComplete="new-password" maxLength={4096} value={accessToken} onChange={e => setAccessToken(e.target.value)} disabled={busy} className={inputClass} /></label>
+          <div className="flex gap-2"><button disabled={busy || !configured} className="rounded-lg bg-[#128C7E] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{busy ? "Connecting…" : "Save connection"}</button><button type="button" disabled={busy} onClick={() => { setEditing(false); setAccessToken(""); }} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs text-[#71849E]">Cancel</button></div>
+        </form> : confirming ? <div><p className="mb-3 text-xs text-[#71849E]">Disconnect WhatsApp? Incoming messages and AI replies will stop. Existing leads and history stay available.</p><div className="flex gap-2"><button disabled={busy} onClick={() => void disconnect()} className="rounded-lg bg-red-500 px-3 py-2 text-xs text-white">{busy ? "Disconnecting…" : "Disconnect"}</button><button disabled={busy} onClick={() => setConfirming(false)} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs text-[#71849E]">Keep connected</button></div></div>
+        : <div className="flex flex-wrap gap-2"><button disabled={!configured} onClick={() => setEditing(true)} className="rounded-lg bg-[#128C7E] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{connection ? "Update connection" : "Connect WhatsApp"}</button>{connection && <><button onClick={() => window.dispatchEvent(new CustomEvent("showwork-workspace-navigate", { detail: { id: "inbox" } }))} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs text-[#71849E]">Open inbox</button><button onClick={() => setConfirming(true)} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs text-[#71849E]">Disconnect</button></>}</div>}
+      {!loading && error && !connection && !editing && <button onClick={() => void load()} className="mt-3 text-xs text-[#397CC8] underline">Retry loading</button>}
     </div>
   </section>;
 }

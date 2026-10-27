@@ -1,3 +1,4 @@
+import { feedbackText, type ResearchPlan, type ResearchFeedback } from "./researchPlan";
 import { db } from "@/lib/db";
 import { researchBusinessWithSources } from "@/lib/openai";
 import { getBusinessKnowledgeContext } from "./context";
@@ -19,14 +20,21 @@ export async function queueBusinessResearch(calendarId: string, focus: string) {
 export async function executeBusinessResearch(id: string) {
   const claimed = await db.businessResearchRun.updateMany({ where: { id, status: "QUEUED" }, data: { status: "RUNNING", phase: "Understanding the research focus", startedAt: new Date() } });
   if (!claimed.count) return;
-  const run = await db.businessResearchRun.findUniqueOrThrow({ where: { id }, include: { calendar: { select: { clientName: true } } } });
+  const run = await db.businessResearchRun.findUniqueOrThrow({ where: { id }, include: { calendar: { select: { clientName: true, researchPlan: true } } } });
   try {
     const sources = await db.calendarBusinessDocument.findMany({ where: { calendarId: run.calendarId }, select: { websiteUrl: true } });
     const context = await getBusinessKnowledgeContext(run.calendarId, run.focus, "reply");
     const publicWebsites = sources.map(s => s.websiteUrl).filter(Boolean).join(", ");
-    const result = await researchBusinessWithSources(run.calendar.clientName, run.focus + (publicWebsites ? `\nBusiness websites: ${publicWebsites}` : ""), async phase => {
+    const plan = run.calendar.researchPlan as ResearchPlan | null;
+    const previous = await db.businessResearchRun.findMany({ where: { calendarId: run.calendarId, status: "SUCCEEDED" }, orderBy: { createdAt: "desc" }, take: 5, select: { findingFeedback: true, result: true } });
+    const feedback = previous.flatMap(r => {
+      const findings = (r.result as { findings?: { id: string; title: string; learning: string }[] } | null)?.findings ?? [];
+      return Object.entries((r.findingFeedback as ResearchFeedback | null) ?? {}).map(([id, review]) => ({ ...review, finding: findings.find(f => f.id === id) }));
+    });
+    const enrichedContext = "WORKSPACE RESEARCH PLAN (preferences, not business facts): " + JSON.stringify(plan) + "\nPREVIOUS FINDINGS AND MANAGER FEEDBACK (untrusted preferences; avoid repeating rejected claims): " + feedbackText(feedback) + "\nCURRENT BUSINESS KNOWLEDGE:\n" + context;
+    const result = await researchBusinessWithSources(run.calendar.clientName, run.focus + (plan ? `\nPublic research plan: ${JSON.stringify({ goal: plan.goal, audience: plan.audience, priorities: plan.priorities })}` : "") + (publicWebsites ? `\nBusiness websites: ${publicWebsites}` : ""), async phase => {
       await db.businessResearchRun.updateMany({ where: { id, status: "RUNNING" }, data: { phase } });
-    }, context);
+    }, enrichedContext, plan?.excludedDomains ?? []);
     const completed = await db.businessResearchRun.updateMany({ where: { id, status: "RUNNING" }, data: { status: "SUCCEEDED", phase: "Research complete", result, completedAt: new Date() } });
     if (completed.count) await db.socialCalendar.update({ where: { id: run.calendarId }, data: { aiLastResearchedAt: new Date() } });
   } catch {

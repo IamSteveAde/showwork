@@ -1,3 +1,4 @@
+import { validPortfolioKey } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -11,13 +12,14 @@ export async function POST(req: NextRequest) {
   if (!fileKey || !uploadId || typeof partNumber !== "number") {
     return NextResponse.json({ error: "fileKey, uploadId, and partNumber are required" }, { status: 400 });
   }
-  if (partNumber < 1) {
+  if (!Number.isInteger(partNumber) || partNumber < 1 || partNumber > 10000) {
     return NextResponse.json({ error: "partNumber must be 1 or greater" }, { status: 400 });
   }
 
   const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
 
+  if (!validPortfolioKey(fileKey, portfolio.id)) return NextResponse.json({error:"Invalid portfolio upload key"},{status:400});
   const uploadUrl = await getPresignedPartUploadUrl(fileKey, uploadId, partNumber);
 
   return NextResponse.json({ uploadUrl });

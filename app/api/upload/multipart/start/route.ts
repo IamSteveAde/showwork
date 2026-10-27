@@ -1,3 +1,4 @@
+import { createDeliverySession, expectedUploadBytes } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     typeof suppliedContentType === "string" ? suppliedContentType : ""
   );
 
-  if (!projectId || !filename || !contentType) {
+  if (typeof projectId !== "string" || typeof filename !== "string" || !filename || !contentType) {
     return NextResponse.json(
       { error: "projectId, filename, and contentType are required" },
       { status: 400 }
@@ -35,8 +36,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `File exceeds ${MAX_FILE_SIZE_MB}MB limit` }, { status: 400 });
   }
 
+  try { expectedUploadBytes(fileSizeMb, 20000); } catch { return NextResponse.json({ error: "A valid positive file size is required" }, { status: 400 }); }
+
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -53,5 +56,6 @@ export async function POST(req: NextRequest) {
   const fileKey = buildMediaKey(projectId, filename);
   const uploadId = await createMultipartUpload(fileKey, contentType);
 
+  await createDeliverySession({ projectId, creatorId: creator.id, fileKey, uploadId, fileSizeMb, contentType, maxMb: 20000 });
   return NextResponse.json({ uploadId, fileKey });
 }

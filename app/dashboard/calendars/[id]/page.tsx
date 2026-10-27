@@ -1,3 +1,7 @@
+import ReportingProductionSummary from "@/components/calendars/ReportingProductionSummary";
+import ChannelsWorkspace from "@/components/calendars/ChannelsWorkspace";
+import KnowledgeWorkspaceHeader from "@/components/calendars/KnowledgeWorkspaceHeader";
+import WorkspaceOverview from "@/components/calendars/WorkspaceOverview";
 import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
 import BrandPersonalityCard from "@/components/calendars/BrandPersonalityCard";
 import BusinessResearchPanel from "@/components/calendars/BusinessResearchPanel";
@@ -33,7 +37,6 @@ import BusinessKnowledgeCard from "@/components/calendars/BusinessKnowledgeCard"
 import AiContentGeneratorCard from "@/components/calendars/AiContentGeneratorCard";
 import CopyLinkButton from "@/components/CopyLinkButton";
 import CalendarWorkspaceShell, { type WorkspaceSection } from "@/components/calendars/CalendarWorkspaceShell";
-import WorkspaceActionButton from "@/components/calendars/WorkspaceActionButton";
 import CalendarReportingPanel from "@/components/calendars/CalendarReportingPanel";
 import SocialLeadInbox from "@/components/calendars/SocialLeadInbox";
 import CalendarLeadsPanel from "@/components/calendars/CalendarLeadsPanel";
@@ -50,190 +53,6 @@ const COLOR = {
   line: "rgba(255,255,255,0.09)",
 };
 
-
-type PlatformAnalyticsPost = {
-  platform: string;
-  postDate: string;
-};
-
-function ApprovalAnalytics({
-  posts,
-}: {
-  posts: { approvalStatus: string; hasContent: boolean }[];
-}) {
-  const total = posts.length;
-  const approved = posts.filter((p) => p.approvalStatus === "APPROVED").length;
-  const pending = posts.filter((p) => p.approvalStatus === "PENDING").length;
-  const revision = posts.filter((p) => p.approvalStatus === "NEEDS_REVISION").length;
-  const withContent = posts.filter((p) => p.hasContent).length;
-  const percent = total ? Math.round((approved / total) * 100) : 0;
-
-  const rows = [
-    { label: "Approved", count: approved, tone: "#16A34A", track: "#DCFCE7" },
-    { label: "Pending review", count: pending, tone: "#D97706", track: "#FEF3C7" },
-    { label: "Needs revision", count: revision, tone: "#DC2626", track: "#FEE2E2" },
-  ];
-
-  if (!total) {
-    return (
-      <div className="flex min-h-[190px] items-center justify-center rounded-2xl border border-[#E4E7EC] bg-[#F8FAFC] px-6 text-center">
-        <div>
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#2478FF] shadow-sm ring-1 ring-black/[0.06]">
-            <span className="text-sm font-bold">0</span>
-          </div>
-          <p className="text-sm font-semibold text-[#101828]">No review activity yet</p>
-          <p className="mt-1.5 text-xs leading-5 text-[#667085]">Add content to start tracking approvals and revisions.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl border border-[#E4E7EC] bg-[#F8FAFC] p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#667085]">Approval health</p>
-          <p className="mt-1 text-sm font-semibold text-[#101828]">{approved} of {total} posts approved</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#ECFDF3] px-3 py-1.5 text-xs font-bold text-[#027A48]">{percent}% approved</span>
-        </div>
-      </div>
-
-      <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-[#E4E7EC]">
-        <div className="h-full rounded-full bg-[#16A34A] transition-all duration-500" style={{ width: `${percent}%` }} />
-      </div>
-
-      <div className="mt-6 space-y-4">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: row.tone }} />
-                <span className="text-[13px] font-semibold text-[#344054]">{row.label}</span>
-              </div>
-              <span className="text-[12px] font-bold text-[#101828]">{row.count}</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full" style={{ background: row.track }}>
-              <div className="h-full rounded-full" style={{ width: `${Math.max((row.count / total) * 100, row.count ? 3 : 0)}%`, background: row.tone }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 flex items-center justify-between rounded-xl border border-[#E4E7EC] bg-white px-3.5 py-3">
-        <span className="text-xs font-medium text-[#667085]">Content attached</span>
-        <span className="text-xs font-bold text-[#101828]">{withContent} / {total}</span>
-      </div>
-    </div>
-  );
-}
-
-function PlatformAnalytics({
-  posts,
-}: {
-  posts: PlatformAnalyticsPost[];
-}) {
-  const platformLabels: Record<string, string> = {
-    INSTAGRAM: "Instagram",
-    TIKTOK: "TikTok",
-    YOUTUBE: "YouTube",
-    FACEBOOK: "Facebook",
-    X: "X",
-    LINKEDIN: "LinkedIn",
-  };
-
-  const platformMeta: Record<string, { mark: string; className: string }> = {
-    INSTAGRAM: { mark: "IG", className: "bg-gradient-to-br from-fuchsia-500 via-pink-500 to-amber-400" },
-    TIKTOK: { mark: "TT", className: "bg-[#111318]" },
-    YOUTUBE: { mark: "YT", className: "bg-red-500" },
-    FACEBOOK: { mark: "f", className: "bg-blue-600" },
-    X: { mark: "𝕏", className: "bg-[#111318]" },
-    LINKEDIN: { mark: "in", className: "bg-[#0A66C2]" },
-  };
-
-  const counts = posts.reduce<Record<string, number>>((acc, post) => {
-    acc[post.platform] = (acc[post.platform] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const rows = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([platform, count]) => ({
-      platform,
-      label: platformLabels[platform] ?? platform.replace(/_/g, " "),
-      count,
-      percent: posts.length ? Math.round((count / posts.length) * 100) : 0,
-      meta: platformMeta[platform] ?? { mark: "•", className: "bg-slate-700" },
-    }));
-
-  const maxCount = Math.max(...rows.map((row) => row.count), 1);
-
-  if (!rows.length) {
-    return (
-      <div className="flex min-h-[190px] items-center justify-center rounded-2xl border border-black/[0.07] bg-[#F8FAFC] px-6 text-center">
-        <div>
-          <p className="text-sm font-semibold text-[#0A0D12]">No platform activity yet</p>
-          <p className="mt-1.5 text-xs leading-5 text-[#667085]">
-            Add posts to start seeing your publishing mix.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl border border-black/[0.07] bg-[#F8FAFC] p-4 sm:p-5">
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold text-[#667085]">
-            {posts.length} {posts.length === 1 ? "post" : "posts"} planned
-          </p>
-          <p className="mt-1 text-xs text-[#98A2B3]">
-            Publishing mix across your channels
-          </p>
-        </div>
-        <span className="rounded-full border border-[#DCE4EE] bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#475467]">
-          All platforms
-        </span>
-      </div>
-
-      <div className="space-y-4">
-        {rows.map((row) => (
-          <div key={row.platform}>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[9px] font-extrabold text-white ${row.meta.className}`}
-                >
-                  {row.meta.mark}
-                </span>
-                <span className="truncate text-[13px] font-semibold text-[#1D2939]">
-                  {row.label}
-                </span>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="text-[12px] font-semibold text-[#344054]">
-                  {row.count}
-                </span>
-                <span className="w-9 text-right text-[10px] font-medium text-[#98A2B3]">
-                  {row.percent}%
-                </span>
-              </div>
-            </div>
-
-            <div className="h-2 overflow-hidden rounded-full bg-[#E7ECF2]">
-              <div
-                className="h-full min-w-[6px] rounded-full bg-[#2478FF] transition-all duration-500"
-                style={{ width: `${Math.max((row.count / maxCount) * 100, 4)}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function IconCalendar({ className = "", style }: { className?: string; style?: CSSProperties }) {
   return (
@@ -404,6 +223,7 @@ const aiActive = workspaceActive;
 
   const calendarPosts = calendar.posts.map((p) => ({
     id: p.id,
+    isAiDraft: p.isAiDraft,
     postDate: p.postDate.toISOString(),
     platform: requirePostPlatform(p.platform),
     postType: p.postType,
@@ -455,11 +275,6 @@ contentIdea: p.contentIdea,
     })),
   }));
 
-  const approvedCount = calendar.posts.filter((post) => post.approvalStatus === "APPROVED").length;
-  const revisionCount = calendar.posts.filter((post) => post.approvalStatus === "NEEDS_REVISION").length;
-  const pendingCount = calendar.posts.filter((post) => post.approvalStatus === "PENDING").length;
-  const contentCount = calendar.posts.filter((post) => post.assets.length > 0).length;
-
   const sections: WorkspaceSection[] = [
     {
       id: "overview",
@@ -469,193 +284,7 @@ contentIdea: p.contentIdea,
       description:
         "The fastest view of what needs attention, what is ready, and what is moving next.",
       group: "Workspace",
-      content: (
-        <div className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              ["Content", calendar.posts.length, "planned across the workspace", "content"],
-              ["Ready", contentCount, "posts with creative attached", "content"],
-              ["Approved", approvedCount, "cleared by the client", "content"],
-              ["Team", totalMembers, "people with access", "team"],
-            ].map(([label, value, note, icon]) => (
-              <WorkspaceActionButton
-                key={String(label)}
-                target={String(icon)}
-                className="group rounded-[22px] border border-[#DFE6EF] bg-white p-5 text-left shadow-[0_10px_30px_rgba(15,23,42,0.035)] transition duration-200 hover:-translate-y-0.5 hover:border-[#C9D9EC] hover:shadow-[0_16px_38px_rgba(15,23,42,0.06)]"
-              >
-                <div className="flex items-start justify-between">
-                  <span className="text-[9px] font-black uppercase tracking-[0.16em] text-[#98A2B3]">
-                    {label}
-                  </span>
-                  <span className="text-[#B2BCC9] transition group-hover:translate-x-0.5 group-hover:text-[#1768E8]"><UiSymbol name="right" /></span>
-                </div>
-                <p className="mt-5 text-[36px] font-semibold tracking-[-0.06em] text-[#0B1220]">
-                  {value}
-                </p>
-                <p className="mt-1 text-[11px] leading-5 text-[#667085]">{note}</p>
-              </WorkspaceActionButton>
-            ))}
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,.55fr)]">
-            <div className="overflow-hidden rounded-[28px] border border-[#DCE5F0] bg-white shadow-[0_16px_46px_rgba(15,23,42,0.045)]">
-              <div className="flex items-start justify-between gap-4 border-b border-[#E9EEF4] px-5 py-5 sm:px-6">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#1768E8]">
-                    Workspace pulse
-                  </p>
-                  <h3 className="mt-1.5 text-lg font-semibold tracking-[-0.03em] text-[#101828]">
-                    What needs your attention
-                  </h3>
-                </div>
-                <span className="rounded-full bg-[#F4F7FB] px-2.5 py-1 text-[9px] font-bold text-[#667085]">
-                  Live
-                </span>
-              </div>
-
-              <div className="divide-y divide-[#EEF1F5]">
-                {[
-                  {
-                    title: `${pendingCount} ${pendingCount === 1 ? "post" : "posts"} waiting for review`,
-                    detail: "Move client feedback forward before the next publishing window.",
-                    tone: "blue",
-                    action: "Review content",
-                    target: "content",
-                  },
-                  {
-                    title: `${revisionCount} ${revisionCount === 1 ? "revision" : "revisions"} requested`,
-                    detail: revisionCount ? "There is feedback waiting inside the calendar." : "Nothing is currently blocked by revision requests.",
-                    tone: revisionCount ? "amber" : "green",
-                    action: revisionCount ? "Open revisions" : "View content",
-                    target: "content",
-                  },
-                  {
-                    title: aiActive ? "AI Studio is ready" : "AI Studio is waiting for activation",
-                    detail: aiActive
-                      ? "Generate from this client's context, then review every draft before publishing."
-                      : "Activate AI Assistant to unlock client-aware generation.",
-                    tone: aiActive ? "violet" : "slate",
-                    action: aiActive ? "Open AI Studio" : "View AI",
-                    target: aiActive ? "generate" : "knowledge",
-                  },
-                ].map((item) => (
-                  <WorkspaceActionButton
-                    key={item.title}
-                    target={item.target}
-                    className="group flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-[#FAFCFF] sm:px-6"
-                  >
-                    <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        item.tone === "blue"
-                          ? "bg-[#1768E8]"
-                          : item.tone === "amber"
-                            ? "bg-[#F59E0B]"
-                            : item.tone === "green"
-                              ? "bg-[#16A34A]"
-                              : item.tone === "violet"
-                                ? "bg-[#7C3AED]"
-                                : "bg-[#98A2B3]"
-                      }`}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[12px] font-semibold text-[#27364A]">
-                        {item.title}
-                      </span>
-                      <span className="mt-1 block max-w-2xl text-[11px] leading-5 text-[#8A95A5]">
-                        {item.detail}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[10px] font-bold text-[#1768E8] opacity-0 transition group-hover:opacity-100">
-                      {item.action}<UiSymbol name="right" /></span>
-                  </WorkspaceActionButton>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-[28px] bg-[#0B1220] p-6 text-white shadow-[0_18px_50px_rgba(15,23,42,0.14)]">
-              <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#1768E8]/35 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full bg-[#5B9BFF]/15 blur-3xl" />
-              <div className="relative flex h-full flex-col">
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.15em] text-[#BBD7FF]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#72A8FF]" />
-                    Client portal
-                  </span>
-                  <IconArrowUpRight className="h-4 w-4 text-white/35" />
-                </div>
-                <h3 className="mt-7 max-w-[260px] text-[25px] font-semibold leading-[1.08] tracking-[-0.045em]">
-                  A cleaner way to get work approved.
-                </h3>
-                <p className="mt-3 text-[11px] leading-5 text-white/45">
-                  Your client gets a focused review experience. You keep the production workspace.
-                </p>
-                <a
-                  href={clientUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-auto inline-flex w-fit items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-[10px] font-bold text-[#1768E8] transition hover:-translate-y-0.5"
-                >
-                  Open client view
-                  <IconArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[.8fr_1.2fr]">
-            <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#98A2B3]">
-                    Approval health
-                  </p>
-                  <h3 className="mt-1.5 text-base font-semibold text-[#101828]">
-                    Client review
-                  </h3>
-                </div>
-                <span className="text-[20px] font-semibold tracking-[-0.04em] text-[#1768E8]">
-                  {calendar.posts.length
-                    ? Math.round((approvedCount / calendar.posts.length) * 100)
-                    : 0}%
-                </span>
-              </div>
-              <div className="mt-5">
-                <ApprovalAnalytics
-                  posts={calendar.posts.map((post) => ({
-                    approvalStatus: post.approvalStatus,
-                    hasContent: post.assets.length > 0,
-                  }))}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#98A2B3]">
-                    Publishing mix
-                  </p>
-                  <h3 className="mt-1.5 text-base font-semibold text-[#101828]">
-                    Where the work is going
-                  </h3>
-                </div>
-                <WorkspaceActionButton
-                  target="analytics"
-                  className="text-[10px] font-bold text-[#1768E8]"
-                ><>{" Full analytics "}<UiSymbol name="right" />{" "}</></WorkspaceActionButton>
-              </div>
-              <div className="mt-4">
-                <PlatformAnalytics
-                  posts={calendar.posts.map((post) => ({
-                    platform: requirePostPlatform(post.platform),
-                    postDate: post.postDate.toISOString(),
-                  }))}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      ),
+      content: <WorkspaceOverview availableSections={["content", ...(can("people.view") ? ["team"] : []), "inbox", "analytics", ...(can("knowledge.view") ? ["knowledge", "research"] : []), ...(can("ai.generate") ? ["generate"] : []), ...(can("channels.view") ? ["channels"] : [])]} clientName={calendar.clientName} totalMembers={totalMembers} aiActive={aiActive} clientUrl={clientUrl} posts={calendar.posts.map(post => ({ id: post.id, postDate: post.postDate.toISOString(), platform: requirePostPlatform(post.platform), internalReviewStatus: post.internalReviewStatus, approvalStatus: post.approvalStatus, isAiDraft: post.isAiDraft, publishStatus: post.publishStatus, instagramPublishStatus: post.instagramPublishStatus, tikTokPublishStatus: post.tikTokPublishStatus, contentIdea: post.contentIdea, hook: post.hook, caption: post.caption }))} />,
     },
     {
       id: "content",
@@ -666,7 +295,7 @@ contentIdea: p.contentIdea,
         "Plan, attach creative, review feedback and move each piece toward approval.",
       group: "Workspace",
       content: (
-        <div className="overflow-hidden rounded-[26px] border border-[#DCE5F0] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
+        <div className="min-w-0">
           <CalendarGrid
             calendarId={calendar.id}
             isOwner={isOwner}
@@ -703,40 +332,13 @@ contentIdea: p.contentIdea,
             recommendationsAccess={featureAccess("performanceRecommendations")}
             canApplyRecommendations={can("analytics.manage") && canEditWorkspace && aiActive && featureAccess("performanceRecommendations")}
           />
-          <div className="grid gap-5 xl:grid-cols-2">
-          <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)] sm:p-6">
-            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#1768E8]">
-              Distribution
-            </p>
-            <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#101828]">
-              Content by platform
-            </h3>
-            <div className="mt-5">
-              <PlatformAnalytics
-                posts={calendar.posts.map((post) => ({
-                  platform: requirePostPlatform(post.platform),
-                  postDate: post.postDate.toISOString(),
-                }))}
-              />
-            </div>
-          </div>
-          <div className="rounded-[26px] border border-[#DFE6EF] bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.035)] sm:p-6">
-            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#1768E8]">
-              Review
-            </p>
-            <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-[#101828]">
-              Approval progress
-            </h3>
-            <div className="mt-5">
-              <ApprovalAnalytics
-                posts={calendar.posts.map((post) => ({
-                  approvalStatus: post.approvalStatus,
-                  hasContent: post.assets.length > 0,
-                }))}
-              />
-            </div>
-          </div>
-          </div>
+          <ReportingProductionSummary posts={calendar.posts.map(post => ({
+            id: post.id, postDate: post.postDate.toISOString(), platform: requirePostPlatform(post.platform),
+            internalReviewStatus: post.internalReviewStatus, approvalStatus: post.approvalStatus,
+            isAiDraft: post.isAiDraft, publishStatus: post.publishStatus,
+            instagramPublishStatus: post.instagramPublishStatus, tikTokPublishStatus: post.tikTokPublishStatus,
+            hasContent: post.assets.length > 0,
+          }))} />
         </div>
       ),
     },
@@ -858,7 +460,7 @@ contentIdea: p.contentIdea,
               "Connect this client’s social and messaging accounts and manage their access here.",
             group: "Publishing" as const,
             content: (
-              <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+              <ChannelsWorkspace>
                 <InstagramConnectionCard
   calendarId={calendar.id}
   username={calendar.instagramUsername}
@@ -894,7 +496,7 @@ contentIdea: p.contentIdea,
                   connectedAt={calendar.xConnectedAt?.toISOString() ?? null}
                   isManager={can("channels.manage")}
                 />
-              </div>
+              </ChannelsWorkspace>
             ),
           },
           {
@@ -907,7 +509,7 @@ contentIdea: p.contentIdea,
             group: "AI Studio" as const,
             content: (
               <>
-              <BrandPersonalityCard key={calendar.id} calendarId={calendar.id} canEdit={can("knowledge.manage")} />
+              <KnowledgeWorkspaceHeader clientName={calendar.clientName}/>
               <BusinessKnowledgeCard
                 canEdit={can("knowledge.manage")}
                 calendarId={calendar.id}
@@ -922,6 +524,7 @@ contentIdea: p.contentIdea,
                   websiteUrl: doc.websiteUrl,
                 }))}
               />
+              <BrandPersonalityCard key={calendar.id} calendarId={calendar.id} canEdit={can("knowledge.manage")} />
               </>
             ),
           },
@@ -932,7 +535,7 @@ contentIdea: p.contentIdea,
             title: "Evidence for your next move.",
             description: "Explore findings, follow the sources and decide what informs your content.",
             group: "AI Studio" as const,
-            content: <BusinessResearchPanel calendarId={calendar.id} canManage={can("knowledge.manage")} />,
+            content: <BusinessResearchPanel calendarId={calendar.id} canManage={can("knowledge.manage")} canGenerate={can("ai.generate")} />,
           },
           {
             id: "generate" as const,
@@ -969,6 +572,7 @@ contentIdea: p.contentIdea,
       isManager={isManager}
       settings={can("workspace.manage") ?
         <CalendarSettingsMenu
+          onBrand
           calendarId={calendar.id}
           clientName={calendar.clientName}
           userRole={can("workspace.manage") ? "EDIT_CALENDAR" : "VIEW_ONLY"}

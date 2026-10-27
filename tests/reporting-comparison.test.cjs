@@ -47,12 +47,12 @@ test('disconnected accounts and empty histories are excluded', () => {
   assert.equal(result.followers.value, null);
   assert.equal(result.reach.value, null);
 });
-function reportingData(leadQueries = []) {
+function reportingData(leadQueries = [], reportQueries = []) {
   const db = {
     calendarReportingPermission: { findUnique: async () => null },
-    socialConnection: { findMany: async () => [], findFirst: async () => null },
-    publishedSocialPost: { findMany: async () => [] },
-    reportingInsight: { findMany: async () => [] },
+    socialConnection: { findMany: async args => { reportQueries.push(args); return []; }, findFirst: async () => { reportQueries.push("facebook"); return null; } },
+    publishedSocialPost: { findMany: async args => { reportQueries.push(args); return []; } },
+    reportingInsight: { findMany: async args => { reportQueries.push(args); return []; } },
     calendarLead: { count: async args => { leadQueries.push(args); return 0; }, findMany: async args => { leadQueries.push(args); return []; } },
   };
   const mod = { exports: {} };
@@ -82,7 +82,7 @@ test('hot-lead shortlist stays in workspace, period and platform and excludes cl
   assert.equal(query.where.calendarId, 'workspace');
   assert.equal(query.where.temperature, 'HOT');
   assert.deepEqual(query.where.status, { notIn: ['CUSTOMER', 'LOST'] });
-  assert.deepEqual(query.where.socialConversation, { platform: 'INSTAGRAM' });
+  assert.deepEqual(query.where.socialConversation, { platform: { in: ['INSTAGRAM'] } });
   assert.equal(query.where.createdAt.gte.toISOString(), '2026-10-01T00:00:00.000Z');
   assert.equal(query.select.email, undefined);
 });
@@ -149,4 +149,19 @@ test('overview uses the same live Facebook content as the lower panel when saved
   assert.equal(result.performance.likes.value,4);assert.equal(result.performance.postMediaViews.value,283);assert.equal(result.performance.followers.delta,null);
   assert.match(result.performance.postMediaViews.basis,/Lifetime/);assert.equal(result.accountPosts[0].likes,4);
   assert.deepEqual(result.connections[0].accountMetricSnapshots,[],'live reads must not fabricate saved snapshots');
+});
+
+test('multiple platforms restrict every report query and reject unknown platforms', async () => {
+  const calls = [];
+  const queries = [];
+  const data = reportingData(calls, queries);
+  await data.getCalendarReportingData('workspace', new URLSearchParams({ platform: 'INSTAGRAM,TIKTOK' }), true);
+  assert.deepEqual(calls.at(-1).where.socialConversation, { platform: { in: ['INSTAGRAM', 'TIKTOK'] } });
+  assert.deepEqual(queries[0].where.platform, { in: ['INSTAGRAM', 'TIKTOK'] });
+  assert.deepEqual(queries[1].where.platform, { in: ['INSTAGRAM', 'TIKTOK'] });
+  assert.deepEqual(queries[2].where.OR[0].platform, { in: ['INSTAGRAM', 'TIKTOK'] });
+  assert.ok(!queries.includes('facebook'));
+  await data.getCalendarReportingData('workspace', new URLSearchParams({ platform: 'INSTAGRAM,FACEBOOK' }), true);
+  assert.ok(queries.includes('facebook'));
+  await assert.rejects(data.getCalendarReportingData('workspace', new URLSearchParams({ platform: 'INSTAGRAM,INVALID' }), true), /supported social platform/);
 });

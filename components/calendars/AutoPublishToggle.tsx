@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, PauseCircle } from "lucide-react";
 
-export default function AutoPublishToggle({ calendarId, canManage }: { calendarId: string; canManage: boolean }) {
+export default function AutoPublishToggle({ calendarId, canManage, compact = false }: { calendarId: string; canManage: boolean; compact?: boolean }) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +32,7 @@ export default function AutoPublishToggle({ calendarId, canManage }: { calendarI
     finally { setBusy(false); }
   }
   const Icon = enabled === false ? PauseCircle : CalendarClock;
-  return <section className="mb-5 rounded-2xl border border-blue-200 bg-white p-4 text-slate-900 shadow-sm" aria-label="Automatic publishing">
+  return <section className={`mb-5 rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 ${compact ? "" : "shadow-sm"}`} aria-label="Automatic publishing">
     <div className="flex items-start justify-between gap-4">
       <div className="flex min-w-0 gap-3">
         <span className="rounded-xl bg-blue-50 p-2 text-blue-600"><Icon size={20} aria-hidden="true" /></span>
@@ -48,7 +48,7 @@ export default function AutoPublishToggle({ calendarId, canManage }: { calendarI
         <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${enabled ? "left-1 translate-x-5" : "left-1"}`} />
       </button>
     </div>
-    <p className="mt-3 text-xs leading-5 text-slate-500">TikTok also needs each post’s visibility settings and publishing consent. Deliveries already started may finish. Turning this on does not queue posts approved while it was off.</p>
+    <details open={!compact}><summary className="mt-3 cursor-pointer text-xs text-slate-500">How publishing works</summary><p className="mt-2 text-xs leading-5 text-slate-500">TikTok also needs each post’s visibility settings and publishing consent. Deliveries already started may finish. Turning this on does not queue posts approved while it was off.</p></details>
     {busy && <p role="status" className="mt-2 text-xs text-blue-600">Saving…</p>}
     {error && <p role="alert" className="mt-2 text-xs text-red-600">{error} <button type="button" className="underline" onClick={() => setReload(value => value + 1)}>Reload</button></p>}
   </section>;

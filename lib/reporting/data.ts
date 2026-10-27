@@ -39,11 +39,11 @@ export async function getCalendarReportingData(
   const { start, end } = reportingPeriod(searchParams);
   const previousEnd = new Date(start.getTime() - 1);
   const previousStart = new Date(start.getTime() - (end.getTime() - start.getTime() + 1));
-  const platformValue = searchParams.get("platform")?.toUpperCase();
-  if (platformValue && !REPORTING_PLATFORMS.includes(platformValue as SocialPlatform)) {
+  const platforms = [...new Set(searchParams.getAll("platform").flatMap(value => value.split(",")).filter(Boolean).map(value => value.toUpperCase()))] as SocialPlatform[];
+  if (platforms.some(value => !REPORTING_PLATFORMS.includes(value))) {
     throw new Error("Choose a supported social platform.");
   }
-  const platform = platformValue as SocialPlatform | null;
+  const platform = platforms.length ? { in: platforms } : null;
 
   const [connections, posts, insights, facebookConnection] = await Promise.all([
     db.socialConnection.findMany({
@@ -132,7 +132,7 @@ export async function getCalendarReportingData(
       },
       orderBy: { generatedAt: "desc" },
     }),
-    !platform || platform === "FACEBOOK"
+    !platform || platforms.includes("FACEBOOK")
       ? db.socialConnection.findFirst({
           where: { calendarId, platform: "FACEBOOK", status: { in: ["CONNECTED", "NEEDS_REAUTH"] } },
           orderBy: { connectedAt: "desc" },

@@ -1,3 +1,4 @@
+import { validPortfolioKey } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -64,14 +65,14 @@ export async function DELETE(
     where: { id: sectionId },
     include: {
       portfolio: { select: { creatorId: true } },
-      media: { select: { fileKey: true } },
+      media: { select: { fileKey: true, posterFileKey: true } },
     },
   });
   if (!section || section.portfolio.creatorId !== creator.id) {
     return NextResponse.json({ error: "Section not found" }, { status: 404 });
   }
 
-  const fileKeys = section.media.map((m) => m.fileKey);
+  const fileKeys = section.media.flatMap((m) => m.posterFileKey ? [m.fileKey, m.posterFileKey] : [m.fileKey]).filter(key => validPortfolioKey(key, section.portfolioId));
   await db.portfolioSection.delete({ where: { id: sectionId } });
   await Promise.allSettled(fileKeys.map((key) => deleteObject(key)));
 

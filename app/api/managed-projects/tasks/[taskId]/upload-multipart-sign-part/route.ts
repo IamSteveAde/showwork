@@ -1,3 +1,5 @@
+import { deliverySession } from "@/lib/deliveryUploads";
+import { validTaskKey } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -31,6 +33,9 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  if (!validTaskKey(fileKey, task.managedProjectId, taskId)) return NextResponse.json({ error: "Invalid upload key" }, { status: 400 });
+  const session = await deliverySession(task.managedProjectId, creator.id, fileKey, uploadId, {purpose:"TASK",targetId:taskId});
+  if (!session || session.state !== "OPEN") return NextResponse.json({error:"Upload session expired. Restart this transfer.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
   const uploadUrl = await getPresignedPartUploadUrl(fileKey, uploadId, partNumber);
 
   return NextResponse.json({ uploadUrl });

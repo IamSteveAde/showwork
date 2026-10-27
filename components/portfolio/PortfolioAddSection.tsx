@@ -6,6 +6,7 @@ import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import UploadPatienceBanner from "@/components/UploadPatienceBanner";
+import { savePortfolioVideoPoster } from "@/lib/portfolioVideoPoster";
 import { detectLocalFileAspectRatio } from "@/lib/detectLocalFileAspectRatio";
 
 type MediaType = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
@@ -295,6 +296,7 @@ export default function PortfolioAddSection({
   const [uploading, setUploading] =
     useState(false);
 
+  const posterFailures = useRef(0);
   const inputRef =
     useRef<HTMLInputElement>(null);
 
@@ -458,6 +460,11 @@ export default function PortfolioAddSection({
           );
         }
 
+        const saved = await completeRes.json();
+        if (mediaType === "VIDEO" && saved.media?.id) {
+          const previewSaved = await savePortfolioVideoPoster(file, saved.media.id);
+          if (!previewSaved) posterFailures.current += 1;
+        }
         return { ok: true };
       } catch (err) {
         if (
@@ -790,6 +797,10 @@ export default function PortfolioAddSection({
       };
     }
 
+    if (mediaType === "VIDEO" && completeData.media?.id) {
+      const previewSaved = await savePortfolioVideoPoster(file, completeData.media.id);
+      if (!previewSaved) posterFailures.current += 1;
+    }
     clearMultipartProgress(
       sectionName,
       fingerprint
@@ -954,6 +965,13 @@ export default function PortfolioAddSection({
 
       clearProgress(sectionName);
 
+      if (posterFailures.current > 0) {
+        setStatus("Videos uploaded. Some previews could not be created; the videos remain available and can be backfilled later.");
+        posterFailures.current = 0;
+        setUploading(false);
+        router.refresh();
+        return;
+      }
       setStatus("Done");
 
       router.refresh();

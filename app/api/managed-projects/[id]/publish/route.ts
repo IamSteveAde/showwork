@@ -86,19 +86,24 @@ export async function POST(
   // interleaved concurrent writes would be.
   let publishedCount = 0;
   for (const asset of approvedUnpublishedAssets) {
-    const media = await db.media.create({
-      data: {
-        projectId: deliveryProjectId,
-        fileKey: asset.fileKey,
-        type: asset.type,
-        uploadedByCreatorId: asset.uploadedByCreatorId,
-        sectionId: sectionIdByTaskId.get(asset.task.id),
-      },
+    const promoted = await db.$transaction(async tx => {
+      // Serialize preview updates and publication of this asset.
+      await tx.$queryRaw`SELECT "id" FROM "TaskAsset" WHERE "id" = ${asset.id} FOR UPDATE`;
+      const current = await tx.taskAsset.findUniqueOrThrow({where:{id:asset.id}});
+      if (current.internalReviewStatus !== "APPROVED" || current.promotedToMediaId) return false;
+      const uploadSessionId = `task-promotion:${asset.id}`;
+      const media = await tx.media.upsert({where:{uploadSessionId},update:{},create:{
+        projectId:deliveryProjectId,fileKey:asset.fileKey,type:asset.type,
+        uploadedByCreatorId:asset.uploadedByCreatorId,sectionId:sectionIdByTaskId.get(asset.task.id),
+        uploadSessionId,posterFileKey:current.posterFileKey,aspectRatio:current.aspectRatio,sizeBytes:current.sizeBytes,
+      }});
+      await tx.taskAsset.update({where:{id:asset.id},data:{promotedToMediaId:media.id}});
+      return true;
     });
-    await db.taskAsset.update({ where: { id: asset.id }, data: { promotedToMediaId: media.id } });
-    publishedCount++;
+    if (promoted) publishedCount++;
   }
 
+  if (!publishedCount) return NextResponse.json({error:"Internal review changed while publishing. Reload and review the current assets."},{status:409});
   await db.managedProject.update({ where: { id }, data: { publishedAt: new Date() } });
 
   return NextResponse.json({ publishedCount });

@@ -1,4 +1,5 @@
 "use client";
+import { deliveryPartUrl, pauseDeliveryUploads, resumeDeliveryUploads, deliveryRetryable, reconcileDeliveryParts, deliveryMediaType, uploadDeliverySingle, putDeliveryFile, putDeliveryPart, uploadQueue, saveDeliveryPreview, completeDeliveryUpload } from "@/lib/deliveryUploadClient";
 
 import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
 
@@ -46,49 +47,13 @@ interface PendingSection {
 type FileStatus = "pending" | "uploading" | "done" | "error";
 type BuilderStep = "closed" | "type" | "details";
 
-function uploadWithProgress(
-  url: string,
-  file: File,
-  onProgress: (loaded: number, total: number) => void
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", getFileContentType(file));
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded, e.total);
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`Upload failed (${xhr.status})`));
-    };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.send(file);
-  });
+function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
+  return putDeliveryFile(url, file, onProgress).then(() => undefined);
 }
 // Same as uploadWithProgress, but reads an optional ETag for debugging.
 // Finalization reads the authoritative ETags from R2 on the server.
-function uploadPartWithProgress(
-  url: string,
-  chunk: Blob,
-  onProgress: (loaded: number, total: number) => void
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded, e.total);
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(xhr.getResponseHeader("ETag") ?? "");
-      } else {
-        reject(new Error(`Chunk upload failed (${xhr.status})`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
-    xhr.send(chunk);
-  });
+function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
+  return putDeliveryPart(url, chunk, onProgress).then(result => result.etag || "");
 }
 
 // Resumable progress — keyed by localId (already stable per file in
@@ -100,6 +65,7 @@ function multipartStorageKey(localId: string): string {
 interface MultipartProgress {
   fileKey: string;
   uploadId: string;
+  chunkSizeMb?: number;
   completedParts: { partNumber: number; etag: string }[];
 }
 function getMultipartProgress(localId: string): MultipartProgress | null {
@@ -126,8 +92,8 @@ function clearMultipartProgress(localId: string) {
 }
 
 const MULTIPART_THRESHOLD_MB = 100;
-const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 3;
+const CHUNK_SIZE_MB = 16;
+const CHUNK_CONCURRENCY = 2;
 const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -148,10 +114,11 @@ async function uploadLargeFileMultipart(
   onChunkStatus: (msg: string) => void,
   folderId?: string
 ): Promise<{ fileKey: string }> {
-  const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
-  const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
 
   let progress = getMultipartProgress(localId);
+  const chunkSizeBytes = (progress ? progress.chunkSizeMb ?? 200 : CHUNK_SIZE_MB) * 1024 * 1024;
+  const totalChunks = Math.ceil(file.size / chunkSizeBytes);
   if (!progress) {
     const startRes = await fetch("/api/upload/multipart/start", {
       method: "POST",
@@ -168,10 +135,12 @@ async function uploadLargeFileMultipart(
       throw new Error(data.error ?? "Failed to start large-file upload");
     }
     const { uploadId, fileKey } = await startRes.json();
-    progress = { fileKey, uploadId, completedParts: [] };
+    progress = { fileKey, uploadId, completedParts: [], chunkSizeMb: CHUNK_SIZE_MB };
     saveMultipartProgress(localId, progress);
   }
 
+  try { await reconcileDeliveryParts(projectId, progress, totalChunks); }
+  catch (error) { if ((error as {code?:string}).code === "UPLOAD_SESSION_EXPIRED") clearMultipartProgress(localId); throw error; }
   const completedPartNumbers = new Set(progress.completedParts.map((p) => p.partNumber));
   const remainingPartNumbers: number[] = [];
   for (let partNumber = 1; partNumber <= totalChunks; partNumber++) {
@@ -185,6 +154,7 @@ async function uploadLargeFileMultipart(
   onLoaded(loadedBytes);
 
   let completedChunkCount = completedPartNumbers.size;
+  const inFlight = new Map<number,number>();
   let firstError: string | null = null;
 
 const uploadOneChunk = async (partNumber: number): Promise<void> => {
@@ -199,18 +169,10 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
 
     for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
       try {
-        const signRes = await fetch("/api/upload/multipart/sign-part", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, fileKey: progress!.fileKey, uploadId: progress!.uploadId, partNumber }),
-        });
-        if (!signRes.ok) {
-          const data = await signRes.json();
-          throw new Error(data.error ?? "Failed to sign chunk");
-        }
-        const { uploadUrl } = await signRes.json();
+        const uploadUrl = await deliveryPartUrl(projectId, progress!.fileKey, progress!.uploadId, partNumber, totalChunks);
 
-        const etag = await uploadPartWithProgress(uploadUrl, chunk, () => {});
+        const etag = await uploadPartWithProgress(uploadUrl, chunk, loaded => { inFlight.set(partNumber,loaded); onLoaded(Math.min(file.size, loadedBytes + [...inFlight.values()].reduce((a,b)=>a+b,0))); });
+        inFlight.delete(partNumber);
 
       progress!.completedParts.push({ partNumber, etag });
         saveMultipartProgress(localId, progress!);
@@ -223,6 +185,7 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
         break;
       } catch (err) {
         lastError = err instanceof Error ? err.message : "Upload failed";
+        if (!deliveryRetryable(err)) break;
         if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
       }
     }
@@ -242,10 +205,7 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
 
   if (firstError) throw new Error(firstError);
 
-  const completeRes = await fetch("/api/upload/multipart/complete", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const completeRes = await completeDeliveryUpload("/api/upload/multipart/complete", {
       projectId,
       fileKey: progress.fileKey,
       uploadId: progress.uploadId,
@@ -253,7 +213,6 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
       type: mediaType,
       sectionId,
       ...(folderId ? { folderId } : {}),
-    }),
   });
   if (!completeRes.ok) {
     const data = await completeRes.json();
@@ -261,6 +220,7 @@ const uploadOneChunk = async (partNumber: number): Promise<void> => {
   }
   const { media } = await completeRes.json();
 
+  await saveDeliveryPreview(file, media.id, progress.fileKey);
   clearMultipartProgress(localId);
   return { fileKey: media.id };
 }
@@ -278,6 +238,7 @@ function suggestCode() {
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const submission = useRef<{signature:string; project:{id:string}; sections:Record<string,string>; folders:Record<string,string>; files:Record<string,string>} | null>(null);
   const [phase, setPhase] = useState<"form" | "uploading" | "done">("form");
 
   const [clientName, setClientName] = useState("");
@@ -570,11 +531,15 @@ export default function NewProjectPage() {
       return;
     }
 
+    resumeDeliveryUploads();
     setPhase("uploading");
     setStatusMap(Object.fromEntries(allFiles.map((f) => [f.localId, "pending" as FileStatus])));
     setLoadedMap({});
 
     try {
+      const signature = JSON.stringify({clientName,password,sections:sections.map(section=>({id:section.sectionLocalId,name:section.name}))});
+      let project = submission.current?.signature === signature ? submission.current.project : null;
+      if (!project) {
       const createRes = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -585,8 +550,12 @@ export default function NewProjectPage() {
         setIsCapError(createRes.status === 403);
         throw new Error(data.error ?? "Failed to create project");
       }
-      const { project } = await createRes.json();
+      project = (await createRes.json()).project;
+      submission.current = {signature,project:project!,sections:{},folders:{},files:{}};
 
+      }
+      const attempt = submission.current!;
+      if (!project) throw Error("Could not recover the current project");
       let heroMediaId: string | null = null;
 
       // Uploads one file, either through the simple single-PUT path or
@@ -601,6 +570,12 @@ export default function NewProjectPage() {
         mediaType: string,
         folderId?: string
       ) => {
+        if (attempt.files[localId]) {
+          if (localId === heroLocalId) heroMediaId = attempt.files[localId];
+          setStatusMap(previous=>({...previous,[localId]:"done"}));
+          setLoadedMap(previous=>({...previous,[localId]:file.size}));
+          return;
+        }
         setStatusMap((prev) => ({ ...prev, [localId]: "uploading" }));
         try {
           const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
@@ -616,39 +591,11 @@ export default function NewProjectPage() {
               (msg) => setChunkStatusMap((prev) => ({ ...prev, [localId]: msg })),
               folderId
             );
+            attempt.files[localId] = mediaId;
             if (localId === heroLocalId) heroMediaId = mediaId;
           } else {
-            const presignRes = await fetch("/api/upload/presign", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                filename: file.name,
-                contentType: getFileContentType(file),
-                fileSizeMb: file.size / (1024 * 1024),
-              }),
-            });
-            if (!presignRes.ok) {
-              const data = await presignRes.json();
-              throw new Error(data.error ?? "presign failed");
-            }
-            const { uploadUrl, fileKey } = await presignRes.json();
-            await uploadWithProgress(uploadUrl, file, (loaded) => {
-              setLoadedMap((prev) => ({ ...prev, [localId]: loaded }));
-            });
-            const completeRes = await fetch("/api/upload/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                projectId: project.id,
-                fileKey,
-                type: mediaType,
-                sectionId,
-                ...(folderId ? { folderId } : {}),
-              }),
-            });
-            if (!completeRes.ok) throw new Error("failed to save media record");
-            const { media } = await completeRes.json();
+            const media = await uploadDeliverySingle({file, projectId: project.id, sectionId, folderId, type: mediaType, onProgress: loaded => setLoadedMap(previous => ({...previous,[localId]:loaded}))});
+            attempt.files[localId] = media.id;
             if (localId === heroLocalId) heroMediaId = media.id;
           }
           setStatusMap((prev) => ({ ...prev, [localId]: "done" }));
@@ -660,6 +607,8 @@ export default function NewProjectPage() {
       };
 
       for (const section of sections) {
+        let createdSection = {id:attempt.sections[section.sectionLocalId]};
+        if (!createdSection.id) {
         const sectionRes = await fetch(`/api/projects/${project.id}/sections`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -669,11 +618,11 @@ export default function NewProjectPage() {
           const data = await sectionRes.json();
           throw new Error(data.error ?? "Couldn't create section");
         }
-        const { section: createdSection } = await sectionRes.json();
+        createdSection = (await sectionRes.json()).section;
+        attempt.sections[section.sectionLocalId] = createdSection.id;
 
-        for (const { file, localId } of section.files) {
-          await uploadOneFile(file, localId, createdSection.id, section.mediaType);
         }
+        await uploadQueue(section.files, async ({file,localId}) => { await uploadOneFile(file,localId,createdSection.id,section.mediaType); });
 
         // Every sub-section within this section — created as a real
         // Folder right after the section itself, then its own files
@@ -684,6 +633,8 @@ export default function NewProjectPage() {
         for (const subSection of section.subSections) {
           if (subSection.files.length === 0) continue;
 
+          let folder = {id:attempt.folders[subSection.subSectionLocalId]};
+          if (!folder.id) {
           const folderRes = await fetch(`/api/sections/${createdSection.id}/folders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -693,11 +644,11 @@ export default function NewProjectPage() {
             const data = await folderRes.json();
             throw new Error(data.error ?? "Couldn't create sub-section");
           }
-          const { folder } = await folderRes.json();
+          folder = (await folderRes.json()).folder;
+          attempt.folders[subSection.subSectionLocalId] = folder.id;
 
-          for (const { file, localId } of subSection.files) {
-            await uploadOneFile(file, localId, createdSection.id, section.mediaType, folder.id);
           }
+          await uploadQueue(subSection.files, async ({file,localId}) => { await uploadOneFile(file,localId,createdSection.id,section.mediaType,folder.id); });
         }
       }
 
@@ -731,7 +682,7 @@ export default function NewProjectPage() {
         style={{ background: COLOR.black, fontFamily: "var(--font-sans)" }}
      >
         <div className="w-full max-w-lg">
-          <UploadPatienceBanner active={phase === "uploading"} />
+          <UploadPatienceBanner onPause={pauseDeliveryUploads} active={phase === "uploading"} />
           <div className="mb-8 mt-4 text-center">
             <p className="mb-3 text-xs font-semibold uppercase" style={{ color: COLOR.blue, letterSpacing: "0.1em" }}>
               {phase === "done" ? "All set" : "Uploading your project"}

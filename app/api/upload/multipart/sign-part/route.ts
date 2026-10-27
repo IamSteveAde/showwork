@@ -1,3 +1,4 @@
+import { deliverySession } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -13,20 +14,13 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, fileKey, uploadId, partNumber } = await req.json();
+  const { projectId, fileKey, uploadId, partNumber, partNumbers } = await req.json();
 
-  if (!projectId || !fileKey || !uploadId || typeof partNumber !== "number") {
-    return NextResponse.json(
-      { error: "projectId, fileKey, uploadId, and partNumber are required" },
-      { status: 400 }
-    );
-  }
-  if (partNumber < 1) {
-    return NextResponse.json({ error: "partNumber must be 1 or greater" }, { status: 400 });
-  }
+  const numbers: number[] = Array.isArray(partNumbers) ? partNumbers : [partNumber];
+  if (typeof projectId !== "string" || typeof fileKey !== "string" || typeof uploadId !== "string" || numbers.length < 1 || numbers.length > 3 || numbers.some(number => !Number.isInteger(number) || number < 1 || number > 10000)) return NextResponse.json({ error: "Provide one to three valid upload part numbers" }, { status: 400 });
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -40,7 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const uploadUrl = await getPresignedPartUploadUrl(fileKey, uploadId, partNumber);
-
-  return NextResponse.json({ uploadUrl });
+  const session = await deliverySession(projectId, creator.id, fileKey, uploadId);
+  if (!session || session.state !== "OPEN") return NextResponse.json({ error: "This upload session has expired. Start a new upload.", code: "UPLOAD_SESSION_EXPIRED" }, { status: 409 });
+  const entries = await Promise.all(numbers.map(async number => [number, await getPresignedPartUploadUrl(fileKey, uploadId, number)] as const));
+  return NextResponse.json(Array.isArray(partNumbers) ? {uploadUrls:Object.fromEntries(entries)} : {uploadUrl:entries[0][1]});
 }

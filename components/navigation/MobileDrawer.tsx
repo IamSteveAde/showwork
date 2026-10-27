@@ -33,6 +33,7 @@ export default function MobileDrawer({
   label,
   className = "bg-white text-slate-900",
   breakpoint = "lg",
+  placement = "left",
 }: {
   open: boolean;
   onClose: () => void;
@@ -40,6 +41,7 @@ export default function MobileDrawer({
   label: string;
   className?: string;
   breakpoint?: "md" | "lg";
+  placement?: "left" | "bottom";
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef(onClose);
@@ -108,8 +110,9 @@ export default function MobileDrawer({
         className={`absolute inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none ${visible ? "opacity-100" : "opacity-0"}`}
       />
       <div
-        className={`relative flex h-full w-[min(320px,calc(100vw-48px))] flex-col shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${visible ? "translate-x-0" : "-translate-x-full"} ${className}`}
+        className={`flex flex-col shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${placement === "bottom" ? `absolute inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-3xl ${visible ? "translate-y-0" : "translate-y-full"}` : `relative h-full w-[min(320px,calc(100vw-48px))] ${visible ? "translate-x-0" : "-translate-x-full"}`} ${className}`}
       >
+        {placement === "bottom" && <div aria-hidden="true" className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-slate-200" />}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-current/10 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
           <span className="text-sm font-semibold">{label}</span>
           <button

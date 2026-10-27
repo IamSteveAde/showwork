@@ -1,3 +1,5 @@
+import { parseDeliveryParts } from "@/lib/deliveryUploads";
+import { deliverySession, verifyDeliveryObject, matchesDeliveryType } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, fileKey, uploadId, parts, type, caption, displayOrder, sectionId, folderId } = await req.json();
+  const { projectId, fileKey, uploadId, parts, type, caption, displayOrder, sectionId, folderId, aspectRatio } = await req.json();
 
   if (!projectId || !fileKey || !uploadId || !Array.isArray(parts) || parts.length === 0 || !type) {
     return NextResponse.json(
@@ -39,15 +41,11 @@ export async function POST(req: NextRequest) {
   if (!validParts) {
     return NextResponse.json({ error: "Each part needs a partNumber and etag" }, { status: 400 });
   }
-  const typedParts: { partNumber: number; etag: string }[] = parts.map(
-    (p: { partNumber: unknown; etag: unknown }) => ({
-      partNumber: Number(p.partNumber),
-      etag: String(p.etag),
-    })
-  );
+  const typedParts = parseDeliveryParts(parts);
+  if (!typedParts) return NextResponse.json({error:"Upload parts must be a contiguous, unique list"},{status:400});
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -61,6 +59,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const session = await deliverySession(projectId, creator.id, fileKey, uploadId);
+  if (!session) return NextResponse.json({ error: "This upload session has expired. Start a new upload.", code: "UPLOAD_SESSION_EXPIRED" }, { status: 409 });
+  if (!matchesDeliveryType(session.contentType, type)) return NextResponse.json({ error: "The file type does not match this upload" }, { status: 400 });
+  const existing = await db.media.findUnique({ where: { uploadSessionId: session.id } });
+  if (existing) return NextResponse.json({ media: existing });
   if (sectionId) {
     const section = await db.mediaSection.findUnique({ where: { id: sectionId } });
     if (!section || section.projectId !== projectId) {
@@ -78,23 +81,27 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // This is the call that actually turns however many separately-
-  // uploaded chunks into one real, complete, readable file in R2 —
-  // nothing before this point is a usable object yet.
-  await completeMultipartUpload(fileKey, uploadId, typedParts);
+  let sizeBytes: number;
+  try {
+    // A previous attempt may have completed R2 before DB registration failed.
+    try { sizeBytes = await verifyDeliveryObject(session); }
+    catch {
+      await completeMultipartUpload(fileKey, uploadId, typedParts);
+      sizeBytes = await verifyDeliveryObject(session);
+    }
+  } catch { return NextResponse.json({ error: "The video upload is incomplete or its size does not match. Retry the missing parts.", code: "UPLOAD_NOT_VERIFIED" }, { status: 409 }); }
 
-  const media = await db.media.create({
-    data: {
-      projectId,
-      fileKey,
-      type,
-      caption: caption ?? null,
-      displayOrder: displayOrder ?? 0,
-      sectionId: sectionId ?? null,
-      folderId: folderId ?? null,
-      uploadedByCreatorId: creator.id,
-    },
+  const data = {
+    projectId, fileKey, type: type as "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF", caption: typeof caption === "string" ? caption : null,
+    displayOrder: typeof displayOrder === "number" ? displayOrder : 0,
+    sectionId: sectionId ?? null, folderId: folderId ?? null,
+    uploadedByCreatorId: creator.id, uploadSessionId: session.id, sizeBytes,
+    aspectRatio: typeof aspectRatio === "number" && Number.isFinite(aspectRatio) && aspectRatio > 0 && aspectRatio < 100 ? aspectRatio : null,
+  };
+  const media = await db.$transaction(async tx => {
+    const saved = await tx.media.upsert({ where: { uploadSessionId: session.id }, create: data, update: {} });
+    await tx.deliveryUploadSession.update({ where: { id: session.id }, data: { state: "COMPLETE", mediaId: saved.id } });
+    return saved;
   });
-
   return NextResponse.json({ media });
 }

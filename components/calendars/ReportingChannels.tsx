@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import PlatformBrandIcon from "./PlatformBrandIcon";
 import IconText from "@/components/ui/IconText";
 import { ArrowUpRight, RefreshCw, ChevronDown, ChevronUp, Radio, FileText, CheckCircle2, ChevronRight } from "lucide-react";
 import type { Report } from "./CalendarReportingPanel";
@@ -7,7 +7,7 @@ import styles from "./ReportingDashboard.module.css";
 const platformLabel: Record<string, string> = { INSTAGRAM: 'Instagram', FACEBOOK: 'Facebook', TIKTOK: 'TikTok', LINKEDIN: 'LinkedIn', X: 'X', YOUTUBE: 'YouTube' };
 const number = (v: number | null) => v == null ? '—' : Intl.NumberFormat().format(v);
 export function PlatformMark({ platform }: { platform: string }) {
-  return <span className={styles.platformMark}>{['INSTAGRAM','FACEBOOK','TIKTOK','LINKEDIN'].includes(platform) ? <Image src={`/images/integrations/${platform.toLowerCase()}.svg`} width={19} height={19} alt="" /> : <Radio size={17} aria-hidden="true" />}</span>;
+  return <span className={styles.platformMark}><PlatformBrandIcon platform={platform} size={20}/></span>;
 }
 export default function ReportingChannels({ report, isManager, syncing, syncNotice, onSync, expanded, onToggle }: { report: Report; isManager: boolean; syncing: boolean; syncNotice: string; onSync: () => void; expanded: boolean; onToggle: () => void }) {
   const shown = expanded ? report.accountPosts : report.accountPosts.slice(0,5);

@@ -14,6 +14,12 @@ function load(file, deps = {}) {
     if (name === '@/lib/aiGenerationResponse') return require('./helpers/load-typescript.cjs').load('lib/aiGenerationResponse.ts');
     if (name.startsWith('./Reporting')) return load(require('node:path').join(require('node:path').dirname(file), name + '.tsx'), deps);
     if (name === './WorkspaceFeatureNotice') return { __esModule: true, default: () => null };
+    if (name.startsWith('@/') || name.startsWith('./')) {
+      const path = require('node:path');
+      const target = name.startsWith('@/') ? name.slice(2) : path.join(path.dirname(file), name);
+      const resolved = fs.existsSync(target + '.ts') ? target + '.ts' : target + '.tsx';
+      return require('./helpers/load-typescript.cjs').load(resolved, deps);
+    }
     return require(name);
   }, mod, mod.exports);
   return mod.exports;
@@ -23,6 +29,7 @@ function hooks() {
   const cells = [], effects = [];
   const same = (a, b) => a && b && a.length === b.length && a.every((value, i) => Object.is(value, b[i]));
   const react = { ...React,
+    useMemo: fn => fn(),
     useState(initial) {
       const index = cursor++;
       if (!cells[index]) cells[index] = { value: typeof initial === 'function' ? initial() : initial };
@@ -160,16 +167,22 @@ test('filter changes hide stale actions immediately and late requests cannot rep
     const render = () => h.render(Panel, panelProps);
     render(); h.flush();
     requests[0].resolve(response(report([insight('old', 'TREND', 'Old experiment')]))); await tick();
-    find(render(), n => n.props['aria-label'] === 'Platform')[0].props.onChange({ target: { value: 'FACEBOOK' } });
+    button(render(), 'Facebook').props.onClick();
+    render(); h.flush();
+    assert.equal(requests.length, 1, 'staging a platform must not fetch a new report');
+    assert.ok(button(render(), 'Apply all recommendations'), 'current report stays visible before Apply');
+    assert.equal(button(render(), 'Apply platforms').props.disabled, false);
+    button(render(), 'Apply platforms').props.onClick();
     assert.equal(button(render(), 'Apply all recommendations'), undefined);
     h.flush();
-    find(render(), n => n.props['aria-label'] === 'Platform')[0].props.onChange({ target: { value: 'LINKEDIN' } });
+    button(render(), 'LinkedIn').props.onClick();
+    button(render(), 'Apply platforms').props.onClick();
     render(); h.flush();
     requests[2].resolve(response(report([insight('current', 'TREND', 'Current experiment')]))); await tick();
     requests[1].resolve(response(report([insight('late', 'TREND', 'Late old experiment')]))); await tick();
     button(render(), 'Apply all recommendations').props.onClick();
     assert.match(handoff.consumeReportingRecommendation('a'), /Current experiment/);
-    assert.match(requests[2].url, /platform=LINKEDIN/);
+    assert.match(requests[2].url, /platform=FACEBOOK%2CLINKEDIN/);
     h.unmount();
   } finally { b.restore(); }
 });
@@ -181,14 +194,17 @@ test('analysis completion and delayed sync refresh the latest selected filters',
     const render = () => h.render(Panel, panelProps);
     render(); h.flush(); await tick();
     const analyzing = button(render(), 'Refresh AI analysis').props.onClick();
-    find(render(), n => n.props['aria-label'] === 'Platform')[0].props.onChange({ target: { value: 'FACEBOOK' } });
+    button(render(), 'Facebook').props.onClick();
+    button(render(), 'Apply platforms').props.onClick();
     render(); h.flush(); await tick();
     assert.equal(button(render(), 'Apply all recommendations').props.disabled, true);
     analysis.resolve(response({ generated: 1 })); await analyzing; await tick();
     assert.match(urls.at(-1), /platform=FACEBOOK/);
     assert.equal(button(render(), 'Sync now').props.disabled, false);
     button(render(), 'Sync now').props.onClick(); await tick();
-    find(render(), n => n.props['aria-label'] === 'Platform')[0].props.onChange({ target: { value: 'LINKEDIN' } });
+    button(render(), 'All platforms').props.onClick();
+    button(render(), 'LinkedIn').props.onClick();
+    button(render(), 'Apply platforms').props.onClick();
     render(); h.flush(); await tick();
     b.timers.at(-1)(); await tick();
     assert.match(urls.at(-1), /platform=LINKEDIN/);

@@ -1,3 +1,4 @@
+import { validDeliveryKey } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -42,7 +43,8 @@ export async function DELETE(
 
   await db.media.delete({ where: { id: mediaId } });
 
-  deleteObject(media.fileKey).catch((err) => console.error("Failed to delete file from R2:", err));
+  if (media.posterFileKey && validDeliveryKey(media.posterFileKey, media.projectId)) deleteObject(media.posterFileKey).catch(() => {});
+  if (validDeliveryKey(media.fileKey, media.projectId)) deleteObject(media.fileKey).catch((err) => console.error("Failed to delete file from R2:", err));
 
   return NextResponse.json({ ok: true });
 }

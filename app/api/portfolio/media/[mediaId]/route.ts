@@ -1,3 +1,4 @@
+import { validPortfolioKey } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -32,7 +33,8 @@ export async function DELETE(
   }
 
   await db.portfolioMedia.delete({ where: { id: mediaId } });
-  deleteObject(media.fileKey).catch((err) => console.error("Failed to delete R2 object:", err));
+  if (media.posterFileKey && validPortfolioKey(media.posterFileKey, media.portfolioId)) deleteObject(media.posterFileKey).catch(() => {});
+  if (validPortfolioKey(media.fileKey, media.portfolioId)) deleteObject(media.fileKey).catch((err) => console.error("Failed to delete R2 object:", err));
 
   return NextResponse.json({ ok: true });
 }

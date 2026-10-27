@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import EmailGate from "@/components/EmailGate";
@@ -13,6 +14,8 @@ export interface MediaItem {
   id: string;
   type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   url: string;
+  aspectRatio?: number | null;
+  posterUrl?: string | null;
   caption: string;
   approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
   approvalNote: string | null;
@@ -103,7 +106,9 @@ export default function DeliveryPage({
   // it's embedded in that same signed token alongside the email.
   const [viewerName, setViewerName] = useState<string | null>(initialViewerName);
   const [viewerEmail, setViewerEmail] = useState<string | null>(initialViewerEmail);
-  const [unlocked, setUnlocked] = useState(initiallyUnlocked);
+  const router = useRouter();
+  // Server refresh supplies the authorized payload after password verification.
+  const unlocked = initiallyUnlocked;
 
   // The one new decision on this page: once unlocked, does the client
   // see task/progress status, or the actual delivered files? Only
@@ -137,7 +142,7 @@ export default function DeliveryPage({
             logoUrl={logoUrl}
             viewerEmail={viewerEmail}
             viewerName={viewerName}
-            onUnlock={() => setUnlocked(true)}
+            onUnlock={() => router.refresh()}
           />
         ) : showManagedProgress ? (
           <ManagedProjectClientView

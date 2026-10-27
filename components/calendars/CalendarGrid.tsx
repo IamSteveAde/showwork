@@ -1,9 +1,10 @@
 "use client";
+import contentStyles from "./ContentPlanner.module.css";
 import CreativeBriefEditor from "./CreativeBriefEditor";
 import type { CreativeBrief, CreativeDevelopment } from "@/lib/content/brief";
-import { FilePenLine, ShieldCheck, Users, Send, X } from "lucide-react";
+import { FilePenLine, ShieldCheck, Users, Send, X, Plus, CalendarDays, Layers3 } from "lucide-react";
 import ContentWorkflow from "@/components/calendars/ContentWorkflow";
-import { calendarWorkflow } from "@/lib/calendarWorkflow";
+import { calendarWorkflow, matchesCalendarStage, type CalendarStageFilter } from "@/lib/calendarWorkflow";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 import { mergeSavedCalendarPosts } from "@/lib/calendarPostCollection";
 import type { TeamPermission } from "@/lib/calendarTeamPolicy";
@@ -56,6 +57,7 @@ type TikTokPublishStatus = "NOT_SCHEDULED" | "SCHEDULED" | "PUBLISHING" | "PUBLI
 type TikTokPrivacyLevel = "PUBLIC_TO_EVERYONE" | "MUTUAL_FOLLOW_FRIENDS" | "FOLLOWER_OF_CREATOR" | "SELF_ONLY";
 
 export interface CalendarPostData {
+  isAiDraft?: boolean;
   updatedAt?: string;
   creativeBrief?: CreativeBrief | null;
   creativeDevelopment?: CreativeDevelopment | null;
@@ -136,13 +138,13 @@ const DEFAULT_CTAS = [
 ];
 
 const DAY_COLORS = [
-  "#FF6B4A",
-  "#2478FF",
-  "#6C5CE7",
-  "#FFCC00",
-  "#00C2A8",
-  "#FF4D8D",
-  "#9B59F6",
+  "#E9735B", // Sunday · coral
+  "#3479DF", // Monday · blue
+  "#8A6ED8", // Tuesday · lavender
+  "#C5962D", // Wednesday · gold
+  "#279F8F", // Thursday · teal
+  "#D16D98", // Friday · rose
+  "#6774C5", // Saturday · indigo
 ];
 
 const APPROVAL_META: Record<
@@ -515,413 +517,25 @@ function VideoThumbnail({
    POST TILE
    ========================================================= */
 
-function PostTile({
-  post,
-  index,
-  onClick,
-  canDelete,
-  onDelete,
-}: {
-  post: CalendarPostData;
-  index: number;
-  onClick: () => void;
-  canDelete: boolean;
-  onDelete: () => Promise<void>;
-}) {
-  const meta = PLATFORMS.find(
-    (p) => p.value === post.platform
-  )!;
-
-  const cover = post.assets[0];
-
-  const approvalMeta =
-    { ...APPROVAL_META[post.approvalStatus], text: calendarWorkflow(post).label };
-
-  const tiltDeg = index % 2 === 0 ? -2 : 2;
-
-  // Once an Instagram post has actually been scheduled, published,
-  // or failed, that's more actionable information than the plain
-  // approval status underneath it — this overrides the bottom badge
-  // text/color in that case, rather than showing both at once on a
-  // tile this small.
-  const instagramStatusMeta =
-    post.platform === "INSTAGRAM" && post.instagramPublishStatus && post.instagramPublishStatus !== "NOT_SCHEDULED"
-      ? post.instagramPublishStatus === "PUBLISHED"
-        ? { text: "Live on Instagram", color: "#E1306C" }
-        : post.instagramPublishStatus === "SCHEDULED"
-          ? { text: "Scheduled to publish", color: "#2478FF" }
-          : post.instagramPublishStatus === "PUBLISHING"
-            ? { text: "Publishing now", color: "#2478FF" }
-            : { text: "Publish failed", color: "#EF4444" }
-      : null;
-  // A post is only ever one platform, so at most one of these two
-  // is ever non-null at the same time — safe to just combine them.
-  const tikTokStatusMeta =
-    post.platform === "TIKTOK" && post.tikTokPublishStatus && post.tikTokPublishStatus !== "NOT_SCHEDULED"
-      ? post.tikTokPublishStatus === "PUBLISHED"
-        ? { text: "Published to TikTok", color: "#00F2EA" }
-        : post.tikTokPublishStatus === "SCHEDULED"
-          ? { text: "Scheduled to publish", color: "#2478FF" }
-          : post.tikTokPublishStatus === "PUBLISHING"
-            ? { text: "Publishing now", color: "#2478FF" }
-            : { text: "Publish failed", color: "#EF4444" }
-      : null;
-  const sharedStatusMeta = post.publishStatus && post.publishStatus !== "NOT_SCHEDULED"
-    ? { text: post.publishStatus === "PUBLISHED" ? `Published to ${meta.label}` : post.publishStatus === "SCHEDULED" ? "Scheduled to publish" : post.publishStatus === "PUBLISHING" ? "Publishing now" : "Publish failed", color: post.publishStatus === "FAILED" ? "#EF4444" : "#2478FF" }
-    : null;
-  const tikTokSetupMeta = post.platform === "TIKTOK" && post.approvalStatus === "APPROVED" && post.tikTokPublishStatus === "NOT_SCHEDULED"
-    ? { text: "Authorize to schedule", color: "#D97706" }
-    : null;
-  const bottomStatusMeta = calendarWorkflow(post).stage < 3 ? approvalMeta : instagramStatusMeta ?? tikTokStatusMeta ?? sharedStatusMeta ?? tikTokSetupMeta ?? approvalMeta;
-
-  const [confirmingDelete, setConfirmingDelete] =
-    useState(false);
+function PostTile({ post, onClick, canDelete, onDelete }: { post: CalendarPostData; index: number; onClick: () => void; canDelete: boolean; onDelete: () => Promise<void> }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const timeLabel = new Date(
-    post.postDate
-  ).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  return (
-    <div
-      className="relative pt-2"
-      style={{
-        transform: `rotate(${tiltDeg}deg)`,
-        transition: "transform 0.25s ease",
-      }}
-    >
-      {/* Pin */}
-      <span
-        className="
-          pointer-events-none
-          absolute left-1/2 top-0
-          z-10
-          -translate-x-1/2
-        "
-        style={{
-          filter:
-            "drop-shadow(0 2px 2px rgba(0,0,0,0.35))",
-        }}
-      >
-        <IconPin
-          color={meta.color}
-          className="h-4.5 w-4.5 sm:h-5 sm:w-5"
-        />
-      </span>
-
-      <button
-        type="button"
-        onClick={onClick}
-        className="
-          group relative
-          h-24 w-full
-          flex-shrink-0
-          overflow-hidden
-          rounded-lg
-          transition-all duration-200
-          active:scale-[0.99]
-          sm:h-[104px]
-          md:h-[112px]
-          lg:h-28
-          lg:hover:scale-[1.03]
-        "
-        style={{
-          background: cover
-            ? "#000"
-            : `${meta.color}26`,
-          border: "3px solid #FBFAF7",
-          boxShadow:
-            "0 6px 14px -4px rgba(0,0,0,0.45)",
-        }}
-      >
-        {cover ? (
-          cover.mediaType === "VIDEO" ? (
-            <VideoThumbnail
-              src={cover.contentUrl}
-              className="
-                absolute inset-0
-                h-full w-full
-                object-cover
-              "
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover.contentUrl}
-              alt=""
-              className="
-                absolute inset-0
-                h-full w-full
-                object-cover
-              "
-            />
-          )
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <PlatformIcon
-              platform={post.platform}
-              className="h-7 w-7"
-              style={{ color: meta.color }}
-            />
-          </div>
-        )}
-
-        {cover?.mediaType === "VIDEO" && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span
-              className="
-                flex h-8 w-8
-                items-center justify-center
-                rounded-full
-              "
-              style={{
-                background: "rgba(0,0,0,0.5)",
-                backdropFilter: "blur(2px)",
-              }}
-            >
-              <IconPlay className="ml-0.5 h-4 w-4 text-white" />
-            </span>
-          </div>
-        )}
-
-        {cover && (
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20" />
-        )}
-
-        {/* Platform */}
-        <span
-          className="
-            absolute left-1.5 top-1.5
-            flex h-5 w-5
-            items-center justify-center
-            rounded-full
-          "
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            color: meta.color,
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <PlatformIcon
-            platform={post.platform}
-            className="h-3 w-3"
-          />
-        </span>
-
-        {/* Time */}
-        <span
-          className="
-            absolute right-1.5 top-1.5
-            flex items-center
-            gap-1
-            rounded-full
-            px-1.5 py-0.5
-            text-[8px]
-            font-bold
-            text-white
-          "
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          {timeLabel}
-        </span>
-
-        {/* Carousel count */}
-        {post.assets.length > 1 && (
-          <span
-            className="
-              absolute left-1.5 bottom-6
-              flex items-center gap-0.5
-              rounded-full
-              px-1.5 py-0.5
-              text-[9px]
-              font-bold
-              text-white
-            "
-            style={{
-              background: "rgba(0,0,0,0.55)",
-              backdropFilter: "blur(4px)",
-            }}
-          >
-            <IconLayers className="h-2.5 w-2.5" />
-            {post.assets.length}
-          </span>
-        )}
-
-        {/* Approved */}
-        {cover &&
-          post.approvalStatus === "APPROVED" && (
-            <span
-              className="
-                absolute bottom-6 right-1.5
-                flex h-5 w-5
-                items-center justify-center
-                rounded-full
-              "
-              style={{
-                background: "#22C55E",
-                boxShadow:
-                  "0 0 0 2px rgba(0,0,0,0.4)",
-              }}
-            >
-              <IconCheck className="h-3 w-3 text-white" />
-            </span>
-          )}
-
-        {/* Status — Instagram publish status when relevant, plain
-            approval status otherwise. */}
-        {cover && (
-          <span
-            className="
-              absolute
-              bottom-1.5 left-1.5 right-1.5
-              truncate
-              rounded
-              px-1.5 py-0.5
-              text-left
-              text-[9px]
-              font-semibold
-            "
-            style={{
-              color: bottomStatusMeta.color,
-              background: "rgba(0,0,0,0.55)",
-            }}
-          >
-            {bottomStatusMeta.text}
-          </span>
-        )}
-      </button>
-
-      {/* Quick delete — a sibling of the tile's own button, since a
-          button can't be nested inside another one. Confirms inline
-          on the tile itself first, rather than deleting on the very
-          first tap, which would be too easy to trigger by accident
-          on a tile this small. */}
-      {canDelete && !confirmingDelete && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setConfirmingDelete(true);
-          }}
-          aria-label="Delete this post"
-          className="
-            absolute right-1 top-1
-            z-20
-            flex h-5 w-5
-            items-center justify-center
-            rounded-full
-            text-xs
-            font-bold
-            text-white
-            transition-all
-            active:scale-90
-          "
-          style={{
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          ×
-        </button>
-      )}
-
-      {canDelete && confirmingDelete && (
-        <div
-          className="
-            absolute inset-x-0 top-2 bottom-0
-            z-20
-            flex flex-col
-            items-center justify-center
-            gap-1.5
-            rounded-lg
-            p-2
-            text-center
-          "
-          style={{ background: "rgba(0,0,0,0.85)" }}
-        >
-          {deleting ? (
-            <>
-              <span
-                className="
-                  h-4 w-4
-                  animate-spin
-                  rounded-full
-                  border-2
-                  border-white/30
-                  border-t-white
-                "
-              />
-              <p className="text-[10px] font-semibold text-white/70">
-                Deleting...
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-[10px] font-semibold text-white">
-                Delete this post?
-              </p>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    setDeleting(true);
-                    await onDelete();
-                    // No need to reset deleting/confirmingDelete on
-                    // success — the tile itself is removed from the
-                    // calendar the moment the parent's state updates.
-                    // Only reset here if something went wrong and
-                    // this tile is still around to show it.
-                    setDeleting(false);
-                  }}
-                  className="
-                    rounded-full
-                    bg-red-500
-                    px-2.5 py-1
-                    text-[10px]
-                    font-semibold
-                    text-white
-                    transition-colors
-                    hover:bg-red-600
-                  "
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmingDelete(false);
-                  }}
-                  className="
-                    rounded-full
-                    bg-white/15
-                    px-2.5 py-1
-                    text-[10px]
-                    font-semibold
-                    text-white
-                  "
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const [deleteError, setDeleteError] = useState("");
+  const cover = post.assets[0];
+  const workflow = calendarWorkflow(post);
+  const meta = PLATFORMS.find(p => p.value === post.platform)!;
+  const time = new Date(post.postDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return <article className={contentStyles.postCard}>
+    <button type="button" onClick={onClick} className={contentStyles.postOpen} aria-label={`Open ${meta.label} post: ${post.contentIdea || post.hook || "Untitled post"}`}>
+      <div className={contentStyles.postTop}><PlatformIcon platform={post.platform} className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }}/><span>{meta.label}</span><time>{time}</time></div>
+      {cover && <div className={contentStyles.cover}>{cover.mediaType === "PHOTO" ? <img src={cover.contentUrl} alt="" loading="lazy"/> : cover.mediaType === "VIDEO" ? <><VideoThumbnail src={cover.contentUrl} className="h-full w-full object-cover"/><span className={contentStyles.play}><IconPlay className="h-4 w-4"/></span></> : <FilePenLine size={24}/>}</div>}
+      <p className={contentStyles.postTitle}>{post.contentIdea || post.hook || post.caption || "Untitled post"}</p>
+      <div className={contentStyles.postStatus} data-tone={workflow.tone}><span/>{workflow.label}</div>
+      {post.assets.length > 1 && <span className={contentStyles.assetCount}><IconLayers className="h-3 w-3"/>{post.assets.length} files</span>}
+    </button>
+    {canDelete && <div className={contentStyles.deleteArea}>{!confirmingDelete ? <button type="button" onClick={() => setConfirmingDelete(true)} aria-label="Delete post" className={contentStyles.deleteTrigger}><X size={12}/></button> : <div className={contentStyles.confirmDelete}><span>Delete this post?</span><button disabled={deleting} onClick={async () => { setDeleting(true); setDeleteError(""); try { await onDelete(); } catch { setDeleteError("Could not delete. Try again."); } finally { setDeleting(false); } }}>{deleting ? "Deleting…" : "Delete"}</button><button disabled={deleting} onClick={() => setConfirmingDelete(false)}>Cancel</button></div>}{deleteError && <p role="alert">{deleteError}</p>}</div>}
+  </article>;
 }
-
-/* =========================================================
-   ADD POST PANEL
-   ========================================================= */
 
 function AddPostPanel({
   calendarId,
@@ -1459,7 +1073,7 @@ function AddPostPanel({
   return (
     <div
       className="
-        fixed inset-0 z-50
+        fixed inset-0 z-[100]
         flex items-end justify-center
         bg-black/75
         p-0
@@ -5787,6 +5401,7 @@ export default function CalendarGrid({
   // calendar, Instagram preview and TikTok preview without creating
   // a second control layer in the parent page.
   const [filterOpen, setFilterOpen] = useState(false);
+  const [stageFilter, setStageFilter] = useState<CalendarStageFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState<Platform | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | "ALL">("ALL");
@@ -5811,6 +5426,7 @@ export default function CalendarGrid({
   ).sort();
 
   const filteredPosts = useMemo(() => posts.filter((post) => {
+    if (!matchesCalendarStage(post, stageFilter)) return false;
     const query = searchQuery.trim().toLowerCase();
 
     const searchable = [
@@ -5836,9 +5452,10 @@ export default function CalendarGrid({
     if (contentFilter === "EMPTY" && post.assets.length > 0) return false;
 
     return true;
-  }), [posts, searchQuery, platformFilter, statusFilter, typeFilter, categoryFilter, contentFilter]);
+  }), [posts, stageFilter, searchQuery, platformFilter, statusFilter, typeFilter, categoryFilter, contentFilter]);
 
   const activeFilterCount = [
+    stageFilter !== "all",
     platformFilter !== "ALL",
     statusFilter !== "ALL",
     typeFilter !== "ALL",
@@ -5850,6 +5467,7 @@ export default function CalendarGrid({
   const filtersActive = activeFilterCount > 0;
 
   const clearFilters = () => {
+    setStageFilter("all");
     setSearchQuery("");
     setPlatformFilter("ALL");
     setStatusFilter("ALL");
@@ -5880,11 +5498,8 @@ export default function CalendarGrid({
       `/api/calendars/${calendarId}/posts/${postId}`,
       { method: "DELETE" }
     );
-    if (res.ok) {
-      setPosts((prev) =>
-        prev.filter((p) => p.id !== postId)
-      );
-    }
+    if (!res.ok) throw new Error("Could not delete this post.");
+    setPosts(prev => prev.filter(p => p.id !== postId));
   };
 
   const year =
@@ -5991,28 +5606,23 @@ export default function CalendarGrid({
     );
 
   return (
-    <div
-      className="
-        min-h-full
-        w-full
-        rounded-none
-        p-3
-        transition-colors
-        duration-300
-        sm:rounded-2xl
-        sm:p-4
-        lg:p-5
-      "
-      style={{
-        background: t.pageBg,
-        color: t.text,
-      }}
-    >
+    <div className={contentStyles.planner} data-theme={theme} style={{ background: t.pageBg, color: t.text, "--planner-text": t.text, "--planner-muted": t.textMuted, "--planner-surface": t.modalBg, "--planner-border": t.cardBorder, "--planner-soft": t.pillBg } as React.CSSProperties}>
+      <section className={contentStyles.intro}>
+        <div><p className={contentStyles.eyebrow}><span/> Your content, connected</p><h1>From the first idea.<br/><span>To out in the world.</span></h1><p>Plan the story, bring your team together and give every post a clear path to publishing.</p></div>
+        {userRole === "EDIT_CALENDAR" && <button type="button" onClick={() => setAddingDate(new Date())} className={contentStyles.create}><Plus size={17}/> Plan a post</button>}
+      </section>
+      <p className={contentStyles.summaryLabel}>Workspace totals · Select a stage to filter</p>
+      <div className={contentStyles.stageGrid} role="group" aria-label="Filter content by workflow stage">{([
+        {id:"all",label:"All content",note:"Your complete workspace",icon:Layers3},
+        {id:"internal",label:"Internal review",note:"Private to your team",icon:ShieldCheck},
+        {id:"client",label:"Client review",note:"Ready for client feedback",icon:Users},
+        {id:"publishing",label:"Publishing",note:"Approved, scheduled & live",icon:Send},
+      ] as const).map(item => { const Icon = item.icon; const count = posts.filter(post => matchesCalendarStage(post, item.id)).length; return <button type="button" key={item.id} aria-pressed={stageFilter === item.id} onClick={() => setStageFilter(item.id)} className={contentStyles.stageCard}><span className={contentStyles.stageTop}>{item.label}<Icon size={17}/></span><strong>{count}</strong><span className={contentStyles.stageNote}>{item.note}</span></button>; })}</div>
       {/* =====================================================
           CALENDAR HEADER
           ===================================================== */}
 
-      <AutoPublishToggle calendarId={calendarId} canManage={isOwner || (permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR")} />
+      <AutoPublishToggle compact calendarId={calendarId} canManage={isOwner || (permissions ? permissions.includes("publishing.manage") : userRole === "EDIT_CALENDAR")} />
       <div className="
         mb-5
         flex
@@ -6070,11 +5680,13 @@ export default function CalendarGrid({
 
         <div className="
           flex
-          flex-shrink-0
+          min-w-0
+          flex-wrap
           items-center
           gap-1.5
           sm:gap-2
         ">
+          <div className={contentStyles.toolbarActions} role="group" aria-label="Calendar actions">
           {isOwner && <ResetCalendarButton calendarId={calendarId} onReset={() => {
             setPosts([]);
             setSelectedPost(null);
@@ -6098,6 +5710,7 @@ export default function CalendarGrid({
             onToggle={toggleTheme}
           />
 
+          </div>
           {viewMode === "calendar" && (
             <>
               <button
@@ -6150,10 +5763,7 @@ export default function CalendarGrid({
           SMART FILTER / SEARCH BAR
           ===================================================== */}
       <div
-        className="
-          mb-4 overflow-hidden rounded-2xl border
-          sm:mb-5
-        "
+        className={contentStyles.filterBar}
         style={{
           background:
             theme === "dark"
@@ -6568,14 +6178,7 @@ export default function CalendarGrid({
       <div
         role="group"
         aria-label="Calendar and channel previews"
-        className="
-          mb-5
-          grid grid-cols-3 sm:flex
-          gap-1.5
-          rounded-2xl
-          p-1.5
-          sm:mb-6
-        "
+        className={contentStyles.previewTabs}
         style={{
           background:
             theme === "dark"
@@ -6664,12 +6267,7 @@ export default function CalendarGrid({
           DESKTOP / TABLET CALENDAR
           ===================================================== */}
 
-          {!isMobileLayout && <div className="
-        grid
-        sm:grid-cols-7
-        sm:gap-1.5
-        lg:gap-2
-      ">
+          {!isMobileLayout && <div className={contentStyles.calendar}>
             {[
               "Sun",
               "Mon",
@@ -6746,13 +6344,9 @@ export default function CalendarGrid({
                 lg:min-h-[170px]
               "
                   style={{
-                    background:
-                      theme === "dark"
-                        ? `${dayColor}14`
-                        : `${dayColor}0d`,
-                    border: todayDate
-                      ? `1.5px solid ${dayColor}`
-                      : `1px solid ${dayColor}30`,
+                    background: theme === "dark" ? `${dayColor}18` : `${dayColor}0C`,
+                    border: todayDate ? `1.5px solid ${dayColor}` : `1px solid ${dayColor}35`,
+                    boxShadow: todayDate ? `0 0 0 3px ${dayColor}12` : "none",
                   }}
                 >
                   {/* DAY HEADER */}
@@ -6922,13 +6516,8 @@ export default function CalendarGrid({
                 border
               "
                   style={{
-                    background:
-                      theme === "dark"
-                        ? `${dayColor}0c`
-                        : `${dayColor}08`,
-                    borderColor: todayDate
-                      ? dayColor
-                      : `${dayColor}28`,
+                    background: theme === "dark" ? `${dayColor}16` : `${dayColor}09`,
+                    borderColor: todayDate ? dayColor : `${dayColor}35`,
                     boxShadow: todayDate
                       ? `0 0 0 1px ${dayColor}18`
                       : "none",

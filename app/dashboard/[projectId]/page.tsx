@@ -1326,7 +1326,7 @@ export default async function ProjectDetailPage({
                               <FileGridItem
                                 key={m.id}
                                 mediaId={m.id}
-                                url={publicUrlFor(m.fileKey)}
+                                url={publicUrlFor(m.fileKey)} posterUrl={m.posterFileKey ? publicUrlFor(m.posterFileKey) : null}
                                 filename={m.fileKey.split("/").pop() ?? "file"}
                                 caption={m.caption}
                                 type={m.type}
@@ -1373,7 +1373,7 @@ export default async function ProjectDetailPage({
                                 <FileGridItem
                                   key={m.id}
                                   mediaId={m.id}
-                                  url={publicUrlFor(m.fileKey)}
+                                  url={publicUrlFor(m.fileKey)} posterUrl={m.posterFileKey ? publicUrlFor(m.posterFileKey) : null}
                                   filename={m.fileKey.split("/").pop() ?? "file"}
                                   caption={m.caption}
                                   type={m.type}
@@ -1416,7 +1416,7 @@ export default async function ProjectDetailPage({
                             <FileGridItem
                               key={m.id}
                               mediaId={m.id}
-                              url={publicUrlFor(m.fileKey)}
+                              url={publicUrlFor(m.fileKey)} posterUrl={m.posterFileKey ? publicUrlFor(m.posterFileKey) : null}
                               filename={m.fileKey.split("/").pop() ?? "file"}
                               caption={m.caption}
                               type={m.type}

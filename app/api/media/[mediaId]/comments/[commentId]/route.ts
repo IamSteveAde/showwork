@@ -1,3 +1,4 @@
+import { deliveryAccess } from "@/lib/deliveryAccess";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
@@ -17,6 +18,9 @@ export async function DELETE(
     return NextResponse.json({ error: "viewerEmail is required" }, { status: 400 });
   }
 
+  const media = await db.media.findUnique({ where: { id: mediaId }, include: { project: true } });
+  const access = media ? await deliveryAccess(media.project) : null;
+  if (!access || access.email.toLowerCase() !== String(viewerEmail).toLowerCase()) return NextResponse.json({ error: "Unlock this delivery as the reviewer before continuing" }, { status: 403 });
   const comment = await db.videoComment.findUnique({ where: { id: commentId } });
   if (!comment || comment.mediaId !== mediaId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

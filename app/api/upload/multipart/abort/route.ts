@@ -1,3 +1,4 @@
+import { deliverySession } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -35,7 +36,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const session = await deliverySession(projectId, creator.id, fileKey, uploadId);
+  if (!session || session.state !== "OPEN") return NextResponse.json({ error: "This upload session has expired. Start a new upload.", code: "UPLOAD_SESSION_EXPIRED" }, { status: 409 });
   await abortMultipartUpload(fileKey, uploadId);
 
+  await db.deliveryUploadSession.update({ where: { id: session.id }, data: { state: "ABORTED" } });
   return NextResponse.json({ ok: true });
 }

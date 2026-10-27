@@ -13,7 +13,7 @@ export async function POST(
   const { password, viewerEmail, viewerName } = await req.json();
 
   const project = await db.project.findUnique({ where: { id } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

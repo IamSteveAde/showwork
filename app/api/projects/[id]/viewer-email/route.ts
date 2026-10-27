@@ -20,7 +20,7 @@ export async function POST(
   }
 
   const project = await db.project.findUnique({ where: { id } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

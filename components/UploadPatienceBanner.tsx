@@ -5,17 +5,17 @@ import { AnimatePresence, motion } from "framer-motion";
 
 const MESSAGES = [
   "Large files take a little longer — hang tight.",
-  "Your files are uploading securely in the background.",
+  "Keep this tab open while your files upload.",
   "No need to keep this tab in focus, just don't close it.",
-  "Almost every upload finishes faster than it feels.",
-  "If it looks slow, that's your actual connection speed — not a problem here.",
+  "Completed parts are retained while you retry a large upload.",
+  "Upload time depends on file size, connection and service response time.",
 ];
 
 // A small, reassuring rotating message shown while a real upload is
 // in progress — the point isn't new information, it's confidence
 // that nothing has frozen during what can genuinely be a long,
 // quiet-looking wait on a large file.
-export default function UploadPatienceBanner({ active }: { active: boolean }) {
+export default function UploadPatienceBanner({ active, onPause }: { active: boolean; onPause?: () => void }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -48,6 +48,7 @@ export default function UploadPatienceBanner({ active }: { active: boolean }) {
           {MESSAGES[index]}
         </motion.p>
       </AnimatePresence>
+      {onPause && <button type="button" onClick={onPause} className="ml-auto shrink-0 rounded-lg border border-blue-400/30 px-3 py-2 text-xs font-semibold text-blue-400">Pause uploads</button>}
     </div>
   );
 }

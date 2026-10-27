@@ -1,3 +1,4 @@
+import { validDeliveryKey } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -55,7 +56,7 @@ export async function DELETE(
     where: { id: sectionId },
     include: {
       project: { select: { creatorId: true } },
-      media: { select: { fileKey: true } },
+      media: { select: { fileKey: true, posterFileKey: true } },
     },
   });
   if (!section || section.project.creatorId !== creator.id) {
@@ -64,7 +65,7 @@ export async function DELETE(
 
   // Grab every file's storage key before the section (and its media
   // rows, via cascade) are deleted from the database.
-  const fileKeys = section.media.map((m) => m.fileKey);
+  const fileKeys = section.media.flatMap((m) => m.posterFileKey ? [m.fileKey,m.posterFileKey] : [m.fileKey]).filter(key => validDeliveryKey(key, section.projectId));
 
   await db.mediaSection.delete({ where: { id: sectionId } });
 

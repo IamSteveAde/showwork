@@ -1,3 +1,4 @@
+import { createDeliverySession, expectedUploadBytes, deliverySession } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -16,13 +17,13 @@ export async function POST(req: NextRequest) {
   const creator = await getCurrentCreator();
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { projectId, filename, contentType: suppliedContentType, fileSizeMb } = await req.json();
+  const { projectId, filename, contentType: suppliedContentType, fileSizeMb, resumeFileKey } = await req.json();
   const contentType = resolveFileContentType(
     typeof filename === "string" ? filename : "",
     typeof suppliedContentType === "string" ? suppliedContentType : ""
   );
 
-  if (!projectId || !filename || !contentType) {
+  if (typeof projectId !== "string" || typeof filename !== "string" || !filename || !contentType) {
     return NextResponse.json(
       { error: "projectId, filename, and contentType are required" },
       { status: 400 }
@@ -43,8 +44,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  try { expectedUploadBytes(fileSizeMb, 5000); } catch { return NextResponse.json({ error: "A valid positive file size is required" }, { status: 400 }); }
+
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) {
+  if (!project || project.deletedAt) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -62,8 +65,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  if (resumeFileKey) {
+    const session = await deliverySession(projectId, creator.id, resumeFileKey);
+    if (!session || session.expectedBytes !== expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB) || session.uploadId) return NextResponse.json({ error: "Upload session expired. Retry to start a new transfer.", code: "UPLOAD_SESSION_EXPIRED" }, { status: 409 });
+    return NextResponse.json({ uploadUrl: await getPresignedUploadUrl(session.fileKey, session.contentType), fileKey: session.fileKey });
+  }
   const fileKey = buildMediaKey(projectId, filename);
   const uploadUrl = await getPresignedUploadUrl(fileKey, contentType);
 
+  await createDeliverySession({ projectId, creatorId: creator.id, fileKey, fileSizeMb, contentType, maxMb: 5000 });
   return NextResponse.json({ uploadUrl, fileKey });
 }

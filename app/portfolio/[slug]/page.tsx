@@ -82,10 +82,11 @@ export default async function PortfolioPage({
     data: { viewCount: { increment: 1 } },
   });
 
-   const mapMedia = (m: { id: string; type: string; fileKey: string; caption: string | null; aspectRatio: number | null }): PortfolioMediaItem => ({
+   const mapMedia = (m: { id: string; type: string; fileKey: string; caption: string | null; aspectRatio: number | null; posterFileKey?: string | null }): PortfolioMediaItem => ({
     id: m.id,
     type: m.type as PortfolioMediaItem["type"],
     url: publicUrlFor(m.fileKey),
+    posterUrl: m.posterFileKey ? publicUrlFor(m.posterFileKey) : null,
     caption: m.caption,
     aspectRatio: m.aspectRatio,
   });

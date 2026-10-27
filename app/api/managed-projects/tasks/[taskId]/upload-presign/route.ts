@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createDeliverySession, expectedUploadBytes, deliverySession } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -16,7 +18,7 @@ export async function POST(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { taskId } = await params;
-  const { filename, contentType: suppliedContentType, fileSizeMb } = await req.json();
+  const { filename, contentType: suppliedContentType, fileSizeMb, resumeFileKey } = await req.json();
   const contentType = resolveFileContentType(
     typeof filename === "string" ? filename : "",
     typeof suppliedContentType === "string" ? suppliedContentType : ""
@@ -39,9 +41,16 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  try { expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB); } catch { return NextResponse.json({ error: "A valid file size is required" }, { status: 400 }); }
+  if (resumeFileKey) {
+    const session = await deliverySession(task.managedProjectId, creator.id, resumeFileKey, undefined, {purpose:"TASK",targetId:taskId});
+    if (!session || session.uploadId || session.expectedBytes !== expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB)) return NextResponse.json({error:"Upload session expired. Retry to start again.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+    return NextResponse.json({uploadUrl:await getPresignedUploadUrl(session.fileKey, session.contentType),fileKey:session.fileKey});
+  }
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const fileKey = `managed-projects/${task.managedProjectId}/tasks/${taskId}/${Date.now()}-${safeName}`;
+  const fileKey = `managed-projects/${task.managedProjectId}/tasks/${taskId}/${randomUUID()}-${safeName}`;
   const uploadUrl = await getPresignedUploadUrl(fileKey, contentType);
 
+  await createDeliverySession({projectId: task.managedProjectId, targetId: taskId, creatorId: creator.id, fileKey, fileSizeMb, contentType, maxMb: MAX_FILE_SIZE_MB, purpose: "TASK"});
   return NextResponse.json({ uploadUrl, fileKey });
 }

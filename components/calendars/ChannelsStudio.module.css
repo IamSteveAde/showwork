@@ -1,0 +1,34 @@
+.workspace { min-width: 0; }
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 29px 32px; margin-bottom: 19px; overflow: hidden; border: 1px solid #dce7fa; border-radius: 24px; background: radial-gradient(ellipse at 100% 0,#d4e4ff90,transparent 65%),linear-gradient(120deg,#f8faff,#edf3ff); }
+.eyebrow { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #6e8fbd; }
+.hero h1 { margin-top: 14px; color: #2b4669; font-size: clamp(30px,3vw,40px); font-weight: 550; letter-spacing: -.045em; line-height: 1.15; }.hero h1 > span { color: #5285cc; }.hero > div > p:last-child { max-width: 430px; margin-top: 14px; font-size: 12px; line-height: 1.8; color: #758ba8; }
+.logoOrbit { display: grid; grid-template-columns: repeat(3,46px); gap: 12px; flex-shrink: 0; padding: 15px; transform: rotate(-8deg); }.logoOrbit > span { display: grid; place-items: center; width: 46px; height: 49px; border: 1px solid #fff; border-radius: 15px; background: #ffffffc9; box-shadow: 4px 9px 25px -15px #1768e840; }.logoOrbit > span:nth-child(2n) { transform: translateY(10px); }.logoOrbit img { transform: rotate(8deg); }
+.capabilityLegend { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 22px; }.capabilityLegend > span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #dfe8f7; border-radius: 8px; background: #f3f7ff; color: #7893b8; font-size: 10px; }.capabilityLegend > p { margin-left: auto; font-size: 10px; color: #8297b3; }
+.channelGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; align-items: start; }
+.connectionCard { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid #dfe7f4; border-radius: 21px; background: #fff; box-shadow: 0 7px 25px -23px #1768e850; }
+.connectionCard > :first-child { flex: 1; }
+.platformLogo { display: grid; place-items: center; width: 43px; height: 44px; flex-shrink: 0; border: 1px solid #e1e8f4; border-radius: 14px; background: linear-gradient(140deg,#fff,#f7f9fd); }
+.connectionCard :global(p[class~="text-white"]),.connectionCard :global(h3[class~="text-white"]) { color: #425f83; }
+.connectionCard :global([class~="text-white/40"]) { color: #8a9eb9; }
+.connectionCard :global([class~="text-[#AAB4C3]"]) { color: #71849e; }
+.connectionCard :global([class~="text-slate-400"]) { color: #8295af; }
+.connectionCard :global([class~="border-white/10"]),.connectionCard :global([class~="border-white/20"]) { border-color: #e0e8f5; }
+.connectionCard :global([class~="bg-white/5"]),.connectionCard :global([class~="bg-white/[0.03]"]) { background: #f6f9ff; }
+.connectionCard :global(a[class~="text-white"]:not([style]):not([class~="bg-black"])) { color: #5482c0; }
+.connectionCard :global(button[class~="text-white"]:not([class~="bg-red-500"]):not([class~="bg-[#128C7E]"])) { color: #5482c0; }
+.connectionCard :global(input) { max-width: 100%; }.connectionCard :global(input[class~="text-white"]) { color: #425f83; }
+.connectionCard :global(a):focus-visible,.connectionCard :global(button):focus-visible { outline: 2px solid #1768e8; outline-offset: 3px; }
+.connectionCard :global([class~="bg-emerald-400/10"]) { border-color: #cde9df; background: #eef8f4; }
+.capabilities { margin-top: 21px; padding-top: 16px; border-top: 1px solid #edf1f7; }.capabilities > p { color: #8b9eb8; font-size: 10px; }.capabilities ul { display: grid; gap: 13px; margin-top: 13px; }.capabilities li { display: flex; align-items: flex-start; gap: 9px; }.capabilities li > span { display: grid; place-items: center; flex-shrink: 0; width: 27px; height: 28px; border: 1px solid #e3ebf9; border-radius: 9px; background: #f3f7ff; color: #81a0ca; }.capabilities li strong { font-size: 11px; color: #607fa6; font-weight: 500; }.capabilities li p { margin-top: 2px; color: #8498b4; font-size: 10px; line-height: 1.8; }
+.note { margin-top: 20px; font-size: 10px; color: #8c9eb6; line-height: 1.9; }
+@media (max-width:800px) { .channelGrid { grid-template-columns: 1fr; gap: 16px; }.capabilityLegend > p { flex-basis: 100%; margin-left: 0; }.hero { padding: 24px; }.logoOrbit { grid-template-columns: repeat(2,40px); gap: 8px; padding: 5px; }.logoOrbit > span { width: 40px; height: 43px; border-radius: 13px; } }
+@media (max-width:500px) { .hero { padding: 22px; gap: 12px; }.hero h1 { font-size: 31px; }.logoOrbit { display: none; }.connectionCard { border-radius: 18px; }.connectionCard :global(input) { font-size: 16px; }.capabilities li p { font-size: 11px; }.capabilities li strong { font-size: 12px; } }
+
+.disconnected { flex-shrink: 0; padding: 5px 8px; border: 1px solid #e3eaf5; border-radius: 999px; background: #f6f8fc; color: #91a1b8; font-size: 9px; }
+.connectionCard :global([class~="text-slate-300"]),.connectionCard :global([class~="text-[#AAB4C3]"]) { color: #71849e; }
+.connectionCard :global([class~="text-blue-300"]) { color: #397cc8; }
+.connectionCard :global([class~="text-red-300"]) { color: #ae6760; }
+.connectionCard :global([class~="text-amber-300"]) { color: #aa8244; }
+.connectionCard :global([class~="text-emerald-300"]) { color: #398d78; }
+.connectionCard :global([class~="border-slate-700"]),.connectionCard :global([class~="border-slate-600"]) { border-color: #dce5f2; }
+.connectionCard :global([class~="bg-slate-800"]) { background: #eef4ff; }

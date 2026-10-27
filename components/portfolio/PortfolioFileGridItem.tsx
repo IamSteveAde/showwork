@@ -14,6 +14,7 @@ function officeViewerUrl(url: string) {
 export default function PortfolioFileGridItem({
   mediaId,
   url,
+  posterUrl,
   filename,
   type,
   sectionId,
@@ -21,6 +22,7 @@ export default function PortfolioFileGridItem({
 }: {
   mediaId: string;
   url: string;
+  posterUrl?: string | null;
   filename: string;
   type: MediaKind;
   sectionId: string;
@@ -53,7 +55,7 @@ export default function PortfolioFileGridItem({
   return (
     <div className={`group relative overflow-hidden rounded-xl bg-white/5 ${isDocLike ? "aspect-[3/4]" : "aspect-square"}`}>
       {type === "VIDEO" ? (
-        <PortfolioAutoplayVideo src={url} className="h-full w-full object-cover" />
+        <PortfolioAutoplayVideo poster={posterUrl} src={url} className="h-full w-full object-cover" />
       ) : type === "PHOTO" ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt={filename} className="h-full w-full object-cover" />

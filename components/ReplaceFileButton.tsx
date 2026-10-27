@@ -1,4 +1,5 @@
 "use client";
+import { uploadDeliverySingle, pauseDeliveryUploads, resumeDeliveryUploads, deliveryRetryable, putDeliveryFile, putDeliveryPart, uploadQueue, saveDeliveryPreview, completeDeliveryUpload } from "@/lib/deliveryUploadClient";
 import { calendarMutationFetch as fetch } from "@/lib/publishing/clientRequests";
 
 import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
@@ -11,28 +12,10 @@ import { putFileWithProgress } from "@/lib/uploadClient";
 type MediaKind = "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
 
 function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
-  return putFileWithProgress(url, file, {
-    contentType: getFileContentType(file) || undefined,
-    onProgress: ({ loaded, total }) => onProgress(loaded, total),
-  }).then(() => undefined);
+  return putDeliveryFile(url, file, onProgress).then(() => undefined);
 }
 function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(e.loaded, e.total);
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(xhr.getResponseHeader("ETag") ?? "");
-      } else {
-        reject(new Error(`Chunk upload failed (${xhr.status})`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
-    xhr.send(chunk);
-  });
+  return putDeliveryPart(url, chunk, onProgress).then(result => result.etag || "");
 }
 
 function fileFingerprint(file: File): string {
@@ -41,6 +24,7 @@ function fileFingerprint(file: File): string {
 interface ReplaceMultipartProgress {
   fileKey: string;
   uploadId: string;
+  chunkSizeMb?: number;
   completedParts: { partNumber: number; etag: string }[];
 }
 function multipartKey(mediaId: string, fingerprint: string): string {
@@ -70,8 +54,8 @@ function clearMultipartProgress(mediaId: string, fingerprint: string) {
 }
 
 const MULTIPART_THRESHOLD_MB = 100;
-const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 3;
+const CHUNK_SIZE_MB = 16;
+const CHUNK_CONCURRENCY = 2;
 const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -102,10 +86,11 @@ export default function ReplaceFileButton({
 
   const uploadLargeFile = async (file: File): Promise<void> => {
     const fingerprint = fileFingerprint(file);
-    const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
-    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
 
     let progress = getMultipartProgress(mediaId, fingerprint);
+    const chunkSizeBytes = (progress ? progress.chunkSizeMb ?? 200 : CHUNK_SIZE_MB) * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
     if (!progress) {
       const startRes = await fetch(`/api/media/${mediaId}/replace/multipart-start`, {
         method: "POST",
@@ -114,7 +99,7 @@ export default function ReplaceFileButton({
       });
       const startData = await startRes.json();
       if (!startRes.ok) throw new Error(startData.error ?? "Failed to start large-file upload");
-      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [] };
+      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [], chunkSizeMb: CHUNK_SIZE_MB };
       saveMultipartProgress(mediaId, fingerprint, progress);
     }
 
@@ -166,7 +151,8 @@ export default function ReplaceFileButton({
           break;
         } catch (err) {
           lastError = err instanceof Error ? err.message : "Upload failed";
-          if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
+          if (!deliveryRetryable(err)) break;
+        if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
         }
       }
       if (!chunkSucceeded && !firstError) {
@@ -193,6 +179,7 @@ export default function ReplaceFileButton({
     const completeData = await completeRes.json();
     if (!completeRes.ok) throw new Error(completeData.error ?? "Failed to finalize large file");
 
+    await saveDeliveryPreview(file, mediaId, progress.fileKey);
     clearMultipartProgress(mediaId, fingerprint);
   };
 
@@ -201,6 +188,7 @@ export default function ReplaceFileButton({
     if (!file) return;
     setError(null);
     setChunkStatus(null);
+    resumeDeliveryUploads();
     setUploading(true);
     setStatus("Uploading 0%");
 
@@ -210,31 +198,7 @@ export default function ReplaceFileButton({
       if (isLarge) {
         await uploadLargeFile(file);
       } else {
-        const presignRes = await fetch(`/api/media/${mediaId}/replace/presign`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: getFileContentType(file),
-            fileSizeMb: file.size / (1024 * 1024),
-          }),
-        });
-        if (!presignRes.ok) {
-          const data = await presignRes.json();
-          throw new Error(data.error ?? "Failed to start upload");
-        }
-        const { uploadUrl, fileKey } = await presignRes.json();
-
-        await uploadWithProgress(uploadUrl, file, (loaded, total) => {
-          setStatus(`Uploading ${Math.round((loaded / total) * 100)}%`);
-        });
-
-        const completeRes = await fetch(`/api/media/${mediaId}/replace/complete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileKey }),
-        });
-        if (!completeRes.ok) throw new Error("Failed to save the replacement");
+        await uploadDeliverySingle({file,projectId:mediaId,type,presignUrl:`/api/media/${mediaId}/replace/presign`,completeUrl:`/api/media/${mediaId}/replace/complete`,onProgress:(loaded,total)=>setStatus(`Uploading ${Math.round(loaded/total*100)}%`)});
       }
 
       setStatus("Done — refreshing...");
@@ -252,7 +216,7 @@ export default function ReplaceFileButton({
 
   return (
     <div className="mt-2">
-      {uploading && <UploadPatienceBanner active={uploading} />}
+      {uploading && <UploadPatienceBanner onPause={pauseDeliveryUploads} active={uploading} />}
       {chunkStatus && <p className="mb-1.5 mt-1.5 text-[11px] text-white/40">{chunkStatus}</p>}
       <input
         ref={inputRef}

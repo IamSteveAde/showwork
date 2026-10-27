@@ -1,3 +1,4 @@
+import { createDeliverySession, expectedUploadBytes, deliverySession } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
@@ -22,7 +23,7 @@ export async function POST(
   if (!creator) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { mediaId } = await params;
-  const { filename, contentType: suppliedContentType, fileSizeMb } = await req.json();
+  const { filename, contentType: suppliedContentType, fileSizeMb, resumeFileKey } = await req.json();
   const contentType = resolveFileContentType(
     typeof filename === "string" ? filename : "",
     typeof suppliedContentType === "string" ? suppliedContentType : ""
@@ -92,8 +93,15 @@ export async function POST(
     );
   }
 
+  try { expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB); } catch { return NextResponse.json({ error: "A valid file size is required" }, { status: 400 }); }
+  if (resumeFileKey) {
+    const session = await deliverySession(media.projectId, creator.id, resumeFileKey, undefined, {purpose:"REPLACE",targetId:mediaId});
+    if (!session || session.uploadId || session.expectedBytes !== expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB)) return NextResponse.json({error:"Upload session expired. Retry to start again.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+    return NextResponse.json({uploadUrl:await getPresignedUploadUrl(session.fileKey, session.contentType),fileKey:session.fileKey});
+  }
   const fileKey = buildMediaKey(media.projectId, filename);
   const uploadUrl = await getPresignedUploadUrl(fileKey, contentType);
 
+  await createDeliverySession({projectId: media.projectId, targetId: mediaId, creatorId: creator.id, fileKey, fileSizeMb, contentType, maxMb: MAX_FILE_SIZE_MB, purpose: "REPLACE"});
   return NextResponse.json({ uploadUrl, fileKey });
 }

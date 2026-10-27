@@ -27,7 +27,7 @@ export default function ResetCalendarButton({ calendarId, onReset }: { calendarI
     finally { setBusy(false); }
   }
   return <>
-    <button type="button" onClick={() => { setConfirmation(""); setError(""); dialog.current?.showModal(); }} className="rounded-full border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Reset calendar</button>
+    <button data-content-toolbar-action="reset" type="button" onClick={() => { setConfirmation(""); setError(""); dialog.current?.showModal(); }} className="rounded-full border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Reset calendar</button>
     <dialog ref={dialog} aria-labelledby="reset-calendar-title" aria-describedby="reset-calendar-description" onCancel={(event) => { if (busy) event.preventDefault(); }} className="w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-6 text-slate-900 shadow-xl backdrop:bg-black/50">
       <h2 id="reset-calendar-title" className="text-lg font-bold">Reset calendar and delete all content?</h2>
       <div id="reset-calendar-description" className="mt-3 space-y-3 text-sm text-slate-600">

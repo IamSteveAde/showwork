@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+import { deliverySession, verifyDeliveryObject, matchesDeliveryType } from "@/lib/deliveryUploads";
+import { validTaskKey } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -35,6 +38,11 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const session = await deliverySession(task.managedProjectId, creator.id, fileKey, undefined, {purpose:"TASK",targetId:taskId});
+  if (!session) return NextResponse.json({error:"Upload session expired. Restart this transfer.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+  if (!matchesDeliveryType(session.contentType, type || "PHOTO")) return NextResponse.json({error:"File type mismatch"},{status:400});
+  const existing = await db.taskAsset.findUnique({where:{uploadSessionId:session.id}});
+  if (existing) return NextResponse.json({asset:existing});
   // Confirm the folder actually belongs to this task before attaching
   // — otherwise a file could get silently tied to a folder from a
   // completely different task.
@@ -45,19 +53,17 @@ export async function POST(
     }
   }
 
-  const asset = await db.taskAsset.create({
-    data: {
-      taskId,
-      fileKey,
-      filename: typeof filename === "string" ? filename : null,
-      type: type || "PHOTO",
-      folderId: folderId ?? null,
-      uploadedByCreatorId: creator.id,
-    },
+  if (!validTaskKey(fileKey, task.managedProjectId, taskId)) return NextResponse.json({ error: "Invalid upload key" }, { status: 400 });
+  try {
+    await verifyDeliveryObject(session);
+  } catch { return NextResponse.json({error:"Uploaded file could not be verified",code:"UPLOAD_NOT_VERIFIED"},{status:409}); }
+  const assetId = randomUUID();
+  const asset = await db.$transaction(async tx => {
+    const saved = await tx.taskAsset.upsert({where:{uploadSessionId:session.id},update:{},create:{id:assetId,taskId,fileKey,filename:typeof filename === "string" ? filename : null,type:type || "PHOTO",folderId:folderId ?? null,uploadedByCreatorId:creator.id,uploadSessionId:session.id,sizeBytes:Number(session.expectedBytes)}});
+    await tx.deliveryUploadSession.update({where:{id:session.id},data:{state:"COMPLETE",mediaId:saved.id}});
+    return saved;
   });
-
-  // Notify the owner — unless they're the one who just uploaded it.
-  if (!isOwner) {
+  if (!isOwner && asset.id === assetId) {
     try {
       await sendNewUploadReadyForReviewEmail({
         to: task.managedProject.creator.email,

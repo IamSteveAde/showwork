@@ -1,0 +1,75 @@
+"use client";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpenText, CalendarRange, Check, CheckCircle2, ChevronRight, CircleHelp, ClipboardList, Copy, FileText, Flag, Layers3, LifeBuoy, ListChecks, MessagesSquare, Printer, Search, ShieldCheck, Sparkles, UsersRound, X } from 'lucide-react';
+import { workspaceCategories as marketingCategories, workspaceGuides as marketingGuides } from '@/lib/help/workspaceGuides';
+import { deliveryCategories, deliveryGuides } from '@/lib/help/deliveryGuides';
+import styles from './WorkspaceHelpCenter.module.css';
+const icons: Record<string, typeof Search> = { start:Flag, content:CalendarRange, review:CheckCircle2, knowledge:BookOpenText, ai:Sparkles, research:Search, channels:Layers3, publishing:ArrowUpRight, inbox:MessagesSquare, leads:UsersRound, analytics:ClipboardList, people:ShieldCheck, settings:CircleHelp, "delivery-start":Flag, "delivery-upload":Layers3, "delivery-access":ShieldCheck, "delivery-review":CheckCircle2, "delivery-payment":CheckCircle2, "delivery-team":UsersRound, "delivery-managed":ClipboardList, "delivery-activity":FileText, "delivery-trouble":CircleHelp };
+const marketingPaths = ['create-workspace','upload-knowledge','generate-content','internal-review','client-review','publish-post'];
+export default function ProductHelpCenter({ initialGuideId, product = 'workspace' }: { initialGuideId?: string; product?: 'workspace' | 'delivery' }) {
+  const delivery = product === 'delivery';
+  const workspaceCategories = delivery ? deliveryCategories : marketingCategories;
+  const workspaceGuides = delivery ? deliveryGuides : marketingGuides;
+  const helpPath = delivery ? '/help/project-delivery' : '/help/workspace';
+  const productName = delivery ? 'Project Delivery' : 'Marketing Workspace';
+  const dashboardPath = delivery ? '/dashboard' : '/dashboard/calendars';
+  const paths = delivery ? ['choose-delivery','create-delivery','upload-files','share-delivery','client-review-file','confirm-payment'] : marketingPaths;
+  const [guideId,setGuideId] = useState(initialGuideId || '');
+  const [category,setCategory] = useState('all');
+  const [query,setQuery] = useState('');
+  const [copied,setCopied] = useState(false);
+  const [copyError,setCopyError] = useState('');
+  const contentRef = useRef<HTMLElement>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const guide = workspaceGuides.find(item => item.id === guideId);
+  const results = useMemo(() => workspaceGuides.filter(guide => (category === 'all' || guide.category === category) && query.toLowerCase().trim().split(/\s+/).filter(Boolean).every(term => [guide.title,guide.description,guide.access,...guide.steps,guide.note || '',...(guide.troubleshooting || [])].join(' ').toLowerCase().includes(term))),[query,category,workspaceGuides]);
+  useEffect(() => { const restore = () => { setGuideId(new URL(window.location.href).searchParams.get('guide') || ''); setCopied(false); }; window.addEventListener('popstate',restore); return () => { window.removeEventListener('popstate',restore); if(copyTimer.current) clearTimeout(copyTimer.current); }; },[]);
+  function navigate(id: string) {
+    setGuideId(id); setCopied(false); setCopyError('');
+    const url = new URL(window.location.href); id ? url.searchParams.set('guide',id) : url.searchParams.delete('guide'); url.hash='';
+    window.history.pushState(null,'',url.pathname+url.search);
+    contentRef.current?.scrollIntoView({block:'start',behavior:'instant'});
+    requestAnimationFrame(() => contentRef.current?.focus({preventScroll:true}));
+  }
+  function followGuide(event: MouseEvent<HTMLAnchorElement>, id: string) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button > 0) return;
+    event.preventDefault(); navigate(id);
+  }
+  function filterCategory(id: string) { setCategory(id); navigate(''); }
+  async function copyLink() { try { await navigator.clipboard.writeText(window.location.href); setCopied(true); setCopyError(''); if(copyTimer.current) clearTimeout(copyTimer.current); copyTimer.current=setTimeout(()=>setCopied(false),2500); } catch { setCopyError('Copy the address from your browser to share this guide.'); } }
+  const categoryMeta = workspaceCategories.find(item => item.id === guide?.category);
+  return <div className={styles.page}>
+    <a href="#help-content" className={styles.skip}>Skip to guides</a>
+    <header className={styles.topbar}><Link href="/" className={styles.brand}><span><Layers3 size={19}/></span>Showwork<small>Help centre</small></Link><Link href={dashboardPath} className={styles.back}><ArrowLeft size={15}/><span>{delivery ? "Go to projects" : "Go to workspaces"}</span></Link></header>
+    <nav className={styles.productNav} aria-label="Help products"><Link href="/help/workspace" aria-current={!delivery ? 'page' : undefined}><BookOpenText size={14}/>Marketing Workspace</Link><Link href="/help/project-delivery" aria-current={delivery ? 'page' : undefined}><Layers3 size={14}/>Project Delivery</Link></nav>
+    <div className={styles.hero}><div className={styles.heroCopy}><p className={styles.eyebrow}><BookOpenText size={14}/> The {productName} handbook</p><h1>Less figuring it out.<br/><span>More making it happen.</span></h1><p>{delivery ? "From the first upload to final sign-off. Clear, practical guides for sharing work, gathering feedback and releasing downloads." : "From your first idea to a published post. Clear, practical guides for every part of your workspace."}</p></div><div className={styles.heroAside}><ListChecks size={24}/><strong>{workspaceGuides.length} practical guides</strong><p>{delivery ? "Your next delivery." : "One workspace."}<br/>A clear next step.</p><span>{delivery ? "Files · Feedback · Final delivery" : "Content · Customers · Collaboration"}</span></div></div>
+    <div className={styles.searchBar}><Search size={20}/><label htmlFor="workspace-help-search" className={styles.srOnly}>Search {productName} help</label><input id="workspace-help-search" type="search" placeholder={delivery ? 'What would you like to do? Try “upload files” or “confirm payment”' : 'What would you like to do? Try “approve a post” or “AI replies”'} value={query} onChange={event=>{setQuery(event.target.value);if(guideId) navigate('');}}/>{query && <button type="button" aria-label="Clear help search" onClick={()=>setQuery('')}><X size={16}/></button>}<span>{workspaceGuides.length} guides</span></div>
+    <div className={styles.layout}>
+      <aside className={styles.sidebar}><p className={styles.sideLabel}>Explore by topic</p><nav aria-label="Help topics"><button type="button" aria-current={category==='all'&&!guide?'page':undefined} onClick={()=>filterCategory('all')}><BookOpenText size={16}/><span>All {delivery ? "delivery" : "workspace"} guides</span><small>{workspaceGuides.length}</small></button>{workspaceCategories.map(item=>{const Icon=icons[item.id];return <button key={item.id} type="button" aria-current={(guide?guide.category:category)===item.id?'page':undefined} onClick={()=>filterCategory(item.id)}><Icon size={16}/><span>{item.title}</span><small>{workspaceGuides.filter(guide=>guide.category===item.id).length}</small></button>;})}</nav><div className={styles.support}><LifeBuoy size={20}/><strong>Still need a hand?</strong><p>Tell us which step you’re on and what you see.</p><a href="https://wa.me/2347018819588" target="_blank" rel="noopener noreferrer">Talk to support<ArrowUpRight size={13}/><span className={styles.srOnly}> (opens in a new tab)</span></a><small>Keep passwords, access tokens and customer details private.</small></div></aside>
+      <main ref={contentRef} tabIndex={-1} id="help-content" className={styles.content}>
+        <label className={styles.mobileTopics}>Browse topics<select value={guide?.category || category} onChange={event=>filterCategory(event.target.value)}><option value="all">All {delivery ? "delivery" : "workspace"} guides</option>{workspaceCategories.map(item=><option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+        {guide ? <>
+          <div className={styles.articleToolbar}><button type="button" onClick={()=>navigate('')}><ArrowLeft size={14}/>Back to guides</button><button type="button" onClick={()=>window.print()}><Printer size={14}/>Print guide</button><button type="button" onClick={()=>void copyLink()}>{copied?<Check size={14}/>:<Copy size={14}/ >}{copied?'Link copied':'Copy guide link'}</button></div>
+          {copyError&&<p role="status" className={styles.copyError}>{copyError}</p>}
+          <article className={styles.article} aria-labelledby="guide-title"><p className={styles.articleCategory}>{categoryMeta?.title}<ChevronRight size={12}/><span>Step-by-step guide</span></p><h2 id="guide-title">{guide.title}</h2><p className={styles.description}>{guide.description}</p><div className={styles.access}><ShieldCheck size={17}/><div><strong>Before you begin</strong><p>{guide.access}</p></div></div>
+            <nav className={styles.onPage} aria-label="In this guide"><span>In this guide</span><a href="#guide-steps">Steps</a><a href="#guide-outcome">What happens next</a>{guide.note&&<a href="#guide-note">Good to know</a>}{guide.troubleshooting&&<a href="#guide-troubleshooting">Troubleshooting</a>}</nav>
+            <section id="guide-steps" className={styles.articleSection}><h3>Here’s how to do it</h3><ol className={styles.steps}>{guide.steps.map((step,index)=><li key={step}><span aria-hidden="true">{String(index+1).padStart(2,'0')}</span><p>{step}</p></li>)}</ol></section>
+            <section id="guide-outcome" className={styles.outcome}><CheckCircle2 size={20}/><div><h3>What happens next</h3><p>{guide.outcome}</p></div></section>
+            {guide.note&&<section id="guide-note" className={styles.note}><CircleHelp size={18}/><div><h3>Good to know</h3><p>{guide.note}</p></div></section>}
+            {guide.troubleshooting&&<section id="guide-troubleshooting" className={styles.troubleshooting}><h3>If something isn’t working</h3><ul>{guide.troubleshooting.map(item=><li key={item}>{item}</li>)}</ul></section>}
+            <footer className={styles.articleFooter}><FileText size={14}/><span>Based on the {productName} interface reviewed 27 October 2026. Options can vary by role, plan and channel access.</span></footer>
+          </article>
+          <section id="guide-related" className={styles.related}><h3>Keep going</h3><div>{guide.related.map(id=>{const item=workspaceGuides.find(guide=>guide.id===id);return item&&<a key={id} href={`?guide=${id}`} onClick={event=>followGuide(event,id)}><span>{item.title}</span><ArrowRight size={15}/></a>;})}</div></section>
+        </> : <>
+          {!query&&category==='all'&&<section className={styles.quickstart}><div><span><Flag size={14}/> Start here</span><h2>{delivery ? "Your first delivery," : "Your first campaign,"}<br/>one clear step at a time.</h2><p>{delivery ? "Prepare the files, share for review and release the finished work." : "Build the foundation, create the work and move it through review."}</p></div><ol>{paths.map((id,index)=>{const item=workspaceGuides.find(guide=>guide.id===id)!;return <li key={id}><a href={`?guide=${id}`} onClick={event=>followGuide(event,id)}><span>{index+1}</span>{item.title}<ChevronRight size={14}/></a></li>;})}</ol></section>}
+          <div className={styles.resultsHeading}><div><p className={styles.eyebrow}>{query?'Find your next step':category==='all'?`The complete ${delivery ? 'delivery' : 'workspace'} guide`:'Explore the essentials'}</p><h2>{query?'Search results':workspaceCategories.find(item=>item.id===category)?.title || 'What would you like to do?'}</h2></div><span role="status">{results.length} {results.length===1?'guide':'guides'}</span></div>
+          {category!=='all'&&!query&&<p className={styles.categoryDescription}>{workspaceCategories.find(item=>item.id===category)?.description}</p>}
+          {results.length ? <div className={styles.guideGrid}>{results.map(item=>{const Icon=icons[item.category];return <a key={item.id} className={styles.guideCard} href={`?guide=${item.id}`} onClick={event=>followGuide(event,item.id)}><div className={styles.cardTop}><span><Icon size={18}/></span><small>{workspaceCategories.find(category=>category.id===item.category)?.title}</small></div><h3>{item.title}</h3><p>{item.description}</p><footer><span>{item.steps.length} steps</span><ArrowUpRight size={17}/></footer></a>;})}</div> : <div className={styles.empty}><Search size={28}/><h3>No matching guides</h3><p>{delivery ? "Try a shorter phrase, such as “upload”, “access code” or “payment”." : "Try a shorter phrase, such as “TikTok”, “documents” or “approval”."}</p><button type="button" onClick={()=>{setQuery('');setCategory('all');}}>Show all guides</button></div>}
+          <div className={styles.scope}><ShieldCheck size={17}/><p>{delivery ? "Direct delivery and managed projects have different workflows. Upload, collaboration and project access depend on your account and plan; client payment confirmation is separate from your Showwork subscription." : "Only the tools your role and plan allow will appear in your workspace. A connected social account may still need separate publishing, analytics or messaging permissions."}</p></div>
+        </>}
+      </main>
+    </div>
+    <footer className={styles.pageFooter}><span>Showwork · {productName} help</span><span>{delivery ? "Portfolio guides will follow." : "Project Delivery guides are also available."}</span><a href="https://wa.me/2347018819588" target="_blank" rel="noopener noreferrer">Contact support<ArrowUpRight size={13}/><span className={styles.srOnly}> (opens in a new tab)</span></a><Link href={dashboardPath}>{delivery ? "Back to your projects" : "Back to your workspaces"}<ArrowRight size={13}/></Link></footer>
+  </div>;
+}

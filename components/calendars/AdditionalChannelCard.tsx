@@ -1,4 +1,7 @@
 "use client";
+import channelStyles from "./ChannelsStudio.module.css";
+import ChannelCapabilities from "./ChannelCapabilities";
+import PlatformBrandIcon from "./PlatformBrandIcon";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -83,74 +86,73 @@ export default function AdditionalChannelCard({
   const isConnected = !!connectedAccount;
 
   return (
-    <section className="w-full min-w-0 overflow-hidden rounded-[24px] border border-[#263449] bg-[#0B111B] shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
+    <section className={channelStyles.connectionCard}>
       <div className="p-5 sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white" style={{ backgroundColor: meta.color }}>
-              {meta.mark}
+            <div className={channelStyles.platformLogo}>
+              <PlatformBrandIcon platform={channel.toUpperCase()} size={24}/>
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold leading-5 text-white">{meta.name} connection</p>
-              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#718096]">
+              <p className="truncate text-sm font-semibold leading-5 text-white">{meta.name}</p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#8295AF]">
                 Connect a {meta.accountType}
               </p>
             </div>
           </div>
-          {isConnected && (
-            <span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300">
+          {isConnected ? (<span className="shrink-0 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#398D78]">
               Connected
-            </span>
-          )}
+            </span>) : <span className={channelStyles.disconnected}>Not connected</span>}
         </div>
 
         {justConnected && (
-          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] text-emerald-300">
+          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] text-[#398D78]">
             {meta.name} account connected successfully.
           </p>
         )}
         {error && (
-          <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] leading-5 text-red-300">
+          <p role="alert" className="mt-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] leading-5 text-[#AE6760]">
             {error}
           </p>
         )}
 
         {channel === "linkedin" && isConnected && isManager && <LinkedInPagePicker calendarId={calendarId} />}
         {channel === "linkedin" && <p className="mt-3 text-xs text-slate-400">LinkedIn inbox replies and message-to-lead import require approved Page Messaging access and a confirmed messaging subscription.</p>}
-        {isConnected && isManager && <a href={`/api/calendars/${calendarId}/channels/${channel}/connect`} className="mt-3 inline-block text-xs text-blue-300 underline">Refresh permissions</a>}
+        {isConnected && isManager && <a href={`/api/calendars/${calendarId}/channels/${channel}/connect`} className="mt-3 inline-block text-xs text-[#397CC8] underline">Refresh permissions</a>}
+        <ChannelCapabilities platform={channel}/>
         {isConnected ? (
           <>
             <p className="mt-4 truncate text-sm font-medium text-white">{channel === "x" ? "@" : ""}{connectedAccount}</p>
-            <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
+            <p className="mt-1 max-w-sm text-[11px] leading-5 text-[#71849E]">
               This {meta.accountType} is linked to the workspace.
               {connectedDate && ` Connected ${new Date(connectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}
             </p>
           </>
         ) : (
-          <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#AAB4C3]">
+          <p className="mt-4 max-w-sm text-[11px] leading-5 text-[#71849E]">
             Connect the {meta.accountType} used for this client&apos;s {meta.name} content.
           </p>
         )}
       </div>
 
-      <div className="border-t border-[#223047] bg-[#0E1622] p-4 sm:p-5">
+      <div className="border-t border-[#E4EBF6] bg-[#F7FAFF] p-4 sm:p-5">
         {!isManager ? (
-          <p className="text-[10px] leading-5 text-[#718096]">Only the workspace owner can connect or disconnect social accounts.</p>
+          <p className="text-[10px] leading-5 text-[#8295AF]">Channel-management permission is required to connect or disconnect accounts.</p>
         ) : isConnected ? (
           confirming ? (
             <div className="flex flex-col gap-2.5">
-              <p className="text-[11px] text-[#AAB4C3]">Disconnect this {meta.accountType}?</p>
+              <p className="text-[11px] text-[#71849E]">Disconnect this {meta.accountType}?</p>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={disconnect} disabled={disconnecting} className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
                   {disconnecting ? "Disconnecting..." : "Yes, disconnect"}
                 </button>
-                <button type="button" onClick={() => setConfirming(false)} disabled={disconnecting} className="rounded-lg border border-[#334155] px-3 py-2 text-xs font-semibold text-[#AAB4C3]">
+                <button type="button" onClick={() => setConfirming(false)} disabled={disconnecting} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs font-semibold text-[#71849E]">
                   Keep connected
                 </button>
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => setConfirming(true)} className="rounded-lg border border-[#334155] px-3 py-2 text-xs font-semibold text-[#AAB4C3] transition hover:border-red-400/30 hover:text-red-300">
+            <button type="button" onClick={() => setConfirming(true)} className="rounded-lg border border-[#DCE5F2] px-3 py-2 text-xs font-semibold text-[#71849E] transition hover:border-red-400/30 hover:text-[#AE6760]">
               Disconnect {meta.name}
             </button>
           )

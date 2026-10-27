@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createDeliverySession, expectedUploadBytes } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
@@ -79,9 +81,11 @@ export async function POST(
     );
   }
 
+  try { expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB); } catch { return NextResponse.json({ error: "A valid file size is required" }, { status: 400 }); }
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const fileKey = `projects/${media.projectId}/${Date.now()}-${safeName}`;
+  const fileKey = `projects/${media.projectId}/${randomUUID()}-${safeName}`;
   const uploadId = await createMultipartUpload(fileKey, contentType);
 
+  await createDeliverySession({projectId: media.projectId, targetId: mediaId, creatorId: creator.id, fileKey, uploadId, fileSizeMb, contentType, maxMb: MAX_FILE_SIZE_MB, purpose: "REPLACE"});
   return NextResponse.json({ uploadId, fileKey });
 }

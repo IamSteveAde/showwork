@@ -1,0 +1,33 @@
+.studio { width: 100%; min-width: 0; padding-bottom: 20px; color: #334e70; }
+.studio > * + * { margin-top: 20px; }
+.hero { padding: 28px 30px 20px; border: 1px solid #dce7fa; border-radius: 24px; background: radial-gradient(ellipse at 100% 0,#d4e3ff99,transparent 65%),linear-gradient(125deg,#f8faff,#edf3ff); }
+.heroHeading { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 500; color: #7191bd; }
+.hero h1 { margin-top: 14px; font-size: clamp(30px,3vw,40px); font-weight: 550; line-height: 1.15; letter-spacing: -.05em; color: #2c486c; }.hero h1 > span { color: #5786c8; }
+.heroCopy { margin-top: 14px; max-width: 440px; color: #7b8faa; font-size: 12px; line-height: 1.8; }
+.researchArt { position: relative; flex-shrink: 0; width: 170px; height: 140px; display: grid; place-items: center; }
+.researchArt > span:first-child { position: absolute; inset: 0; border: 1px solid #a5c2ee45; border-radius: 50%; transform: rotate(-25deg) scaleY(.7); }
+.researchArt > div { display: grid; place-items: center; width: 84px; height: 89px; border: 1px solid #ffffff90; border-radius: 26px; background: linear-gradient(140deg,#8eb9f9,#1768e8); color: #fff; transform: rotate(-10deg); box-shadow: 10px 15px 28px -15px #1768e870; }.researchArt > div > svg { transform: rotate(10deg); }
+.researchArt > span:last-child { position: absolute; right: 7px; bottom: 9px; display: grid; place-items: center; width: 39px; height: 41px; border: 1px solid #fff; border-radius: 13px; color: #9290c5; background: #fffE; transform: rotate(9deg); box-shadow: 0 8px 20px -15px #1768e870; }
+.questionBox { margin-top: 25px; padding: 7px 16px 16px; border: 1px solid #d5e3f8; border-radius: 17px; background: #ffffffe0; box-shadow: 0 8px 25px -23px #1768e840; }
+.questionInput { width: 100%; min-width: 0; min-height: 93px; resize: vertical; padding: 13px 0; background: transparent; color: #4a6488; border: 0; outline: none; font-size: 14px; line-height: 1.8; }.questionInput::placeholder { color: #a0aec3; }.questionInput:focus-visible { outline: 2px solid #aac8f5; outline-offset: 1px; border-radius: 7px; }
+.questionHint { max-width: 380px; font-size: 10px; color: #8296b3; line-height: 1.8; }
+.startButton { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 8px; min-height: 41px; padding: 10px 17px; border: 1px solid #1768e8; border-radius: 11px; background: #1768e8; color: #fff; font-size: 12px; font-weight: 500; }.startButton:hover { background: #125bcf; }.startButton:disabled { opacity: .4; cursor: not-allowed; }
+.contextLine { display: flex; flex-wrap: wrap; gap: 8px 19px; margin-top: 15px; color: #8aa0bf; font-size: 10px; }.contextLine > span { display: flex; align-items: center; gap: 6px; }
+.preferences { margin-top: 19px; padding-top: 15px; border-top: 1px solid #dce7f8; }.preferences > summary { font-size: 11px; color: #7190b9; }.preferences label { font-size: 11px; color: #6d88ad; }
+.results { padding-top: 3px; }.results > * + * { margin-top: 17px; }.resultsTitle { font-size: 24px; font-weight: 550; letter-spacing: -.04em; color: #365575; margin-top: 7px; }
+.disclosure { padding: 15px 18px; border: 1px solid #e0e8f5; border-radius: 15px; background: #fff; }.disclosure > summary { font-size: 12px; color: #7590b3; }
+.findingGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; align-items: start; }
+.finding { position: relative; min-width: 0; overflow: hidden; padding: 23px; border: 1px solid #dce7f8; border-radius: 21px; background: radial-gradient(ellipse at 100% 0,#edf3ff90,transparent 55%),#fff; box-shadow: 0 8px 24px -23px #1768e850; }
+.finding[data-excluded=true] { border-color: #e3e8f0; background: #fafbfd; }
+.findingTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }.findingMark { display: inline-flex; align-items: center; gap: 8px; color: #7e9dcb; }.findingMark > svg { display: block; box-sizing: content-box; padding: 8px; border: 1px solid #dfe9fb; border-radius: 11px; background: linear-gradient(140deg,#fff,#eef4ff); }.findingMark > span { color: #b1c0d5; font-size: 11px; }.findingStatus { padding: 4px 7px; border: 1px solid #e2ebf9; border-radius: 7px; background: #f6f9ff; color: #91a7c6; font-size: 9px; }
+.findingTitle { color: #415d80; font-size: 18px; font-weight: 550; line-height: 1.4; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.learning { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 12px; color: #7b8faa; font-size: 12px; line-height: 1.9; }
+.application { padding: 15px; margin-top: 18px; border: 1px solid #e0eafb; border-radius: 13px; background: linear-gradient(125deg,#f0f5ff,#f8faff); }.application > p:first-child { display: flex; align-items: center; gap: 6px; color: #7596c6; font-size: 10px; font-weight: 500; }.application > p:last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: #6d86a9; font-size: 12px; line-height: 1.9; }
+.sourceCount { display: inline-flex; align-items: center; gap: 5px; color: #90a3be; font-size: 10px; }
+.createBrief { display: inline-flex; align-items: center; gap: 9px; padding: 9px 13px; border: 1px solid #1768e8; border-radius: 10px; background: #1768e8; color: #fff; font-size: 11px; font-weight: 500; box-shadow: 0 5px 12px -9px #1768e870; }.createBrief:hover { background: #145ece; }.createBrief:disabled { opacity: .4; cursor: not-allowed; }
+.findingDetails { border-top: 1px solid #edf1f8; padding-top: 13px; margin-top: 16px; }.findingDetails > summary { font-size: 11px; color: #8b9fba; }
+.empty { padding: 35px 20px; border: 1px dashed #d4e3f9; border-radius: 21px; background: linear-gradient(140deg,#f7faff,#fff); text-align: center; }.empty h3 { font-weight: 500; color: #6a88b0; }.empty p { font-size: 12px; color: #8b9fb9; }
+.studio button:focus-visible,.studio a:focus-visible,.studio summary:focus-visible { outline: 2px solid #1768e8; outline-offset: 3px; }
+@media (max-width:760px) { .findingGrid { grid-template-columns: 1fr; gap: 15px; }.hero { padding: 23px; }.researchArt { width: 125px; }.resultsTitle { font-size: 22px; } }
+@media (max-width:500px) { .hero { padding: 21px; }.researchArt { display: none; }.hero h1 { font-size: 31px; }.questionBox { padding: 5px 12px 13px; }.questionInput { font-size: 16px; }.startButton { width: 100%; }.finding { padding: 20px; border-radius: 18px; }.findingTitle { font-size: 18px; }.studio textarea:not(.questionInput) { font-size: 16px; }.findingStatus { font-size: 8px; } }

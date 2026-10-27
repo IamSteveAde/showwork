@@ -1,4 +1,5 @@
 "use client";
+import headerStyles from "./WorkspaceHeader.module.css";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { useState } from "react";
@@ -88,11 +89,13 @@ export default function CalendarSettingsMenu({
   clientName,
   userRole,
   isManager,
+  onBrand = false,
 }: {
   calendarId: string;
   clientName: string;
   userRole: "VIEW_ONLY" | "ADD_CONTENT" | "EDIT_CALENDAR";
   isManager: boolean;
+  onBrand?: boolean;
 }) {
   const router = useRouter();
 
@@ -189,10 +192,10 @@ export default function CalendarSettingsMenu({
         onClick={() => setOpen((prev) => !prev)}
         aria-label="Workspace settings"
         aria-expanded={open}
-        className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 text-[11px] font-semibold transition-all duration-150 ${
+        className={onBrand ? `${headerStyles.settingsTrigger} ${open ? headerStyles.settingsOpen : ""}` : `flex h-10 items-center gap-2 rounded-xl border px-3.5 text-[11px] font-semibold transition-all duration-150 ${
           open
-            ? "border-white/25 bg-white/[0.18] text-white"
-            : "border-white/15 bg-white/[0.09] text-white/80 hover:border-white/25 hover:bg-white/[0.15] hover:text-white"
+            ? "border-blue-200 bg-blue-50 text-blue-700"
+            : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
         }`}
       >
         <SettingsIcon className="h-4 w-4" /><span className="sr-only sm:hidden">Workspace settings</span>

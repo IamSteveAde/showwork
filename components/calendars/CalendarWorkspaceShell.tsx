@@ -1,7 +1,8 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import UiSymbol from "@/components/ui/UiSymbol";
+import { CircleHelp, MoreHorizontal, Sparkles, ArrowLeft, LayoutDashboard, CalendarRange, UsersRound, ChartNoAxesCombined, MessagesSquare, ContactRound, PanelsTopLeft, Cable, ScanSearch, BookOpenText, WandSparkles, SendHorizontal, ChevronsLeft, ChevronsRight, ChevronRight } from "lucide-react";
+import menuStyles from "./WorkspaceMenu.module.css";
+import headerStyles from "./WorkspaceHeader.module.css";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import MobileDrawer from "@/components/navigation/MobileDrawer";
@@ -47,103 +48,18 @@ type NavCluster = {
   featured?: boolean;
 };
 
-const PRIMARY_BLUE = "#1768E8";
-
-function SectionIcon({
-  name,
-  className = "h-[18px] w-[18px]",
-}: {
-  name: WorkspaceSectionId;
-  className?: string;
-}) {
-  const common = {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.7,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    className,
-    "aria-hidden": true,
+function SectionIcon({ name, className = "h-[18px] w-[18px]" }: { name: WorkspaceSectionId; className?: string }) {
+  const icons = {
+    overview: LayoutDashboard, content: CalendarRange, team: UsersRound,
+    analytics: ChartNoAxesCombined, inbox: MessagesSquare, leads: ContactRound,
+    access: PanelsTopLeft, channels: Cable, research: ScanSearch,
+    knowledge: BookOpenText, generate: WandSparkles, publish: SendHorizontal,
   };
-
-  switch (name) {
-    case "overview":
-      return (
-        <svg {...common}>
-          <path d="M4 5.8A1.8 1.8 0 0 1 5.8 4h4.4A1.8 1.8 0 0 1 12 5.8v4.4a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 10.2V5.8ZM14 5.8A1.8 1.8 0 0 1 15.8 4h2.4A1.8 1.8 0 0 1 20 5.8v8.4a1.8 1.8 0 0 1-1.8 1.8h-2.4a1.8 1.8 0 0 1-1.8-1.8V5.8ZM4 15.8A1.8 1.8 0 0 1 5.8 14h4.4a1.8 1.8 0 0 1 1.8 1.8v2.4a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.2v-2.4Z" />
-        </svg>
-      );
-    case "content":
-      return (
-        <svg {...common}>
-          <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
-          <path d="M7.5 3.5V7M16.5 3.5V7M3.5 9.5h17M8 13h3M8 16.5h7" />
-        </svg>
-      );
-    case "team":
-      return (
-        <svg {...common}>
-          <circle cx="8.5" cy="8" r="3" />
-          <path d="M3.5 19c.4-3.2 2-5 5-5s4.6 1.8 5 5M15 6c2 .1 3.2 1.3 3.2 3 0 1.3-.7 2.3-1.8 2.8M16 14.2c2.5.5 3.8 2 4 4.8" />
-        </svg>
-      );
-    case "analytics":
-      return (
-        <svg {...common}>
-          <path d="M4 19V12M10 19V5M16 19v-9M21 19H3" />
-          <path d="m4 9 5-3 6 2 5-4" opacity=".45" />
-        </svg>
-      );
-    case "inbox":
-      return (
-        <svg {...common}>
-          <path d="M4 5.5h16v13H4z" />
-          <path d="M4 13h4l1.5 2h5L16 13h4M8 9h8" />
-        </svg>
-      );
-    case "leads":
-      return (
-        <svg {...common}>
-          <circle cx="9" cy="8" r="3" />
-          <path d="M3.5 19c.5-3.2 2.3-5 5.5-5s5 1.8 5.5 5M16 5.5a3 3 0 0 1 0 5.8M17 14c2.1.5 3.3 2.1 3.6 4.5" />
-        </svg>
-      );
-    case "access":
-      return (
-        <svg {...common}>
-          <rect x="4" y="10" width="16" height="10" rx="2.5" />
-          <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2.5" />
-        </svg>
-      );
-    case "channels":
-      return (
-        <svg {...common}>
-          <path d="M9 15 15 9M7 18H6a4 4 0 1 1 0-8h3M17 6h1a4 4 0 1 1 0 8h-3" />
-        </svg>
-      );
-    case "research":
-    case "knowledge":
-      return (
-        <svg {...common}>
-          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v17H6.5A2.5 2.5 0 0 0 4 22V5.5ZM20 5.5A2.5 2.5 0 0 0 17.5 3H13v17h4.5A2.5 2.5 0 0 1 20 22V5.5Z" />
-        </svg>
-      );
-    case "generate":
-      return (
-        <svg {...common}>
-          <path d="m11.5 3 1.55 5.45L18.5 10l-5.45 1.55L11.5 17l-1.55-5.45L4.5 10l5.45-1.55L11.5 3Z" />
-          <path d="m18.5 16 .65 2.35 2.35.65-2.35.65L18.5 22l-.65-2.35L15.5 19l2.35-.65L18.5 16Z" />
-        </svg>
-      );
-    case "publish":
-      return (
-        <svg {...common}>
-          <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14" />
-        </svg>
-      );
-  }
+  const Icon = icons[name];
+  return <Icon className={className} strokeWidth={1.7} aria-hidden="true" />;
 }
+
+function LayersMark() { return <LayoutDashboard size={17} strokeWidth={1.8} aria-hidden="true"/>; }
 
 function ArrowUpRight({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -156,21 +72,6 @@ function ArrowUpRight({ className = "h-4 w-4" }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="M7 17 17 7M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-      stroke="currentColor"
-      strokeWidth="1.8"
-      aria-hidden="true"
-    >
-      <path d="m7 9 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -209,6 +110,15 @@ export default function CalendarWorkspaceShell({
   // Overview first and then switch to the requested section in an effect.
   const activeId = sections.find(section => section.id === requestedView)?.id
     ?? sections[0]?.id ?? "overview";
+  const [mobileSheet, setMobileSheet] = useState<"more" | "ai">("more");
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => setKeyboardOpen(window.innerHeight - viewport.height > 150 && /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName ?? ""));
+    viewport.addEventListener("resize", update); document.addEventListener("focusout", update);
+    return () => { viewport.removeEventListener("resize", update); document.removeEventListener("focusout", update); };
+  }, []);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   useEffect(() => {
@@ -236,12 +146,13 @@ export default function CalendarWorkspaceShell({
       const detail = (event as CustomEvent<{ id?: WorkspaceSectionId; tour?: boolean }>).detail;
       if (detail?.id) {
         rememberInsightView(detail.id);
+        setMobileSheet("more");
         setMobileOpen(Boolean(detail.tour) && window.innerWidth < 1024);
         setTourId(detail.tour ? detail.id : null);
         const url = new URL(window.location.href);
         url.searchParams.set("view", detail.id);
         window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "instant" });
       }
     };
 
@@ -321,6 +232,7 @@ export default function CalendarWorkspaceShell({
     label: "Publish",
     items: compact([
       byId("channels"),
+      byId("publish"),
     ]),
   },
 
@@ -335,10 +247,7 @@ export default function CalendarWorkspaceShell({
 
   if (!active) return null;
 
-  const canUseAi = visibleSections.some(section => section.id === "generate" || section.id === "knowledge");
-  const canPlanContent = visibleSections.some(section => section.id === "content");
   const canGenerate = visibleSections.some((section) => section.id === "generate");
-  const aiTarget: WorkspaceSectionId = canGenerate ? "generate" : "knowledge";
 
   const select = (id: WorkspaceSectionId) => {
     if (tourId) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss"));
@@ -349,314 +258,95 @@ export default function CalendarWorkspaceShell({
       url.searchParams.set("view", id);
       window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
-    requestAnimationFrame(() => {
-      document.getElementById("workspace-main")?.scrollTo({ top: 0, behavior: "smooth" });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
+    document.getElementById("workspace-main")?.scrollTo({ top: 0, behavior: "instant" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
+  const aiSections = visibleSections.filter(section => ["knowledge", "research", "generate"].includes(section.id));
+  const primaryMobile = (["overview", "content", "inbox"] as WorkspaceSectionId[]).map(id => visibleSections.find(section => section.id === id)).filter(Boolean) as WorkspaceSection[];
+  const moreSections = visibleSections.filter(section => !["overview", "content", "inbox", "knowledge", "research", "generate"].includes(section.id));
+  const aiActive = aiSections.some(section => section.id === active.id);
+  const moreActive = moreSections.some(section => section.id === active.id);
+  const openSheet = (sheet: "more" | "ai") => { setMobileSheet(sheet); setMobileOpen(true); };
   const sidebar = <>
-          {canPlanContent && <div className="hidden border-b border-[#E7ECF3] p-3 lg:block xl:p-4">
-            <button
-              type="button"
-              onClick={() => select("content")}
-              className="group flex w-full items-center gap-3 rounded-[18px] border border-[#DFE7F1] bg-white p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:border-[#CBD9EC] hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#EEF5FF] text-[#1768E8]">
-                <SectionIcon name="content" className="h-[17px] w-[17px]" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-[#98A2B3]">
-                  Working space
-                </p>
-                <p className="mt-0.5 truncate text-[12px] font-semibold text-[#27364A]">
-                  Content planner
-                </p>
-              </div>
-              <span className="ml-auto text-[#A9B4C2] transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
-            </button>
-          </div>}
-
-          <nav
-            className="min-h-0 flex-1 overflow-y-auto px-3 py-3 xl:px-4"
-            aria-label="Workspace sections"
-          >
-            {nav.map((cluster) => (
-              <div
-                key={cluster.label}
-                className={`mb-4 last:mb-0 ${
-                  cluster.featured
-                    ? "lg:rounded-[20px] lg:border lg:border-[#D3E4FF] lg:bg-[linear-gradient(145deg,#F2F7FF_0%,#FFFFFF_60%,#EDF5FF_100%)] lg:p-2.5 lg:shadow-[0_12px_30px_rgba(23,104,232,0.07)]"
-                    : ""
-                }`}
-              >
-                <div className="mb-1.5 flex items-center justify-between px-2">
-                  <p
-                    className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${
-                      cluster.featured ? "text-[#1768E8]" : "text-[#98A2B3]"
-                    }`}
-                  >
-                    {cluster.label}
-                  </p>
-                  {cluster.featured && (
-                    <span className="hidden items-center gap-1 rounded-full bg-[#1768E8] px-1.5 lg:inline-flex py-0.5 text-[7px] font-black uppercase tracking-[0.1em] text-white">
-                      <SparkMark className="h-2.5 w-2.5" /> AI
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  {cluster.items.map((item) => {
-                    const selected = item.id === active.id;
-                    const generate = item.id === "generate";
-
-                    return (
-                      <div key={item.id}>
-                      <button
-                        data-tour-target={item.id}
-                        type="button"
-                        aria-current={selected ? "page" : undefined}
-                        onClick={() => select(item.id)}
-                        className={`${tourId === item.id ? "outline outline-1 outline-[#A9C9FA]" : ""} group relative flex w-full scroll-mt-2 items-center gap-3 min-h-11 rounded-xl px-2.5 py-2 text-left transition-all ${
-                          selected
-                            ? generate
-                              ? "bg-[#EEF5FF] text-[#1768E8] lg:bg-[#1768E8] lg:text-white lg:shadow-[0_9px_20px_rgba(23,104,232,0.24)]"
-                              : "bg-[#EEF5FF] text-[#1768E8] lg:bg-white lg:shadow-[0_6px_16px_rgba(15,23,42,0.06)] lg:ring-1 lg:ring-[#DCE7F5]"
-                            : "text-[#5E6B7C] hover:bg-white/80 hover:text-[#172033]"
-                        }`}
-                      >
-                        {selected && !generate && (
-                          <span className="absolute -left-3 hidden lg:block h-5 w-[3px] rounded-r-full bg-[#1768E8] xl:-left-4" />
-                        )}
-                        <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[9px] ${
-                            selected
-                              ? generate
-                                ? "bg-[#DCEAFF] text-[#1768E8] lg:bg-white/12 lg:text-white"
-                                : "bg-[#EEF5FF] text-[#1768E8]"
-                              : cluster.featured
-                                ? "bg-[#EEF5FF] text-[#1768E8] lg:bg-white lg:shadow-sm lg:ring-1 lg:ring-[#E3ECFA]"
-                                : "bg-[#F1F4F8] text-[#7D8999]"
-                          }`}
-                        >
-                          <SectionIcon name={item.id} className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">
-                          {item.label}
-                        </span>
-                        {generate && !selected && (
-                          <span className="hidden rounded-full bg-[#1768E8]/[0.08] px-1.5 lg:block py-0.5 text-[7px] font-black uppercase tracking-[0.08em] text-[#1768E8]">
-                            Create
-                          </span>
-                        )}
-                      </button>
-                      <div data-tour-slot={item.id} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </nav>
-
-          <div className="border-t border-[#E7ECF3] p-3 xl:p-4">
-            {clientUrl && <div className="rounded-xl border border-[#E1E8F1] bg-white px-3 py-1.5 lg:rounded-[18px] lg:p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#98A2B3]">
-                    Client portal
-                  </p>
-                  <p className="mt-1 text-[11px] font-semibold text-[#344054]">
-                    Private review view
-                  </p>
-                </div>
-                <a
-                  href={clientUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-[#F2F6FB] text-[#667085] transition hover:bg-[#EEF5FF] hover:text-[#1768E8]"
-                  aria-label="Open client view"
-                >
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            </div>}
-
-            {publishAction && <div className="mt-2.5">{publishAction}</div>}
-          </div>
+    <nav className={menuStyles.navigation} aria-label="Workspace sections">
+      {nav.map(cluster => <div key={cluster.label} className={menuStyles.cluster} data-featured={cluster.featured || undefined}>
+        <div className={menuStyles.clusterHeading}><p>{cluster.label}</p>{cluster.featured && <Sparkles size={12} aria-hidden="true"/>}</div>
+        <div className={menuStyles.items}>{cluster.items.map(item => <div key={item.id}>
+          <button type="button" data-tour-target={item.id} data-section={item.id} aria-current={item.id === active.id ? "page" : undefined} onClick={() => select(item.id)} className={menuStyles.navItem}>
+            <span className={menuStyles.iconWell}><SectionIcon name={item.id}/></span><span className={menuStyles.navLabel}>{item.label}</span>
+            {item.id === active.id && <span className={menuStyles.activeArrow} aria-hidden="true"><ChevronRight size={12}/></span>}
+          </button><div data-tour-slot={item.id}/>
+        </div>)}</div>
+      </div>)}
+    </nav>
+    <div className={menuStyles.footer}>
+      <a href="/help/workspace" target="_blank" rel="noopener noreferrer" className={menuStyles.helpLink}><CircleHelp size={16}/><span>Help & guides</span><span className="sr-only"> (opens in a new tab)</span><ArrowUpRight className="h-3.5 w-3.5"/></a>
+      {clientUrl && <a href={clientUrl} target="_blank" rel="noopener noreferrer" className={menuStyles.clientLink}><span className={menuStyles.clientIcon}><PanelsTopLeft size={17}/></span><span><strong>Client view</strong><small>See their side of the story</small></span><ArrowUpRight/></a>}
+      {publishAction}
+    </div>
   </>;
 
   return (
-    <div data-marketing-workspace="true" className="min-h-screen w-full min-w-0 bg-[#F5F7FB] text-[#101828]">
-      {/* BLUE COMMAND HEADER */}
-      {/* BLUE COMMAND HEADER */}
-<header className="sticky top-0 z-50 border-b border-white/10 bg-[#1768E8] text-white shadow-[0_12px_40px_rgba(23,104,232,0.22)]">
-  <div className="relative overflow-visible">
-    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_-30%,rgba(255,255,255,0.24),transparent_31%),radial-gradient(circle_at_55%_120%,rgba(117,178,255,0.28),transparent_27%)]" />
-
-    <div className="relative mx-auto flex min-h-[72px] max-w-[1800px] items-center gap-2.5 px-3.5 py-2.5 sm:gap-3 sm:px-5 lg:h-[72px] lg:px-6 xl:px-8 lg:py-0">
-
-      {/* BACK */}
-      <Link
-        href="/dashboard/calendars"
-        className="group flex h-10 shrink-0 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.09] px-3 text-[11px] font-semibold text-white/85 transition-all duration-150 hover:border-white/25 hover:bg-white/[0.16] hover:text-white"
-        aria-label="Back to workspaces"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-0.5"
-          aria-hidden="true"
-        >
-          <path
-            d="M19 12H5M11 6l-6 6 6 6"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-
-        <span className="hidden sm:inline">Workspaces</span>
-      </Link>
-
-      <div className="hidden h-7 w-px bg-white/15 sm:block" />
-
-      {/* WORKSPACE IDENTITY */}
-      <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-white/15 bg-white text-[#1768E8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
-          <span className="text-[13px] font-black tracking-[-0.04em]">
-            {clientName.slice(0, 2).toUpperCase()}
-          </span>
-        </div>
-
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <p className="truncate text-[13px] font-semibold tracking-[-0.015em] text-white sm:text-[15px]">
-              {clientName}
-            </p>
-
-            <span className="hidden shrink-0 rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.14em] text-white/65 md:inline-flex">
-              Marketing workspace
-            </span>
+    <div data-marketing-workspace="true" className="min-h-screen w-full min-w-0 bg-[#F7F8FA] text-[#101828]">
+      <header className={headerStyles.header}>
+        <div className={headerStyles.inner}>
+          <Link href="/dashboard/calendars" aria-label="Back to workspaces" title="All workspaces" className={headerStyles.back}><ArrowLeft size={16}/><span>Workspaces</span></Link>
+          <span className={headerStyles.divider} aria-hidden="true"/>
+          <div className={headerStyles.identity}><span className={headerStyles.monogram} aria-hidden="true">{clientName.slice(0, 2).toUpperCase()}</span><div className={headerStyles.name}><p title={clientName}>{clientName}</p><span><span className={headerStyles.desktopSection}>Marketing workspace</span><span className={headerStyles.mobileSection}>{active.label}</span></span></div></div>
+          <span className={headerStyles.location}><SectionIcon name={active.id} className="h-3.5 w-3.5"/>{active.label}</span>
+          <div className={headerStyles.actions}>
+            {clientUrl && <a href={clientUrl} target="_blank" rel="noopener noreferrer" className={headerStyles.client}>Client view <ArrowUpRight className="h-3.5 w-3.5"/></a>}
+            {canGenerate && <button type="button" onClick={() => select("generate")} className={headerStyles.create}><Sparkles size={15}/> Create with AI</button>}
           </div>
-
-          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-white/55">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#92FFC1] shadow-[0_0_10px_rgba(146,255,193,0.8)]" />
-            <span className="truncate">{active.label}</span>
-            <span className="text-white/25">/</span>
-            <span className="hidden sm:inline">{active.eyebrow}</span>
-          </div>
+          {settings}
         </div>
-      </div>
+      </header>
+      <MobileDrawer placement="bottom" open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label={mobileSheet === "ai" ? "AI Studio" : "More from your workspace"} className="bg-white text-slate-800">
+        {tourId ? sidebar : <div className="p-4">
+          {mobileSheet === "ai" && <p className="mb-4 px-1 text-sm leading-6 text-slate-500">Build your knowledge, explore ideas and create content.</p>}
+          <nav aria-label={mobileSheet === "ai" ? "AI Studio tools" : "More workspace sections"} className="grid grid-cols-2 gap-2">
+            {(mobileSheet === "ai" ? aiSections : moreSections).map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} data-section={item.id} className={menuStyles.sheetItem}><span className={menuStyles.iconWell}><SectionIcon name={item.id} className="h-5 w-5"/></span><span className="break-words">{item.label}</span>{item.id === active.id && <span className={menuStyles.sheetActive}>Current section</span>}</button>)}
+          </nav>
+          {mobileSheet === "more" && <div className="mt-4 space-y-3 border-t border-slate-100 pt-4"><a href="/help/workspace" target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><CircleHelp size={16}/>Help & guides<span className="sr-only"> (opens in a new tab)</span></a><Link href="/dashboard/calendars" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><ArrowLeft size={16}/> All workspaces</Link>{clientUrl && <a href={clientUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-between rounded-xl px-3 text-sm text-slate-600">Open client view <ArrowUpRight/></a>}{publishAction}</div>}
+        </div>}
+      </MobileDrawer>
+      <nav aria-label="Mobile workspace navigation" data-workspace-bottom-nav hidden={keyboardOpen} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }} className={`${menuStyles.bottomNav} fixed inset-x-0 bottom-0 z-40 flex items-center justify-around gap-1 px-2 pt-2 lg:hidden`}>
+        {primaryMobile.map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${item.id === active.id ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><SectionIcon name={item.id} className="h-5 w-5"/>{item.id === "overview" ? "Home" : item.label}</button>)}
+        {!!aiSections.length && <button onClick={() => openSheet("ai")} aria-current={aiActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "ai"} aria-haspopup="dialog" className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${aiActive ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><Sparkles size={20}/>AI Studio</button>}
+        <button onClick={() => openSheet("more")} aria-current={moreActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "more"} aria-haspopup="dialog" className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${moreActive ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><MoreHorizontal size={20}/>More</button>
+      </nav>
 
-      {/* DESKTOP ACTIONS */}
-      <div className="hidden items-center gap-2 lg:flex">
-        {canUseAi && <button
-          type="button"
-          onClick={() => select(aiTarget)}
-          className="group flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.10] px-3 text-[11px] font-semibold text-white transition-all duration-150 hover:border-white/25 hover:bg-white/[0.17]"
-        >
-          <SparkMark className="h-3.5 w-3.5" />
-          AI Studio
-          <span className="text-white/45 transition-transform group-hover:translate-x-0.5"><UiSymbol name="right" /></span>
-        </button>}
-
-        {clientUrl && <a
-          href={clientUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex h-10 items-center gap-2 rounded-xl bg-white px-3.5 text-[11px] font-semibold text-[#1558BE] shadow-[0_8px_18px_rgba(7,39,92,0.16)] transition-all duration-150 hover:-translate-y-0.5"
-        >
-          Client view
-          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </a>}
-
-        {settings}
-      </div>
-
-      {/* MOBILE ACTIONS */}
-      <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
-        {settings}
-
-        <button
-          type="button"
-          onClick={() => setMobileOpen((open) => !open)}
-          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all duration-150 ${
-            mobileOpen
-              ? "border-white/30 bg-white/[0.18]"
-              : "border-white/15 bg-white/[0.10]"
-          }`}
-          aria-label={
-            mobileOpen
-              ? "Close workspace navigation"
-              : "Open workspace navigation"
-          }
-          aria-expanded={mobileOpen}
-        >
-          {mobileOpen ? (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="h-4.5 w-4.5"
-              aria-hidden="true"
-            >
-              <path
-                d="m6 6 12 12M18 6 6 18"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-          ) : (
-            <div className="space-y-1">
-              <span className="block h-[1.5px] w-4 bg-current" />
-              <span className="block h-[1.5px] w-4 bg-current" />
-              <span className="block h-[1.5px] w-4 bg-current" />
-            </div>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <MobileDrawer open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label="Workspace" className="bg-[#FAFBFD] text-[#101828]">{sidebar}</MobileDrawer>
-
-</header>
-
-      <div className={`mx-auto grid max-w-[1800px] ${sidebarCollapsed ? "lg:grid-cols-[76px_minmax(0,1fr)]" : "lg:grid-cols-[236px_minmax(0,1fr)] xl:grid-cols-[258px_minmax(0,1fr)]"}`}>
+      <div className={`mx-auto grid max-w-[1800px] ${sidebarCollapsed ? "lg:grid-cols-[76px_minmax(0,1fr)]" : "lg:grid-cols-[224px_minmax(0,1fr)]"}`}>
         {/* QUIET LEFT RAIL */}
-        <aside className="sticky top-[72px] hidden h-[calc(100dvh-72px)] flex-col border-r border-[#E4EAF2] bg-[#FAFBFD] lg:flex">
-          <div className={`flex shrink-0 items-center border-b border-[#E7ECF3] p-3 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
-            {!sidebarCollapsed && <span className="pl-2 text-[10px] font-semibold uppercase tracking-widest text-[#667085]">Workspace menu</span>}
+        <aside className={`${menuStyles.rail} sticky top-[72px] hidden h-[calc(100dvh-72px)] flex-col lg:flex`} data-collapsed={sidebarCollapsed}>
+          <div className={menuStyles.railHeader}>
+            {!sidebarCollapsed && <div className={menuStyles.workspaceIdentity}><span className={menuStyles.workspaceMark}><LayersMark/></span><span><strong>Marketing workspace</strong><small>Your creative home</small></span></div>}
             <button type="button" onClick={toggleSidebar} aria-expanded={!sidebarCollapsed} aria-controls="workspace-desktop-navigation"
-              aria-label={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"}
-              title={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#526780] transition hover:bg-[#EAF2FF] hover:text-[#1768E8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
-              {sidebarCollapsed ? <PanelLeftOpen size={20} aria-hidden="true" /> : <PanelLeftClose size={20} aria-hidden="true" />}
-            </button>
+              aria-label={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"} title={sidebarCollapsed ? "Expand workspace menu" : "Collapse workspace menu"}
+              className={menuStyles.collapseButton}>{sidebarCollapsed ? <ChevronsRight size={16} aria-hidden="true"/> : <ChevronsLeft size={16} aria-hidden="true"/>}</button>
           </div>
           <div id="workspace-desktop-navigation" className="flex min-h-0 flex-1 flex-col">
             {sidebarCollapsed ? <>
-              <nav aria-label="Workspace sections" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-                {nav.map(cluster => <div key={cluster.label} className="space-y-1 border-b border-[#E7ECF3] py-2 last:border-0">
-                  {cluster.items.map(item => <button key={item.id} type="button" onClick={() => select(item.id)}
+              <nav aria-label="Workspace sections" className={menuStyles.iconNavigation}>
+                {nav.map(cluster => <div key={cluster.label} className={menuStyles.iconCluster}>
+                  {cluster.items.map(item => <button key={item.id} type="button" onClick={() => select(item.id)} data-section={item.id}
                     data-tour-target={item.id} title={item.label} aria-label={item.label} aria-current={item.id === active.id ? "page" : undefined}
-                    className={`flex h-11 w-full items-center justify-center rounded-xl transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 ${item.id === active.id ? "bg-[#1768E8] text-white shadow-sm" : "text-[#667085] hover:bg-[#EAF2FF] hover:text-[#1768E8]"}`}>
-                    <SectionIcon name={item.id} className="h-5 w-5" />
-                  </button>)}
+                    className={menuStyles.iconItem}><SectionIcon name={item.id} className="h-5 w-5"/>{item.id === active.id && <span className={menuStyles.iconActiveDot} aria-hidden="true"/>}</button>)}
                 </div>)}
               </nav>
+              <a href="/help/workspace" target="_blank" rel="noopener noreferrer" title="Workspace help (opens in a new tab)" aria-label="Workspace help (opens in a new tab)" className={menuStyles.collapsedHelp}><CircleHelp size={19}/></a>
               {clientUrl && <div className="shrink-0 border-t border-[#E7ECF3] p-3">
                 <a href={clientUrl} target="_blank" rel="noopener noreferrer" title="Open client view" aria-label="Open client view"
                   className="flex h-11 items-center justify-center rounded-xl bg-white text-[#1768E8] hover:bg-[#EAF2FF]"><ArrowUpRight className="h-5 w-5" /></a>
               </div>}
+              {publishAction && <div className="shrink-0 border-t border-slate-100 p-3"><button type="button" onClick={toggleSidebar} title="Publishing actions" aria-label="Expand menu for publishing actions" className="flex h-11 w-full items-center justify-center rounded-xl text-slate-500 hover:bg-blue-50 hover:text-blue-700"><SectionIcon name="publish" className="h-5 w-5"/></button></div>}
             </> : sidebar}
           </div>
         </aside>
 
         {/* ACTIVE WORKSPACE */}
-        <main id="workspace-main" className="min-w-0">
+        <main id="workspace-main" className="min-w-0 pb-[calc(88px+env(safe-area-inset-bottom))] lg:pb-0">
           <div
             className={`mx-auto ${
               active.id === "content" ? "max-w-none" : "max-w-[1480px]"
@@ -664,11 +354,11 @@ export default function CalendarWorkspaceShell({
           >
             {/* CONTEXT BAR */}
             {calendarId && active.id !== "inbox" && sections.some(section => section.id === "inbox") && <InboxHandoffAlert calendarId={calendarId} />}
-            {["inbox", "team", "analytics"].includes(active.id) ? <h1 className="sr-only">{active.title}</h1> : (
-            <div className="mb-5 flex flex-col gap-4 rounded-[24px] border border-[#E1E8F1] bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] sm:px-6 md:flex-row md:items-end md:justify-between">
+            {["overview", "content", "generate", "knowledge", "channels", "research", "inbox", "team", "analytics"].includes(active.id) ? <h1 className="sr-only">{active.title}</h1> : (
+            <div className="mb-6 flex flex-col gap-4 px-1 py-1 md:flex-row md:items-end md:justify-between">
               <div className="min-w-0 max-w-4xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF5FF] px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.15em] text-[#1768E8]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF5FF] px-2.5 py-1 text-[10px] font-medium text-[#1768E8]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#1768E8]" />
                     {active.eyebrow}
                   </span>
@@ -679,7 +369,7 @@ export default function CalendarWorkspaceShell({
                   )}
                 </div>
 
-                <h1 className="mt-3 text-[29px] font-semibold leading-[1.04] tracking-[-0.05em] text-[#0B1220] sm:text-[34px] md:text-[39px]">
+                <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-3xl">
                   {active.title}
                 </h1>
                 <p className="mt-2.5 max-w-3xl text-[13px] leading-6 text-[#667085]">
@@ -687,39 +377,14 @@ export default function CalendarWorkspaceShell({
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="hidden rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] p-1 sm:flex">
-                  <button
-                    type="button"
-                    onClick={() => select("content")}
-                    className={`rounded-[10px] px-3 py-2 text-[10px] font-semibold transition ${
-                      active.id === "content"
-                        ? "bg-white text-[#1768E8] shadow-sm"
-                        : "text-[#667085] hover:text-[#344054]"
-                    }`}
-                  >
-                    Content
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => select(aiTarget)}
-                    className={`rounded-[10px] px-3 py-2 text-[10px] font-semibold transition ${
-                      active.id === "generate" || active.id === "knowledge"
-                        ? "bg-white text-[#1768E8] shadow-sm"
-                        : "text-[#667085] hover:text-[#344054]"
-                    }`}
-                  >
-                    AI Studio
-                  </button>
-                </div>
-              </div>
+
             </div>
             )}
 
             {/* Keep visited panels mounted so navigation preserves local work. */}
             {visibleSections.map((section) => {
               if (section.id !== active.id && !mountedInsightViews.has(section.id)) return null;
-              return <div key={section.id} hidden={active.id !== section.id}>
+              return <div key={section.id} data-workspace-panel={section.id} hidden={active.id !== section.id}>
                 {section.content}
               </div>;
             })}
@@ -737,16 +402,14 @@ export default function CalendarWorkspaceShell({
       />
 
       <style jsx global>{`
-        @keyframes workspaceEnter {
-          from {
-            opacity: 0;
-            transform: translateY(7px) scale(0.997);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        [data-marketing-workspace] [data-workspace-bottom-nav][hidden] { display: none; }
+        @media (max-width: 1023px) {
+          [data-marketing-workspace]:has([data-workspace-panel]:not([hidden]) [data-mobile-chat-open="true"]) [data-workspace-bottom-nav] { display: none; }
+          [data-marketing-workspace]:has([data-workspace-panel]:not([hidden]) [data-mobile-chat-open="true"]) #workspace-main { padding-bottom: 0; }
         }
+        /* Hidden panels stay mounted without fading or changing text contrast. */
+        [data-marketing-workspace] [data-workspace-panel][hidden] { display: none !important; }
+
       `}</style>
     </div>
   );

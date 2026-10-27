@@ -1,3 +1,4 @@
+import { validDeliveryKey, deliverySession, verifyDeliveryObject, registerDeliveryReplacement, matchesDeliveryType } from "@/lib/deliveryUploads";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { complimentaryAccessSelect, hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { NextRequest, NextResponse } from "next/server";
@@ -52,6 +53,10 @@ export async function POST(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const session = await deliverySession(media.projectId, creator.id, fileKey, undefined, {purpose:"REPLACE",targetId:mediaId});
+  if (!session) return NextResponse.json({error:"Upload session expired. Restart this transfer.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+  if (media.fileKey === fileKey) return NextResponse.json({media});
+  if (!matchesDeliveryType(session.contentType, media.type)) return NextResponse.json({error:"Replacement must have the original media type"},{status:400});
   if (media.approvalStatus !== "NEEDS_REVISION") {
     return NextResponse.json(
       { error: "Only files flagged for revision can be replaced" },
@@ -74,31 +79,20 @@ export async function POST(
     );
   }
 
+  if (!validDeliveryKey(fileKey, media.projectId)) return NextResponse.json({ error: "Invalid upload key" }, { status: 400 });
   const oldFileKey = media.fileKey;
   const notifyEmail = media.reviewerEmail; // whoever flagged this specific file
 
-  const updated = await db.media.update({
-    where: { id: mediaId },
-    data: {
-      fileKey,
-      approvalStatus: "PENDING",
-      approvalNote: null,
-      reviewedAt: null,
-      reviewerEmail: null, // cleared until the next review comes in
-      // Attribution follows whoever actually fixed the file — if a
-      // different collaborator (or the owner) is the one replacing
-      // it, future feedback on this file should reach them, not
-      // whoever originally uploaded the now-replaced version.
-      uploadedByCreatorId: creator.id,
-    },
-  });
-
-  await db.project.update({
-    where: { id: media.projectId },
-    data: { replaceCount: { increment: 1 } },
-  });
-
-  deleteObject(oldFileKey).catch((err) => console.error("Failed to delete old file:", err));
+  let sizeBytes: number;
+  try {
+    sizeBytes = await verifyDeliveryObject(session);
+  } catch { return NextResponse.json({error:"Replacement file could not be verified",code:"UPLOAD_NOT_VERIFIED"},{status:409}); }
+  let updated;
+  try { updated = await registerDeliveryReplacement({mediaId,projectId:media.projectId,oldFileKey,fileKey,creatorId:creator.id,sessionId:session.id,sizeBytes,unlimited:hasDeliveryPaidAccess(media.project.creator)}); }
+  catch { return NextResponse.json({error:"The file or replacement allowance changed. Reload this project before retrying."},{status:409}); }
+  // Promoted task originals/previews are shared with internal review history.
+  if (media.posterFileKey && validDeliveryKey(media.posterFileKey, media.projectId)) deleteObject(media.posterFileKey).catch(() => {});
+  if (validDeliveryKey(oldFileKey, media.projectId)) deleteObject(oldFileKey).catch((err) => console.error("Failed to delete old file:", err));
 
   // Notify whoever flagged this file that a fix has been uploaded.
   if (notifyEmail) {

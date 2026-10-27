@@ -23,10 +23,7 @@ export async function generateMetadata({
       clientName: true,
       heroMediaId: true,
       creator: { select: { companyName: true, name: true } },
-      media: {
-        select: { id: true, fileKey: true, type: true },
-        orderBy: { displayOrder: "asc" },
-      },
+
     },
   });
 
@@ -43,13 +40,7 @@ export async function generateMetadata({
   // Only falls back to the generic image if the project genuinely
   // has no photos at all (video-only or document-only deliveries),
   // since a video file itself can't be used as a share-preview image.
-  const projectPhotos = project.media.filter((m) => m.type === "PHOTO");
-  const randomPhoto = projectPhotos.length > 0
-    ? projectPhotos[Math.floor(Math.random() * projectPhotos.length)]
-    : null;
-  const image = randomPhoto
-    ? publicUrlFor(randomPhoto.fileKey)
-    : "/images/shwk.jpg";
+  const image = "/images/shwk.jpg";
 
   return {
     title,
@@ -66,6 +57,26 @@ export default async function SlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+
+  // Gate first: locked requests never load files, review history or task briefs.
+  const gate = await db.project.findUnique({ where: { slug }, select: {
+    id:true, clientName:true, badgeVisible:true, primaryColor:true, bgColor:true,
+    logoUrl:true, heroTagline:true, deliveryStatus:true, deletedAt:true,
+    creator:{ select:{ subscriptionActive:true, ...complimentaryAccessSelect, isComped:true } },
+  } });
+  if (!gate || gate.deletedAt) notFound();
+  const [currentCreator, cookieStore] = await Promise.all([getCurrentCreator(), cookies()]);
+  const isAdminPreview = !!currentCreator && isAdminEmail(currentCreator.email);
+  const token = cookieStore.get(`viewer_${gate.id}`)?.value;
+  const viewerSession = token ? verifyViewerToken(token, gate.id) : null;
+  if (!isAdminPreview && !viewerSession) {
+    await db.project.update({where:{id:gate.id},data:{viewCount:{increment:1}}});
+    return <DeliveryPage projectId={gate.id} clientName={gate.clientName}
+      badgeVisible={gate.badgeVisible && !hasDeliveryPaidAccess(gate.creator)} primaryColor={gate.primaryColor ?? "#C9A84C"}
+      bgColor={gate.bgColor ?? "#080808"} logoUrl={gate.logoUrl} heroTagline={gate.heroTagline}
+      media={[]} sections={[]} ungroupedMedia={[]} heroMedia={null} managedProject={null}
+      deliveryStatus={gate.deliveryStatus} initiallyUnlocked={false} initialViewerEmail={null} initialViewerName={null}/>;
+  }
 
   const project = await db.project.findUnique({
     where: { slug },
@@ -114,9 +125,6 @@ export default async function SlugPage({
 
   if (!project || project.deletedAt) notFound();
 
-  const currentCreator = await getCurrentCreator();
-  const isAdminPreview = !!currentCreator && isAdminEmail(currentCreator.email);
-
   // Public client opens count as views. Admin previews bypass the gate
   // without changing client analytics or creating viewer records.
   if (!isAdminPreview) {
@@ -130,6 +138,8 @@ export default async function SlugPage({
     id: string;
     type: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
     fileKey: string;
+    aspectRatio?: number | null;
+    posterFileKey?: string | null;
     caption: string | null;
     approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
     approvalNote: string | null;
@@ -138,6 +148,8 @@ export default async function SlugPage({
     id: m.id,
     type: m.type,
     url: publicUrlFor(m.fileKey),
+    aspectRatio: m.aspectRatio ?? null,
+    posterUrl: m.posterFileKey ? publicUrlFor(m.posterFileKey) : null,
     caption: m.caption ?? "",
     approvalStatus: m.approvalStatus,
     approvalNote: m.approvalNote,
@@ -150,13 +162,15 @@ export default async function SlugPage({
     })),
   });
 
-  const media = project.media.map(mapMedia);
+  const canView = isAdminPreview || !!viewerSession;
+  const canViewFiles = canView && (!project.managedProject || !!project.managedProject.publishedAt || isAdminPreview);
+  const media = canViewFiles ? project.media.map(mapMedia) : [];
 
   // The client-facing view of each creator-named section — replaces the
   // old hardcoded "Films" / "Photography" split entirely. Only sections
   // that actually have files in them are shown — either directly in
   // the section, or inside one of its sub-sections.
-  const sections = project.sections
+  const sections = (canViewFiles ? project.sections : [])
     .filter((s) => s.media.length > 0 || s.folders.some((f) => f.media.length > 0))
     .map((s) => ({
       id: s.id,
@@ -175,7 +189,7 @@ export default async function SlugPage({
   // Anything not assigned to a section (older uploads from before
   // sections existed) — shown as its own fallback group by the
   // rendering component, same as on the creator's dashboard.
-  const ungroupedMedia = project.media
+  const ungroupedMedia = (canViewFiles ? project.media : [])
     .filter((m) => !m.sectionId)
     .map(mapMedia);
 
@@ -186,7 +200,7 @@ export default async function SlugPage({
     ? media.find((m) => m.id === project.heroMediaId) ?? null
     : null;
 
-  const managedProjectForClient = project.managedProject
+  const managedProjectForClient = canView && project.managedProject
     ? {
         name: project.managedProject.name,
         publishedAt: project.managedProject.publishedAt?.toISOString() ?? null,
@@ -208,15 +222,6 @@ export default async function SlugPage({
           : null,
       }
     : null;
-
-  // Check whether this browser already unlocked this project before —
-  // if so, skip straight past both gates instead of asking again,
-  // including the name they gave, now that it's embedded in this same
-  // signed token alongside the email (see lib/auth.ts and the
-  // verify-password route, which is what actually creates this cookie).
-  const cookieStore = await cookies();
-  const unlockToken = cookieStore.get(`viewer_${project.id}`)?.value;
-  const viewerSession = unlockToken ? verifyViewerToken(unlockToken, project.id) : null;
 
   return (
     <DeliveryPage

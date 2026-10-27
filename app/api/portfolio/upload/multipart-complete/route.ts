@@ -1,3 +1,4 @@
+import { validPortfolioKey } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest) {
 
   const portfolio = await db.portfolio.findFirst({ where: { creatorId: creator.id } });
   if (!portfolio) return NextResponse.json({ error: "No portfolio found" }, { status: 404 });
+
+  if (!validPortfolioKey(fileKey, portfolio.id)) return NextResponse.json({error:"Invalid portfolio upload key"},{status:400});
 
   if (sectionId) {
     const section = await db.portfolioSection.findUnique({ where: { id: sectionId } });

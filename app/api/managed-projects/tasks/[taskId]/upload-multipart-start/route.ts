@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createDeliverySession, expectedUploadBytes } from "@/lib/deliveryUploads";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -42,9 +44,11 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  try { expectedUploadBytes(fileSizeMb, MAX_FILE_SIZE_MB); } catch { return NextResponse.json({ error: "A valid file size is required" }, { status: 400 }); }
   const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const fileKey = `managed-projects/${task.managedProjectId}/tasks/${taskId}/${Date.now()}-${safeName}`;
+  const fileKey = `managed-projects/${task.managedProjectId}/tasks/${taskId}/${randomUUID()}-${safeName}`;
   const uploadId = await createMultipartUpload(fileKey, contentType);
 
+  await createDeliverySession({projectId: task.managedProjectId, targetId: taskId, creatorId: creator.id, fileKey, uploadId, fileSizeMb, contentType, maxMb: MAX_FILE_SIZE_MB, purpose: "TASK"});
   return NextResponse.json({ uploadId, fileKey });
 }

@@ -1,3 +1,7 @@
+import { parseDeliveryParts } from "@/lib/deliveryUploads";
+import { randomUUID } from "node:crypto";
+import { deliverySession, verifyDeliveryObject, matchesDeliveryType } from "@/lib/deliveryUploads";
+import { validTaskKey } from "@/lib/deliveryUploads";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
@@ -26,12 +30,8 @@ export async function POST(
   if (type && !["PHOTO", "VIDEO", "DOCUMENT", "PDF"].includes(type)) {
     return NextResponse.json({ error: "type must be PHOTO, VIDEO, DOCUMENT, or PDF" }, { status: 400 });
   }
-  const typedParts: { partNumber: number; etag: string }[] = parts.map(
-    (p: { partNumber: unknown; etag: unknown }) => ({
-      partNumber: Number(p.partNumber),
-      etag: String(p.etag),
-    })
-  );
+  const typedParts = parseDeliveryParts(parts);
+  if (!typedParts) return NextResponse.json({error:"Upload parts must be a contiguous, unique list"},{status:400});
 
   const task = await db.task.findUnique({
     where: { id: taskId },
@@ -43,6 +43,11 @@ export async function POST(
   const isAssignee = task.assignedToCreatorId === creator.id;
   if (!isOwner && !isAssignee) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const session = await deliverySession(task.managedProjectId, creator.id, fileKey, uploadId, {purpose:"TASK",targetId:taskId});
+  if (!session) return NextResponse.json({error:"Upload session expired. Restart this transfer.",code:"UPLOAD_SESSION_EXPIRED"},{status:409});
+  if (!matchesDeliveryType(session.contentType, type || "PHOTO")) return NextResponse.json({error:"File type mismatch"},{status:400});
+  const existing = await db.taskAsset.findUnique({where:{uploadSessionId:session.id}});
+  if (existing) return NextResponse.json({asset:existing});
   if (folderId) {
     const folder = await db.taskFolder.findUnique({ where: { id: folderId } });
     if (!folder || folder.taskId !== taskId) {
@@ -53,20 +58,17 @@ export async function POST(
   // The call that actually turns however many separately-uploaded
   // chunks into one real, complete file in R2 — nothing before this
   // point is a usable object yet.
-  await completeMultipartUpload(fileKey, uploadId, typedParts);
-
-  const asset = await db.taskAsset.create({
-    data: {
-      taskId,
-      fileKey,
-      filename: typeof filename === "string" ? filename : null,
-      type: type || "PHOTO",
-      folderId: folderId ?? null,
-      uploadedByCreatorId: creator.id,
-    },
+  if (!validTaskKey(fileKey, task.managedProjectId, taskId)) return NextResponse.json({ error: "Invalid upload key" }, { status: 400 });
+  try {
+    try { await verifyDeliveryObject(session); } catch { await completeMultipartUpload(fileKey, uploadId, typedParts); await verifyDeliveryObject(session); }
+  } catch { return NextResponse.json({error:"Uploaded file could not be verified",code:"UPLOAD_NOT_VERIFIED"},{status:409}); }
+  const assetId = randomUUID();
+  const asset = await db.$transaction(async tx => {
+    const saved = await tx.taskAsset.upsert({where:{uploadSessionId:session.id},update:{},create:{id:assetId,taskId,fileKey,filename:typeof filename === "string" ? filename : null,type:type || "PHOTO",folderId:folderId ?? null,uploadedByCreatorId:creator.id,uploadSessionId:session.id,sizeBytes:Number(session.expectedBytes)}});
+    await tx.deliveryUploadSession.update({where:{id:session.id},data:{state:"COMPLETE",mediaId:saved.id}});
+    return saved;
   });
-
-  if (!isOwner) {
+  if (!isOwner && asset.id === assetId) {
     try {
       await sendNewUploadReadyForReviewEmail({
         to: task.managedProject.creator.email,

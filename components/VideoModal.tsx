@@ -155,6 +155,7 @@ export default function VideoModal({
         <video
           ref={videoRef}
           src={video.url}
+          poster={video.posterUrl || undefined}
           controls
           loop
           playsInline

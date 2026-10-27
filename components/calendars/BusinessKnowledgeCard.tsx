@@ -1,11 +1,12 @@
 "use client";
+import knowledgeStyles from "./KnowledgeStudio.module.css";
 import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
 import KnowledgeIndexStatus from "./KnowledgeIndexStatus";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { businessDocumentType, BUSINESS_DOCUMENT_ACCEPT } from "@/lib/businessDocumentTypes";
 import { useRouter } from "next/navigation";
-import { UploadCloud, FileText, CheckCircle2, RefreshCw } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, RefreshCw, Globe2, BookOpenText, Plus, ArrowUpRight, Database, Trash2 } from "lucide-react";
 
 import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotice";
 
@@ -182,8 +183,6 @@ export default function BusinessKnowledgeCard({
   const [addingWebsite, setAddingWebsite] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [documentsExpanded, setDocumentsExpanded] = useState(false);
   const [confirmingDeleteId, setConfirmingDeleteId] =
     useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -505,329 +504,35 @@ if (presignContentType.includes("application/json")) {
     );
   }
 
-  return (
-    <section className="relative w-full overflow-hidden rounded-[30px] border border-[#DCE3EC] bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
-      <div className="pointer-events-none absolute -right-28 -top-28 h-72 w-72 rounded-full bg-[#2478FF]/[0.07] blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-1/2 bg-gradient-to-r from-[#2478FF]/[0.025] to-transparent" />
-
-      <div className="relative p-5 sm:p-7 lg:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-start gap-4">
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#2478FF]/15 bg-[#EEF5FF] text-[#2478FF]">
-              <SparkIcon />
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#22C55E]" />
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-[-0.02em] text-[#101828] sm:text-xl">
-                  AI business knowledge
-                </h2>
-
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B7E4CD] bg-[#ECFDF3] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#027A48]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
-                  Active
-                </span>
-              </div>
-
-              <p className="mt-1.5 text-xs leading-5 text-[#667085]">
-                Your AI context for this marketing workspace.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2 rounded-xl border border-[#E4E7EC] bg-[#F8FAFC] px-3 py-2">
-            <FileIcon />
-
-            <span className="text-[11px] font-semibold text-[#475467]">
-              {documentsState.length}{" "}
-              {documentsState.length === 1
-                ? "source"
-                : "sources"}
-            </span>
-          </div>
-        </div>
-
-        {indexStatus}
-        {error && (
-          <div
-            role="alert"
-            className="mt-5 flex items-start gap-3 rounded-2xl border border-[#FECACA] bg-[#FFF7F7] px-4 py-3.5 text-[11px] leading-5 text-[#B42318]"
-          >
-            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F04438]" />
-            <div>{error}
-                {/upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or allowance does not cover this action. View plans to restore access or increase your limits." />}</div>
-          </div>
-        )}
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="min-w-0 rounded-[22px] border border-[#E4E7EC] bg-[#F8FAFC] p-5 sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#667085]">
-                  Current understanding
-                </p>
-
-                <p className="mt-1 text-sm font-semibold text-[#101828]">
-                  What the AI knows about this business
-                </p>
-              </div>
-
-              {businessSummaryState && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSummaryExpanded((value) => !value)
-                  }
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#D9E2EF] bg-white px-2.5 py-2 text-[10px] font-semibold text-[#2478FF] transition-colors hover:border-[#B9D2FA] hover:bg-[#F5F9FF]"
-                >
-                  {summaryExpanded
-                    ? "Collapse"
-                    : "Read summary"}
-
-                  <ChevronIcon open={summaryExpanded} />
-                </button>
-              )}
-            </div>
-
-            {businessSummaryState ? (
-              <p
-                className={`mt-4 whitespace-pre-wrap text-xs leading-6 text-[#475467] ${
-                  summaryExpanded ? "" : "line-clamp-4"
-                }`}
-              >
-                {businessSummaryState}
-              </p>
-            ) : (
-              <div className="mt-4 rounded-xl border border-dashed border-[#D5DCE5] bg-white px-4 py-5">
-                <p className="text-xs font-medium text-[#475467]">
-                  No business summary yet.
-                </p>
-
-                <p className="mt-1 text-[11px] leading-5 text-[#98A2B3]">
-                  Add a document or website and Showwork will
-                  use it to build context for this client.
-                </p>
-              </div>
-            )}
-
-            {canEdit && aiActive && documentsState.length > 0 && <button type="button" onClick={rebuildSummary} disabled={rebuilding} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 disabled:opacity-50"><RefreshCw size={14} className={rebuilding ? "animate-spin" : ""} />{rebuilding ? "Rebuilding from current sources…" : "Rebuild from current sources"}</button>}
-            <p className="mt-3 text-xs leading-5 text-slate-500">Replies retrieve relevant passages from your current documents. Research findings are reviewed separately in the Research tab.</p>
-            {(updated || researched) && (
-              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#E4E7EC] pt-4">
-                {updated && (
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
-                      Knowledge updated
-                    </p>
-
-                    <p className="mt-1 text-[10px] font-medium text-[#667085]">
-                      {updated}
-                    </p>
-                  </div>
-                )}
-
-                {researched && (
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#98A2B3]">
-                      Last research
-                    </p>
-
-                    <p className="mt-1 text-[10px] font-medium text-[#667085]">
-                      {researched}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[22px] border border-[#E4E7EC] bg-white p-5 sm:p-6">
-            <div className="flex h-full flex-col">
-              <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#667085]">
-                Knowledge base
-              </p>
-
-              <p className="mt-1 text-sm font-semibold text-[#101828]">
-                Give the assistant more context
-              </p>
-
-              <p className="mt-2 text-[11px] leading-5 text-[#667085]">
-                Upload business documents or add the company website.
-                Showwork reads the site and uses its useful business
-                details as context for AI content.
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
-                disabled={uploading || !canEdit}
-                className="mt-auto flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-4 py-3 text-xs font-semibold text-white shadow-[0_10px_24px_rgba(36,120,255,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#1768E8] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <UploadIcon />
-
-                {uploading
-                  ? `Uploading ${uploadPercent}% & reading…`
-                  : "Upload documents"}
-              </button>
-
-              <p className="mt-2 text-center text-[9px] font-medium text-[#98A2B3]">
-                PDF, Word, Excel, CSV or plain text
-              </p>
-              <form onSubmit={(event) => void addWebsite(event)} className="mt-4 border-t border-[#E4E7EC] pt-4">
-                <label htmlFor="business-website-url" className="block text-[10px] font-semibold text-[#475467]">Website URL</label>
-                <div className="mt-1.5 flex gap-2">
-                  <input
-                    id="business-website-url"
-                    type="text"
-                    inputMode="url"
-                    placeholder="example.com or https://example.com"
-                    value={websiteUrl}
-                    onChange={(event) => setWebsiteUrl(event.target.value)}
-                    disabled={addingWebsite || uploading || !canEdit}
-                    className="min-w-0 flex-1 rounded-xl border border-[#D0D5DD] bg-white px-3 py-2.5 text-xs text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#2478FF] focus:ring-2 focus:ring-[#2478FF]/10 disabled:opacity-60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={addingWebsite || uploading || !canEdit || !websiteUrl.trim()}
-                    className="shrink-0 rounded-xl bg-[#101828] px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  >{addingWebsite ? "Reading…" : "Add website"}</button>
-                </div>
-                <p className="mt-2 text-[9px] leading-4 text-[#98A2B3]">Reads the homepage and up to four relevant pages on the same site. JavaScript-only pages may have limited text.</p>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept={BUSINESS_DOCUMENT_ACCEPT}
-          className="hidden"
-          disabled={uploading || !canEdit}
-          onChange={(event) => {
-            if (
-              event.target.files &&
-              event.target.files.length > 0
-            ) {
-              void handleFiles(event.target.files);
-              event.currentTarget.value = "";
-            }
-          }}
-        />
-
-        {documentsState.length > 0 && (
-          <div className="mt-5 rounded-[22px] border border-[#E4E7EC] bg-white">
-            <button
-              type="button"
-              onClick={() =>
-                setDocumentsExpanded((value) => !value)
-              }
-              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F2F4F7] text-[#667085]">
-                  <FileIcon />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#101828]">
-                    Uploaded sources
-                  </p>
-
-                  <p className="mt-0.5 truncate text-[10px] text-[#98A2B3]">
-                    {documentsState.length}{" "}
-                    {documentsState.length === 1
-                      ? "source"
-                      : "sources"}{" "}
-                    available to the AI
-                  </p>
-                </div>
-              </div>
-
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#E4E7EC] bg-[#F8FAFC] text-[#667085]">
-                <ChevronIcon open={documentsExpanded} />
-              </span>
-            </button>
-
-            {documentsExpanded && (
-              <div className="border-t border-[#EEF0F3] px-4 pb-4 pt-2 sm:px-5">
-                <div className="divide-y divide-[#EEF0F3]">
-                  {documentsState.map((doc) => (
-                    <div
-                      key={doc.id}
-                      className="flex min-w-0 items-center gap-3 py-3"
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F8FAFC] text-[#667085]">
-                        <FileIcon />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className="truncate text-[11px] font-medium text-[#344054]"
-                          title={doc.originalName}
-                        >
-                          {doc.originalName}
-                        </p>
-                        <div className="mt-0.5 flex items-center gap-2 text-[9px] text-[#98A2B3]">
-                          <span>Added {formatDate(doc.createdAt)}</span>
-                          {doc.websiteUrl && <a href={doc.websiteUrl} target="_blank" rel="noreferrer" className="font-semibold text-[#2478FF] hover:underline">Open website</a>}
-                        </div>
-                      </div>
-
-                      {confirmingDeleteId === doc.id ? (
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void removeDocument(doc.id)
-                            }
-                            disabled={
-                              deletingId === doc.id
-                            }
-                            className="rounded-lg bg-[#D92D20] px-2.5 py-1.5 text-[9px] font-bold text-white transition-colors hover:bg-[#B42318] disabled:opacity-50"
-                          >
-                            {deletingId === doc.id
-                              ? "Removing…"
-                              : "Remove"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setConfirmingDeleteId(null)
-                            }
-                            disabled={
-                              deletingId === doc.id
-                            }
-                            className="rounded-lg px-2.5 py-1.5 text-[9px] font-semibold text-[#667085] hover:bg-[#F2F4F7] disabled:opacity-50"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setConfirmingDeleteId(doc.id)
-                          }
-                          aria-label={`Remove ${doc.originalName}`}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#98A2B3] transition-colors hover:bg-[#FFF1F0] hover:text-[#D92D20]"
-                        >
-                          <TrashIcon />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+  return <section id="knowledge-sources" className={knowledgeStyles.library} aria-label="Business knowledge sources">
+    <header className={knowledgeStyles.libraryHeader}><div className={knowledgeStyles.headingIcon}><Database size={20}/></div><div><p className={knowledgeStyles.kicker}>The facts behind the ideas</p><h2>Your source library.</h2></div><span className={knowledgeStyles.sourceCount}>{documentsState.length} {documentsState.length === 1 ? "source" : "sources"}</span></header>
+    {indexStatus}
+    {error && <div role="alert" className={knowledgeStyles.error}>{error}{/upgrade|allowance|quota|subscription|trial.*(ended|expired)/i.test(error) && <WorkspaceFeatureNotice compact message="Your current plan or allowance does not cover this action. View plans to restore access or increase your limits."/>}</div>}
+    <div className={knowledgeStyles.sourceLayout}>
+      <div className={knowledgeStyles.sourceColumn}>
+        <div className={knowledgeStyles.listHeading}><h3>Documents & websites</h3><span>Workspace sources</span></div>
+        {documentsState.length ? <ul className={knowledgeStyles.sourceList}>{documentsState.map(doc => <li key={doc.id} className={knowledgeStyles.sourceRow}>
+          <span className={knowledgeStyles.fileIcon} data-website={!!doc.websiteUrl}>{doc.websiteUrl ? <Globe2 size={19}/> : <FileText size={19}/>}</span>
+          <div className={knowledgeStyles.fileCopy}><p title={doc.originalName}>{doc.originalName}</p><span>{doc.websiteUrl ? "Website" : "Document"} · Added {formatDate(doc.createdAt)}</span>{doc.websiteUrl && <a href={doc.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website <ArrowUpRight size={11}/></a>}</div>
+          {canEdit && (confirmingDeleteId === doc.id ? <div className={knowledgeStyles.confirm}><button disabled={deletingId === doc.id} onClick={() => void removeDocument(doc.id)}>{deletingId === doc.id ? "Removing…" : "Remove"}</button><button disabled={deletingId === doc.id} onClick={() => setConfirmingDeleteId(null)}>Cancel</button></div> : <button type="button" aria-label={`Remove ${doc.originalName}`} onClick={() => setConfirmingDeleteId(doc.id)} className={knowledgeStyles.remove}><Trash2 size={15}/></button>)}
+        </li>)}</ul> : <div className={knowledgeStyles.empty}><BookOpenText size={31}/><h3>Start with what you know.</h3><p>Add your business profile, offers, price lists or FAQs. Give your AI a reliable place to start.</p></div>}
+        <div className={knowledgeStyles.sourceTip}><CheckCircle2 size={16}/><p>Keep these sources current. They inform content generation and customer replies.</p></div>
       </div>
-    </section>
-  );
+      <aside className={knowledgeStyles.addPanel} aria-label="Add business knowledge">
+        <div className={knowledgeStyles.addHeading}><span><Plus size={15}/></span><h3>Add to your knowledge</h3></div>
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || addingWebsite || !canEdit} className={knowledgeStyles.upload}><span className={knowledgeStyles.uploadIcon}><UploadCloud size={24}/></span><strong>{uploading ? `Uploading ${uploadPercent}% & reading…` : "Upload documents"}</strong><span>PDF · Word · Excel · CSV · Text</span><small>Select several files together</small></button>
+        {uploadFile && <p role="status" className={knowledgeStyles.uploadProgress}>File {uploadFile.index} of {uploadFile.total} · {uploadFile.name}</p>}
+        <div className={knowledgeStyles.or}><span/>or add a website<span/></div>
+        <form onSubmit={event => void addWebsite(event)} className={knowledgeStyles.websiteForm}><label htmlFor={`knowledge-website-${calendarId}`}>Website address</label><div><Globe2 size={15}/><input id={`knowledge-website-${calendarId}`} type="text" inputMode="url" placeholder="yourbusiness.com" value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} disabled={addingWebsite || uploading || !canEdit}/></div><button type="submit" disabled={addingWebsite || uploading || !canEdit || !websiteUrl.trim()}>{addingWebsite ? "Reading website…" : "Add website"}<Plus size={14}/></button><p>Reads the homepage and up to four relevant pages. Some JavaScript-only pages may have limited text.</p></form>
+      </aside>
+    </div>
+    <input ref={fileInputRef} type="file" multiple accept={BUSINESS_DOCUMENT_ACCEPT} disabled={uploading || addingWebsite || !canEdit} className="hidden" aria-label="Upload business knowledge documents" onChange={event => { if (event.target.files?.length) { void handleFiles(event.target.files); event.currentTarget.value = ""; } }}/>
+    <details className={knowledgeStyles.understanding}>
+      <summary><span className={knowledgeStyles.understandingIcon}><BookOpenText size={18}/></span><span><strong>What Showwork understands</strong><small>{updated ? `Overview updated ${updated}` : "Read the source-derived business overview"}</small></span><ChevronIcon open={false}/></summary>
+      <div className={knowledgeStyles.understandingBody}>{businessSummaryState ? <p className={knowledgeStyles.summaryText}>{businessSummaryState}</p> : <p>Add a source to start building your business overview.</p>}
+        {canEdit && documentsState.length > 0 && <button type="button" onClick={rebuildSummary} disabled={rebuilding} className={knowledgeStyles.rebuild}><RefreshCw size={14} className={rebuilding ? "animate-spin" : ""}/>{rebuilding ? "Rebuilding from current sources…" : "Refresh overview from sources"}</button>}
+        <p className={knowledgeStyles.finePrint}>This overview summarizes your sources. Relevant source text takes priority in replies; research is reviewed separately in the Research tab.{researched ? ` Last researched ${researched}.` : ""}</p>
+      </div>
+    </details>
+  </section>;
 }

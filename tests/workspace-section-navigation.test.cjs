@@ -7,13 +7,19 @@ const { renderToStaticMarkup } = require('react-dom/server');
 function load(file, mocks) {
   const mod = { exports: {} };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  new Function('require', 'module', 'exports', code)(name => Object.hasOwn(mocks, name) ? mocks[name] : require(name), mod, mod.exports);
+  new Function('require', 'module', 'exports', code)(name => {
+    if (Object.hasOwn(mocks, name)) return mocks[name];
+    if (name.endsWith('.module.css')) return {__esModule:true,default:new Proxy({}, {get:(_,key)=>String(key)})};
+    if (['./ChannelCapabilities','./PlatformBrandIcon'].includes(name)) return require('./helpers/load-typescript.cjs').load('components/calendars/' + name.slice(2) + '.tsx');
+    return require(name);
+  }, mod, mod.exports);
   return mod.exports.default;
 }
 const stub = { __esModule: true, default: () => null };
 const sections = ['overview', 'content', 'channels', 'inbox', 'knowledge', 'generate', 'team', 'analytics', 'leads', 'access', 'publish'].map(id => ({ id, label: id, title: id, group: 'Workspace', eyebrow: id, description: id, content: React.createElement('div', { 'data-panel': id }, id) }));
 function manager(url, available = sections) {
   const Component = load('components/calendars/CalendarWorkspaceShell.tsx', {
+    './WorkspaceMenu.module.css': { __esModule: true, default: new Proxy({}, {get: (_, key) => String(key)}) },
     './InboxHandoffAlert': { __esModule: true, default: () => null },
     'next/navigation': { useSearchParams: () => new URL(url).searchParams },
     'next/link': { __esModule: true, default: ({ children, ...props }) => React.createElement('a', props, children) },
@@ -77,4 +83,40 @@ test('channel callback cleanup preserves section, unrelated filters and hash wit
       assert.equal(result.searchParams.has(flags.split('=')[0]), false);
     }
   } finally { global.window = originalWindow; }
+});
+test('mobile workspace navigation exposes primary destinations and groups AI tools', () => {
+  const html = manager('https://example.test/dashboard/calendars/workspace?view=research', [...sections, {id:'research',label:'Research',title:'Research',group:'AI Studio',eyebrow:'Research',description:'',content:React.createElement('div',{'data-panel':'research'})}]);
+  const bar = html.match(/<nav[^>]*aria-label="Mobile workspace navigation"[\s\S]*?<\/nav>/)?.[0];
+  assert.ok(bar);for (const label of ['Home','content','inbox','AI Studio','More']) assert.ok(bar.includes(label));
+  assert.ok(!bar.includes('>knowledge<'));assert.ok(!bar.includes('>analytics<'));
+  assert.ok(html.includes('data-panel="research"'));assert.ok(html.includes('env(safe-area-inset-bottom)'));
+});
+test('mobile navigation does not invent inaccessible workspace destinations', () => {
+  const html = manager('https://example.test/dashboard/calendars/workspace?view=content',[sections[1]]);
+  const bar = html.match(/<nav[^>]*aria-label="Mobile workspace navigation"[\s\S]*?<\/nav>/)?.[0];
+  assert.ok(bar.includes('content'));assert.ok(!bar.includes('AI Studio'));assert.ok(!bar.includes('>inbox<'));assert.ok(!bar.includes('>Home<'));
+});
+test('drawer adds a bottom-sheet presentation without changing existing side drawers', () => {
+  const Drawer = load('components/navigation/MobileDrawer.tsx', {});
+  const props = {open:false,onClose:()=>{},label:'More workspace options',children:React.createElement('button',null,'Analytics')};
+  const bottom=renderToStaticMarkup(React.createElement(Drawer,{...props,placement:'bottom'}));
+  const side=renderToStaticMarkup(React.createElement(Drawer,props));
+  assert.ok(bottom.includes('aria-label="More workspace options"'));
+  assert.ok(bottom.includes('max-h-[85dvh]'));assert.ok(bottom.includes('rounded-t-3xl'));assert.ok(bottom.includes('translate-y-full'));
+  assert.ok(side.includes('-translate-x-full'));assert.ok(!side.includes('max-h-[85dvh]'));
+});
+test('workspace menu exposes a semantic active item and distinct icons for each section', () => {
+  const available=[...sections,{id:'research',label:'Research',title:'Research',group:'AI Studio',eyebrow:'Research',description:'',content:React.createElement('div',{'data-panel':'research'})}];
+  const html=manager('https://example.test/dashboard/calendars/workspace?view=research',available);
+  assert.match(html,/<button[^>]*data-section="research"[^>]*aria-current="page"/);
+  assert.doesNotMatch(html,/<button[^>]*data-section="knowledge"[^>]*aria-current="page"/);
+  for(const icon of ['layout-dashboard','calendar-range','users-round','chart-no-axes-combined','messages-square','contact-round','panels-top-left','cable','scan-search','book-open-text','wand-sparkles','send-horizontal']) assert.ok(html.includes(`lucide-${icon}`),icon);
+  assert.ok(html.includes('lucide-chevrons-left'));assert.ok(!html.includes('lucide-panel-left-close'));
+});
+
+test('workspace help opens independently without replacing the current workspace', () => {
+  const html = manager('https://example.test/dashboard/calendars/workspace?view=content');
+  assert.match(html, /href="\/help\/workspace" target="_blank" rel="noopener noreferrer"/);
+  assert.ok(html.includes('Help &amp; guides'));
+  assert.ok(html.includes('data-workspace-panel="content"'));
 });

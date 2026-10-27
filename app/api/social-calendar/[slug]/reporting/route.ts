@@ -15,8 +15,8 @@ export async function GET(
 ) {
   try {
     reportingPeriod(req.nextUrl.searchParams);
-    const platform = req.nextUrl.searchParams.get("platform")?.toUpperCase();
-    if (platform && !["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"].includes(platform)) {
+    const platforms = req.nextUrl.searchParams.getAll("platform").flatMap(value => value.split(",")).filter(Boolean).map(value => value.toUpperCase());
+    if (platforms.some(platform => !["INSTAGRAM", "TIKTOK", "FACEBOOK", "LINKEDIN", "X", "YOUTUBE"].includes(platform))) {
       return NextResponse.json({ error: "Choose a supported social platform." }, { status: 400 });
     }
   } catch (error) {

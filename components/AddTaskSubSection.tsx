@@ -1,4 +1,5 @@
 "use client";
+import { uploadDeliverySingle, deliveryMediaType, pauseDeliveryUploads, resumeDeliveryUploads, deliveryRetryable, putDeliveryFile, putDeliveryPart, uploadQueue, saveDeliveryPreview, completeDeliveryUpload } from "@/lib/deliveryUploadClient";
 
 import { getFileContentType } from "@/lib/mediaFileTypes";
 
@@ -8,31 +9,10 @@ import UploadPatienceBanner from "@/components/UploadPatienceBanner";
 type Step = "closed" | "details";
 
 function uploadWithProgress(url: string, file: File | Blob, onProgress: (loaded: number, total: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", getFileContentType(file) || "application/octet-stream");
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`)));
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.send(file);
-  });
+  return putDeliveryFile(url, file, onProgress).then(() => undefined);
 }
 function uploadPartWithProgress(url: string, chunk: Blob, onProgress: (loaded: number, total: number) => void): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded, e.total); };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(xhr.getResponseHeader("ETag") ?? "");
-      } else {
-        reject(new Error(`Chunk upload failed (${xhr.status})`));
-      }
-    };
-    xhr.onerror = () => reject(new Error("Network error during chunk upload"));
-    xhr.send(chunk);
-  });
+  return putDeliveryPart(url, chunk, onProgress).then(result => result.etag || "");
 }
 
 function fileFingerprint(file: File): string {
@@ -70,6 +50,7 @@ function clearProgress(scopeKey: string) {
 interface MultipartProgress {
   fileKey: string;
   uploadId: string;
+  chunkSizeMb?: number;
   completedParts: { partNumber: number; etag: string }[];
 }
 function multipartStorageKey(scopeKey: string, fingerprint: string): string {
@@ -99,8 +80,8 @@ function clearMultipartProgress(scopeKey: string, fingerprint: string) {
 }
 
 const MULTIPART_THRESHOLD_MB = 100;
-const CHUNK_SIZE_MB = 200;
-const CHUNK_CONCURRENCY = 3;
+const CHUNK_SIZE_MB = 16;
+const CHUNK_CONCURRENCY = 2;
 const MAX_RETRIES_PER_FILE = 2;
 const MAX_RETRIES_PER_CHUNK = 3;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -170,36 +151,10 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
 
   const uploadOneFileWithRetry = async (file: File, folderId: string): Promise<{ ok: true } | { ok: false; error: string }> => {
     const type = detectType(file);
-    for (let attempt = 0; attempt <= MAX_RETRIES_PER_FILE; attempt++) {
-      try {
-        const presignRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-presign`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename: file.name, contentType: getFileContentType(file), fileSizeMb: file.size / (1024 * 1024) }),
-        });
-        const presignData = await presignRes.json();
-        if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
-
-        await uploadWithProgress(presignData.uploadUrl, file, (loaded, total) => {
-          setChunkStatus(`${Math.round((loaded / total) * 100)}% uploaded`);
-        });
-
-        const completeRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-complete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileKey: presignData.fileKey, filename: file.name, type, folderId }),
-        });
-        const completeData = await completeRes.json();
-        if (!completeRes.ok) throw new Error(completeData.error ?? "Failed to save upload");
-        return { ok: true };
-      } catch (err) {
-        if (attempt === MAX_RETRIES_PER_FILE) {
-          return { ok: false, error: err instanceof Error ? err.message : "Upload failed" };
-        }
-        await sleep(2000 * (attempt + 1));
-      }
-    }
-    return { ok: false, error: "Upload failed" };
+    try {
+      await uploadDeliverySingle({file,projectId:taskId,folderId,type,task:true,presignUrl:`/api/managed-projects/tasks/${taskId}/upload-presign`,completeUrl:`/api/managed-projects/tasks/${taskId}/upload-complete`,onProgress:(loaded,total)=>setStatus(`${Math.round(loaded / total * 100)}% uploaded`)});
+      return {ok:true};
+    } catch(error) { return {ok:false,error:error instanceof Error ? error.message : "Upload failed"}; }
   };
 
   const uploadLargeFileMultipart = async (
@@ -209,10 +164,11 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     const type = detectType(file);
     const fingerprint = fileFingerprint(file);
-    const chunkSizeBytes = CHUNK_SIZE_MB * 1024 * 1024;
-    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
+
 
     let progress = getMultipartProgress(scopeKey, fingerprint);
+    const chunkSizeBytes = (progress ? progress.chunkSizeMb ?? 200 : CHUNK_SIZE_MB) * 1024 * 1024;
+    const totalChunks = Math.ceil(file.size / chunkSizeBytes);
     if (!progress) {
       const startRes = await fetch(`/api/managed-projects/tasks/${taskId}/upload-multipart-start`, {
         method: "POST",
@@ -221,7 +177,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
       });
       const startData = await startRes.json();
       if (!startRes.ok) return { ok: false, error: startData.error ?? "Failed to start large-file upload" };
-      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [] };
+      progress = { fileKey: startData.fileKey, uploadId: startData.uploadId, completedParts: [], chunkSizeMb: CHUNK_SIZE_MB };
       saveMultipartProgress(scopeKey, fingerprint, progress);
     }
 
@@ -273,7 +229,8 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
           break;
         } catch (err) {
           lastError = err instanceof Error ? err.message : "Upload failed";
-          if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
+          if (!deliveryRetryable(err)) break;
+        if (attempt < MAX_RETRIES_PER_CHUNK) await sleep(2000 * (attempt + 1));
         }
       }
       if (!chunkSucceeded && !firstError) {
@@ -307,6 +264,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
     const completeData = await completeRes.json();
     if (!completeRes.ok) return { ok: false, error: completeData.error ?? "Failed to finalize large file" };
 
+    await saveDeliveryPreview(file, completeData.asset.id, progress.fileKey, true);
     clearMultipartProgress(scopeKey, fingerprint);
     return { ok: true };
   };
@@ -316,11 +274,16 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
     if (files.length === 0) { setError("Choose at least one file"); return; }
     setError(null);
     setSkippedFiles([]);
+    resumeDeliveryUploads();
     setUploading(true);
 
     const scopeKey = `${taskId}:${subSectionName.trim().toLowerCase()}`;
 
     try {
+      const destinationKey = `showwork-task-upload-folder:${scopeKey}`;
+      let folderId = "";
+      try { folderId = localStorage.getItem(destinationKey) || ""; } catch {}
+      if (!folderId) {
       const folderRes = await fetch(`/api/managed-projects/tasks/${taskId}/folders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -328,14 +291,15 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
       });
       const folderData = await folderRes.json();
       if (!folderRes.ok) throw new Error(folderData.error ?? "Failed to create sub-section");
-      const folderId = folderData.folder.id;
+      folderId = folderData.folder.id;
+      try { localStorage.setItem(destinationKey, folderId); } catch {}
 
+      }
       const completed = getCompletedFingerprints(scopeKey);
       const filesToUpload = files.filter((f) => !completed.has(fileFingerprint(f)));
       const failedFiles: string[] = [];
 
-      for (let i = 0; i < filesToUpload.length; i++) {
-        const file = filesToUpload[i];
+      await uploadQueue(filesToUpload.map((file,index)=>({file,index})),async ({file,index:i})=>{
         const isLarge = file.size >= MULTIPART_THRESHOLD_MB * 1024 * 1024;
 
         setStatus(`Uploading ${i + 1} of ${filesToUpload.length}${resumedCount > 0 ? ` (${resumedCount} already done)` : ""}...`);
@@ -351,8 +315,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
           failedFiles.push(`${file.name} (${result.error})`);
         }
 
-        await sleep(150);
-      }
+      });
 
       if (failedFiles.length > 0) {
         setSkippedFiles(failedFiles);
@@ -365,6 +328,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
       }
 
       clearProgress(scopeKey);
+      try { localStorage.removeItem(destinationKey); } catch {}
       setStatus("Done");
       onChanged();
       setTimeout(reset, 1200);
@@ -425,7 +389,7 @@ export default function AddTaskSubSection({ taskId, onChanged }: { taskId: strin
         )}
       </div>
 
-      {uploading && <UploadPatienceBanner active={uploading} />}
+      {uploading && <UploadPatienceBanner onPause={pauseDeliveryUploads} active={uploading} />}
       {chunkStatus && <p className="text-[10px] text-white/40">{chunkStatus}</p>}
       {error && <p className="text-[11px] text-red-400">{error}</p>}
       {skippedFiles.length > 0 && (

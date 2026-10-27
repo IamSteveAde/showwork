@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import {nativeApplicationContext} from '@/lib/publishing/nativeApplicationContext';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   HeadObjectCommand,
   CreateMultipartUploadCommand,
@@ -239,7 +241,7 @@ export async function cleanupTikTokPreparedFiles() {
  */
 export function buildMediaKey(projectId: string, filename: string) {
   const safeName = filename.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  return `projects/${projectId}/${Date.now()}-${safeName}`;
+  return `projects/${projectId}/${randomUUID()}-${safeName}`;
 }
 
 /**
@@ -276,4 +278,37 @@ export async function deleteObject(key: string) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { const scoped=nativeApplicationContext();if(scoped?.deleteObject)return scoped.deleteObject(key);await assertLegacyPublishingAllowed("lib/r2.ts#deleteObject@264"); } /* end-canonical-integration-boundary */
 
   await r2.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
+}
+
+/** Small, validated portfolio video previews. Originals are never overwritten. */
+export async function putPortfolioPoster(key: string, body: Buffer) {
+  if (!/^portfolios\/[a-zA-Z0-9-]+\/posters\/[a-zA-Z0-9-]+\.jpg$/.test(key)) throw Error("Invalid portfolio poster key");
+  await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: "image/jpeg", ContentLength: body.length, CacheControl: "public, max-age=31536000, immutable" }));
+}
+
+export async function getDeliveryDownloadUrl(key: string, filename: string) {
+  const safe = filename.replace(/["\r\n]/g, "_");
+  return getSignedUrl(r2, new GetObjectCommand({ Bucket: BUCKET, Key: key, ResponseContentDisposition: `attachment; filename="${safe.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(safe)}` }), { expiresIn: 600 });
+}
+
+export async function putDeliveryPoster(key: string, body: Buffer) {
+  if (!/^projects\/[a-zA-Z0-9-]+\/posters\/[a-zA-Z0-9-]+\.jpg$/.test(key)) throw Error("Invalid delivery poster key");
+  await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: "image/jpeg", ContentLength: body.length, CacheControl: "public, max-age=31536000, immutable" }));
+}
+
+export async function listDeliveryUploadParts(key: string, uploadId: string) {
+  const parts: {partNumber: number; etag: string}[] = [];
+  let marker: string | undefined;
+  do {
+    const page = await r2.send(new ListPartsCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumberMarker: marker }));
+    for (const part of page.Parts || []) if (part.PartNumber && part.ETag) parts.push({partNumber:part.PartNumber,etag:part.ETag});
+    if (parts.length > 10000) throw Error("Invalid part count");
+    marker = page.IsTruncated && page.NextPartNumberMarker !== undefined ? String(page.NextPartNumberMarker) : undefined;
+  } while (marker);
+  return parts;
+}
+
+export async function putTaskPoster(key: string, body: Buffer) {
+  if (!/^managed-projects\/[a-zA-Z0-9-]+\/tasks\/[a-zA-Z0-9-]+\/posters\/[a-zA-Z0-9-]+\.jpg$/.test(key)) throw Error("Invalid task poster key");
+  await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: "image/jpeg", ContentLength: body.length, CacheControl: "public, max-age=31536000, immutable" }));
 }

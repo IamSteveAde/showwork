@@ -16,6 +16,8 @@ type UploadOptions = {
   contentType?: string;
   retries?: number;
   timeoutMs?: number;
+  stallTimeoutMs?: number;
+  signal?: AbortSignal;
   onProgress?: (progress: UploadProgress) => void;
 };
 
@@ -33,32 +35,33 @@ function putOnce(
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let timer: ReturnType<typeof setTimeout>;
+    let done = false;
+    const abort = () => { xhr.abort(); finish(new DOMException("Upload paused", "AbortError")); };
+    const cleanup = () => { clearTimeout(timer); options.signal?.removeEventListener("abort", abort); };
+    const finish = (error?: Error) => {
+      if (done) return; done = true; cleanup();
+      if (error) reject(error); else resolve({ status: xhr.status, etag: xhr.getResponseHeader("ETag") });
+    };
+    const watch = () => { clearTimeout(timer); timer = setTimeout(() => { finish(new Error("Upload stalled. Retry to resume.")); xhr.abort(); }, options.stallTimeoutMs ?? 120000); };
     xhr.open("PUT", url);
     if (options.contentType) xhr.setRequestHeader("Content-Type", options.contentType);
     xhr.timeout = options.timeoutMs ?? 0;
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) return;
-      options.onProgress?.({
-        loaded: event.loaded,
-        total: event.total,
-        percent: Math.min(100, Math.floor((event.loaded / event.total) * 100)),
-        attempt,
-      });
+    xhr.upload.onprogress = event => {
+      watch();
+      if (event.lengthComputable) options.onProgress?.({ loaded: event.loaded, total: event.total, percent: Math.min(100, Math.floor(event.loaded / event.total * 100)), attempt });
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        options.onProgress?.({ loaded: body.size, total: body.size, percent: 100, attempt });
-        resolve({ status: xhr.status, etag: xhr.getResponseHeader("ETag") });
-      } else {
-        const error = new Error(`Upload failed (${xhr.status})`) as Error & { status?: number };
-        error.status = xhr.status;
-        reject(error);
-      }
+        options.onProgress?.({ loaded: body.size, total: body.size, percent: 100, attempt }); finish();
+      } else { const error = Object.assign(new Error(`Upload failed (${xhr.status})`), { status: xhr.status }); finish(error); }
     };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.ontimeout = () => reject(new Error("Upload timed out"));
-    xhr.onabort = () => reject(new Error("Upload was interrupted"));
-    xhr.send(body);
+    xhr.onerror = () => finish(new Error("Network error during upload"));
+    xhr.ontimeout = () => finish(new Error("Upload timed out"));
+    xhr.onabort = () => finish(new DOMException("Upload paused", "AbortError"));
+    if (options.signal?.aborted) { finish(new DOMException("Upload paused", "AbortError")); return; }
+    options.signal?.addEventListener("abort", abort, { once: true });
+    try { watch(); xhr.send(body); } catch (error) { finish(error instanceof Error ? error : new Error("Could not start upload")); }
   });
 }
 
@@ -74,6 +77,7 @@ export async function putFileWithProgress(
       options.onProgress?.({ loaded: 0, total: body.size, percent: 0, attempt });
       return await putOnce(url, body, options, attempt);
     } catch (error) {
+      if ((error as Error).name === "AbortError" || options.signal?.aborted) throw error;
       const status = (error as Error & { status?: number }).status;
       const retryable = status === undefined || status === 0 || RETRYABLE_STATUS.has(status);
       if (!retryable || attempt > retries) throw error;
