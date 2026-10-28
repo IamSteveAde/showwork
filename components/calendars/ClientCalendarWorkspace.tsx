@@ -43,7 +43,7 @@ type CalendarPost = {
   assets: Array<{
     id: string;
     mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
-    contentUrl: string;
+    contentUrl: string; posterUrl?: string | null;
   }>;
   videoComments: Array<{
     id: string;
@@ -62,7 +62,7 @@ type CalendarPost = {
 type PreviewAsset = {
   id: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
-  contentUrl: string;
+  contentUrl: string; posterUrl?: string | null;
 };
 
 type PreviewPost = Omit<CalendarPost, "assets"> & {
@@ -352,6 +352,7 @@ export default function ClientCalendarWorkspace({
                   ? "PDF"
                   : "PHOTO",
           contentUrl: asset.contentUrl,
+          posterUrl: asset.posterUrl,
         })),
         videoComments: post.videoComments.map((comment) => ({
           ...comment,

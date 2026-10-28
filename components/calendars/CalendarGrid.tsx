@@ -1,5 +1,4 @@
 "use client";
-import { cancelWorkspaceUpload } from "@/lib/workspaceUploadCancellation";
 import contentStyles from "./ContentPlanner.module.css";
 import CreativeBriefEditor from "./CreativeBriefEditor";
 import type { CreativeBrief, CreativeDevelopment } from "@/lib/content/brief";
@@ -29,7 +28,6 @@ import ResetCalendarButton from "@/components/calendars/ResetCalendarButton";
 import ImportCalendar from "@/components/calendars/ImportCalendar";
 import { uploadWorkspaceAsset } from "@/lib/workspaceVideoClient";
 import { workspaceUploadQueue } from "@/lib/workspaceUploadQueue";
-import { putFileWithProgress } from "@/lib/uploadClient";
 
 type Platform =
   | "INSTAGRAM"

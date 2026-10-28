@@ -22,7 +22,7 @@ async function fixture() {
     INSERT INTO "ContentWorkspaceStorageReservation" VALUES('r','owner','w','calendars/w/p/a.jpg',10,'COMPLETED',now()+interval '8 hours',NULL);
   `);
   await pg.exec(fs.readFileSync('prisma/migrations/20261028120000_workspace_storage_cleanup/migration.sql','utf8'));
-  let queryCount = 0; let failDelete = false, retention = false; const deleted = [];
+  let queryCount = 0; let failDelete = false, retention = false; const deleted = []; const deletedPosters = [];
   function adapter(connection) {
     const q = async(sql, args=[]) => { queryCount++; return (await connection.query(sql,args.map(v=>typeof v==='bigint'?v.toString():v))).rows.map(normalize); };
     function where(input, args, table) {
@@ -54,10 +54,10 @@ async function fixture() {
     return api;
   }
   const db=adapter(pg);db.$transaction=fn=>pg.transaction(tx=>fn(adapter(tx)));
-  const mocks={'@/lib/db':{db},'@/lib/r2':{deleteObject:async key=>{if(failDelete){failDelete=false;throw Error('storage unavailable');}deleted.push(key);}},'@/lib/publishing/applicationBoundary':{publishingRetentionRequired:()=>retention}};
+  const mocks={'@/lib/db':{db},'@/lib/r2':{deleteObject:async key=>{if(failDelete){failDelete=false;throw Error('storage unavailable');}if(key.includes("/video-posters/"))deletedPosters.push(key);else deleted.push(key);}},'@/lib/publishing/applicationBoundary':{publishingRetentionRequired:()=>retention}};
   const cache=new Map();const cleanup=load('lib/workspaceStorageCleanup.ts',mocks,cache);const rawRemoval=load('lib/workspaceDeletion.ts',mocks,cache);const removal={removeWorkspaceContent:input=>rawRemoval.removeWorkspaceContent({actorId:input.calendarId==='other'?'other-owner':'owner',...input})};
   const sql=async(s,args=[]) => (await pg.query(s,args)).rows.map(normalize);
-  return {pg,db,sql,cleanup,removal,deleted,queries:()=>queryCount,failNextDelete:()=>failDelete=true,retain:()=>retention=true,close:()=>pg.close(),usage:async()=> (await sql(`SELECT * FROM "ContentWorkspaceUsage" WHERE "creatorId"='owner'`))[0],job:async()=> (await sql('SELECT * FROM "WorkspaceStorageCleanup"'))[0]};
+  return {pg,db,sql,cleanup,removal,deleted,deletedPosters,queries:()=>queryCount,failNextDelete:()=>failDelete=true,retain:()=>retention=true,close:()=>pg.close(),usage:async()=> (await sql(`SELECT * FROM "ContentWorkspaceUsage" WHERE "creatorId"='owner'`))[0],job:async()=> (await sql('SELECT * FROM "WorkspaceStorageCleanup"'))[0]};
 }
 
 test('shared asset removal preserves the object and charge; last removal releases once with durable cleanup',async()=>{
@@ -66,7 +66,7 @@ test('shared asset removal preserves the object and charge; last removal release
  await f.removal.removeWorkspaceContent({mode:'asset',calendarId:'w',postId:'shared',assetId:'b'});assert.equal((await f.usage()).storageBytes,90n);assert.ok((await f.job()).usageReleasedAt);
  await f.removal.removeWorkspaceContent({mode:'asset',calendarId:'w',postId:'shared',assetId:'b'});assert.equal((await f.usage()).storageBytes,90n);
  assert.equal((await f.cleanup.processWorkspaceStorageCleanup()).processed,0,'signed upload URL must expire before physical purge');
- await f.sql(`UPDATE "WorkspaceStorageCleanup" SET "notBefore"=now()-interval '1 minute'`);await f.cleanup.processWorkspaceStorageCleanup();assert.equal(f.deleted.length,1);await f.cleanup.processWorkspaceStorageCleanup();assert.equal(f.deleted.length,1);assert.equal((await f.usage()).storageBytes,90n);
+ await f.sql(`UPDATE "WorkspaceStorageCleanup" SET "notBefore"=now()-interval '1 minute'`);await f.cleanup.processWorkspaceStorageCleanup();assert.equal(f.deleted.length,1);assert.equal(f.deletedPosters.length,1);await f.cleanup.processWorkspaceStorageCleanup();assert.equal(f.deleted.length,1);assert.equal((await f.usage()).storageBytes,90n);
  }finally{await f.close();}
 });
 test('failed storage deletion is durable and retry does not release storage twice',async()=>{

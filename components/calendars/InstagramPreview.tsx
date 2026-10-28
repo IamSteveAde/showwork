@@ -9,7 +9,7 @@ type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
 interface PreviewAsset {
   id: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
-  contentUrl: string;
+  contentUrl: string; posterUrl?: string | null;
 }
 
 interface PreviewPost {
@@ -306,9 +306,9 @@ function PostMedia({
       onPointerCancel={clearPointer}
     >
       {active.mediaType === "VIDEO" ? (
-        <video
+        <video preload={active.posterUrl ? "none" : "metadata"}
           key={active.id}
-          src={active.contentUrl}
+          poster={active.posterUrl ?? undefined} src={active.contentUrl}
           className="h-full w-full object-cover"
           autoPlay
           muted
@@ -517,8 +517,8 @@ function GridCell({
     >
       {cover ? (
         cover.mediaType === "VIDEO" ? (
-          <video
-            src={cover.contentUrl}
+          <video preload={cover.posterUrl ? "none" : "metadata"}
+            poster={cover.posterUrl ?? undefined} src={cover.contentUrl}
             muted
             playsInline
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
@@ -847,8 +847,8 @@ export default function InstagramPreview({
                           <div className="h-full w-full overflow-hidden rounded-full border-2 border-[#080b0e] bg-neutral-800">
                             {cover ? (
                               cover.mediaType === "VIDEO" ? (
-                                <video
-                                  src={cover.contentUrl}
+                                <video preload={cover.posterUrl ? "none" : "metadata"}
+                                  poster={cover.posterUrl ?? undefined} src={cover.contentUrl}
                                   muted
                                   playsInline
                                   className="h-full w-full object-cover"

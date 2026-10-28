@@ -9,7 +9,7 @@ type ApprovalStatus = "PENDING" | "APPROVED" | "NEEDS_REVISION";
 interface PreviewAsset {
   id: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
-  contentUrl: string;
+  contentUrl: string; posterUrl?: string | null;
 }
 
 interface PreviewPost {
@@ -353,11 +353,11 @@ function TikTokTile({
       {firstAsset ? (
         firstAsset.mediaType === "VIDEO" ? (
           <video
-            src={firstAsset.contentUrl}
+            poster={firstAsset.posterUrl ?? undefined} src={firstAsset.contentUrl}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             muted
             playsInline
-            preload="metadata"
+            preload={firstAsset.posterUrl ? "none" : "metadata"}
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
@@ -536,9 +536,9 @@ function TikTokSlide({
 
       {active ? (
         active.mediaType === "VIDEO" ? (
-          <video
+          <video preload={active.posterUrl ? "none" : "metadata"}
             key={active.id}
-            src={active.contentUrl}
+            poster={active.posterUrl ?? undefined} src={active.contentUrl}
             className="absolute inset-0 h-full w-full object-cover"
             autoPlay
             muted

@@ -16,7 +16,7 @@ type Theme = "dark" | "light";
 interface CalendarPostAssetData {
   id: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
-  contentUrl: string;
+  contentUrl: string; posterUrl?: string | null;
 }
 
 interface CalendarPostCustomFieldData {
@@ -205,8 +205,10 @@ function IconLayers({ className }: { className?: string }) {
   );
 }
 
-function VideoThumbnail({ src, className }: { src: string; className?: string }) {
+function VideoThumbnail({ src, posterUrl, className }: { src: string; posterUrl?: string | null; className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [failed, setFailed] = useState(false);
+  if (posterUrl && !failed) return <img src={posterUrl} alt="Video preview" loading="lazy" className={className} onError={() => setFailed(true)}/>;
   return (
     <video
       ref={videoRef}
@@ -265,7 +267,7 @@ function PostTile({ post, index, onClick }: { post: CalendarPostData; index: num
       >
         {cover ? (
           cover.mediaType === "VIDEO" ? (
-            <VideoThumbnail src={cover.contentUrl} className="absolute inset-0 h-full w-full object-cover" />
+            <VideoThumbnail posterUrl={cover.posterUrl} src={cover.contentUrl} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={cover.contentUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -565,9 +567,9 @@ useEffect(() => {
                 {activeAsset && (
                   <div className="relative flex min-h-[220px] items-center justify-center bg-black sm:min-h-[340px]">
                     {activeAsset.mediaType === "VIDEO" ? (
-                      <video
+                      <video preload={activeAsset.posterUrl ? "none" : "metadata"}
                         ref={videoRef}
-                        src={activeAsset.contentUrl}
+                        poster={activeAsset.posterUrl ?? undefined} src={activeAsset.contentUrl}
                         controls
                         playsInline
                         className="max-h-[48vh] w-full object-contain"
@@ -613,8 +615,8 @@ useEffect(() => {
                             }}
                           >
                             {asset.mediaType === "VIDEO" ? (
-                              <video
-                                src={asset.contentUrl}
+                              <video preload={asset.posterUrl ? "none" : "metadata"}
+                                poster={asset.posterUrl ?? undefined} src={asset.contentUrl}
                                 muted
                                 playsInline
                                 className="h-full w-full object-cover"

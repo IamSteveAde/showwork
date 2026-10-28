@@ -8,7 +8,7 @@ type PreviewPost = {
   id: string; postDate: string; platform: string; caption: string | null;
   contentIdea: string | null; hashtags: string | null; taggedAccounts: string | null;
   linkUrl: string | null; approvalStatus: "PENDING" | "APPROVED" | "NEEDS_REVISION";
-  assets: { id: string; mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF"; contentUrl: string }[];
+  assets: { id: string; mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF"; contentUrl: string; posterUrl?: string | null }[];
 };
 
 type Channel = "linkedin" | "facebook" | "x";
@@ -48,7 +48,7 @@ function FeedPost({ post, clientName, channel, onOpen }: { post: PreviewPost; cl
         {post.linkUrl && <a href={/^https?:\/\//i.test(post.linkUrl) ? post.linkUrl : `https://${post.linkUrl}`} target="_blank" rel="noopener noreferrer" className="mt-3 block truncate text-sm text-[#1768E8] hover:underline">{post.linkUrl}</a>}
       </div>
       {asset && <div className="relative border-y border-slate-100 bg-slate-50">
-        {asset.mediaType === "PHOTO" ? <img src={asset.contentUrl} alt={post.contentIdea || "Post attachment"} loading="lazy" className="max-h-[520px] w-full object-contain" /> : asset.mediaType === "VIDEO" ? <video key={asset.id} src={asset.contentUrl} controls preload="metadata" playsInline className="max-h-[520px] w-full" /> : <a href={asset.contentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-6 text-sm font-medium text-[#1768E8]"><FileText className="h-6 w-6" />Open attached document<ArrowUpRight className="h-4 w-4" /></a>}
+        {asset.mediaType === "PHOTO" ? <img src={asset.contentUrl} alt={post.contentIdea || "Post attachment"} loading="lazy" className="max-h-[520px] w-full object-contain" /> : asset.mediaType === "VIDEO" ? <video key={asset.id} poster={asset.posterUrl ?? undefined} src={asset.contentUrl} controls preload={asset.posterUrl ? "none" : "metadata"} playsInline className="max-h-[520px] w-full" /> : <a href={asset.contentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-6 text-sm font-medium text-[#1768E8]"><FileText className="h-6 w-6" />Open attached document<ArrowUpRight className="h-4 w-4" /></a>}
         {post.assets.length > 1 && <div className="flex items-center justify-center gap-4 border-t border-slate-200 bg-white py-2">
           <button type="button" aria-label="Previous attachment" disabled={assetIndex === 0} onClick={() => setAssetIndex(assetIndex - 1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-slate-100 disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
           <span className="text-xs tabular-nums text-slate-500">{assetIndex + 1} / {post.assets.length}</span>

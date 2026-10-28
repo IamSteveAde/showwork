@@ -4,10 +4,8 @@ const fs = require('node:fs');
 const ts = require('typescript');
 const { webcrypto } = require('node:crypto');
 function makeQueue(limit = 3) {
-  const module = { exports: {} };
-  const code = ts.transpileModule(fs.readFileSync('lib/workspaceUploadQueue.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
-  new Function('module', 'exports', 'crypto', code)(module, module.exports, webcrypto);
-  return new module.exports.WorkspaceUploadQueue(limit);
+  const { WorkspaceUploadQueue } = require('./helpers/load-typescript.cjs').load('lib/workspaceUploadQueue.ts');
+  return new WorkspaceUploadQueue(limit);
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const file = (name = 'photo.jpg') => ({ name, size: 100, type: name.endsWith('.mp4') ? 'video/mp4' : 'image/jpeg' });
@@ -72,13 +70,13 @@ test('dismissal only removes terminal rows from the specified workspace', async 
   const queue = makeQueue(); await Promise.all([queue.enqueue('a', file(), async () => {}), queue.enqueue('b', file(), async () => {})]);
   await tick(); queue.clearFinished('a'); assert.deepEqual(queue.getSnapshot().map(row => row.workspaceId), ['b']);
 });
-test('all workspace file paths use the shared queue and content completion serialization', () => {
+test('all workspace file paths use the shared queue and content uses the common transfer pipeline', () => {
   for (const file of ['CalendarGrid', 'BusinessKnowledgeCard', 'CalendarPlanStatus']) {
     const source = fs.readFileSync(`components/calendars/${file}.tsx`, 'utf8');
-    assert.match(source, /workspaceUploadQueue\.enqueue/); assert.match(source, /signal: task\.signal/); assert.match(source, /task\.step\("transfer"/);
+    assert.match(source, /workspaceUploadQueue\.enqueue/);
   }
   const grid = fs.readFileSync('components/calendars/CalendarGrid.tsx', 'utf8');
-  assert.match(grid, /task\.finalize\(`post:/);
+  assert.equal((grid.match(/uploadWorkspaceAsset<CalendarPostData>/g)||[]).length,2);
   assert.match(fs.readFileSync('components/calendars/CalendarWorkspaceShell.tsx', 'utf8'), /<WorkspaceUploadTray workspaceId={calendarId}/);
 });
 test('cancel invokes receipt release once, including cancellation while preparation is still running', async () => {
@@ -96,4 +94,14 @@ test('failed receipt release is visible without restarting a cancelled upload', 
   const job = queue.enqueue('a', file(), async task => { task.onCancel(async () => { throw Error('Automatic expiry will retry'); }); await gate.promise; });
   const outcome = Promise.allSettled([job]); await tick(); queue.cancel(queue.getSnapshot()[0].id); gate.resolve(); await outcome; await tick();
   assert.equal(queue.getSnapshot()[0].state,'cancelled'); assert.match(queue.getSnapshot()[0].error,/expiry/);
+});
+
+test('pause and immediate resume wait for the old transfer to settle without double-running or releasing quota', async () => {
+  const queue=makeQueue();const gate=deferred();let runs=0,active=0,peak=0,released=0;
+  const job=queue.enqueue('w',{name:'video.mp4',type:'video/mp4',size:80*1024*1024},async task=>{
+    runs++;active++;peak=Math.max(peak,active);task.onCancel(async()=>released++);
+    try {if(runs===1){await gate.promise;if(task.signal.aborted)throw new DOMException('Paused','AbortError');}return 'saved';}finally{active--;}
+  });
+  await tick();const id=queue.getSnapshot()[0].id;queue.pause(id);assert.equal(queue.getSnapshot()[0].state,'paused');queue.resume(id);await tick();assert.equal(runs,1);
+  gate.resolve();assert.equal(await job,'saved');assert.equal(runs,2);assert.equal(peak,1);assert.equal(released,0);
 });
