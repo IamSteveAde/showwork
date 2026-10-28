@@ -119,7 +119,7 @@ export default function DeliveryPage({
   const showManagedProgress = !!managedProject && !managedProject.publishedAt;
 
   return (
-    <div style={{ background: bgColor, minHeight: "100vh" }}>
+    <div data-showwork-client-view="delivery" style={{ background: bgColor, minHeight: "100vh" }}>
       <AnimatePresence mode="wait">
         {!viewerEmail ? (
           <EmailGate

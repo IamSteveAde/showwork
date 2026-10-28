@@ -1,5 +1,7 @@
+import { measureUploadStage, timeWorkspaceUpload } from "@/lib/workspaceUploadTiming";
+import { randomUUID } from "node:crypto";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
-import { postContentEditError } from "@/lib/publishing/editGuard";
+import { postContentEditErrorFromState } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,7 +16,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; postId: string }> }
 ) {
-  const creator = await getCurrentCreator();
+  return timeWorkspaceUpload(() => handleUpload(req, { params }));
+}
+
+async function handleUpload(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; postId: string }> }
+) {
+  const creator = await measureUploadStage("auth", () => getCurrentCreator());
 
   if (!creator) {
     return NextResponse.json(
@@ -25,7 +34,7 @@ export async function POST(
 
   const { id, postId } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "ADD_CONTENT"))) {
+  if (!(await measureUploadStage("permission", () => hasCalendarPermission(creator.id, id, "ADD_CONTENT")))) {
     return NextResponse.json(
       {
         error:
@@ -35,21 +44,20 @@ export async function POST(
     );
   }
 
-  const editError = await postContentEditError(postId, id);
-  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
-
-  const post = await db.calendarPost.findUnique({
+  const post = await measureUploadStage("lookup", () => db.calendarPost.findUnique({
     where: { id: postId },
     select: {
       id: true,
       calendarId: true,
+      approvalStatus: true, platform: true, instagramPublishStatus: true,
+      tikTokPublishStatus: true, publishStatus: true, tikTokPublishId: true, platformPostId: true,
       calendar: {
         select: {
           managerId: true,
         },
       },
     },
-  });
+  }));
 
   if (!post || post.calendarId !== id) {
     return NextResponse.json(
@@ -57,6 +65,9 @@ export async function POST(
       { status: 404 }
     );
   }
+
+  const editError = postContentEditErrorFromState(post);
+  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
 
   /*
    * Storage belongs to the Marketing Workspace subscription owner.
@@ -127,14 +138,14 @@ export async function POST(
     .trim()
     .replace(/[^a-zA-Z0-9._-]/g, "_");
 
-  const fileKey = `calendars/${id}/${postId}/${Date.now()}-${safeFilename}`;
+  const fileKey = `calendars/${id}/${postId}/${randomUUID()}-${safeFilename}`;
 
-  const reservation = await reserveContentWorkspaceStorage(
+  const reservation = await measureUploadStage("reservation", () => reserveContentWorkspaceStorage(
     ownerId,
     id,
     fileKey,
     fileSize
-  );
+  ));
 
   if (!reservation.allowed || !reservation.reservationId) {
     return NextResponse.json(
@@ -154,10 +165,10 @@ export async function POST(
   }
 
   try {
-    const uploadUrl = await getPresignedUploadUrl(
+    const uploadUrl = await measureUploadStage("signing", () => getPresignedUploadUrl(
       fileKey,
       contentType
-    );
+    ));
 
     return NextResponse.json({
       uploadUrl,

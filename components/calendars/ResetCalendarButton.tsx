@@ -35,10 +35,11 @@ export default function ResetCalendarButton({ calendarId, onReset }: { calendarI
         <ul className="list-disc space-y-1 pl-5">
           <li>Deletes every planned post and AI draft, captions, scripts, custom fields, and attached photos and videos.</li>
           <li>Deletes post comments, feedback, approvals, AI version history, and calendar publishing records and their metrics.</li>
-          <li>Removes scheduled posts from this calendar and clears import history.</li>
+          <li>Clear import history. Cancel scheduled publishing before resetting.</li>
           <li>Resets the calendar plan to Building and clears its approval.</li>
         </ul>
         <p>Your workspace settings, business knowledge, team, connected accounts, leads, and subscription stay in place. Posts already published on social platforms stay live.</p>
+        <p>Shared files stay available where they are still used. Unused files are queued for removal after active upload links expire.</p>
         <p className="font-semibold text-red-700">This cannot be undone.</p>
       </div>
       <label className="mt-4 block text-sm font-medium">Type RESET to confirm

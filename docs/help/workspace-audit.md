@@ -56,4 +56,4 @@ Component paths above are relative to `components/calendars/` unless a different
 - Some social connections need external approvals/configuration. The help directs users to actual access/error notices rather than promising all metrics or DM support.
 - Saved content and research may already be outdated; updating knowledge cannot rewrite prior posts or messages automatically.
 - Exact business-document limits depend on ingestion configuration. Help defers to uploader errors rather than publishing an assumed universal PDF limit.
-- Further help centres for project delivery and portfolio are intentionally outside this release. No placeholder links claim these guides already exist.
+- Project Delivery and Portfolio now have separate help centres at `/help/project-delivery` and `/help/portfolio`, sharing presentation while retaining independent guides.

@@ -1,4 +1,5 @@
-import { complimentaryAccessSelect } from "@/lib/complimentaryAccess";
+import { measureUploadStage, timeWorkspaceUpload } from "@/lib/workspaceUploadTiming";
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -6,7 +7,6 @@ import { getPresignedUploadUrl } from "@/lib/r2";
 import { isAllowedBusinessDocumentType } from "@/lib/documentExtraction";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import {
-  canAccessContentWorkspace,
   reserveContentWorkspaceStorage,
   releaseContentWorkspaceStorageReservation,
 } from "@/lib/contentWorkspaceUsage";
@@ -15,7 +15,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const creator = await getCurrentCreator();
+  return timeWorkspaceUpload(() => handleUpload(req, { params }));
+}
+
+async function handleUpload(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await measureUploadStage("auth", () => getCurrentCreator());
 
   if (!creator) {
     return NextResponse.json(
@@ -27,11 +34,11 @@ export async function POST(
   const { id } = await params;
 
   if (
-    !(await hasCalendarPermission(
+    !(await measureUploadStage("permission", () => hasCalendarPermission(
       creator.id,
       id,
       "knowledge.manage"
-    ))
+    )))
   ) {
     return NextResponse.json(
       {
@@ -42,13 +49,13 @@ export async function POST(
     );
   }
 
-  const calendar = await db.socialCalendar.findUnique({
+  const calendar = await measureUploadStage("lookup", () => db.socialCalendar.findUnique({
     where: { id },
     select: {
       id: true,
       managerId: true,
     },
-  });
+  }));
 
   if (!calendar) {
     return NextResponse.json(
@@ -57,36 +64,8 @@ export async function POST(
     );
   }
 
-  /*
-   * Business Knowledge is included in the Marketing Workspace
-   * subscription. It is therefore gated by the workspace owner's
-   * Marketing Workspace access, not by the old standalone AI
-   * subscription.
-   */
-  const owner = await db.creator.findUnique({
-    where: {
-      id: calendar.managerId,
-    },
-    select: {
-  id: true,
-  contentWorkspacePlan: true,
-  contentWorkspaceBillingStatus: true,
-  contentWorkspaceBillingCycle: true,
-  contentWorkspaceTrialEndsAt: true,
-  ...complimentaryAccessSelect, isComped: true,
-  compedUntil: true,
-},
-  });
-
-  if (!owner || !canAccessContentWorkspace(owner)) {
-    return NextResponse.json(
-      {
-        error:
-          "Your Marketing Workspace subscription isn't active yet",
-      },
-      { status: 403 }
-    );
-  }
+  // hasCalendarPermission already validates owner billing and workspace coverage.
+  // Reservation creation independently checks current owner entitlement and quota.
 
   let body: {
     filename?: unknown;
@@ -164,7 +143,7 @@ export async function POST(
   }
 
   const fileKey =
-    `calendars/${id}/business-documents/${Date.now()}-${safeFilename}`;
+    `calendars/${id}/business-documents/${randomUUID()}-${safeFilename}`;
 
   /*
    * Reserve the exact number of bytes before giving the client an
@@ -176,12 +155,12 @@ export async function POST(
   let reservation;
 
   try {
-    reservation = await reserveContentWorkspaceStorage(
+    reservation = await measureUploadStage("reservation", () => reserveContentWorkspaceStorage(
       calendar.managerId,
       id,
       fileKey,
       fileSize
-    );
+    ));
   } catch (error) {
     const message =
       error instanceof Error
@@ -207,10 +186,10 @@ export async function POST(
    * user's available storage is not unnecessarily locked.
    */
   try {
-    const uploadUrl = await getPresignedUploadUrl(
+    const uploadUrl = await measureUploadStage("signing", () => getPresignedUploadUrl(
       fileKey,
       contentType
-    );
+    ));
 
     return NextResponse.json({
       uploadUrl,

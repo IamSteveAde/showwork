@@ -1,3 +1,4 @@
+import HelpLink from "@/components/help/HelpLink";
 import { normalizeTeamRole, TEAM_ROLES } from "@/lib/calendarTeamPolicy";
 import { retryDatabaseRead } from "@/lib/retryDatabaseRead";
 import styles from "@/components/calendars/CalendarDashboard.module.css";
@@ -150,6 +151,7 @@ export default async function CalendarsPage({
             All apps
           </Link>
           <div className="flex items-center gap-1">
+            <HelpLink className="px-2 text-xs text-[#607fa5]"/>
             <DashboardTourButton />
             <Link
               href={BILLING_HREF}

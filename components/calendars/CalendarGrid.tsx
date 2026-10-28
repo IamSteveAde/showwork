@@ -1,4 +1,5 @@
 "use client";
+import { cancelWorkspaceUpload } from "@/lib/workspaceUploadCancellation";
 import contentStyles from "./ContentPlanner.module.css";
 import CreativeBriefEditor from "./CreativeBriefEditor";
 import type { CreativeBrief, CreativeDevelopment } from "@/lib/content/brief";
@@ -26,6 +27,8 @@ import AutoPublishToggle from "@/components/calendars/AutoPublishToggle";
 import SocialPostPublishing from "@/components/calendars/SocialPostPublishing";
 import ResetCalendarButton from "@/components/calendars/ResetCalendarButton";
 import ImportCalendar from "@/components/calendars/ImportCalendar";
+import { uploadWorkspaceAsset } from "@/lib/workspaceVideoClient";
+import { workspaceUploadQueue } from "@/lib/workspaceUploadQueue";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 type Platform =
@@ -44,6 +47,7 @@ interface CalendarPostAssetData {
   fileKey: string;
   mediaType: "PHOTO" | "VIDEO" | "DOCUMENT" | "PDF";
   contentUrl: string;
+  posterUrl?: string | null;
 }
 
 interface CalendarPostCustomFieldData {
@@ -484,13 +488,17 @@ function ThemeToggle({
    ========================================================= */
 
 function VideoThumbnail({
+  posterUrl,
   src,
   className,
 }: {
   src: string;
+  posterUrl?: string | null;
   className?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [failedPoster, setFailedPoster] = useState(false);
+  if (posterUrl && !failedPoster) return <img src={posterUrl} alt="Video preview" loading="lazy" className={className} onError={() => setFailedPoster(true)} />;
 
   return (
     <video
@@ -528,7 +536,7 @@ function PostTile({ post, onClick, canDelete, onDelete }: { post: CalendarPostDa
   return <article className={contentStyles.postCard}>
     <button type="button" onClick={onClick} className={contentStyles.postOpen} aria-label={`Open ${meta.label} post: ${post.contentIdea || post.hook || "Untitled post"}`}>
       <div className={contentStyles.postTop}><PlatformIcon platform={post.platform} className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }}/><span>{meta.label}</span><time>{time}</time></div>
-      {cover && <div className={contentStyles.cover}>{cover.mediaType === "PHOTO" ? <img src={cover.contentUrl} alt="" loading="lazy"/> : cover.mediaType === "VIDEO" ? <><VideoThumbnail src={cover.contentUrl} className="h-full w-full object-cover"/><span className={contentStyles.play}><IconPlay className="h-4 w-4"/></span></> : <FilePenLine size={24}/>}</div>}
+      {cover && <div className={contentStyles.cover}>{cover.mediaType === "PHOTO" ? <img src={cover.contentUrl} alt="" loading="lazy"/> : cover.mediaType === "VIDEO" ? <><VideoThumbnail posterUrl={cover.posterUrl} src={cover.contentUrl} className="h-full w-full object-cover"/><span className={contentStyles.play}><IconPlay className="h-4 w-4"/></span></> : <FilePenLine size={24}/>}</div>}
       <p className={contentStyles.postTitle}>{post.contentIdea || post.hook || post.caption || "Untitled post"}</p>
       <div className={contentStyles.postStatus} data-tone={workflow.tone}><span/>{workflow.label}</div>
       {post.assets.length > 1 && <span className={contentStyles.assetCount}><IconLayers className="h-3 w-3"/>{post.assets.length} files</span>}
@@ -755,83 +763,23 @@ function AddPostPanel({
     const uploadSingleFile = async (
       file: File,
       index: number
-    ): Promise<CalendarPostData> => {
-      uploadedBytesByFile[index] = 0;
-      updateOverallProgress();
-      const presignRes = await calendarMutationFetch(
-        `/api/calendars/${calendarId}/posts/${postId}/upload-presign`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: getFileContentType(file),
-            fileSize: file.size,
-          }),
-        }
-      );
-
-      const presignData = await presignRes.json();
-
-      if (!presignRes.ok) {
-        throw new Error(
-          presignData.error ?? "Failed to start upload"
-        );
-      }
-
-      await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: getFileContentType(file),
-        onProgress: ({ loaded }) => {
-          uploadedBytesByFile[index] = loaded;
-          updateOverallProgress();
-        },
+    ): Promise<CalendarPostData> => workspaceUploadQueue.enqueue(calendarId, file, async (task) => {
+      return uploadWorkspaceAsset<CalendarPostData>(calendarId, postId, file, task, loaded => {
+        uploadedBytesByFile[index] = loaded;
+        updateOverallProgress();
       });
-      uploadedBytesByFile[index] = file.size;
-      updateOverallProgress();
-
-      const mediaType = getFileContentType(file).startsWith("video/")
-        ? "VIDEO"
-        : "PHOTO";
-
-      const completeRes = await calendarMutationFetch(
-        `/api/calendars/${calendarId}/posts/${postId}/upload-complete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileKey: presignData.fileKey,
-            mediaType,
-            fileSize: file.size,
-            reservationId: presignData.reservationId,
-          }),
-        }
-      );
-
-      const completeData = await completeRes.json();
-
-      if (!completeRes.ok) {
-        throw new Error(
-          completeData.error ?? "Failed to save content"
-        );
-      }
-
-      return completeData.post;
-    };
+    });
 
     setUploadingStage(
       `Preparing ${files.length
       } ${files.length === 1 ? "file" : "files"}...`
     );
 
-    const uploadedPosts = await Promise.all(
-      files.map(({ file }, index) =>
-        uploadSingleFile(file, index)
-      )
+    const outcomes = await Promise.allSettled(
+      files.map(({ file }, index) => uploadSingleFile(file, index))
     );
+    // Explicit cancellation keeps posts already created and files already saved.
+    const uploadedPosts = outcomes.flatMap(result => result.status === "fulfilled" ? [result.value] : []);
 
     setUploadProgress(100);
 
@@ -2993,7 +2941,7 @@ caption: draftDetails.caption,
     post.assets[0] ??
     null;
 
-  const uploadOne = async (file: File) => {
+  const uploadOne = async (file: File) => workspaceUploadQueue.enqueue(calendarId, file, async (task) => {
     if (!canUpload) throw new Error("You do not have permission to upload creative assets.");
     setUploadPercent(0);
     if (isApproved) {
@@ -3002,69 +2950,10 @@ caption: draftDetails.caption,
       );
     }
 
-    const presignRes = await calendarMutationFetch(
-      `/api/calendars/${calendarId}/posts/${post.id}/upload-presign`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: getFileContentType(file),
-          fileSize: file.size,
-        }),
-      }
-    );
-
-    const presignData =
-      await presignRes.json();
-
-    if (!presignRes.ok) {
-      throw new Error(
-        presignData.error ??
-        "Failed to start upload"
-      );
-    }
-
-    await putFileWithProgress(presignData.uploadUrl, file, {
-      contentType: getFileContentType(file),
-      onProgress: ({ percent }) => setUploadPercent(percent),
-    });
-
-    const mediaType =
-      getFileContentType(file).startsWith("video/")
-        ? "VIDEO"
-        : "PHOTO";
-
-    const completeRes = await calendarMutationFetch(
-      `/api/calendars/${calendarId}/posts/${post.id}/upload-complete`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fileKey: presignData.fileKey,
-          mediaType,
-          fileSize: file.size,
-          reservationId: presignData.reservationId,
-        }),
-      }
-    );
-
-    const completeData =
-      await completeRes.json();
-
-    if (!completeRes.ok) {
-      throw new Error(
-        completeData.error ??
-        "Failed to save content"
-      );
-    }
-
-    return completeData.post;
-  };
+    const updated = await uploadWorkspaceAsset<CalendarPostData>(calendarId, post.id, file, task, loaded => setUploadPercent(loaded / file.size * 100));
+    onUpdated({ ...updated, assets: updated.assets ?? [], videoComments: updated.videoComments ?? [], customFields: updated.customFields ?? [] });
+    return updated;
+  });
 
   const uploadMany = async (
     files: FileList
@@ -3074,22 +2963,9 @@ caption: draftDetails.caption,
     setError(null);
 
     try {
-      let latest = post;
-
-      for (const file of Array.from(
-        files
-      )) {
-        latest = await uploadOne(file);
-      }
-
-      onUpdated({
-        ...latest,
-        assets: latest.assets ?? [],
-        videoComments:
-          latest.videoComments ?? [],
-        customFields:
-          latest.customFields ?? [],
-      });
+      const outcomes = await Promise.allSettled(Array.from(files).map(file => uploadOne(file)));
+      const failures = outcomes.filter(result => result.status === "rejected");
+      if (failures.length) throw new Error(`${failures.length} upload(s) cancelled. Successfully saved files are kept.`);
 
       router.refresh();
     } catch (err) {
@@ -3454,6 +3330,8 @@ caption: draftDetails.caption,
                       "VIDEO" ? (
                       <video
                         ref={videoRef}
+                        poster={activeAsset.posterUrl ?? undefined}
+                        preload={activeAsset.posterUrl ? "none" : "metadata"}
                         src={
                           activeAsset.contentUrl
                         }
@@ -3578,12 +3456,13 @@ caption: draftDetails.caption,
                                 "VIDEO" ? (
                                 <>
                                   <video
+                                    poster={asset.posterUrl ?? undefined}
                                     src={
                                       asset.contentUrl
                                     }
                                     muted
                                     playsInline
-                                    preload="metadata"
+                                    preload={asset.posterUrl ? "none" : "metadata"}
                                     className="
                                       h-full
                                       w-full
@@ -5316,6 +5195,18 @@ export default function CalendarGrid({
     useState<CalendarPostData | null>(
       null
     );
+
+  useEffect(() => {
+    const previewReady = (event: Event) => {
+      const detail = (event as CustomEvent<{calendarId:string;postId:string;assetId:string;posterUrl:string}>).detail;
+      if (!detail || detail.calendarId !== calendarId) return;
+      const update = (post: CalendarPostData) => post.id !== detail.postId ? post : {...post, assets: post.assets.map(asset => asset.id === detail.assetId ? {...asset, posterUrl: detail.posterUrl} : asset)};
+      setPosts(current => current.map(update));
+      setSelectedPost(current => current ? update(current) : current);
+    };
+    window.addEventListener("workspace-video-preview", previewReady);
+    return () => window.removeEventListener("workspace-video-preview", previewReady);
+  }, [calendarId]);
 
   const openedLinkedPost = useRef(false);
   useEffect(() => {

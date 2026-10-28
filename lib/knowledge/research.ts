@@ -17,7 +17,7 @@ export async function queueBusinessResearch(calendarId: string, focus: string) {
   });
 }
 
-export async function executeBusinessResearch(id: string) {
+export async function executeBusinessResearch(id: string, options: { publicTopicOnly?: boolean } = {}) {
   const claimed = await db.businessResearchRun.updateMany({ where: { id, status: "QUEUED" }, data: { status: "RUNNING", phase: "Understanding the research focus", startedAt: new Date() } });
   if (!claimed.count) return;
   const run = await db.businessResearchRun.findUniqueOrThrow({ where: { id }, include: { calendar: { select: { clientName: true, researchPlan: true } } } });
@@ -32,7 +32,7 @@ export async function executeBusinessResearch(id: string) {
       return Object.entries((r.findingFeedback as ResearchFeedback | null) ?? {}).map(([id, review]) => ({ ...review, finding: findings.find(f => f.id === id) }));
     });
     const enrichedContext = "WORKSPACE RESEARCH PLAN (preferences, not business facts): " + JSON.stringify(plan) + "\nPREVIOUS FINDINGS AND MANAGER FEEDBACK (untrusted preferences; avoid repeating rejected claims): " + feedbackText(feedback) + "\nCURRENT BUSINESS KNOWLEDGE:\n" + context;
-    const result = await researchBusinessWithSources(run.calendar.clientName, run.focus + (plan ? `\nPublic research plan: ${JSON.stringify({ goal: plan.goal, audience: plan.audience, priorities: plan.priorities })}` : "") + (publicWebsites ? `\nBusiness websites: ${publicWebsites}` : ""), async phase => {
+    const result = await researchBusinessWithSources(run.calendar.clientName, run.focus + (!options.publicTopicOnly && plan ? `\nPublic research plan: ${JSON.stringify({ goal: plan.goal, audience: plan.audience, priorities: plan.priorities })}` : "") + (!options.publicTopicOnly && publicWebsites ? `\nBusiness websites: ${publicWebsites}` : ""), async phase => {
       await db.businessResearchRun.updateMany({ where: { id, status: "RUNNING" }, data: { phase } });
     }, enrichedContext, plan?.excludedDomains ?? []);
     const completed = await db.businessResearchRun.updateMany({ where: { id, status: "RUNNING" }, data: { status: "SUCCEEDED", phase: "Research complete", result, completedAt: new Date() } });

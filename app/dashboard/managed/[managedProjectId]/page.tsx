@@ -1,3 +1,4 @@
+import DeliveryHelpLink from "@/components/help/DeliveryHelpLink";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentCreator } from "@/lib/auth";
@@ -414,7 +415,7 @@ export default async function ManagedProjectDetailPage({
             <span>Projects</span>
           </Link>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5"><DeliveryHelpLink/>
             <span
               className="h-1.5 w-1.5 rounded-full"
               style={{

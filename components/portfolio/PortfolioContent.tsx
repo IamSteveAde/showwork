@@ -1,5 +1,6 @@
 "use client";
 
+import HelpLink from "@/components/help/HelpLink";
 import Image from "next/image";
 import UiSymbol from "@/components/ui/UiSymbol";
 import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
@@ -1074,7 +1075,7 @@ export default function PortfolioContent({
   }, [selectedSectionId]);
 
   return (
-    <main className="min-h-screen overflow-x-clip" style={{ background: bgColor }}>
+    <main data-showwork-client-view="portfolio" className="min-h-screen overflow-x-clip" style={{ background: bgColor }}>
       <header
         className="fixed left-[5%] right-[5%] top-4 z-30 flex items-center justify-between gap-3 rounded-full px-4 py-3.5 transition-shadow duration-500 md:top-6 md:px-8"
         style={{
@@ -2022,6 +2023,8 @@ export default function PortfolioContent({
           </div>
         )}
 
+        {/* Contextual help stays on the main app even on portfolio subdomains. */}
+        <div className="flex items-end"><HelpLink product="portfolio" canonical className="text-xs text-white/60 hover:text-white"/></div>
         {/* Showwork credit */}
         <div className="flex flex-col gap-3 md:items-end">
           <a

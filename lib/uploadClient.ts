@@ -23,8 +23,20 @@ type UploadOptions = {
 
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function wait(ms: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const abort = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
+      reject(new DOMException("Upload cancelled", "AbortError"));
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    if (signal?.aborted) { abort(); return; }
+    signal?.addEventListener("abort", abort, { once: true });
+  });
 }
 
 function putOnce(
@@ -43,7 +55,7 @@ function putOnce(
       if (done) return; done = true; cleanup();
       if (error) reject(error); else resolve({ status: xhr.status, etag: xhr.getResponseHeader("ETag") });
     };
-    const watch = () => { clearTimeout(timer); timer = setTimeout(() => { finish(new Error("Upload stalled. Retry to resume.")); xhr.abort(); }, options.stallTimeoutMs ?? 120000); };
+    const watch = () => { clearTimeout(timer); timer = setTimeout(() => { finish(new Error("Upload stalled. Retry this file.")); xhr.abort(); }, options.stallTimeoutMs ?? 120000); };
     xhr.open("PUT", url);
     if (options.contentType) xhr.setRequestHeader("Content-Type", options.contentType);
     xhr.timeout = options.timeoutMs ?? 0;
@@ -82,7 +94,7 @@ export async function putFileWithProgress(
       const retryable = status === undefined || status === 0 || RETRYABLE_STATUS.has(status);
       if (!retryable || attempt > retries) throw error;
       options.onProgress?.({ loaded: 0, total: body.size, percent: 0, attempt: attempt + 1 });
-      await wait(Math.min(8000, 500 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 250));
+      await wait(Math.min(8000, 500 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 250), options.signal);
     }
   }
 }

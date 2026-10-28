@@ -312,3 +312,23 @@ export async function putTaskPoster(key: string, body: Buffer) {
   if (!/^managed-projects\/[a-zA-Z0-9-]+\/tasks\/[a-zA-Z0-9-]+\/posters\/[a-zA-Z0-9-]+\.jpg$/.test(key)) throw Error("Invalid task poster key");
   await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: "image/jpeg", ContentLength: body.length, CacheControl: "public, max-age=31536000, immutable" }));
 }
+
+/** Authoritative multipart progress includes byte lengths, not browser-provided ETags. */
+export async function listWorkspaceVideoParts(key: string, uploadId: string) {
+  const parts: { partNumber: number; etag: string; size: number }[] = [];
+  let marker: string | undefined;
+  do {
+    const page = await r2.send(new ListPartsCommand({ Bucket: BUCKET, Key: key, UploadId: uploadId, PartNumberMarker: marker }));
+    for (const part of page.Parts ?? []) {
+      if (part.PartNumber && part.ETag && typeof part.Size === "number") parts.push({ partNumber: part.PartNumber, etag: part.ETag, size: part.Size });
+    }
+    if (parts.length > 10000) throw Error("Invalid part count");
+    marker = page.IsTruncated && page.NextPartNumberMarker !== undefined ? String(page.NextPartNumberMarker) : undefined;
+  } while (marker);
+  return parts.sort((a, b) => a.partNumber - b.partNumber);
+}
+
+export async function putWorkspaceVideoPoster(key: string, body: Buffer) {
+  if (!/^calendars\/[a-zA-Z0-9-]+\/video-posters\/[a-f0-9]{64}\.jpg$/.test(key)) throw Error("Invalid workspace poster key");
+  await r2.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: body, ContentType: "image/jpeg", ContentLength: body.length, CacheControl: "public, max-age=31536000, immutable" }));
+}

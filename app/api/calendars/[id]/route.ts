@@ -1,15 +1,14 @@
+import { queueWorkspaceStorageCleanup } from "@/lib/workspaceStorageCleanup";
+import { removeWorkspaceContent, WorkspaceDeletionConflict } from "@/lib/workspaceDeletion";
+import { lockWorkspaceUploadReservation } from "@/lib/workspaceUploadLocks";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator, hashPassword } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import {
-  deleteObject,
   getObjectSize,
 } from "@/lib/r2";
-import {
-  releaseContentWorkspaceStorage,
-} from "@/lib/contentWorkspaceUsage";
 
 function generateAccessCode(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -189,6 +188,9 @@ export async function PATCH(
       fileKey: string | null,
       variant: "desktop" | "mobile"
     ) => {
+      const existingKey = variant === "desktop" ? calendar.headerBannerDesktopUrl : calendar.headerBannerMobileUrl;
+      if (fileKey && (reservationId || fileKey !== existingKey) && !fileKey.startsWith(`calendars/${id}/banner-${variant}/`)) return { success: false, reservationId, fileKey, bytes: 0, error: "Invalid banner upload key." };
+      if (fileKey && !reservationId && fileKey !== existingKey) return { success: false, reservationId, fileKey, bytes: 0, error: "A new banner needs its upload receipt. Please upload it again." };
       if (!reservationId || !fileKey) {
         return {
           success: true,
@@ -226,7 +228,7 @@ export async function PATCH(
         }
 
         if (
-          reservation.creatorId !== creator.id ||
+          reservation.creatorId !== calendar.managerId ||
           reservation.calendarId !== id ||
           reservation.fileKey !== fileKey
         ) {
@@ -240,6 +242,9 @@ export async function PATCH(
           };
         }
 
+        if (reservation.status === "COMPLETED") {
+          return { success: true, reservationId, fileKey, bytes: Number(reservation.bytes) };
+        }
         if (reservation.status !== "PENDING") {
           return {
             success: false,
@@ -349,11 +354,26 @@ export async function PATCH(
      * Finalize verified reservations and update the banner
      * references together in one database transaction.
      */
-    const updated = await db.$transaction(async (tx) => {
+    const replayedVariants = new Set<string>();
+    const committed = await db.$transaction(async (tx) => {
+      // Serialize both banner reservations for this calendar in a stable order.
+      const currentCalendars = await tx.$queryRaw<{ id: string; headerBannerDesktopUrl: string | null; headerBannerMobileUrl: string | null }[]>`SELECT id, "headerBannerDesktopUrl", "headerBannerMobileUrl" FROM "SocialCalendar" WHERE id = ${id} FOR UPDATE`;
+      const currentCalendar = currentCalendars[0];
+      if (!currentCalendar) throw new Error("Workspace not found.");
+
+      // A stale form cannot reattach an old object without a still-valid receipt.
+      for (const [requested, receipt, existing] of [
+        [newDesktopBanner, desktopReservationId, currentCalendar.headerBannerDesktopUrl],
+        [newMobileBanner, mobileReservationId, currentCalendar.headerBannerMobileUrl],
+      ]) {
+        if (requested && !receipt && requested !== existing) throw new Error("This banner has changed. Refresh before saving again.");
+      }
+
       const finalizeReservation = async (
         reservationId: string | null,
         expectedFileKey: string | null,
-        expectedBytes: number
+        expectedBytes: number,
+        variant: "desktop" | "mobile"
       ) => {
         if (
           !reservationId ||
@@ -362,20 +382,7 @@ export async function PATCH(
           return;
         }
 
-        const reservation =
-          await tx.contentWorkspaceStorageReservation.findUnique({
-            where: {
-              id: reservationId,
-            },
-            select: {
-              creatorId: true,
-              calendarId: true,
-              fileKey: true,
-              bytes: true,
-              status: true,
-              expiresAt: true,
-            },
-          });
+        const reservation = await lockWorkspaceUploadReservation(tx, reservationId);
 
         if (!reservation) {
           throw new Error(
@@ -384,7 +391,7 @@ export async function PATCH(
         }
 
         if (
-          reservation.creatorId !== creator.id ||
+          reservation.creatorId !== calendar.managerId ||
           reservation.calendarId !== id ||
           reservation.fileKey !== expectedFileKey
         ) {
@@ -393,13 +400,19 @@ export async function PATCH(
           );
         }
 
+        if (reservation.status === "COMPLETED") {
+          const currentKey = variant === "desktop" ? currentCalendar.headerBannerDesktopUrl : currentCalendar.headerBannerMobileUrl;
+          if (currentKey !== expectedFileKey) throw new Error("This banner has changed. Refresh before saving again.");
+          replayedVariants.add(variant);
+          return;
+        }
         if (reservation.status !== "PENDING") {
           throw new Error(
             "Storage reservation is no longer pending."
           );
         }
 
-        if (reservation.expiresAt <= new Date()) {
+        if (!reservation.live) {
           throw new Error(
             "Storage reservation has expired."
           );
@@ -417,38 +430,11 @@ export async function PATCH(
           );
         }
 
-        const usage =
-          await tx.contentWorkspaceUsage.findUnique({
-            where: {
-              creatorId: creator.id,
-            },
-            select: {
-              storageReservedBytes: true,
-            },
-          });
-
-        if (
-          !usage ||
-          Number(usage.storageReservedBytes) < bytes
-        ) {
-          throw new Error(
-            "Storage reservation accounting is inconsistent."
-          );
-        }
-
-        await tx.contentWorkspaceUsage.update({
-          where: {
-            creatorId: creator.id,
-          },
-          data: {
-            storageReservedBytes: {
-              decrement: BigInt(bytes),
-            },
-            storageBytes: {
-              increment: BigInt(bytes),
-            },
-          },
+        const usage = await tx.contentWorkspaceUsage.updateMany({
+          where: { creatorId: calendar.managerId, storageReservedBytes: { gte: reservation.bytes } },
+          data: { storageReservedBytes: { decrement: reservation.bytes }, storageBytes: { increment: reservation.bytes } },
         });
+        if (usage.count !== 1) throw new Error("Storage reservation accounting is inconsistent.");
 
         await tx.contentWorkspaceStorageReservation.update({
           where: {
@@ -464,16 +450,18 @@ export async function PATCH(
       await finalizeReservation(
         desktopResult.reservationId,
         desktopResult.fileKey,
-        desktopResult.bytes
+        desktopResult.bytes,
+        "desktop"
       );
 
       await finalizeReservation(
         mobileResult.reservationId,
         mobileResult.fileKey,
-        mobileResult.bytes
+        mobileResult.bytes,
+        "mobile"
       );
 
-      return tx.socialCalendar.update({
+      const updated = await tx.socialCalendar.update({
         where: {
           id,
         },
@@ -495,58 +483,14 @@ export async function PATCH(
               : undefined,
         },
       });
+      const oldBanners = [
+        ...(newDesktopBanner !== undefined && currentCalendar.headerBannerDesktopUrl && currentCalendar.headerBannerDesktopUrl !== newDesktopBanner ? [{ fileKey: currentCalendar.headerBannerDesktopUrl, bytes: BigInt(0) }] : []),
+        ...(newMobileBanner !== undefined && currentCalendar.headerBannerMobileUrl && currentCalendar.headerBannerMobileUrl !== newMobileBanner ? [{ fileKey: currentCalendar.headerBannerMobileUrl, bytes: BigInt(0) }] : []),
+      ];
+      await queueWorkspaceStorageCleanup(tx, calendar.managerId, id, oldBanners);
+      return { updated, previous: currentCalendar };
     });
-
-    /*
-     * The new banner references are now committed. The old
-     * banner objects are no longer referenced, so delete them
-     * from R2 and release their tracked storage.
-     */
-    const releaseOldBanner = async (
-      oldFileKey: string | null,
-      newFileKey: string | null | undefined,
-      variant: "desktop" | "mobile"
-    ) => {
-      if (
-        !oldFileKey ||
-        oldFileKey === newFileKey
-      ) {
-        return;
-      }
-
-      try {
-        const oldSize =
-          await getObjectSize(oldFileKey);
-
-        await deleteObject(oldFileKey);
-
-        await releaseContentWorkspaceStorage(
-          creator.id,
-          oldSize
-        );
-      } catch (error) {
-        /*
-         * Do not undo a successful header update if cleanup
-         * fails. The old object can be cleaned up separately.
-         */
-        console.error(
-          `Failed to clean up old ${variant} banner:`,
-          error
-        );
-      }
-    };
-
-    await releaseOldBanner(
-      calendar.headerBannerDesktopUrl,
-      newDesktopBanner,
-      "desktop"
-    );
-
-        await releaseOldBanner(
-      calendar.headerBannerMobileUrl,
-      newMobileBanner,
-      "mobile"
-    );
+    const updated = committed.updated;
 
     return NextResponse.json({
       calendar: updated,
@@ -609,29 +553,9 @@ export async function DELETE(
     );
   }
 
-  // Delete uploaded media from R2 before removing the
-  // workspace records from the database.
-  //
-  // We intentionally DO NOT cancel Paystack here.
-  // Calendar billing belongs to the Creator account and
-  // one subscription covers all of the creator's workspaces.
-
-  for (const post of calendar.posts) {
-    for (const asset of post.assets) {
-      try {
-        await deleteObject(asset.fileKey);
-      } catch (err) {
-        console.error(
-          `Failed to delete R2 object for asset ${asset.id}:`,
-          err
-        );
-      }
-    }
+  try {
+    return NextResponse.json(await removeWorkspaceContent({ actorId: creator.id, mode: "workspace", calendarId: id }));
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof WorkspaceDeletionConflict ? error.message : "Unable to delete this workspace. Please retry." }, { status: error instanceof WorkspaceDeletionConflict ? 409 : 500 });
   }
-
-  await db.socialCalendar.delete({
-    where: { id },
-  });
-
-  return NextResponse.json({ ok: true });
 }

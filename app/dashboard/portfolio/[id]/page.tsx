@@ -1,3 +1,4 @@
+import PortfolioHelpLink from "@/components/help/PortfolioHelpLink";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import ResponsiveSidebar from "@/components/navigation/ResponsiveSidebar";
@@ -363,7 +364,7 @@ export default async function PortfolioDetailPage({
             <span className="sm:hidden">Apps</span>
           </Link>
 
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3"><PortfolioHelpLink className="max-sm:px-2 max-sm:text-[10px]"/>
             <div className="hidden min-w-0 items-center gap-3 md:flex">
               <span className="max-w-[260px] truncate text-xs font-medium text-white/55">
                 {portfolio.companyName}

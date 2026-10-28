@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleHelp, MoreHorizontal, Sparkles, ArrowLeft, LayoutDashboard, CalendarRange, UsersRound, ChartNoAxesCombined, MessagesSquare, ContactRound, PanelsTopLeft, Cable, ScanSearch, BookOpenText, WandSparkles, SendHorizontal, ChevronsLeft, ChevronsRight, ChevronRight } from "lucide-react";
+import { CircleHelp, MoreHorizontal, Sparkles, ArrowLeft, LayoutDashboard, CalendarRange, UsersRound, ChartNoAxesCombined, MessagesSquare, ContactRound, PanelsTopLeft, Cable, BrainCircuit, BookOpenText, WandSparkles, SendHorizontal, ChevronsLeft, ChevronsRight, ChevronRight } from "lucide-react";
 import menuStyles from "./WorkspaceMenu.module.css";
 import headerStyles from "./WorkspaceHeader.module.css";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import MobileDrawer from "@/components/navigation/MobileDrawer";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import WorkspaceTour from "@/components/calendars/WorkspaceTour";
+import WorkspaceUploadTray from "@/components/uploads/WorkspaceUploadTray";
 import InboxHandoffAlert from "./InboxHandoffAlert";
 
 type WorkspaceSectionId =
@@ -52,7 +53,7 @@ function SectionIcon({ name, className = "h-[18px] w-[18px]" }: { name: Workspac
   const icons = {
     overview: LayoutDashboard, content: CalendarRange, team: UsersRound,
     analytics: ChartNoAxesCombined, inbox: MessagesSquare, leads: ContactRound,
-    access: PanelsTopLeft, channels: Cable, research: ScanSearch,
+    access: PanelsTopLeft, channels: Cable, research: BrainCircuit,
     knowledge: BookOpenText, generate: WandSparkles, publish: SendHorizontal,
   };
   const Icon = icons[name];
@@ -289,6 +290,7 @@ export default function CalendarWorkspaceShell({
 
   return (
     <div data-marketing-workspace="true" className="min-h-screen w-full min-w-0 bg-[#F7F8FA] text-[#101828]">
+      {calendarId && <WorkspaceUploadTray workspaceId={calendarId} />}
       <header className={headerStyles.header}>
         <div className={headerStyles.inner}>
           <Link href="/dashboard/calendars" aria-label="Back to workspaces" title="All workspaces" className={headerStyles.back}><ArrowLeft size={16}/><span>Workspaces</span></Link>
@@ -302,19 +304,19 @@ export default function CalendarWorkspaceShell({
           {settings}
         </div>
       </header>
-      <MobileDrawer placement="bottom" open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label={mobileSheet === "ai" ? "AI Studio" : "More from your workspace"} className="bg-white text-slate-800">
-        {tourId ? sidebar : <div className="p-4">
-          {mobileSheet === "ai" && <p className="mb-4 px-1 text-sm leading-6 text-slate-500">Build your knowledge, explore ideas and create content.</p>}
-          <nav aria-label={mobileSheet === "ai" ? "AI Studio tools" : "More workspace sections"} className="grid grid-cols-2 gap-2">
-            {(mobileSheet === "ai" ? aiSections : moreSections).map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} data-section={item.id} className={menuStyles.sheetItem}><span className={menuStyles.iconWell}><SectionIcon name={item.id} className="h-5 w-5"/></span><span className="break-words">{item.label}</span>{item.id === active.id && <span className={menuStyles.sheetActive}>Current section</span>}</button>)}
+      <MobileDrawer motion="fade" placement="bottom" open={mobileOpen} onClose={() => { setMobileOpen(false); if (tourId && window.innerWidth < 1024) window.dispatchEvent(new Event("showwork-workspace-tour-dismiss")); }} label={mobileSheet === "ai" ? "AI Studio" : "Your workspace"} panelClassName={menuStyles.mobilePanel} className="bg-white text-slate-800">
+        {tourId ? sidebar : <div className={menuStyles.sheetBody}>
+          {mobileSheet === "ai" && <p className={menuStyles.sheetIntro}>Build your knowledge, explore ideas and create content.</p>}
+          <nav aria-label={mobileSheet === "ai" ? "AI Studio tools" : "More workspace sections"} className={menuStyles.sheetGrid}>
+            {(mobileSheet === "ai" ? aiSections : moreSections).map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} data-section={item.id} className={menuStyles.sheetItem}><span className={menuStyles.iconWell}><SectionIcon name={item.id} className="h-5 w-5"/></span><span className={menuStyles.sheetLabel}>{item.label}</span><ChevronRight size={14} className={menuStyles.sheetChevron} aria-hidden="true"/>{item.id === active.id && <span className={menuStyles.sheetActive}>You’re here</span>}</button>)}
           </nav>
-          {mobileSheet === "more" && <div className="mt-4 space-y-3 border-t border-slate-100 pt-4"><a href="/help/workspace" target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><CircleHelp size={16}/>Help & guides<span className="sr-only"> (opens in a new tab)</span></a><Link href="/dashboard/calendars" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><ArrowLeft size={16}/> All workspaces</Link>{clientUrl && <a href={clientUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-between rounded-xl px-3 text-sm text-slate-600">Open client view <ArrowUpRight/></a>}{publishAction}</div>}
+          {mobileSheet === "more" && <div className={menuStyles.sheetLinks}><a href="/help/workspace" target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><CircleHelp size={16}/>Help & guides<span className="sr-only"> (opens in a new tab)</span></a><Link href="/dashboard/calendars" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-slate-600"><ArrowLeft size={16}/> All workspaces</Link>{clientUrl && <a href={clientUrl} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-between rounded-xl px-3 text-sm text-slate-600">Open client view <ArrowUpRight/></a>}{publishAction}</div>}
         </div>}
       </MobileDrawer>
-      <nav aria-label="Mobile workspace navigation" data-workspace-bottom-nav hidden={keyboardOpen} style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }} className={`${menuStyles.bottomNav} fixed inset-x-0 bottom-0 z-40 flex items-center justify-around gap-1 px-2 pt-2 lg:hidden`}>
-        {primaryMobile.map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${item.id === active.id ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><SectionIcon name={item.id} className="h-5 w-5"/>{item.id === "overview" ? "Home" : item.label}</button>)}
-        {!!aiSections.length && <button onClick={() => openSheet("ai")} aria-current={aiActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "ai"} aria-haspopup="dialog" className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${aiActive ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><Sparkles size={20}/>AI Studio</button>}
-        <button onClick={() => openSheet("more")} aria-current={moreActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "more"} aria-haspopup="dialog" className={`flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium ${moreActive ? "bg-blue-50 text-blue-700" : "text-slate-400"}`}><MoreHorizontal size={20}/>More</button>
+      <nav aria-label="Mobile workspace navigation" data-workspace-bottom-nav hidden={keyboardOpen} className={`${menuStyles.bottomNav} lg:hidden`}>
+        {primaryMobile.map(item => <button key={item.id} onClick={() => select(item.id)} aria-current={item.id === active.id ? "page" : undefined} className={menuStyles.dockItem}><SectionIcon name={item.id} className="h-5 w-5"/>{item.id === "overview" ? "Home" : item.label}</button>)}
+        {!!aiSections.length && <button onClick={() => openSheet("ai")} aria-current={aiActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "ai"} aria-haspopup="dialog" className={menuStyles.dockItem}><Sparkles size={20}/>AI Studio</button>}
+        <button onClick={() => openSheet("more")} aria-current={moreActive ? "true" : undefined} aria-expanded={mobileOpen && mobileSheet === "more"} aria-haspopup="dialog" className={menuStyles.dockItem}><MoreHorizontal size={20}/>More</button>
       </nav>
 
       <div className={`mx-auto grid max-w-[1800px] ${sidebarCollapsed ? "lg:grid-cols-[76px_minmax(0,1fr)]" : "lg:grid-cols-[224px_minmax(0,1fr)]"}`}>
@@ -346,7 +348,7 @@ export default function CalendarWorkspaceShell({
         </aside>
 
         {/* ACTIVE WORKSPACE */}
-        <main id="workspace-main" className="min-w-0 pb-[calc(88px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main id="workspace-main" className="min-w-0 pb-[calc(104px+env(safe-area-inset-bottom))] lg:pb-0">
           <div
             className={`mx-auto ${
               active.id === "content" ? "max-w-none" : "max-w-[1480px]"

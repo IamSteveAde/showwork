@@ -365,6 +365,7 @@ export default async function SocialCalendarPage({
       id: a.id,
       mediaType: normalizeAssetMediaType(String(a.mediaType)),
       contentUrl: publicUrlFor(a.fileKey),
+        posterUrl: a.posterFileKey ? publicUrlFor(a.posterFileKey) : null,
     })),
     videoComments: p.videoComments.map((c) => ({
       id: c.id,

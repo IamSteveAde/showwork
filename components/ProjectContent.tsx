@@ -12,6 +12,7 @@ import VideoModal from "@/components/VideoModal";
 import Lightbox from "@/components/Lightbox";
 import DocModal from "@/components/Docmodal";
 import DeliveryStatusBanner from "@/components/DeliveryStatusBanner";
+import HelpLink from "@/components/help/HelpLink";
 import { downloadFile, downloadAllAsZip } from "@/lib/download";
 import ReviewControls from "@/components/ReviewControls";
 import PortfolioAutoplayVideo from "@/components/portfolio/PortfolioAutoplayVideo";
@@ -1058,6 +1059,7 @@ export default function ProjectContent({
           <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/30">
             Presented privately to {clientName}. Every asset is available in full quality.
           </p>
+          <div className="mt-6 flex justify-center"><HelpLink product="delivery" className="text-xs text-white/60 hover:text-white"/></div>
           {badgeVisible && (
             <a
               href="https://useshowwork.com"

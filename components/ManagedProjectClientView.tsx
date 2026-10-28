@@ -1,5 +1,6 @@
 "use client";
 
+import HelpLink from "@/components/help/HelpLink";
 import { motion } from "framer-motion";
 
 interface ClientBrief {
@@ -140,6 +141,7 @@ export default function ManagedProjectClientView({
             </div>
           </div>
         )}
+        <footer className="mt-8 border-t border-white/10 pt-6 text-center"><HelpLink product="delivery" className="text-xs text-white/60 hover:text-white"/></footer>
       </div>
     </motion.div>
   );

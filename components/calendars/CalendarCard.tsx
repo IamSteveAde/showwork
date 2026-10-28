@@ -194,6 +194,8 @@ export default function CalendarCard({
               lose access immediately. This cannot be undone.
             </p>
 
+            <p className="mt-2 text-xs leading-5 text-[#667085]">Shared files stay where they are still used. Unused files are queued for removal after active upload links expire.</p>
+
             {error && (
               <div
                 role="alert"

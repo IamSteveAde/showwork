@@ -1,3 +1,4 @@
+import PortfolioHelpLink from "@/components/help/PortfolioHelpLink";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -242,7 +243,7 @@ export default async function PortfolioEntryPage() {
 
               {/* Existing agency component remains responsible for
                   portfolio creation, billing and interaction. */}
-              <AgencyPortfolioList initialPortfolios={portfolios} />
+              <div className="mb-4 flex justify-end"><PortfolioHelpLink/></div><AgencyPortfolioList initialPortfolios={portfolios} />
             </section>
           </div>
         </div>
@@ -357,7 +358,7 @@ export default async function PortfolioEntryPage() {
                 </div>
 
                 <div className="rounded-[30px] border border-[#E1E5EB] bg-white p-5 shadow-[0_25px_80px_rgba(20,30,50,0.07)] sm:p-8">
-                  <CreatePortfolioForm />
+                  <div className="mb-4 flex justify-end"><PortfolioHelpLink/></div><CreatePortfolioForm />
                 </div>
 
                 <div className="mt-6 flex items-center gap-2 text-xs text-[#969AA2]">

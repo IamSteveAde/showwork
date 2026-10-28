@@ -1,5 +1,6 @@
 "use client";
 
+import DeliveryHelpLink from "@/components/help/DeliveryHelpLink";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -242,7 +243,7 @@ export default function NewManagedProjectPage() {
             <span>Back to projects</span>
           </Link>
 
-          <div className="hidden items-center gap-2.5 sm:flex">
+          <div className="flex items-center gap-2.5"><DeliveryHelpLink guide="create-managed"/>
             <span className="h-1.5 w-1.5 rounded-full bg-[#2478FF] shadow-[0_0_14px_rgba(36,120,255,.9)]" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/25">
               New managed project

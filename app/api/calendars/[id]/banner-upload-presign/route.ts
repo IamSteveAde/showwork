@@ -1,5 +1,8 @@
+import { measureUploadStage, timeWorkspaceUpload } from "@/lib/workspaceUploadTiming";
+import { randomUUID } from "node:crypto";
 import { resolveFileContentType } from "@/lib/mediaFileTypes";
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 import { getCurrentCreator } from "@/lib/auth";
 import { getPresignedUploadUrl, isAllowedContentType } from "@/lib/r2";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
@@ -12,7 +15,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const creator = await getCurrentCreator();
+  return timeWorkspaceUpload(() => handleUpload(req, { params }));
+}
+
+async function handleUpload(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await measureUploadStage("auth", () => getCurrentCreator());
 
   if (!creator) {
     return NextResponse.json(
@@ -24,17 +34,20 @@ export async function POST(
   const { id } = await params;
 
   if (
-    !(await hasCalendarPermission(
+    !(await measureUploadStage("permission", () => hasCalendarPermission(
       creator.id,
       id,
       "delivery.manage"
-    ))
+    )))
   ) {
     return NextResponse.json(
       { error: "You don't have permission to edit this calendar" },
       { status: 403 }
     );
   }
+
+  const calendar = await measureUploadStage("lookup", () => db.socialCalendar.findUnique({ where: { id }, select: { managerId: true } }));
+  if (!calendar) return NextResponse.json({ error: "Workspace not found" }, { status: 404 });
 
   let body: {
     filename?: string;
@@ -108,15 +121,15 @@ export async function POST(
     "_"
   );
 
-  const fileKey = `calendars/${id}/banner-${variant}/${Date.now()}-${safeFilename}`;
+  const fileKey = `calendars/${id}/banner-${variant}/${randomUUID()}-${safeFilename}`;
 
   const reservation =
-    await reserveContentWorkspaceStorage(
-      creator.id,
+    await measureUploadStage("reservation", () => reserveContentWorkspaceStorage(
+      calendar.managerId,
       id,
       fileKey,
       fileSize
-    );
+    ));
 
   if (!reservation.allowed || !reservation.reservationId) {
     return NextResponse.json(
@@ -130,10 +143,10 @@ export async function POST(
   }
 
   try {
-    const uploadUrl = await getPresignedUploadUrl(
+    const uploadUrl = await measureUploadStage("signing", () => getPresignedUploadUrl(
       fileKey,
       contentType
-    );
+    ));
 
     return NextResponse.json({
       uploadUrl,
@@ -144,7 +157,7 @@ export async function POST(
   } catch (error) {
     await releaseContentWorkspaceStorageReservation(
       reservation.reservationId,
-      creator.id,
+      calendar.managerId,
       id,
       fileKey
     );

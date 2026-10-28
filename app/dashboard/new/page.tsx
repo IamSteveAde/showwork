@@ -3,6 +3,7 @@ import { deliveryPartUrl, pauseDeliveryUploads, resumeDeliveryUploads, deliveryR
 
 import { IMAGE_FILE_ACCEPT, VIDEO_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
 
+import DeliveryHelpLink from "@/components/help/DeliveryHelpLink";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -797,6 +798,7 @@ export default function NewProjectPage() {
       <div className="relative z-10 mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-10 lg:px-12 lg:py-14">
         <Link href="/dashboard/projects" className="group mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2.5 text-sm text-white/50 backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/[0.06] hover:text-white"><>{" "}<UiSymbol name="left" />{" Back to projects "}</></Link>
 
+        <div className="mb-6"><DeliveryHelpLink guide="create-delivery"/></div>
         <div className="mb-10 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-end lg:gap-14">
           <div>
             <div className="mb-5 flex items-center gap-3">

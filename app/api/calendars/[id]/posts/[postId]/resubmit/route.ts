@@ -74,6 +74,7 @@ export async function POST(
         ...asset,
         sizeBytes: Number(asset.sizeBytes),
         contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
       })),
     },
   });

@@ -1,10 +1,11 @@
+import { removeWorkspaceContent, WorkspaceDeletionConflict } from "@/lib/workspaceDeletion";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
-import { deleteObject, publicUrlFor } from "@/lib/r2";
+import { publicUrlFor } from "@/lib/r2";
 
 const VALID_PLATFORMS = [
   "INSTAGRAM",
@@ -176,6 +177,7 @@ caption:
         ...a,
         sizeBytes: Number(a.sizeBytes),
         contentUrl: publicUrlFor(a.fileKey),
+        posterUrl: a.posterFileKey ? publicUrlFor(a.posterFileKey) : null,
       })),
     },
   });
@@ -240,24 +242,9 @@ export async function DELETE(
     );
   }
 
-  // Best-effort cleanup of the actual files in storage — a failure
-  // here shouldn't block the post itself from being deleted.
-  for (const asset of post.assets) {
-    try {
-      await deleteObject(asset.fileKey);
-    } catch (err) {
-      console.error(
-        `Failed to delete R2 object for asset ${asset.id}:`,
-        err
-      );
-    }
+  try {
+    return NextResponse.json(await removeWorkspaceContent({ actorId: creator.id, mode: "post", calendarId: id, postId }));
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof WorkspaceDeletionConflict ? error.message : "Unable to delete this post. Please retry." }, { status: error instanceof WorkspaceDeletionConflict ? 409 : 500 });
   }
-
-  await db.calendarPost.delete({
-    where: { id: postId },
-  });
-
-  return NextResponse.json({
-    ok: true,
-  });
 }

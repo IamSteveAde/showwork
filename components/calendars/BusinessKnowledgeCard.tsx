@@ -1,4 +1,5 @@
 "use client";
+import { cancelWorkspaceUpload } from "@/lib/workspaceUploadCancellation";
 import knowledgeStyles from "./KnowledgeStudio.module.css";
 import { brandPersonalityDocumentId } from "@/lib/knowledge/brandPersonality";
 import KnowledgeIndexStatus from "./KnowledgeIndexStatus";
@@ -12,6 +13,7 @@ import WorkspaceFeatureNotice from "@/components/calendars/WorkspaceFeatureNotic
 
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState, useRef, useEffect, type FormEvent } from "react";
+import { workspaceUploadQueue } from "@/lib/workspaceUploadQueue";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 export interface BusinessDocumentData {
@@ -193,13 +195,14 @@ export default function BusinessKnowledgeCard({
     setDocumentsState(documents.filter(doc => doc.id !== brandPersonalityDocumentId(calendarId)));
   }, [businessSummary, summaryUpdatedAt, documents]);
 
-  const uploadOne = async (file: File) => {
+  const uploadOne = async (file: File) => workspaceUploadQueue.enqueue(calendarId, file, async (task) => {
     setUploadPercent(0);
     /*
      * Step 1:
      * Reserve the file's storage allowance and obtain the R2
      * presigned upload URL.
      */
+    const prepared = await task.step("prepare", async () => {
     const presignRes = await calendarMutationFetch(
       `/api/calendars/${calendarId}/business-documents/upload-presign`,
       {
@@ -258,14 +261,19 @@ if (presignContentType.includes("application/json")) {
       );
     }
 
+    return presignData;
+    });
     /*
      * Step 2:
      * Upload the file directly to R2.
      */
-    await putFileWithProgress(presignData.uploadUrl, file, {
+    task.onCancel(() => cancelWorkspaceUpload(calendarId, { reservationId: prepared.reservationId!, fileKey: prepared.fileKey! }));
+    await task.step("transfer", () => putFileWithProgress(prepared.uploadUrl!, file, {
+      signal: task.signal,
       contentType: businessDocumentType(file),
-      onProgress: ({ percent }) => setUploadPercent(percent),
-    });
+      onProgress: ({ percent }) => { setUploadPercent(percent); task.progress(percent); },
+    }));
+    task.saving();
 
     /*
      * Step 3:
@@ -282,11 +290,11 @@ if (presignContentType.includes("application/json")) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fileKey: presignData.fileKey,
+          fileKey: prepared.fileKey,
           originalName: file.name,
           contentType: businessDocumentType(file),
           fileSize: file.size,
-          reservationId: presignData.reservationId,
+          reservationId: prepared.reservationId,
         }),
       }
     );
@@ -300,7 +308,7 @@ if (presignContentType.includes("application/json")) {
     }
 
     return completeData;
-  };
+  }, "business-documents");
 
   const handleFiles = async (files: FileList) => {
     const selectedFiles = Array.from(files);
@@ -309,7 +317,7 @@ if (presignContentType.includes("application/json")) {
     setError(null);
     const failures: string[] = [];
     try {
-      for (const [index, file] of selectedFiles.entries()) {
+      await Promise.all(selectedFiles.map(async (file, index) => {
         setUploadFile({ index: index + 1, total: selectedFiles.length, name: file.name });
         try {
           const result = await uploadOne(file);
@@ -322,11 +330,11 @@ if (presignContentType.includes("application/json")) {
             setSummaryUpdatedAtState(result.summaryUpdatedAt ?? new Date().toISOString());
             window.sessionStorage.setItem(`calendar:${calendarId}:has-business-summary`, "true");
           }
-          if (result?.summaryUpdated === false) failures.push(`${file.name}: uploaded, but AI could not update its knowledge.`);
+          if (result?.summaryUpdated === false && !result?.alreadyCompleted) failures.push(`${file.name}: uploaded, but AI could not update its knowledge.`);
         } catch (error) {
           failures.push(`${file.name}: ${error instanceof Error ? error.message : "Upload failed. Please try again."}`);
         }
-      }
+      }));
       router.refresh();
       if (failures.length) setError(failures.join("\n"));
     } finally {
@@ -531,7 +539,7 @@ if (presignContentType.includes("application/json")) {
       <summary><span className={knowledgeStyles.understandingIcon}><BookOpenText size={18}/></span><span><strong>What Showwork understands</strong><small>{updated ? `Overview updated ${updated}` : "Read the source-derived business overview"}</small></span><ChevronIcon open={false}/></summary>
       <div className={knowledgeStyles.understandingBody}>{businessSummaryState ? <p className={knowledgeStyles.summaryText}>{businessSummaryState}</p> : <p>Add a source to start building your business overview.</p>}
         {canEdit && documentsState.length > 0 && <button type="button" onClick={rebuildSummary} disabled={rebuilding} className={knowledgeStyles.rebuild}><RefreshCw size={14} className={rebuilding ? "animate-spin" : ""}/>{rebuilding ? "Rebuilding from current sources…" : "Refresh overview from sources"}</button>}
-        <p className={knowledgeStyles.finePrint}>This overview summarizes your sources. Relevant source text takes priority in replies; research is reviewed separately in the Research tab.{researched ? ` Last researched ${researched}.` : ""}</p>
+        <p className={knowledgeStyles.finePrint}>This overview summarizes your sources. Relevant source text takes priority in replies; research is reviewed separately in Randy.{researched ? ` Last researched ${researched}.` : ""}</p>
       </div>
     </details>
   </section>;

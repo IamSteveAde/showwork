@@ -25,7 +25,7 @@ function fixture(onAttempt) {
   const reservations = [];
   const tx = {
     contentWorkspaceUsage: {
-      findUnique: async () => ({ ...row }),
+      upsert: async () => ({ ...row }),
       update: async ({ data }) => { row.storageReservedBytes += data.storageReservedBytes.increment; },
     },
     contentWorkspaceStorageReservation: {
@@ -54,7 +54,7 @@ function fixture(onAttempt) {
       }
     },
   };
-  const api = load('lib/contentWorkspaceUsage.ts', { '@/lib/db': { db }, '@/lib/contentWorkspaceEntitlements': plans });
+  const api = load('lib/contentWorkspaceUsage.ts', { '@/lib/db': { db }, '@/lib/contentWorkspaceEntitlements': plans, '@/lib/workspaceUploadLocks': load('lib/workspaceUploadLocks.ts') });
   return { reserve: () => api.reserveContentWorkspaceStorage('owner', 'calendar', 'file', 100), row, reservations, attempts: () => attempts };
 }
 

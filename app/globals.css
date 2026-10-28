@@ -93,12 +93,8 @@ body {
   border-radius: 8px;
 }
 
-/* Inbox carries its own support action on mobile; edge widgets must not cover chats. */
-@media (max-width: 700px) {
-  body:has([data-showwork-inbox]):not(:has([hidden] [data-showwork-inbox])) [data-showwork-support] {
-    display: none !important;
-  }
-}
+/* Randy's launcher must not obscure a conversation composer; its dialog remains usable. */
+body:has([data-workspace-panel]:not([hidden]) [data-mobile-chat-open="true"]) [data-randy-launcher] { display: none; }
 
 /* Workspace columns must shrink to the device, rather than widening the page. */
 [data-marketing-workspace] { overflow-x: clip; }
@@ -119,3 +115,7 @@ body {
 [data-marketing-workspace] details[open] > summary:not(:has(svg))::before { transform: rotate(90deg); }
 html:has([data-marketing-workspace]), body:has([data-marketing-workspace]) { background: #f5f7fb; }
 body:has([data-marketing-workspace]) { overflow-x: clip; }
+
+/* Brand-owned client surfaces keep only their own contact controls. */
+body:has([data-showwork-client-view]) [data-randy-assistant] { display:none !important; }
+body:has([data-workspace-panel]:not([hidden]) [data-mobile-chat-open="true"]) [data-showwork-whatsapp] { display:none; }

@@ -471,7 +471,7 @@ export default async function DashboardPage() {
         <DashboardResources />
         <footer className={workspaceStyles.footer}>
           <div className="flex items-center gap-4"><Logo /><span>A little more room to create.</span></div>
-          <div className={workspaceStyles.footerLinks}><Link href="/dashboard/profile">Account</Link><Link href="/dashboard/billing">Billing</Link><a href="mailto:hello@useshowwork.com">Support</a></div>
+          <div className={workspaceStyles.footerLinks}><Link href="/dashboard/profile">Account</Link><Link href="/dashboard/billing">Billing</Link><Link href="/help/workspace">Help &amp; guides</Link><a href="mailto:hello@useshowwork.com">Support</a></div>
         </footer>
       </div>
     </main>

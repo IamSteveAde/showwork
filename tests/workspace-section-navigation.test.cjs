@@ -9,6 +9,7 @@ function load(file, mocks) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
   new Function('require', 'module', 'exports', code)(name => {
     if (Object.hasOwn(mocks, name)) return mocks[name];
+    if (name === '@/components/help/HelpLink') return require('./helpers/load-typescript.cjs').load('components/help/HelpLink.tsx');
     if (name.endsWith('.module.css')) return {__esModule:true,default:new Proxy({}, {get:(_,key)=>String(key)})};
     if (['./ChannelCapabilities','./PlatformBrandIcon'].includes(name)) return require('./helpers/load-typescript.cjs').load('components/calendars/' + name.slice(2) + '.tsx');
     return require(name);
@@ -110,7 +111,7 @@ test('workspace menu exposes a semantic active item and distinct icons for each 
   const html=manager('https://example.test/dashboard/calendars/workspace?view=research',available);
   assert.match(html,/<button[^>]*data-section="research"[^>]*aria-current="page"/);
   assert.doesNotMatch(html,/<button[^>]*data-section="knowledge"[^>]*aria-current="page"/);
-  for(const icon of ['layout-dashboard','calendar-range','users-round','chart-no-axes-combined','messages-square','contact-round','panels-top-left','cable','scan-search','book-open-text','wand-sparkles','send-horizontal']) assert.ok(html.includes(`lucide-${icon}`),icon);
+  for(const icon of ['layout-dashboard','calendar-range','users-round','chart-no-axes-combined','messages-square','contact-round','panels-top-left','cable','brain-circuit','book-open-text','wand-sparkles','send-horizontal']) assert.ok(html.includes(`lucide-${icon}`),icon);
   assert.ok(html.includes('lucide-chevrons-left'));assert.ok(!html.includes('lucide-panel-left-close'));
 });
 

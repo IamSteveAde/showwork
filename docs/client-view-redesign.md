@@ -1,0 +1,11 @@
+# Client review experience and support restoration
+
+The Marketing Workspace client view now uses the Showwork blue header, theme-aware navigation, a concise welcome banner, real shared-content counts, an approval-progress ring, and actionable review queues. The welcome banner appears only on Overview to leave room for calendar, analytics and previews. The mobile dock provides Home, Calendar, Reviews and More; More uses the existing accessible drawer with fade motion. Desktop uses a persistent rail. Client light/dark preferences and custom banners remain supported. The client entry form uses matching branding and retains the existing unlock endpoint and fields.
+
+Review rows open the selected creative, including when reopening a previously closed post. Existing calendar review/comment actions, reporting permissions, password verification and internal-review visibility filtering remain in their existing components and APIs; no publishing, payment or authentication rules were changed. Portfolio and delivery layouts retain their creator branding.
+
+Randy is excluded from public client review routes, portfolio detail pages, root delivery slugs, testimonial pages and supported portfolio subdomains. Creator dashboard/editor routes and help/marketing pages retain Randy. Explicit client-surface markers also hide Randy on embedded client content. Auth-page hiding stays in place.
+
+The original Showwork WhatsApp edge support control was restored from the repository version before Randy replaced it. Its desktop support card, mobile direct link, placement and support number are preserved. WhatsApp is separate from Randy and remains available on the original non-authentication surfaces, including client pages. Creator-owned portfolio WhatsApp controls are unchanged. Support drafts no longer include the current route, avoiding copying private delivery URLs into a message.
+
+No database migration is required. No deployment, paid AI request or VPS change was performed. The hosted website needs a normal website deployment to receive these local changes. Validation uses SSR and mocked route tests; real browser layout, touch interactions, theme toggling and password submission still require manual verification.

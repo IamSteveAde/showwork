@@ -87,6 +87,7 @@ export async function GET(
           fileKey: asset.fileKey,
           mediaType: asset.mediaType,
           contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
         })),
         videoComments: post.videoComments.map((comment) => ({
           id: comment.id,

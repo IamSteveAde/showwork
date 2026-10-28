@@ -55,3 +55,9 @@ test('research combines plan, knowledge and manager feedback while keeping priva
   assert.equal(calls.length,1);assert.match(calls[0][1],/Enquiries/);assert.match(calls[0][1],/business.test/);assert.doesNotMatch(calls[0][1],/PRIVATE|Wrong audience/);
   assert.match(calls[0][3],/PRIVATE DOCUMENT EVIDENCE/);assert.match(calls[0][3],/Wrong audience/);assert.deepEqual(calls[0][4],['excluded.test']);assert.ok(updates.some(u=>u.data.status==='SUCCEEDED'));
 });
+test('Randy confirmed-topic research excludes saved preferences and websites from the public query',async()=>{
+ const calls=[];const db={businessResearchRun:{updateMany:async()=>({count:1}),findUniqueOrThrow:async()=>({id:'run',calendarId:'w',focus:'Confirmed public topic',calendar:{clientName:'Public Brand',researchPlan:{goal:'PRIVATE GOAL',audience:'PRIVATE AUDIENCE',priorities:'PRIVATE PRIORITIES',excludedDomains:[]}}}),findMany:async()=>[]},calendarBusinessDocument:{findMany:async()=>[{websiteUrl:'https://unconfirmed-site.test'}]},socialCalendar:{update:async()=>{}}};
+ const research=load('lib/knowledge/research.ts',{'@/lib/db':{db},'@/lib/openai':{researchBusinessWithSources:async(...args)=>{calls.push(args);return{summary:'Synthetic',findings:[],sources:[],unknowns:[]}}},'./context':{getBusinessKnowledgeContext:async()=> 'PRIVATE DOCUMENT EVIDENCE'},'./retrieval':{}});
+ await research.executeBusinessResearch('run',{publicTopicOnly:true});
+ assert.equal(calls[0][1],'Confirmed public topic');assert.doesNotMatch(calls[0][1],/PRIVATE|unconfirmed-site/);assert.match(calls[0][3],/PRIVATE GOAL/);
+});

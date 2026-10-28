@@ -1,11 +1,13 @@
+import { measureUploadStage, timeWorkspaceUpload } from "@/lib/workspaceUploadTiming";
+import { lockWorkspaceUploadReservation } from "@/lib/workspaceUploadLocks";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
-import { postContentEditError } from "@/lib/publishing/editGuard";
+import { postContentEditErrorFromState } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 import { getObjectSize, publicUrlFor } from "@/lib/r2";
-import { MediaType } from "@prisma/client";
+import { type CalendarPost, MediaType } from "@prisma/client";
 import {
   releaseContentWorkspaceStorageReservation,
 } from "@/lib/contentWorkspaceUsage";
@@ -15,8 +17,15 @@ export async function POST(
   { params }: { params: Promise<{ id: string; postId: string }> }
 ) {
   /* canonical-integration-boundary */ if (publishingIntegrationInstalled()) { return await invokePublishingEntrypoint<never>("app/api/calendars/[id]/posts/[postId]/upload-complete/route.ts#POST@12",Array.from(arguments)); } /* end-canonical-integration-boundary */
+  return timeWorkspaceUpload(() => handleUpload(req, { params }));
+}
 
-  const creator = await getCurrentCreator();
+async function handleUpload(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; postId: string }> }
+) {
+
+  const creator = await measureUploadStage("auth", () => getCurrentCreator());
 
   if (!creator) {
     return NextResponse.json(
@@ -27,7 +36,7 @@ export async function POST(
 
   const { id, postId } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "ADD_CONTENT"))) {
+  if (!(await measureUploadStage("permission", () => hasCalendarPermission(creator.id, id, "ADD_CONTENT")))) {
     return NextResponse.json(
       {
         error:
@@ -37,10 +46,8 @@ export async function POST(
     );
   }
 
-  const editError = await postContentEditError(postId, id);
-  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
 
-  const post = await db.calendarPost.findUnique({
+  const post = await measureUploadStage("lookup", () => db.calendarPost.findUnique({
     where: { id: postId },
     select: {
       id: true,
@@ -51,7 +58,7 @@ export async function POST(
         },
       },
     },
-  });
+  }));
 
   if (!post || post.calendarId !== id) {
     return NextResponse.json(
@@ -139,7 +146,7 @@ const validatedMediaType = mediaType as MediaType;
    * The reservation is the source of truth for storage accounting.
    */
   const reservation =
-    await db.contentWorkspaceStorageReservation.findUnique({
+    await measureUploadStage("receipt", () => db.contentWorkspaceStorageReservation.findUnique({
       where: {
         id: reservationId,
       },
@@ -152,7 +159,7 @@ const validatedMediaType = mediaType as MediaType;
         status: true,
         expiresAt: true,
       },
-    });
+    }));
 
   if (!reservation) {
     return NextResponse.json(
@@ -206,7 +213,7 @@ const validatedMediaType = mediaType as MediaType;
       );
     }
 
-    const updated = await db.calendarPost.findUnique({
+    const updated = await measureUploadStage("lookup", () => db.calendarPost.findUnique({
       where: { id: postId },
       include: {
         assets: {
@@ -217,7 +224,7 @@ const validatedMediaType = mediaType as MediaType;
         },
         customFields: true,
       },
-    });
+    }));
 
     if (!updated) {
       return NextResponse.json(
@@ -232,6 +239,7 @@ const validatedMediaType = mediaType as MediaType;
     ...asset,
     sizeBytes: asset.sizeBytes.toString(),
     contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
   })),
 };
 
@@ -289,7 +297,7 @@ return NextResponse.json({
   let actualSizeBytes: number;
 
   try {
-    actualSizeBytes = await getObjectSize(fileKey);
+    actualSizeBytes = await measureUploadStage("storage_verify", () => getObjectSize(fileKey));
   } catch (error) {
     console.error(
       "Failed to verify uploaded calendar asset in R2:",
@@ -400,26 +408,15 @@ return NextResponse.json({
    * create the asset without accounting for its storage.
    */
   try {
-    const updated = await db.$transaction(
+    const updated = await measureUploadStage("save", () => db.$transaction(
   async (tx) => {
       /*
        * Re-check the reservation inside the transaction to prevent
        * two simultaneous completion requests from both consuming it.
        */
-      const currentReservation =
-        await tx.contentWorkspaceStorageReservation.findUnique({
-          where: {
-            id: reservation.id,
-          },
-          select: {
-            id: true,
-            creatorId: true,
-            calendarId: true,
-            fileKey: true,
-            bytes: true,
-            status: true,
-          },
-        });
+      // Lock the parent before the receipt, matching asset-review trigger ordering.
+      const lockedPosts = await tx.$queryRaw<CalendarPost[]>`SELECT * FROM "CalendarPost" WHERE id = ${postId} AND "calendarId" = ${id} FOR UPDATE`;
+      const currentReservation = await lockWorkspaceUploadReservation(tx, reservation.id);
 
       if (!currentReservation) {
         throw new Error("UPLOAD_RESERVATION_NOT_FOUND");
@@ -472,15 +469,21 @@ return NextResponse.json({
         throw new Error("UPLOAD_RESERVATION_NOT_PENDING");
       }
 
+      if (!currentReservation.live || currentReservation.bytes !== reservation.bytes) {
+        throw new Error("UPLOAD_RESERVATION_EXPIRED_OR_CHANGED");
+      }
+      const editError = postContentEditErrorFromState(lockedPosts[0] ?? null);
+      if (editError) throw new Error("UPLOAD_POST_LOCKED");
+      // One scoped read supplies both duplicate detection and next display order.
+      // The parent lock serializes attachment writers for this post.
+      const assets = await tx.calendarPostAsset.findMany({
+        where: { postId }, select: { fileKey: true, displayOrder: true },
+      });
+      if (assets.some(asset => asset.fileKey === fileKey)) {
+        throw new Error("UPLOAD_FILE_ALREADY_ATTACHED");
+      }
       const bytes = currentReservation.bytes;
-
-      /*
-       * Find the next display order inside the transaction.
-       */
-      const existingCount =
-        await tx.calendarPostAsset.count({
-          where: { postId },
-        });
+      const nextDisplayOrder = assets.reduce((max, asset) => Math.max(max, asset.displayOrder), -1) + 1;
 
       /*
        * Move the bytes from reserved storage into consumed storage.
@@ -530,7 +533,7 @@ return NextResponse.json({
           fileKey,
          mediaType: validatedMediaType,
           sizeBytes: bytes,
-          displayOrder: existingCount,
+          displayOrder: nextDisplayOrder,
         },
       });
 
@@ -560,7 +563,7 @@ return NextResponse.json({
       maxWait: 15000,
       timeout: 15000,
     }
-  );
+  ));
 
     const serializedPost = {
   ...updated,
@@ -568,6 +571,7 @@ return NextResponse.json({
     ...asset,
     sizeBytes: asset.sizeBytes.toString(),
     contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
   })),
 };
 
@@ -575,6 +579,14 @@ return NextResponse.json({
   post: serializedPost,
 });
   } catch (error) {
+    if (error instanceof Error && ["UPLOAD_RESERVATION_EXPIRED_OR_CHANGED", "UPLOAD_POST_LOCKED", "UPLOAD_FILE_ALREADY_ATTACHED"].includes(error.message)) {
+      return NextResponse.json({ error: error.message === "UPLOAD_POST_LOCKED"
+        ? "This post is approved or publishing. Request a revision before changing content."
+        : error.message === "UPLOAD_FILE_ALREADY_ATTACHED"
+          ? "This file is already attached. Refresh before starting another upload."
+          : "This upload reservation expired or changed. Please start the upload again." }, { status: 409 });
+    }
+
     if (
       error instanceof Error &&
       error.message === "UPLOAD_RESERVATION_NOT_FOUND"

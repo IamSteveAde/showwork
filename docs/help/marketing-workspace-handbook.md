@@ -353,7 +353,7 @@ Guide: /help/workspace?guide=add-website
 
 **Good to know:** The current reader visits the homepage and up to four relevant pages, not the entire website. Login-only, blocked and JavaScript-only content may be unavailable.
 
-Related: Upload business documents; Keep knowledge accurate and remove outdated sources; Start a research question.
+Related: Upload business documents; Keep knowledge accurate and remove outdated sources; Chat and research with Randy.
 
 ### Set your Brand Personality
 
@@ -422,7 +422,7 @@ Guide: /help/workspace?guide=generate-content
 
 - If a request fails, check whether drafts already exist before retrying so you do not create another batch unnecessarily.
 
-Related: Review, edit and confirm AI drafts; Answer AI clarification questions; Set your Brand Personality; Turn a research finding into a content brief.
+Related: Review, edit and confirm AI drafts; Answer AI clarification questions; Set your Brand Personality; Turn a Randy conversation into a content prompt.
 
 ### Review, edit and confirm AI drafts
 
@@ -464,69 +464,70 @@ Guide: /help/workspace?guide=missing-information
 
 Related: Generate a content batch with AI Studio; Upload business documents; Keep knowledge accurate and remove outdated sources.
 
-## Research
+## Randy
 
-Turn questions and sourced findings into practical content ideas.
+Chat about your business, research ideas and build your knowledge.
 
-### Start a research question
+### Chat and research with Randy
 
-Find sourced opportunities relevant to your business and audience.
+Talk about your business, explore sourced ideas and propose additions to Business Knowledge.
 
 Guide: /help/workspace?guide=research-question
 
-**Before you begin:** Manage business knowledge permission, source documents and available research/AI access.
+**Before you begin:** Knowledge view permission to read your conversations; AI generation permission and active workspace to chat. Knowledge management permission to research or confirm additions.
 
-1. Open Research after adding sources to Knowledge.
-2. Enter a focused question with enough detail to explain the audience or opportunity you want to understand.
-3. Optionally open preferences to set your marketing goal, audience, priority topics and sources to avoid. Save preferences.
-4. Select Start research and follow the current run’s progress.
-5. When it completes, read the findings, practical applications and linked evidence before using them.
+1. Open Randy in AI Studio. Select Start conversation or choose one of your saved conversations.
+2. Ask about your business, audience, brand or known rules. Randy uses relevant Business Knowledge passages and recent conversation; it may ask for missing details.
+3. To investigate online, ask Randy to research a specific question. Review the proposed public research topic, then select Start research. Keep private customer details out of the topic.
+4. Read the findings in the conversation and expand Sources to inspect supporting evidence. Continue asking follow-up questions in the same conversation.
+5. Randy may offer a useful knowledge addition, or you can ask for one. Review the proposed addition and select Confirm & save if accurate. It adds a shared source; existing conflicting documents are not overwritten.
+6. To create content from the discussion, select Create content prompt or ask Randy. Review the prompt in chat, then Copy prompt or Use in Generate.
 
-**What happens next:** A research run records findings and sources that can inform current AI recommendations.
+**What happens next:** Your conversation is saved privately to your login within this workspace. Confirmed additions become shared Business Knowledge sources.
 
-**Good to know:** Research uses external web evidence alongside business context. It is not a verified business policy and should not replace your own product facts.
+**Good to know:** Randy does not read every document in every reply: it retrieves relevant passages. Research is external evidence, not company policy. Nothing is saved to knowledge without confirmation. No content is automatically generated or published.
 
-Related: Review research evidence and control what AI uses; Turn a research finding into a content brief; Add a website to Business Knowledge.
+Related: Check research evidence in your conversation; Turn a Randy conversation into a content prompt; Add a website to Business Knowledge.
 
-### Review research evidence and control what AI uses
+### Check research evidence in your conversation
 
-Keep useful findings and exclude irrelevant or incorrect research.
+Inspect sources, discuss uncertainty and challenge findings without leaving Randy.
 
 Guide: /help/workspace?guide=research-feedback
 
-**Before you begin:** Manage business knowledge permission to change feedback and exclusions.
+**Before you begin:** Knowledge view to read your own conversations; AI generation permission to continue chatting.
 
-1. Open a finding in Research and inspect its supporting sources and context.
-2. Read the uncertainty and suggested application where provided.
-3. Open feedback, add a note if helpful, and mark the finding Useful, Irrelevant or Incorrect.
-4. Use Use in AI recommendations to include or exclude the finding.
-5. Open Previous research to review earlier runs; use current research when creating a new brief.
+1. Open Randy and choose the conversation containing your research.
+2. Expand Sources beneath the answer and open supporting links to inspect the evidence.
+3. Ask Randy which parts are verified, uncertain or proposed experiments, and explain any incorrect assumptions.
+4. Ask a follow-up question or request more research when the evidence is insufficient.
+5. Review any proposed knowledge addition separately. Nothing is saved as business information until an authorized member confirms it.
 
-**What happens next:** Your selections guide which current research findings are available to later AI context.
+**What happens next:** Research can inform your discussion while keeping uncertainty visible.
 
-**Good to know:** Feedback does not retract already generated content. Review existing drafts separately after discovering an incorrect source.
+**Good to know:** Chat feedback does not automatically edit or delete historical research records or retract existing generated content. External research must not be treated as proof of company prices, policies or capabilities.
 
-Related: Start a research question; Turn a research finding into a content brief; Keep knowledge accurate and remove outdated sources.
+Related: Chat and research with Randy; Turn a Randy conversation into a content prompt; Keep knowledge accurate and remove outdated sources.
 
-### Turn a research finding into a content brief
+### Turn a Randy conversation into a content prompt
 
-Carry evidence and a practical angle into AI Studio.
+Prepare a generation prompt directly from your business discussion and research.
 
 Guide: /help/workspace?guide=research-brief
 
-**Before you begin:** Manage knowledge and generate AI content permissions.
+**Before you begin:** AI generation permission to prepare a prompt and use Generate.
 
-1. Open a current finding in Research and review its evidence.
-2. Make sure the finding is included for AI recommendations.
-3. Select Create brief. Showwork opens Generate with the research direction carried over.
-4. Review the objective, dates, platforms and instructions; adapt them to your campaign.
-5. Start generation only when the brief is ready, then review the resulting drafts.
+1. Discuss the idea or research findings with Randy in the same conversation.
+2. Ask to create content from the discussion, or select Create content prompt below the latest answer.
+3. Review the content prompt Randy prepares. Edit the prompt in its card to refine the objective, audience, angle and creative direction.
+4. Select Copy prompt to copy the text, or Use in Generate to open Generate with the instructions filled in.
+5. Review your platforms, dates and other generation settings, then start generation when ready.
 
-**What happens next:** A sourced idea informs a deliberate generation request.
+**What happens next:** A reviewed prompt carries your discussion into AI content generation.
 
-**Good to know:** Create brief does not automatically generate, approve or publish posts.
+**Good to know:** Use in Generate does not automatically generate, approve or publish posts. Knowledge additions are separate and require confirmation.
 
-Related: Generate a content batch with AI Studio; Review research evidence and control what AI uses; Review, edit and confirm AI drafts.
+Related: Generate a content batch with AI Studio; Check research evidence in your conversation; Review, edit and confirm AI drafts.
 
 ## Social connections
 
@@ -960,7 +961,7 @@ Guide: /help/workspace?guide=report-insights
 
 **Good to know:** AI analysis can consume allowance and is not proof of causation. Validate suggestions against business knowledge and actual customer needs.
 
-Related: Generate a content batch with AI Studio; View analytics for selected platforms; Turn a research finding into a content brief.
+Related: Generate a content batch with AI Studio; View analytics for selected platforms; Turn a Randy conversation into a content prompt.
 
 ### Read lead opportunities and production summaries
 

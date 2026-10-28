@@ -1,12 +1,11 @@
+import { removeWorkspaceContent, WorkspaceDeletionConflict } from "@/lib/workspaceDeletion";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed, nativePolicyExecutionAllowed } from "@/lib/publishing/applicationBoundary";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { deleteObject } from "@/lib/r2";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 
-// DELETE — removes one uploaded business document, both its database
-// record and its underlying R2 file.
+// DELETE — removes a document and durably queues unused media for cleanup.
 //
 // The document's recorded size is also returned to the Content
 // Workspace storage allowance. Invalidate the summary so deleted facts cannot remain.
@@ -68,158 +67,9 @@ export async function DELETE(
     );
   }
 
-  const ownerId = document.calendar.managerId;
-
-  /*
-   * Delete the physical R2 object first.
-   *
-   * We intentionally preserve the existing behavior of allowing the
-   * database document to be removed even if R2 deletion fails. This
-   * prevents an inaccessible object from permanently blocking the
-   * user's ability to remove the document from the workspace.
-   */
   try {
-    if (document.fileKey) await deleteObject(document.fileKey);
+    return NextResponse.json(await removeWorkspaceContent({ actorId: creator.id, mode: "document", calendarId: id, documentId }));
   } catch (error) {
-    console.error(
-      `Failed to delete R2 object for business document ${documentId}:`,
-      error
-    );
+    return NextResponse.json({ error: error instanceof WorkspaceDeletionConflict ? error.message : "Unable to remove this document. Please retry." }, { status: error instanceof WorkspaceDeletionConflict ? 409 : 500 });
   }
-
-  /*
-   * Remove the document and release its consumed storage in the same
-   * database transaction.
-   *
-   * storageBytes -= document.sizeBytes
-   *
-   * This prevents the database record from disappearing while the
-   * storage allowance remains permanently consumed.
-   */
-  try {
-    await db.$transaction(async (tx) => {
-      /*
-       * Re-check the document inside the transaction so a concurrent
-       * deletion cannot cause us to release the same storage twice.
-       */
-      const currentDocument =
-        await tx.calendarBusinessDocument.findUnique({
-          where: {
-            id: documentId,
-          },
-          select: {
-            id: true,
-            calendarId: true,
-            sizeBytes: true,
-            fileKey: true,
-          },
-        });
-
-      if (!currentDocument) {
-        throw new Error(
-          "BUSINESS_DOCUMENT_ALREADY_DELETED"
-        );
-      }
-
-      if (currentDocument.calendarId !== id) {
-        throw new Error(
-          "BUSINESS_DOCUMENT_INVALID_CALENDAR"
-        );
-      }
-
-      const releasedBytes = currentDocument.sizeBytes;
-
-      /*
-       * Decrement consumed storage only when the usage record has
-       * enough recorded storage to release.
-       *
-       * This protects the usage counter from becoming negative.
-       */
-      if (currentDocument.fileKey) {
-        const usage = await tx.contentWorkspaceUsage.updateMany({
-            where: {
-              creatorId: ownerId,
-              storageBytes: {
-                gte: releasedBytes,
-              },
-            },
-            data: {
-              storageBytes: {
-                decrement: releasedBytes,
-              },
-            },
-          });
-
-        if (usage.count !== 1) {
-          throw new Error(
-            "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
-          );
-        }
-      }
-
-      await tx.socialCalendar.update({ where: { id }, data: { aiBusinessSummary: null, aiBusinessSummarySourceHash: null, aiBusinessSummaryUpdatedAt: null } });
-
-      await tx.calendarBusinessDocument.delete({
-        where: {
-          id: documentId,
-        },
-      });
-    });
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message ===
-        "BUSINESS_DOCUMENT_ALREADY_DELETED"
-    ) {
-      return NextResponse.json(
-        { ok: true },
-        { status: 200 }
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        "BUSINESS_DOCUMENT_INVALID_CALENDAR"
-    ) {
-      return NextResponse.json(
-        { error: "Document not found" },
-        { status: 404 }
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message ===
-        "CONTENT_WORKSPACE_STORAGE_RELEASE_FAILED"
-    ) {
-      console.error(
-        `Failed to release Marketing Workspace storage for business document ${documentId}:`,
-        error
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            "Unable to release the document's storage allowance. The document was not removed.",
-        },
-        { status: 409 }
-      );
-    }
-
-    console.error(
-      `Failed to remove business document ${documentId}:`,
-      error
-    );
-
-    return NextResponse.json(
-      {
-        error:
-          "Failed to remove the business document",
-      },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ ok: true });
 }

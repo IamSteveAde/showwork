@@ -26,6 +26,7 @@ const navigation = [
   { title: "Let’s connect", links: [
     { label: "Create an account", href: "/signup" },
     { label: "Log in", href: "/login" },
+    { label: "Help & guides", href: "/help/workspace" },
     { label: "Email us", href: "mailto:hello@useshowwork.com" },
   ] },
 ];

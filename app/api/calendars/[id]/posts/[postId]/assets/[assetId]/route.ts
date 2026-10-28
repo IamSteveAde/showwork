@@ -1,8 +1,7 @@
+import { removeWorkspaceContent, WorkspaceDeletionConflict } from "@/lib/workspaceDeletion";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
-import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { hasCalendarPermission } from "@/lib/calendarPermissions";
 
 export async function DELETE(
@@ -19,14 +18,9 @@ export async function DELETE(
     return NextResponse.json({ error: "You don't have permission to modify content on this calendar" }, { status: 403 });
   }
 
-  const editError = await postContentEditError(postId, id);
-  if (editError) return NextResponse.json({ error: editError }, { status: 409 });
-
-  const asset = await db.calendarPostAsset.findUnique({ where: { id: assetId } });
-  if (!asset || asset.postId !== postId) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    return NextResponse.json(await removeWorkspaceContent({ actorId: creator.id, mode: "asset", calendarId: id, postId, assetId }));
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof WorkspaceDeletionConflict ? error.message : "Unable to remove this file. Nothing was changed; please retry." }, { status: error instanceof WorkspaceDeletionConflict ? 409 : 500 });
   }
-
-  await db.calendarPostAsset.delete({ where: { id: assetId } });
-  return NextResponse.json({ ok: true });
 }

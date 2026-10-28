@@ -32,16 +32,20 @@ export default function MobileDrawer({
   children,
   label,
   className = "bg-white text-slate-900",
+  panelClassName = "",
   breakpoint = "lg",
   placement = "left",
+  motion = "slide",
 }: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   label: string;
   className?: string;
+  panelClassName?: string;
   breakpoint?: "md" | "lg";
   placement?: "left" | "bottom";
+  motion?: "slide" | "fade";
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef(onClose);
@@ -53,7 +57,7 @@ export default function MobileDrawer({
     if (!dialog) return;
     if (!open) {
       setVisible(false);
-      const timer = window.setTimeout(() => dialog.close(), 300);
+      const timer = window.setTimeout(() => dialog.close(), motion === "fade" ? 180 : 300);
       return () => window.clearTimeout(timer);
     }
     const previousOverflow = document.body.style.overflow;
@@ -75,7 +79,7 @@ export default function MobileDrawer({
       document.body.style.overflow = previousOverflow;
       previousFocus?.focus({ preventScroll: true });
     };
-  }, [open, breakpoint]);
+  }, [open, breakpoint, motion]);
 
   return (
     <dialog
@@ -107,10 +111,11 @@ export default function MobileDrawer({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className={`absolute inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity ${motion === "fade" ? "duration-[180ms]" : "duration-300"} motion-reduce:transition-none ${visible ? "opacity-100" : "opacity-0"}`}
       />
       <div
-        className={`flex flex-col shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${placement === "bottom" ? `absolute inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-3xl ${visible ? "translate-y-0" : "translate-y-full"}` : `relative h-full w-[min(320px,calc(100vw-48px))] ${visible ? "translate-x-0" : "-translate-x-full"}`} ${className}`}
+        data-visible={visible}
+        className={`${panelClassName} flex flex-col shadow-2xl ease-out motion-reduce:transition-none ${motion === "fade" ? `transition-opacity duration-[180ms] ${visible ? "opacity-100" : "opacity-0"}` : "transition-transform duration-300"} ${placement === "bottom" ? "absolute inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-3xl" : "relative h-full w-[min(320px,calc(100vw-48px))]"} ${motion === "slide" ? (placement === "bottom" ? (visible ? "translate-y-0" : "translate-y-full") : (visible ? "translate-x-0" : "-translate-x-full")) : ""} ${className}`}
       >
         {placement === "bottom" && <div aria-hidden="true" className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-slate-200" />}
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-current/10 px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">

@@ -1,3 +1,4 @@
+import DeliveryHelpLink from "@/components/help/DeliveryHelpLink";
 import { cookies } from "next/headers";
 import ProjectDashboardTheme, { ProjectThemeToggle } from "@/components/projects/ProjectDashboardTheme";
 import UiSymbol from "@/components/ui/UiSymbol";
@@ -621,6 +622,7 @@ export default async function ProjectDeliveryPage() {
 
                 {/* Right side */}
                 <div className="flex items-center gap-1.5 sm:gap-2">
+                  <DeliveryHelpLink className="!border-[var(--pd-border)] !text-[var(--pd-muted)] max-sm:text-[10px]"/>
                   <ProjectThemeToggle />
                   {/* Plan */}
                   <Link

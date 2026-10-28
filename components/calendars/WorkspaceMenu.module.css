@@ -46,3 +46,32 @@
 @media (prefers-reduced-motion:reduce) { .navItem,.iconItem,.collapseButton,.bottomNav > button { transition: none; } }
 .helpLink { display:flex; align-items:center; gap:8px; min-height:35px; padding:6px 8px; color:#6e8eb6; font-size:10px; border-radius:9px; }.helpLink > span:first-of-type { flex:1; }.helpLink:hover { color:#1768e8; background:#edf4ff; }.helpLink:focus-visible,.collapsedHelp:focus-visible { outline:2px solid #1768e8; outline-offset:3px; }
 .collapsedHelp { display:grid; place-items:center; flex-shrink:0; min-height:41px; margin:4px 12px; border:1px solid #dce7f8; border-radius:11px; color:#7c9ac1; background:#fff; }.collapsedHelp:hover { color:#1768e8; background:#edf4ff; }
+
+/* A floating mobile dock, with a matching workspace sheet. */
+.bottomNav { position:fixed; inset:auto 12px calc(10px + env(safe-area-inset-bottom)); z-index:40; display:flex; align-items:center; gap:3px; width:calc(100% - 24px); max-width:540px; margin-inline:auto; padding:7px; border:1px solid #d2e1f6; border-radius:25px; background:linear-gradient(145deg,#fffffff5,#f5f9fff5); backdrop-filter:blur(24px); box-shadow:0 10px 35px #193e7620,0 2px 5px #193e7608,inset 0 1px 0 #fff; }
+.dockItem { position:relative; display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-width:0; min-height:57px; padding:7px 2px; border:1px solid transparent; border-radius:18px; color:#7186a3; font-size:11px; font-weight:550; line-height:1.3; -webkit-tap-highlight-color:transparent; transition:background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease; }
+.dockItem > svg { width:21px; height:21px; stroke-width:1.8; transition:transform .25s cubic-bezier(.2,.8,.2,1); }
+.bottomNav > .dockItem[aria-current],.bottomNav > .dockItem[aria-expanded=true] { background:linear-gradient(145deg,#287cf1,#155fd5); border-color:#1c6de5; color:#fff; box-shadow:0 5px 12px #1768e82b,inset 0 1px 0 #ffffff40; }
+.dockItem[aria-current] > svg,.dockItem[aria-expanded=true] > svg { transform:translateY(-1px); }
+.dockItem:active { transform:scale(.95); }
+.dockItem:focus-visible { outline:2px solid #1768e8; outline-offset:2px; }
+.mobilePanel { inset-inline:8px !important; bottom:calc(8px + env(safe-area-inset-bottom)) !important; width:calc(100% - 16px) !important; max-width:560px; margin-inline:auto; max-height:85dvh; border:1px solid #d8e6f9; border-radius:30px !important; background:radial-gradient(ellipse at 100% 0,#e4efff,transparent 55%),#fff !important; box-shadow:0 24px 90px #0a234859,inset 0 1px 0 #fff; transition-timing-function:cubic-bezier(.22,.8,.25,1) !important; }
+.mobilePanel > div:first-child { width:36px; background:#bfd0e9; }
+.mobilePanel > div:nth-child(2) { padding:14px 20px; border-bottom:1px solid #e3ebf7; }
+.mobilePanel > div:nth-child(2) > span { font-size:20px; letter-spacing:-.035em; color:#203e69; }
+.mobilePanel > div:nth-child(2) > button { width:36px; height:36px; border:1px solid #dce6f5; border-radius:50%; background:#ffffffb3; color:#6e8bb1; }
+.sheetBody { padding:18px; }
+.sheetIntro { margin:0 2px 16px; color:#748cae; font-size:13px; line-height:1.6; }
+.sheetGrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.sheetItem { min-height:108px; padding:14px; gap:11px; border-color:#dfe8f5; border-radius:20px; background:linear-gradient(135deg,#fff,#f1f6ff); box-shadow:0 2px 4px #27497e04; transition:transform .2s ease,box-shadow .2s ease; }
+.sheetItem:active { transform:scale(.97); }
+.sheetItem .iconWell { width:36px; height:36px; border-radius:12px; }
+.sheetLabel { padding-right:12px; font-size:13px; line-height:1.4; }
+.sheetChevron { position:absolute; right:12px; top:25px; color:#8ca7ca; }
+.sheetItem[aria-current=page] .sheetChevron { color:#c5defe; }
+.sheetActive { font-size:11px; }
+.sheetLinks { display:grid; gap:4px; margin-top:18px; padding:10px 4px 0; border-top:1px solid #e2ebf8; }
+.sheetLinks > a { transition:background .2s ease; }
+.sheetLinks > a:hover { background:#edf4ff; }
+@media(min-width:1024px) { .bottomNav { display:none; } }
+@media(prefers-reduced-motion:reduce) { .dockItem,.dockItem > svg,.sheetItem,.sheetLinks > a,.mobilePanel { transition:none !important; } }

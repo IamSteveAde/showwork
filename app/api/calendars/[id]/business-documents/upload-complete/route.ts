@@ -1,3 +1,5 @@
+import { measureUploadStage, timeWorkspaceUpload } from "@/lib/workspaceUploadTiming";
+import { lockWorkspaceUploadReservation } from "@/lib/workspaceUploadLocks";
 import { rebuildBusinessKnowledge } from "@/lib/knowledge/context";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentCreator } from "@/lib/auth";
@@ -13,7 +15,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const creator = await getCurrentCreator();
+  return timeWorkspaceUpload(() => handleUpload(req, { params }));
+}
+
+async function handleUpload(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const creator = await measureUploadStage("auth", () => getCurrentCreator());
 
   if (!creator) {
     return NextResponse.json(
@@ -24,7 +33,7 @@ export async function POST(
 
   const { id } = await params;
 
-  if (!(await hasCalendarPermission(creator.id, id, "knowledge.manage"))) {
+  if (!(await measureUploadStage("permission", () => hasCalendarPermission(creator.id, id, "knowledge.manage")))) {
     return NextResponse.json(
       {
         error:
@@ -34,7 +43,7 @@ export async function POST(
     );
   }
 
-  const calendar = await db.socialCalendar.findUnique({
+  const calendar = await measureUploadStage("lookup", () => db.socialCalendar.findUnique({
     where: { id },
     select: {
       id: true,
@@ -43,7 +52,7 @@ export async function POST(
       aiBusinessSummary: true,
       aiBusinessSummaryUpdatedAt: true,
     },
-  });
+  }));
 
   if (!calendar) {
     return NextResponse.json(
@@ -129,7 +138,7 @@ export async function POST(
    * Find the exact storage reservation created during presign.
    */
   const reservation =
-    await db.contentWorkspaceStorageReservation.findUnique({
+    await measureUploadStage("receipt", () => db.contentWorkspaceStorageReservation.findUnique({
       where: {
         id: reservationId,
       },
@@ -142,7 +151,7 @@ export async function POST(
         status: true,
         expiresAt: true,
       },
-    });
+    }));
 
   if (!reservation) {
     return NextResponse.json(
@@ -201,7 +210,8 @@ export async function POST(
     }
 
     return NextResponse.json({
-      document: existingDocument,
+      document: { ...existingDocument, sizeBytes: existingDocument.sizeBytes.toString() },
+      alreadyCompleted: true,
       summaryUpdated: false,
     });
   }
@@ -254,7 +264,7 @@ export async function POST(
   let actualSizeBytes: number;
 
   try {
-    actualSizeBytes = await getObjectSize(fileKey);
+    actualSizeBytes = await measureUploadStage("storage_verify", () => getObjectSize(fileKey));
   } catch (error) {
     console.error(
       "Failed to verify uploaded business document in R2:",
@@ -353,10 +363,10 @@ export async function POST(
   let extractedText: string;
 
   try {
-    extractedText = await extractTextFromDocument(
+    extractedText = await measureUploadStage("extraction", () => extractTextFromDocument(
       publicUrlFor(fileKey),
       contentType
-    );
+    ));
   } catch (error) {
     const message =
       error instanceof Error
@@ -389,29 +399,18 @@ export async function POST(
    *
    * Either all of these changes happen or none do.
    */
+  let replayed = false;
   let document;
 
   try {
-    document = await db.$transaction(async (tx) => {
+    document = await measureUploadStage("save", () => db.$transaction(async (tx) => {
       /*
        * Re-check the reservation inside the transaction so two
        * simultaneous completion requests cannot consume the same
        * reservation twice.
        */
-      const currentReservation =
-        await tx.contentWorkspaceStorageReservation.findUnique({
-          where: {
-            id: reservation.id,
-          },
-          select: {
-            id: true,
-            creatorId: true,
-            calendarId: true,
-            fileKey: true,
-            bytes: true,
-            status: true,
-          },
-        });
+      await tx.$queryRaw`SELECT id FROM "SocialCalendar" WHERE id = ${id} FOR UPDATE`;
+      const currentReservation = await lockWorkspaceUploadReservation(tx, reservation.id);
 
       if (!currentReservation) {
         throw new Error("UPLOAD_RESERVATION_NOT_FOUND");
@@ -444,6 +443,7 @@ export async function POST(
           );
         }
 
+        replayed = true;
         return existingDocument;
       }
 
@@ -453,6 +453,12 @@ export async function POST(
         );
       }
 
+      if (!currentReservation.live || currentReservation.bytes !== reservation.bytes) {
+        throw new Error("UPLOAD_RESERVATION_EXPIRED_OR_CHANGED");
+      }
+      if (await tx.calendarBusinessDocument.findFirst({ where: { calendarId: id, fileKey } })) {
+        throw new Error("UPLOAD_FILE_ALREADY_ATTACHED");
+      }
       const bytes = currentReservation.bytes;
 
       /*
@@ -506,8 +512,14 @@ export async function POST(
           extractedText,
         },
       });
-    });
+    }));
   } catch (error) {
+    if (error instanceof Error && ["UPLOAD_RESERVATION_EXPIRED_OR_CHANGED", "UPLOAD_FILE_ALREADY_ATTACHED"].includes(error.message)) {
+      return NextResponse.json({ error: error.message === "UPLOAD_FILE_ALREADY_ATTACHED"
+          ? "This file is already attached. Refresh before starting another upload."
+          : "This upload reservation expired or changed. Please start the upload again." }, { status: 409 });
+    }
+
     if (
       error instanceof Error &&
       error.message ===
@@ -589,6 +601,11 @@ export async function POST(
     );
   }
 
+  if (replayed) return NextResponse.json({
+    document: { ...document, sizeBytes: document.sizeBytes.toString() },
+    alreadyCompleted: true, summaryUpdated: false,
+  });
+
   /*
    * The document is now safely persisted and its storage has been
    * accounted for. Updating the rolling AI business summary is
@@ -597,7 +614,7 @@ export async function POST(
    * A summary failure must never undo a successful document upload.
    */
   try {
-    const { summary: updatedSummary, updatedAt: summaryUpdatedAt } = await rebuildBusinessKnowledge(id);
+    const { summary: updatedSummary, updatedAt: summaryUpdatedAt } = await measureUploadStage("knowledge", () => rebuildBusinessKnowledge(id));
 
     const serializedDocument = {
   ...document,

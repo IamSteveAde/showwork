@@ -1,7 +1,10 @@
 "use client";
 
+import PlatformBrandIcon from "./PlatformBrandIcon";
+import styles from "./ClientWorkspace.module.css";
+import HelpLink from "@/components/help/HelpLink";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, ChartNoAxesCombined, ArrowUpRight, CalendarDays, CheckCheck, Clock3, FileImage, ShieldCheck, MoreHorizontal, LayoutDashboard, MessageSquareText } from "lucide-react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import MobileDrawer, { NavigationToggle } from "@/components/navigation/MobileDrawer";
@@ -94,6 +97,10 @@ function Icon({
     | "calendar"
     | "instagram"
     | "tiktok"
+    | "linkedin"
+    | "facebook"
+    | "x"
+    | "analytics"
     | "review"
     | "check"
     | "clock"
@@ -103,13 +110,8 @@ function Icon({
     | "spark";
   className?: string;
 }) {
-  if (name === "tiktok") {
-    return (
-      <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-        <path d="M16.6 2h-3.3v13.8c0 1.5-1.2 2.7-2.7 2.7a2.7 2.7 0 1 1 0-5.4c.3 0 .5 0 .8.1V9.8a6.1 6.1 0 0 0-.8 0A6.1 6.1 0 1 0 16.6 15.9V8.5a8 8 0 0 0 4.6 1.5V6.7a4.8 4.8 0 0 1-4.6-4.7Z" />
-      </svg>
-    );
-  }
+  if (["instagram","tiktok","linkedin","facebook","x"].includes(name)) return <PlatformBrandIcon platform={name.toUpperCase()} size={18}/>;
+  if (name === "analytics") return <ChartNoAxesCombined className={className} aria-hidden="true"/>;
 
   const common = {
     viewBox: "0 0 24 24",
@@ -216,7 +218,7 @@ function SidebarItem({
       type="button"
       onClick={onClick}
       className={[
-        "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 text-left text-[12px] font-medium transition-all duration-200",
+        `${styles.navItem} group flex min-h-11 w-full items-center gap-3 rounded-xl px-3.5 text-left text-[12px] font-medium transition-all duration-200`,
         active
           ? "bg-[#2478FF] text-white shadow-[0_10px_24px_rgba(36,120,255,0.22)]"
           : "text-[rgb(var(--client-muted))] hover:bg-[rgb(var(--client-ink))]/[0.055] hover:text-[rgb(var(--client-ink))]",
@@ -311,6 +313,7 @@ export default function ClientCalendarWorkspace({
     </button>
   );
   const [previewPostId, setPreviewPostId] = useState<string>();
+  const [previewRequest, setPreviewRequest] = useState(0);
   const [calendarVisited, setCalendarVisited] = useState(false);
   const searchParams = useSearchParams();
   const requestedView = searchParams.get("view");
@@ -372,8 +375,8 @@ export default function ClientCalendarWorkspace({
       url.searchParams.set("view", view);
       window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
-    contentScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    contentScrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   const sidebar = <>
@@ -413,7 +416,7 @@ export default function ClientCalendarWorkspace({
             <div className="space-y-1">
               <SidebarItem active={activeView === "overview"} onClick={() => navigate("overview")} icon="grid" label="Overview" />
               <SidebarItem active={activeView === "calendar"} onClick={() => navigate("calendar")} icon="calendar" label="Content Calendar" />
-              <SidebarItem active={activeView === "analytics"} onClick={() => navigate("analytics")} icon="spark" label="Analytics & Reporting" />
+              <SidebarItem active={activeView === "analytics"} onClick={() => navigate("analytics")} icon="analytics" label="Analytics & Reporting" />
             </div>
 
             <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
@@ -422,9 +425,9 @@ export default function ClientCalendarWorkspace({
             <div className="space-y-1">
               <SidebarItem active={activeView === "instagram"} onClick={() => navigate("instagram")} icon="instagram" label="Instagram" />
               <SidebarItem active={activeView === "tiktok"} onClick={() => navigate("tiktok")} icon="tiktok" label="TikTok" />
-              <SidebarItem active={activeView === "linkedin"} onClick={() => navigate("linkedin")} icon="message" label="LinkedIn" />
-              <SidebarItem active={activeView === "facebook"} onClick={() => navigate("facebook")} icon="message" label="Facebook" />
-              <SidebarItem active={activeView === "x"} onClick={() => navigate("x")} icon="message" label="X" />
+              <SidebarItem active={activeView === "linkedin"} onClick={() => navigate("linkedin")} icon="linkedin" label="LinkedIn" />
+              <SidebarItem active={activeView === "facebook"} onClick={() => navigate("facebook")} icon="facebook" label="Facebook" />
+              <SidebarItem active={activeView === "x"} onClick={() => navigate("x")} icon="x" label="X" />
             </div>
 
             <div className="mb-2 mt-7 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
@@ -442,6 +445,7 @@ export default function ClientCalendarWorkspace({
           </div>
 
           <div className="border-t border-[rgb(var(--client-ink))]/[0.07] p-3.5">
+            <HelpLink className={styles.helpLink}/>
             <div className="rounded-xl border border-[rgb(var(--client-ink))]/[0.06] bg-[rgb(var(--client-ink))]/[0.025] px-3.5 py-3">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgb(var(--client-ink))]/[0.04]">
@@ -457,13 +461,13 @@ export default function ClientCalendarWorkspace({
   </>;
 
   return (
-    <main style={themeStyle} data-client-theme={theme} className="min-h-screen overflow-x-hidden bg-[rgb(var(--client-bg))] text-[rgb(var(--client-ink))] lg:h-dvh lg:min-h-0 lg:overflow-hidden">
+    <main style={themeStyle} data-showwork-client-view="workspace" data-client-theme={theme} className={`${styles.workspace} min-h-screen overflow-x-hidden bg-[rgb(var(--client-bg))] text-[rgb(var(--client-ink))] lg:h-dvh lg:min-h-0 lg:overflow-hidden`}>
       {/* Mobile app header */}
-      <header className="sticky top-0 z-50 border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/94 backdrop-blur-2xl lg:hidden">
+      <header className={`${styles.mobileHeader} sticky top-0 z-50 border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/94 backdrop-blur-2xl lg:hidden`}>
         <div className="flex h-[68px] items-center gap-2 px-3 sm:gap-3 sm:px-4">
           <NavigationToggle open={mobileOpen} onClick={() => setMobileOpen(true)} label="workspace navigation" />
           <Image
-            src={theme === "dark" ? "/images/logo/swwhite.svg" : "/images/logo/sw.svg"}
+            src="/images/logo/swwhite.svg"
             alt="Showwork"
             width={80}
             height={20}
@@ -474,7 +478,7 @@ export default function ClientCalendarWorkspace({
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-[rgb(var(--client-muted))]">{clientName}</p>
             <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-[rgb(var(--client-muted))]">
-              Marketing workspace
+              Client workspace
             </p>
           </div>
           {themeToggle}
@@ -483,17 +487,17 @@ export default function ClientCalendarWorkspace({
 
       </header>
 
-      <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} label="Marketing workspace" className="bg-[rgb(var(--client-panel))] text-[rgb(var(--client-ink))]">{sidebar}</MobileDrawer>
+      <MobileDrawer motion="fade" placement="bottom" panelClassName={styles.mobileSheet} open={mobileOpen} onClose={() => setMobileOpen(false)} label="Your workspace" className="bg-[rgb(var(--client-panel))] text-[rgb(var(--client-ink))]">{sidebar}</MobileDrawer>
 
       <div className="flex min-h-screen lg:h-full lg:min-h-0">
         {/* Persistent desktop navigation */}
-        <aside className="hidden h-full w-[272px] shrink-0 flex-col overflow-hidden border-r border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] lg:flex">
+        <aside className={`${styles.sidebar} hidden h-full w-[240px] shrink-0 flex-col overflow-hidden border-r border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-panel))] lg:flex`}>
           {sidebar}
         </aside>
 
         {/* Everything below stays mounted. Only the active workspace view changes. */}
-        <section ref={contentScrollRef} aria-label="Marketing workspace content" tabIndex={0} className="min-w-0 flex-1 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
-          <header className="sticky top-0 z-30 hidden h-[68px] items-center border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/90 px-6 backdrop-blur-2xl lg:flex xl:px-9">
+        <section ref={contentScrollRef} aria-label="Marketing workspace content" tabIndex={0} className={`${styles.content} min-w-0 flex-1 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain`}>
+          <header className={`${styles.topbar} sticky top-0 z-30 hidden h-[68px] items-center border-b border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-bg))]/90 px-6 backdrop-blur-2xl lg:flex xl:px-9`}>
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[rgb(var(--client-muted))]">
                 {activeView === "overview"
@@ -520,116 +524,32 @@ export default function ClientCalendarWorkspace({
             </div>
           </header>
 
-          {/* Hero is part of the persistent shell and does not reload between views. */}
-          <div className="relative isolate overflow-hidden border-b border-[rgb(var(--client-ink))]/[0.06]">
-            <div className="absolute inset-0 h-[310px]">
-              {mobileBannerUrl && (
-                <img
-                  src={mobileBannerUrl}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover sm:hidden"
-                />
-              )}
-              {desktopBannerUrl && (
-                <img
-                  src={desktopBannerUrl}
-                  alt=""
-                  className="absolute inset-0 hidden h-full w-full object-cover sm:block"
-                />
-              )}
-              {!desktopBannerUrl && !mobileBannerUrl && (
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 15% 10%, rgba(36,120,255,0.28), transparent 32%), radial-gradient(circle at 88% 8%, rgba(124,58,237,0.17), transparent 30%), rgb(var(--client-bg))",
-                  }}
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-[rgb(var(--client-bg))]/35 via-[rgb(var(--client-bg))]/60 to-[rgb(var(--client-bg))]" />
-            </div>
+          {activeView === "overview" && <section className={styles.hero} aria-label="Your client workspace">
+            {(desktopBannerUrl || mobileBannerUrl) && <picture className={styles.heroImage}>{mobileBannerUrl && <source media="(max-width:639px)" srcSet={mobileBannerUrl}/>}<img src={desktopBannerUrl || mobileBannerUrl!} alt=""/></picture>}
+            <div className={styles.heroCopy}><span className={styles.heroEyebrow}><ShieldCheck size={13}/>Your private review room</span><h1>{displayTitle}</h1><p>{displayDescription}</p><button type="button" onClick={() => navigate(reviewPosts.length ? "review" : "calendar")}>{reviewPosts.length ? "Review your content" : "Explore your calendar"}<ArrowUpRight size={16}/></button></div>
+            <div className={styles.heroStamp}><span>{clientName.slice(0,2).toUpperCase()}</span><p>Created together.<br/><strong>Shared with you.</strong></p></div>
+          </section>}
 
-            <div className="relative px-5 pb-9 pt-11 sm:px-8 sm:pb-10 sm:pt-13 xl:px-9">
-              <div className="max-w-4xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--client-ink))]/[0.09] bg-black/30 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[rgb(var(--client-muted))] backdrop-blur-xl">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#43E097] shadow-[0_0_10px_rgba(67,224,151,0.65)]" />
-                  Marketing workspace
+          <div className={styles.pageBody}>
+            <div>
+              {activeView === "overview" && <div className={styles.overview}>
+                <div className={styles.statGrid}>{[
+                  { label:"Shared posts", value:stats.totalPosts, icon:CalendarDays, tone:"blue" },
+                  { label:"Approved", value:stats.approvedPosts, icon:CheckCheck, tone:"green" },
+                  { label:"Awaiting review", value:stats.pendingPosts, icon:Clock3, tone:"amber" },
+                  { label:"Creative files", value:stats.totalAssets, icon:FileImage, tone:"violet" },
+                ].map(({label,value,icon:StatIcon,tone}) => <div key={label} className={styles.stat} data-tone={tone}><span><StatIcon size={18}/></span><div><p>{label}</p><strong>{value}</strong></div></div>)}</div>
+                <div className={styles.overviewGrid}>
+                  <section className={styles.reviewCard}>
+                    <span className={styles.kicker}>Make it yours</span><h2>{reviewPosts.length ? "Your perspective makes the difference." : stats.totalPosts ? "Good work. All caught up." : "Your next chapter starts here."}</h2><p>{reviewPosts.length ? `${stats.pendingPosts} awaiting review · ${stats.revisionPosts} needing revision. Explore the creative, leave feedback and approve when it feels right.` : stats.totalPosts ? "Everything shared with you has been approved. Your calendar holds the complete picture." : "Your team’s content will appear here once it is ready for your review."}</p>
+                    <button type="button" onClick={() => navigate(reviewPosts.length ? "review" : "calendar")}>{reviewPosts.length ? "Go to reviews" : "Open calendar"}<ArrowUpRight size={16}/></button>
+                  </section>
+                  <section className={styles.progressCard} aria-label="Client approval progress"><div><span className={styles.kicker}>Moving forward</span><h2>Approval progress</h2><p>{stats.approvedPosts} of {stats.totalPosts} shared posts</p></div><div className={styles.progressRing}><svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="48"/><circle cx="60" cy="60" r="48" strokeDasharray="301.6" strokeDashoffset={301.6 * (1 - Math.max(0,Math.min(100,stats.approvalPercentage))/100)}/></svg><span><strong>{stats.approvalPercentage}%</strong><small>approved</small></span></div><div className={styles.progressLegend}><span><i/>{stats.approvedPosts} approved</span><span><i/>{reviewPosts.length} to review</span></div></section>
                 </div>
-                <h1 className="mt-5 max-w-3xl text-[2.2rem] font-semibold leading-[1] tracking-[-0.055em] text-[rgb(var(--client-ink))] sm:text-5xl xl:text-6xl">
-                  {displayTitle}
-                </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[rgb(var(--client-muted))] sm:text-[15px]">
-                  {displayDescription}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-5 pb-20 pt-7 sm:px-8 sm:pt-9 xl:px-9">
-            <div className="animate-[showworkViewIn_220ms_ease-out]">
-              {activeView === "overview" && (
-                <div className="mx-auto max-w-6xl">
-                  <ViewHeader
-                    eyebrow="Overview"
-                    title="Everything important, at a glance."
-                    description="Jump directly into your calendar, social previews or anything waiting for your review."
-                  />
-
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {[
-                      { label: "Planned", value: stats.totalPosts, sub: "posts in workspace", icon: "calendar" as const, color: "#2478FF" },
-                      { label: "Approved", value: stats.approvedPosts, sub: `${stats.approvalPercentage}% of content`, icon: "check" as const, color: "#43E097" },
-                      { label: "Needs attention", value: stats.pendingPosts + stats.revisionPosts, sub: "awaiting your action", icon: "review" as const, color: "#F7B742" },
-                      { label: "Files", value: stats.totalAssets, sub: "attached assets", icon: "grid" as const, color: "#A78BFA" },
-                    ].map((stat) => (
-                      <div key={stat.label} className="rounded-2xl border border-[rgb(var(--client-ink))]/[0.065] bg-[rgb(var(--client-ink))]/[0.025] p-5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ color: stat.color, background: `${stat.color}12` }}>
-                          <Icon name={stat.icon} className="h-4 w-4" />
-                        </div>
-                        <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">{stat.label}</p>
-                        <p className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[rgb(var(--client-ink))]">{stat.value}</p>
-                        <p className="mt-1 text-[10px] text-[rgb(var(--client-muted))]">{stat.sub}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-7 grid gap-3 lg:grid-cols-2">
-                    <button type="button" onClick={() => navigate("calendar")} className="group rounded-[24px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--client-ink))]/[0.12] hover:bg-[rgb(var(--client-ink))]/[0.04]">
-                      <div className="flex items-start justify-between">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#2478FF]/10 text-[rgb(var(--client-blue))]"><Icon name="calendar" className="h-5 w-5" /></span>
-                        <Icon name="arrow" className="h-4 w-4 text-[rgb(var(--client-muted))] transition group-hover:translate-x-1 group-hover:text-[rgb(var(--client-muted))]" />
-                      </div>
-                      <p className="mt-6 text-sm font-semibold text-[rgb(var(--client-ink))]">Content calendar</p>
-                      <p className="mt-2 text-xs leading-5 text-[rgb(var(--client-muted))]">Search, filter and review every planned post without moving through a long page.</p>
-                    </button>
-
-                    <button type="button" onClick={() => navigate("review")} className="group rounded-[24px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--client-ink))]/[0.12] hover:bg-[rgb(var(--client-ink))]/[0.04]">
-                      <div className="flex items-start justify-between">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[rgb(var(--client-amber))]"><Icon name="review" className="h-5 w-5" /></span>
-                        <Icon name="arrow" className="h-4 w-4 text-[rgb(var(--client-muted))] transition group-hover:translate-x-1 group-hover:text-[rgb(var(--client-muted))]" />
-                      </div>
-                      <p className="mt-6 text-sm font-semibold text-[rgb(var(--client-ink))]">Review centre</p>
-                      <p className="mt-2 text-xs leading-5 text-[rgb(var(--client-muted))]">
-                        {reviewPosts.length ? `${reviewPosts.length} ${reviewPosts.length === 1 ? "post is" : "posts are"} waiting for your attention.` : "Nothing is waiting for your attention right now."}
-                      </p>
-                    </button>
-                  </div>
-
-                  <div className="mt-7 rounded-[24px] border border-[rgb(var(--client-ink))]/[0.065] bg-[rgb(var(--client-panel))] p-6 sm:p-7">
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[rgb(var(--client-muted))]">Approval progress</p>
-                        <p className="mt-2 text-lg font-semibold text-[rgb(var(--client-ink))]">{stats.approvedPosts} of {stats.totalPosts} posts approved</p>
-                        <p className="mt-1 text-xs text-[rgb(var(--client-muted))]">{reviewPosts.length ? "Review the outstanding posts from the Review Centre." : "Your workspace is fully up to date."}</p>
-                      </div>
-                      <div className="w-full max-w-xs">
-                        <div className="mb-2 flex items-center justify-between text-[10px] text-[rgb(var(--client-muted))]"><span>Progress</span><span className="font-semibold text-[rgb(var(--client-muted))]">{stats.approvalPercentage}%</span></div>
-                        <div className="h-2 overflow-hidden rounded-full bg-[rgb(var(--client-ink))]/[0.06]"><div className="h-full rounded-full bg-[#2478FF] transition-all duration-500" style={{ width: `${stats.approvalPercentage}%` }} /></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                <section className={styles.queue}><header><div><span className={styles.kicker}>A clear next step</span><h2>Ready for your eyes</h2></div><button type="button" onClick={() => navigate("calendar")}>View calendar<ArrowUpRight size={14}/></button></header>
+                 {reviewPosts.length ? <div className={styles.queueList}>{reviewPosts.slice(0,5).map(post => <button type="button" key={post.id} className={styles.queueItem} onClick={() => { setPreviewPostId(post.id); setPreviewRequest(value => value + 1); navigate("calendar"); }}><span className={styles.queueIcon}>{post.assets[0]?.mediaType === "PHOTO" ? <img src={post.assets[0].contentUrl} alt="" loading="lazy"/> : <FileImage size={20}/>}</span><span className={styles.queueTitle}><strong>{post.contentIdea || post.caption || "Untitled post"}</strong><small>{post.platform} · {new Date(post.postDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></span><span className={styles.status} data-revision={post.approvalStatus === "NEEDS_REVISION"}>{post.approvalStatus === "NEEDS_REVISION" ? "Needs revision" : "Awaiting review"}</span><ArrowUpRight size={16}/></button>)}</div> : <div className={styles.empty}><CheckCheck size={24}/><p>{stats.totalPosts ? "Nothing waiting for your review." : "No content has been shared yet."}</p></div>}
+                </section>
+              </div>}
 
               {activeView === "analytics" && (
                 <CalendarReportingPanel calendarId={slug} clientSlug={slug} isManager={false} canAnalyze={false} canApplyRecommendations={false} />
@@ -643,7 +563,7 @@ export default function ClientCalendarWorkspace({
                     description="Find content by month, platform, status or keyword and open any post for the full review experience."
                   />
                   <ClientCalendarView
-                    key={previewPostId || "calendar"}
+                    key={`${previewPostId || "calendar"}:${previewRequest}`}
                     initialPostId={previewPostId}
                     controlledTheme={theme}
                     onThemeChange={toggleTheme}
@@ -658,7 +578,7 @@ export default function ClientCalendarWorkspace({
               {(activeView === "linkedin" || activeView === "facebook" || activeView === "x") && (
                 <section className="rounded-3xl border border-[rgb(var(--client-ink))]/10 bg-[rgb(var(--client-panel))] p-3 sm:p-6">
                   <SocialFeedPreview posts={posts} clientName={clientName.trim() || "Your brand"} channel={activeView}
-                    onOpen={(post) => { setPreviewPostId(post.id); navigate("calendar"); }}
+                    onOpen={(post) => { setPreviewPostId(post.id); setPreviewRequest(value => value + 1); navigate("calendar"); }}
                     filtersActive={false} onClearFilters={() => {}} />
                 </section>
               )}
@@ -697,86 +617,25 @@ export default function ClientCalendarWorkspace({
                 </div>
               )}
 
-              {activeView === "review" && (
-                <div className="mx-auto max-w-5xl">
-                  <ViewHeader
-                    eyebrow="Review centre"
-                    title="What needs your attention?"
-                    description="See exactly what is waiting for your decision, then jump into the calendar to review each post."
-                  />
+              {activeView === "review" && <div className={styles.overview}>
+                <ViewHeader eyebrow="Client review" title="A fresh pair of eyes." description="Explore the creative, share your feedback and give your team the go-ahead."/>
+                <div className={styles.reviewStats}>{[
+                  {label:"Awaiting review",value:stats.pendingPosts,icon:Clock3,tone:"amber"},
+                  {label:"Needs revision",value:stats.revisionPosts,icon:MessageSquareText,tone:"violet"},
+                  {label:"Approved",value:stats.approvedPosts,icon:CheckCheck,tone:"green"},
+                ].map(({label,value,icon:StatIcon,tone}) => <div key={label} className={styles.stat} data-tone={tone}><span><StatIcon size={18}/></span><div><p>{label}</p><strong>{value}</strong></div></div>)}</div>
+                <section className={styles.queue}><header><div><span className={styles.kicker}>Your review list</span><h2>{reviewPosts.length ? `${reviewPosts.length} ${reviewPosts.length === 1 ? "post" : "posts"} to explore` : "Nothing outstanding"}</h2></div><button type="button" onClick={() => navigate("calendar")}>Full calendar<ArrowUpRight size={14}/></button></header>
+                 {reviewPosts.length ? <div className={styles.queueList}>{reviewPosts.map(post => <button type="button" key={post.id} className={styles.queueItem} onClick={() => { setPreviewPostId(post.id); setPreviewRequest(value => value + 1); navigate("calendar"); }}><span className={styles.queueIcon}><FileImage size={20}/></span><span className={styles.queueTitle}><strong>{post.contentIdea || post.caption || "Untitled post"}</strong><small>{post.platform} · {new Date(post.postDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></span><span className={styles.status} data-revision={post.approvalStatus === "NEEDS_REVISION"}>{post.approvalStatus === "NEEDS_REVISION" ? "Needs revision" : "Awaiting review"}</span><ArrowUpRight size={16}/></button>)}</div> : <div className={styles.empty}><CheckCheck size={24}/><p>{stats.totalPosts ? "Your team has your approval. You’re all caught up." : "Your team hasn’t shared any content yet."}</p></div>}
+                </section>
+              </div>}
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-[#F7B742]/15 bg-[#F7B742]/[0.055] p-5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F7B742]/10 text-[rgb(var(--client-amber))]"><Icon name="clock" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Awaiting review</p>
-                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.pendingPosts}</p>
-                    </div>
-                    <div className="rounded-2xl border border-red-400/15 bg-red-400/[0.045] p-5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-400/10 text-red-300"><Icon name="message" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Needs revision</p>
-                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.revisionPosts}</p>
-                    </div>
-                    <div className="rounded-2xl border border-[#43E097]/15 bg-[#43E097]/[0.045] p-5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#43E097]/10 text-[rgb(var(--client-green))]"><Icon name="check" className="h-4 w-4" /></div>
-                      <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-[rgb(var(--client-muted))]">Approved</p>
-                      <p className="mt-2 text-3xl font-semibold text-[rgb(var(--client-ink))]">{stats.approvedPosts}</p>
-                    </div>
-                  </div>
-
-                  {reviewPosts.length ? (
-                    <div className="mt-7 rounded-[26px] border border-[rgb(var(--client-ink))]/[0.07] bg-[rgb(var(--client-ink))]/[0.025] p-6 sm:p-7">
-                      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-[rgb(var(--client-ink))]">You have {reviewPosts.length} {reviewPosts.length === 1 ? "post" : "posts"} to review.</p>
-                          <p className="mt-1 text-xs leading-5 text-[rgb(var(--client-muted))]">Open the calendar and use the status filter to see exactly what requires your attention.</p>
-                        </div>
-                        <button type="button" onClick={() => navigate("calendar")} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#2478FF] px-5 text-xs font-semibold text-white shadow-[0_12px_28px_rgba(36,120,255,0.18)] transition hover:-translate-y-0.5">
-                          Review posts <Icon name="arrow" className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="mt-6 space-y-2">
-                        {reviewPosts.slice(0, 8).map((post) => (
-                          <button
-                            key={post.id}
-                            type="button"
-                            onClick={() => navigate("calendar")}
-                            className="flex w-full items-center gap-3 rounded-xl border border-[rgb(var(--client-ink))]/[0.055] bg-[rgb(var(--client-ink))]/[0.02] px-3.5 py-3 text-left transition hover:bg-[rgb(var(--client-ink))]/[0.045]"
-                          >
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F7B742]/[0.08] text-[rgb(var(--client-amber))]">
-                              <Icon name={post.approvalStatus === "NEEDS_REVISION" ? "message" : "clock"} className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-medium text-[rgb(var(--client-muted))]">{post.contentIdea || post.caption || "Untitled post"}</span>
-                              <span className="mt-1 block text-[9px] text-[rgb(var(--client-muted))]">
-                                {post.platform} · {new Date(post.postDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </span>
-                            </span>
-                            <Icon name="arrow" className="h-3.5 w-3.5 shrink-0 text-[rgb(var(--client-muted))]" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="mt-7 rounded-[26px] border border-[#43E097]/15 bg-[#43E097]/[0.045] p-8 text-center">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#43E097]/10 text-[rgb(var(--client-green))]"><Icon name="check" className="h-5 w-5" /></div>
-                      <p className="mt-5 text-sm font-semibold text-[rgb(var(--client-ink))]">You&apos;re all caught up.</p>
-                      <p className="mx-auto mt-2 max-w-sm text-xs leading-5 text-[rgb(var(--client-muted))]">There are no posts waiting for approval or revision.</p>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </section>
       </div>
 
-      <style jsx global>{`
-        @keyframes showworkViewIn {
-          from { opacity: 0.65; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <nav className={styles.mobileDock} aria-label="Client workspace navigation">{([{id:"overview",label:"Home",icon:LayoutDashboard},{id:"calendar",label:"Calendar",icon:CalendarDays},{id:"review",label:"Reviews",icon:MessageSquareText}] as const).map(item => <button key={item.id} type="button" onClick={() => navigate(item.id)} aria-current={activeView === item.id ? "page" : undefined}><item.icon size={20}/><span>{item.label}</span></button>)}<button type="button" onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen} aria-current={["overview","calendar","review"].includes(activeView) ? undefined : "true"} aria-haspopup="dialog"><MoreHorizontal size={20}/><span>More</span></button></nav>
+
     </main>
   );
 }

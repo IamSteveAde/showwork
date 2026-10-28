@@ -53,6 +53,7 @@ export async function GET(
       assets: d.assets.map((a) => ({
         ...a,
         contentUrl: publicUrlFor(a.fileKey),
+        posterUrl: a.posterFileKey ? publicUrlFor(a.posterFileKey) : null,
       })),
     })),
   });

@@ -376,7 +376,7 @@ export default function CalendarSettingsMenu({
                     {clientName}
                   </span>
                   &apos;s calendar, every planned post and all uploaded
-                  content. This cannot be undone.
+                  content. Shared files stay where they are still used. Unused files are queued for removal after active upload links expire. This cannot be undone.
                 </p>
 
                 <label className="mt-4 block text-[10px] font-semibold text-[#667085]">

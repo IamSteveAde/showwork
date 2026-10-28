@@ -1,3 +1,4 @@
+import DeliveryHelpLink from "@/components/help/DeliveryHelpLink";
 import { syncVerifiedPayment } from "@/lib/paymentSync";
 import { hasDeliveryPaidAccess } from "@/lib/complimentaryAccess";
 import { redirect, notFound } from "next/navigation";
@@ -807,7 +808,7 @@ export default async function ProjectDetailPage({
             <span className="sm:hidden">Projects</span>
           </Link>
 
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3"><DeliveryHelpLink className="max-sm:px-2 max-sm:text-[10px]"/>
             <div className="hidden min-w-0 items-center gap-3 md:flex">
               <span className="max-w-[260px] truncate text-xs font-medium text-white/90">
                 {project.clientName}

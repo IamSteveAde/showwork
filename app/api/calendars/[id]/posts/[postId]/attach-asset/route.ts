@@ -1,3 +1,4 @@
+import { assertWorkspaceFileAttachable, WorkspaceDeletionConflict } from "@/lib/workspaceStorageCleanup";
 import { publishingIntegrationInstalled, invokePublishingEntrypoint, assertLegacyPublishingAllowed } from "@/lib/publishing/applicationBoundary";
 import { postContentEditError } from "@/lib/publishing/editGuard";
 import { NextRequest, NextResponse } from "next/server";
@@ -81,10 +82,17 @@ export async function POST(
     );
   }
 
+  try {
+    return await db.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "SocialCalendar" WHERE id=${calendarId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM "CalendarPost" WHERE "calendarId"=${calendarId} AND id IN (${postId},${sourcePostId}) ORDER BY id FOR UPDATE`;
+      await assertWorkspaceFileAttachable(tx, fileKey);
+      const editError = await postContentEditError(postId, calendarId, tx);
+      if (editError) return NextResponse.json({ error: editError }, { status: 409 });
   /*
    * Confirm that the destination post belongs to this calendar.
    */
-  const destinationPost = await db.calendarPost.findUnique({
+  const destinationPost = await tx.calendarPost.findUnique({
     where: {
       id: postId,
     },
@@ -111,7 +119,7 @@ export async function POST(
    * calendar. This prevents somebody from using this endpoint to
    * attach an asset from another client's workspace.
    */
-  const sourcePost = await db.calendarPost.findUnique({
+  const sourcePost = await tx.calendarPost.findUnique({
     where: {
       id: sourcePostId,
     },
@@ -138,7 +146,7 @@ export async function POST(
    * original R2 upload has already completed and its storage has
    * already been accounted for.
    */
-  const sourceAsset = await db.calendarPostAsset.findFirst({
+  const sourceAsset = await tx.calendarPostAsset.findFirst({
     where: {
       postId: sourcePostId,
       fileKey,
@@ -148,6 +156,7 @@ export async function POST(
       fileKey: true,
       mediaType: true,
       sizeBytes: true,
+      posterFileKey: true,
     },
   });
 
@@ -164,7 +173,7 @@ export async function POST(
   /*
    * Do not create the same asset twice on the destination post.
    */
-  const existingAsset = await db.calendarPostAsset.findFirst({
+  const existingAsset = await tx.calendarPostAsset.findFirst({
     where: {
       postId,
       fileKey,
@@ -176,7 +185,7 @@ export async function POST(
 
   if (existingAsset) {
     const existingPost =
-      await db.calendarPost.findUniqueOrThrow({
+      await tx.calendarPost.findUniqueOrThrow({
         where: {
           id: postId,
         },
@@ -205,6 +214,7 @@ export async function POST(
               ? asset.sizeBytes.toString()
               : asset.sizeBytes,
           contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
         })),
       },
     });
@@ -215,7 +225,7 @@ export async function POST(
    * asset list.
    */
   const existingCount =
-    await db.calendarPostAsset.count({
+    await tx.calendarPostAsset.count({
       where: {
         postId,
       },
@@ -229,12 +239,13 @@ export async function POST(
    * It also does NOT increase storage usage because the physical
    * file already exists and has already been counted.
    */
-  await db.calendarPostAsset.create({
+  await tx.calendarPostAsset.create({
     data: {
       postId,
       fileKey: sourceAsset.fileKey,
       mediaType: sourceAsset.mediaType,
       sizeBytes: sourceAsset.sizeBytes,
+      posterFileKey: sourceAsset.posterFileKey,
       displayOrder: existingCount,
     },
   });
@@ -243,7 +254,7 @@ export async function POST(
    * Attaching new content means the destination post needs fresh
    * client review, just like a normal upload.
    */
-  const updatedPost = await db.calendarPost.update({
+  const updatedPost = await tx.calendarPost.update({
     where: {
       id: postId,
     },
@@ -277,7 +288,12 @@ export async function POST(
             ? asset.sizeBytes.toString()
             : asset.sizeBytes,
         contentUrl: publicUrlFor(asset.fileKey),
+        posterUrl: asset.posterFileKey ? publicUrlFor(asset.posterFileKey) : null,
       })),
     },
   });
+    }, { maxWait: 15000, timeout: 15000 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof WorkspaceDeletionConflict ? error.message : "Unable to attach this file. Please retry." }, { status: error instanceof WorkspaceDeletionConflict ? 409 : 500 });
+  }
 }

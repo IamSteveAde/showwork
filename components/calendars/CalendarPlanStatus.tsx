@@ -1,4 +1,5 @@
 "use client";
+import { cancelWorkspaceUpload } from "@/lib/workspaceUploadCancellation";
 import { calendarMutationFetch } from "@/lib/publishing/clientRequests";
 
 import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
@@ -6,6 +7,7 @@ import { IMAGE_FILE_ACCEPT, getFileContentType } from "@/lib/mediaFileTypes";
 import UiSymbol from "@/components/ui/UiSymbol";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { workspaceUploadQueue } from "@/lib/workspaceUploadQueue";
 import { putFileWithProgress } from "@/lib/uploadClient";
 
 const STATUS_META: Record<string, { text: string; color: string; bg: string; description: string }> = {
@@ -72,6 +74,8 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
     setProgress(0);
     setError(null);
     try {
+      await workspaceUploadQueue.enqueue(calendarId, file, async (task) => {
+      const presignData = await task.step("prepare", async () => {
       const presignRes = await calendarMutationFetch(`/api/calendars/${calendarId}/banner-upload-presign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,10 +89,14 @@ const [mobileReservationId, setMobileReservationId] = useState<string | null>(nu
       const presignData = await presignRes.json();
       if (!presignRes.ok) throw new Error(presignData.error ?? "Failed to start upload");
 
-      await putFileWithProgress(presignData.uploadUrl, file, {
-        contentType: getFileContentType(file),
-        onProgress: ({ percent }) => setProgress(percent),
+      return presignData;
       });
+      task.onCancel(() => cancelWorkspaceUpload(calendarId, presignData));
+      await task.step("transfer", () => putFileWithProgress(presignData.uploadUrl, file, {
+        signal: task.signal,
+        contentType: getFileContentType(file),
+        onProgress: ({ percent }) => { setProgress(percent); task.progress(percent); },
+      }));
 
      const publicUrl = presignData.fileKey;
 const reservationId = presignData.reservationId;
@@ -104,6 +112,7 @@ if (variant === "desktop") {
   setMobileUrl(publicUrl);
   setMobileReservationId(reservationId);
 }
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {

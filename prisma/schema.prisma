@@ -43,6 +43,7 @@ enum ContentWorkspacePlan {
 }
 
 model Creator {
+  randyConversations WorkspaceRandyConversation[]
   id           String      @id @default(uuid())
   email        String      @unique
   passwordHash String
@@ -1700,6 +1701,7 @@ enum CalendarBillingStatus {
 }
 
 model SocialCalendar {
+  randyConversations WorkspaceRandyConversation[]
   researchPlan Json?
   // Workspace-wide permission to dispatch queued social posts.
   autoPublishEnabled Boolean @default(true)
@@ -1850,6 +1852,7 @@ model CalendarBusinessDocument {
   @@unique([calendarId, websiteUrlHash])
   @@unique([id, calendarId])
   @@index([calendarId])
+  @@index([fileKey])
 }
 
 model BusinessResearchRun {
@@ -2438,6 +2441,7 @@ model CalendarPostCustomField {
 // structure with more than one, in a deliberate order.
 // ─────────────────────────────────────────────
 model CalendarPostAsset {
+  posterFileKey String?
   id           String       @id @default(uuid())
   post         CalendarPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId       String
@@ -2448,6 +2452,7 @@ model CalendarPostAsset {
   createdAt    DateTime     @default(now())
 
   @@index([postId])
+  @@index([fileKey])
 }
 
 model CalendarPostComment {
@@ -2860,5 +2865,71 @@ model DeliveryUploadSession {
   expiresAt DateTime
   createdAt DateTime @default(now())
   @@index([projectId, creatorId])
+  @@index([state, expiresAt])
+}
+
+// Private business conversations, scoped to both workspace and signed-in member.
+model WorkspaceRandyConversation {
+  id String @id @default(uuid())
+  calendarId String
+  calendar SocialCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  creatorId String
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  title String
+  processingAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages WorkspaceRandyMessage[]
+  @@index([calendarId, creatorId, updatedAt])
+}
+
+model WorkspaceRandyMessage {
+  id String @id @default(uuid())
+  conversationId String
+  conversation WorkspaceRandyConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role String
+  body Json
+  knowledgeDocumentId String?
+  createdAt DateTime @default(now())
+  @@index([conversationId, createdAt])
+}
+
+// Survives workspace deletion so failed physical cleanup can be retried.
+model WorkspaceStorageCleanup {
+  id String @id
+  fileKey String @unique
+  creatorId String
+  calendarId String
+  bytes BigInt
+  state String @default("PENDING")
+  notBefore DateTime
+  usageReleasedAt DateTime?
+  leaseToken String?
+  leaseUntil DateTime?
+  attempts Int @default(0)
+  lastError String?
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([state, notBefore])
+}
+
+// Durable multipart session; intentionally independent of cascaded workspace rows.
+model WorkspaceVideoUpload {
+  id String @id
+  calendarId String
+  postId String
+  creatorId String
+  actorId String
+  fileKey String @unique
+  fingerprint String
+  contentType String
+  bytes BigInt
+  partSize Int
+  uploadId String?
+  state String @default("STARTING")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   @@index([state, expiresAt])
 }

@@ -1,3 +1,4 @@
+import { lockWorkspaceUploadReservation, lockWorkspaceUploadUsage } from "@/lib/workspaceUploadLocks";
 import { complimentaryAccessSelect, workspaceComplimentaryPlan, type ComplimentaryAccount } from "@/lib/complimentaryAccess";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -333,7 +334,8 @@ export async function reserveContentWorkspaceStorage(
   creatorId: string,
   calendarId: string,
   fileKey: string,
-  bytes: number
+  bytes: number,
+  receiptId?: string,
 ): Promise<{
   allowed: boolean;
   reason?: string;
@@ -365,16 +367,18 @@ export async function reserveContentWorkspaceStorage(
     };
   }
 
-  const creator = await db.creator.findUnique({
-    where: { id: creatorId },
-   select: {
-  contentWorkspacePlan: true,
-  contentWorkspaceBillingStatus: true,
-  contentWorkspaceTrialEndsAt: true,
-  ...complimentaryAccessSelect, isComped: true,
-  compedUntil: true,
-},
-  });
+  const [creator, calendar] = await Promise.all([
+    db.creator.findUnique({
+      where: { id: creatorId },
+      select: {
+        contentWorkspacePlan: true,
+        contentWorkspaceBillingStatus: true,
+        contentWorkspaceTrialEndsAt: true,
+        ...complimentaryAccessSelect, isComped: true, compedUntil: true,
+      },
+    }),
+    db.socialCalendar.findUnique({ where: { id: calendarId }, select: { managerId: true } }),
+  ]);
 
   if (!creator) {
     return {
@@ -407,13 +411,6 @@ export async function reserveContentWorkspaceStorage(
    * This prevents a caller from creating a reservation against
    * an unrelated workspace.
    */
-  const calendar = await db.socialCalendar.findUnique({
-    where: { id: calendarId },
-    select: {
-      managerId: true,
-    },
-  });
-
   if (!calendar || calendar.managerId !== creatorId) {
     return {
       allowed: false,
@@ -425,12 +422,15 @@ export async function reserveContentWorkspaceStorage(
     };
   }
 
-  await getOrCreateContentWorkspaceUsage(creatorId);
-
   const result = await retryStorageTransaction(() => db.$transaction(
     async (tx) => {
-    const current = await tx.contentWorkspaceUsage.findUnique({
+    // Initialize and read storage in one operation, inside the retryable transaction.
+    // Uploads do not need to reset or fetch unrelated monthly AI allowances.
+    const current = await tx.contentWorkspaceUsage.upsert({
       where: { creatorId },
+      create: { creatorId, cycleStart: new Date(), storageBytes: 0, storageReservedBytes: 0,
+        aiGenerationsUsed: 0, aiRegenerationsUsed: 0 },
+      update: {},
       select: {
         storageBytes: true,
         storageReservedBytes: true,
@@ -470,6 +470,7 @@ export async function reserveContentWorkspaceStorage(
     const reservation =
       await tx.contentWorkspaceStorageReservation.create({
         data: {
+          ...(receiptId ? { id: receiptId } : {}),
           creatorId,
           calendarId,
           fileKey,
@@ -685,10 +686,7 @@ export async function releaseContentWorkspaceStorageReservation(
   }
 
   return db.$transaction(async (tx) => {
-    const reservation =
-      await tx.contentWorkspaceStorageReservation.findUnique({
-        where: { id: reservationId },
-      });
+    const reservation = await lockWorkspaceUploadReservation(tx, reservationId);
 
     if (!reservation) {
       return {
@@ -734,6 +732,7 @@ export async function releaseContentWorkspaceStorageReservation(
 
     const bytes = Number(reservation.bytes);
 
+    await lockWorkspaceUploadUsage(tx, creatorId);
     const usage = await tx.contentWorkspaceUsage.findUnique({
       where: { creatorId },
       select: {
@@ -791,6 +790,7 @@ export async function releaseContentWorkspaceStorage(
   }
 
   await db.$transaction(async (tx) => {
+    await lockWorkspaceUploadUsage(tx, creatorId);
     const usage = await tx.contentWorkspaceUsage.findUnique({
       where: { creatorId },
       select: {
@@ -1000,16 +1000,7 @@ export async function cleanupExpiredContentWorkspaceStorageReservations(): Promi
   for (const reservation of reservations) {
     try {
       const result = await db.$transaction(async (tx) => {
-        const current =
-          await tx.contentWorkspaceStorageReservation.findUnique({
-            where: { id: reservation.id },
-            select: {
-              creatorId: true,
-              bytes: true,
-              status: true,
-              expiresAt: true,
-            },
-          });
+        const current = await lockWorkspaceUploadReservation(tx, reservation.id);
 
         if (
           !current ||
@@ -1039,6 +1030,7 @@ export async function cleanupExpiredContentWorkspaceStorageReservations(): Promi
           };
         }
 
+        await lockWorkspaceUploadUsage(tx, current.creatorId);
         const usage = await tx.contentWorkspaceUsage.findUnique({
           where: {
             creatorId: current.creatorId,
