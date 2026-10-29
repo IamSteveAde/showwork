@@ -11,10 +11,38 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
   let answer: BusinessChatAnswer;
   try {
     const [calendar, documents, messages] = await Promise.all([
-      db.socialCalendar.findUniqueOrThrow({ where: { id: calendarId }, select: { clientName: true, researchPlan: true } }),
+      db.socialCalendar.findUniqueOrThrow({
+        where: { id: calendarId },
+        select: {
+          clientName: true,
+          headerTitle: true,
+          headerDescription: true,
+          aiBusinessSummary: true,
+          instagramUsername: true,
+          tikTokUsername: true,
+          facebookPageName: true,
+          xUsername: true,
+          linkedinName: true,
+          researchPlan: true,
+        },
+      }),
       db.calendarBusinessDocument.findMany({ where: { calendarId }, select: { id: true, originalName: true, extractedText: true, websiteUrl: true } }),
       db.workspaceRandyMessage.findMany({ where: { conversationId }, orderBy: { createdAt: 'desc' }, take: 12 }),
     ]);
+    const connectedChannels = [
+      calendar.instagramUsername ? `Instagram (@${calendar.instagramUsername})` : null,
+      calendar.tikTokUsername ? `TikTok (@${calendar.tikTokUsername})` : null,
+      calendar.facebookPageName ? `Facebook Page (${calendar.facebookPageName})` : null,
+      calendar.xUsername ? `X (@${calendar.xUsername})` : null,
+      calendar.linkedinName ? `LinkedIn (${calendar.linkedinName})` : null,
+    ].filter(Boolean);
+    const workspaceProfile = [
+      `WORKSPACE PROFILE:`,
+      `- Brand/Client Name: ${calendar.clientName}`,
+      calendar.headerTitle ? `- Headline/Tagline: ${calendar.headerTitle}` : null,
+      calendar.headerDescription ? `- Workspace Overview: ${calendar.headerDescription}` : null,
+      connectedChannels.length ? `- Connected Social Channels: ${connectedChannels.join(', ')}` : `- Connected Social Channels: None connected yet`,
+    ].filter(Boolean).join('\n');
     const history = messages.reverse().map(m => ({ role: m.role, text: [String((m.body as BusinessChatAnswer).text || ''), (m.body as BusinessChatAnswer).proposal ? 'Proposed knowledge (not saved unless confirmed): ' + JSON.stringify((m.body as BusinessChatAnswer).proposal) : '', (m.body as BusinessChatAnswer).contentBrief ? 'Content prompt: ' + JSON.stringify((m.body as BusinessChatAnswer).contentBrief) : ''].filter(Boolean).join('\n').slice(0, 7000) }));
     if (approvedResearch) {
       // The existing research engine maintains cooldowns, source exclusions and provenance.
@@ -37,7 +65,13 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
       const sources: RandySource[] = documents.map(d => ({ id: d.id, title: d.originalName }));
       // External source links are offered only when the context builder actually included current research.
       if (context.includes('EXTERNAL RESEARCH') && researchRun && result) sources.push(...(result.sources || []).filter(s => sourceAllowed(s.url, (calendar.researchPlan as { excludedDomains?: string[] } | null)?.excludedDomains || [])).map((s, i) => ({ id: `research:${researchRun.id}:${i}`, title: s.title, url: s.url })));
-      answer = await businessChatAnswer({ question, business: calendar.clientName, context: context + '\nWORKSPACE RESEARCH PREFERENCES (goals and preferences, not business facts): ' + JSON.stringify(calendar.researchPlan), history: history.slice(0, -1), sources, canManage, prepareResearch: research });
+      const fullContext = [
+        workspaceProfile,
+        calendar.aiBusinessSummary ? `WORKSPACE BUSINESS OVERVIEW:\n${calendar.aiBusinessSummary.slice(0, 6000)}` : null,
+        context,
+        calendar.researchPlan ? `WORKSPACE RESEARCH PREFERENCES (goals and preferences, not business facts): ${JSON.stringify(calendar.researchPlan)}` : null,
+      ].filter(Boolean).join('\n\n');
+      answer = await businessChatAnswer({ question, business: calendar.clientName, context: fullContext, history: history.slice(0, -1), sources, canManage, prepareResearch: research });
       if (!canManage) delete answer.proposal;
       if (!research) delete answer.researchPlan;
     }
