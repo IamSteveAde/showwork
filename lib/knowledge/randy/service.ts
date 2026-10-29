@@ -36,18 +36,26 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
       calendar.xUsername ? `X (@${calendar.xUsername})` : null,
       calendar.linkedinName ? `LinkedIn (${calendar.linkedinName})` : null,
     ].filter(Boolean);
+    const websites = documents.map(d => d.websiteUrl).filter(Boolean);
     const workspaceProfile = [
       `WORKSPACE PROFILE:`,
       `- Brand/Client Name: ${calendar.clientName}`,
       calendar.headerTitle ? `- Headline/Tagline: ${calendar.headerTitle}` : null,
       calendar.headerDescription ? `- Workspace Overview: ${calendar.headerDescription}` : null,
+      websites.length ? `- Public Website(s): ${websites.join(', ')}` : null,
       connectedChannels.length ? `- Connected Social Channels: ${connectedChannels.join(', ')}` : `- Connected Social Channels: None connected yet`,
+      `- Internet Research Scope: Live web research, market trends, competitors, audience demographics, and industry developments relating to ${calendar.clientName}.`,
     ].filter(Boolean).join('\n');
     const history = messages.reverse().map(m => ({ role: m.role, text: [String((m.body as BusinessChatAnswer).text || ''), (m.body as BusinessChatAnswer).proposal ? 'Proposed knowledge (not saved unless confirmed): ' + JSON.stringify((m.body as BusinessChatAnswer).proposal) : '', (m.body as BusinessChatAnswer).contentBrief ? 'Content prompt: ' + JSON.stringify((m.body as BusinessChatAnswer).contentBrief) : ''].filter(Boolean).join('\n').slice(0, 7000) }));
     if (approvedResearch) {
       // The existing research engine maintains cooldowns, source exclusions and provenance.
-      // Only the user-confirmed public topic is passed to web search. Conversation and private sources stay in relevance context.
-      const focus = question.slice(0, 1200);
+      // The user-confirmed public topic combined with workspace brand context is passed to web search.
+      const focus = [
+        question.slice(0, 1000),
+        `Brand: ${calendar.clientName}`,
+        calendar.headerTitle ? `Industry/Focus: ${calendar.headerTitle}` : null,
+        websites.length ? `Website: ${websites[0]}` : null,
+      ].filter(Boolean).join(' | ');
       const run = await queueBusinessResearch(calendarId, focus);
       if (run.focus !== focus || run.status === 'RUNNING') throw Error('Please wait for the current workspace research to finish.');
       await executeBusinessResearch(run.id, { publicTopicOnly: true });
@@ -70,6 +78,7 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
         calendar.aiBusinessSummary ? `WORKSPACE BUSINESS OVERVIEW:\n${calendar.aiBusinessSummary.slice(0, 6000)}` : null,
         context,
         calendar.researchPlan ? `WORKSPACE RESEARCH PREFERENCES (goals and preferences, not business facts): ${JSON.stringify(calendar.researchPlan)}` : null,
+        `INTERNET RESEARCH ACCESS:\nYou have live access to suggest and execute internet research specifically relating to ${calendar.clientName}'s brand, channels, competitors, and target market.`,
       ].filter(Boolean).join('\n\n');
       answer = await businessChatAnswer({ question, business: calendar.clientName, context: fullContext, history: history.slice(0, -1), sources, canManage, prepareResearch: research });
       if (!canManage) delete answer.proposal;
