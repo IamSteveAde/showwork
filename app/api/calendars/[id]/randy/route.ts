@@ -81,14 +81,16 @@ export async function POST(req: NextRequest, { params }: Context) {
      where: { conversationId: body.conversationId, role: 'assistant' },
      orderBy: { createdAt: 'desc' },
     });
-    const lastPayload = lastAssistantMsg?.body as BusinessChatAnswer | undefined;
-    if (lastPayload?.researchPlan && !lastPayload.researchStarted) {
-     approvedResearch = true;
-     body.messageId = lastAssistantMsg.id;
-     researchFocusText = lastPayload.researchPlan.focus;
-    } else if (lastPayload?.proposal && !lastAssistantMsg.knowledgeDocumentId) {
-     autoSavedTitle = lastPayload.proposal.title;
-     pendingProposal = { id: lastAssistantMsg.id, title: lastPayload.proposal.title, text: lastPayload.proposal.text, sources: lastPayload.sources };
+    if (lastAssistantMsg) {
+     const lastPayload = lastAssistantMsg.body as BusinessChatAnswer | undefined;
+     if (lastPayload?.researchPlan && !lastPayload.researchStarted) {
+      approvedResearch = true;
+      body.messageId = lastAssistantMsg.id;
+      researchFocusText = lastPayload.researchPlan.focus;
+     } else if (lastPayload?.proposal && !lastAssistantMsg.knowledgeDocumentId) {
+      autoSavedTitle = lastPayload.proposal.title;
+      pendingProposal = { id: lastAssistantMsg.id, title: lastPayload.proposal.title, text: lastPayload.proposal.text, sources: lastPayload.sources };
+     }
     }
    }
   }
