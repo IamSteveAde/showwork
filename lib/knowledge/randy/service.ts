@@ -7,9 +7,15 @@ import { queueBusinessResearch, executeBusinessResearch } from '@/lib/knowledge/
 import { businessChatAnswer, type BusinessChatAnswer, type RandySource } from './answer';
 import type { BusinessResearchResult } from '@/lib/openai';
 
-export async function finishBusinessChat(conversationId: string, calendarId: string, question: string, research: boolean, canManage: boolean, lease: Date, approvedResearch = false) {
+export async function finishBusinessChat(conversationId: string, calendarId: string, question: string, research: boolean, canManage: boolean, lease: Date, approvedResearch = false, autoSavedTitle = '') {
   let answer: BusinessChatAnswer;
   try {
+    if (autoSavedTitle) {
+      answer = {
+        text: `I've confirmed and saved "${autoSavedTitle}" to your workspace Business Knowledge. It is now part of this workspace's shared context and will guide future strategy, thinking, and content generation.`,
+        sources: [],
+      };
+    } else {
     const [calendar, documents, messages] = await Promise.all([
       db.socialCalendar.findUniqueOrThrow({
         where: { id: calendarId },
@@ -83,6 +89,7 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
       answer = await businessChatAnswer({ question, business: calendar.clientName, context: fullContext, history: history.slice(0, -1), sources, canManage, prepareResearch: research });
       if (!canManage) delete answer.proposal;
       if (!research) delete answer.researchPlan;
+    }
     }
   } catch (error) {
     const cooldown = error instanceof Error && /Please wait|Add business/.test(error.message) ? error.message : null;

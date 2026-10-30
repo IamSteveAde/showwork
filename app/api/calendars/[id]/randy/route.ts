@@ -4,7 +4,7 @@ import { getCurrentCreator } from '@/lib/auth';
 import { hasCalendarPermission, canAccessCalendarById } from '@/lib/calendarPermissions';
 import { db } from '@/lib/db';
 import { finishBusinessChat } from '@/lib/knowledge/randy/service';
-import { researchRequested, type BusinessChatAnswer } from '@/lib/knowledge/randy/answer';
+import { researchRequested, isAffirmativeGoAhead, type BusinessChatAnswer } from '@/lib/knowledge/randy/answer';
 export const runtime = 'nodejs';
 export const maxDuration = 240;
 type Context = { params: Promise<{ id: string }> };
@@ -64,12 +64,33 @@ export async function POST(req: NextRequest, { params }: Context) {
    return reply(saved ? { saved: true } : { error: 'This proposal is unavailable or a reply is still in progress.' }, saved ? 200 : 409);
   }
   let approvedResearch = false;
+  let autoSavedTitle = '';
+  let researchFocusText = '';
+  let pendingProposal: { id: string; title: string; text: string; sources?: import('@/lib/knowledge/randy/answer').RandySource[] } | null = null;
   if (body.action === 'confirmResearch') {
    if (!canManage || typeof body.conversationId !== 'string' || typeof body.messageId !== 'string') return reply({ error: 'Choose a research topic you can manage.' }, 403);
    const proposalMessage = await db.workspaceRandyMessage.findFirst({ where: { id: body.messageId, conversationId: body.conversationId, role: 'assistant', conversation: { calendarId: id, creatorId: creator.id } } });
    const proposal = proposalMessage?.body as BusinessChatAnswer | undefined;
    if (!proposal?.researchPlan || proposal.researchStarted) return reply({ error: 'Research topic is unavailable or already started.' }, 409);
-   body.text = proposal.researchPlan.focus; approvedResearch = true;
+   researchFocusText = proposal.researchPlan.focus; body.text = proposal.researchPlan.focus; approvedResearch = true;
+  }
+  if (!approvedResearch && body.conversationId && typeof body.text === 'string') {
+   const userText = body.text.trim();
+   if (isAffirmativeGoAhead(userText) && canManage) {
+    const lastAssistantMsg = await db.workspaceRandyMessage.findFirst({
+     where: { conversationId: body.conversationId, role: 'assistant' },
+     orderBy: { createdAt: 'desc' },
+    });
+    const lastPayload = lastAssistantMsg?.body as BusinessChatAnswer | undefined;
+    if (lastPayload?.researchPlan && !lastPayload.researchStarted) {
+     approvedResearch = true;
+     body.messageId = lastAssistantMsg.id;
+     researchFocusText = lastPayload.researchPlan.focus;
+    } else if (lastPayload?.proposal && !lastAssistantMsg.knowledgeDocumentId) {
+     autoSavedTitle = lastPayload.proposal.title;
+     pendingProposal = { id: lastAssistantMsg.id, title: lastPayload.proposal.title, text: lastPayload.proposal.text, sources: lastPayload.sources };
+    }
+   }
   }
   if (!await hasCalendarPermission(creator.id, id, 'ai.generate')) return reply({ error: 'AI generation permission is required to talk with Randy.' }, 403);
   if (typeof body.text !== 'string' || !body.text.trim() || body.text.length > 3000 || (body.conversationId !== undefined && typeof body.conversationId !== 'string')) return reply({ error: 'Enter a message between 1 and 3,000 characters.' }, 400);
@@ -87,10 +108,26 @@ export async function POST(req: NextRequest, { params }: Context) {
    if (conversation?.processingAt && Date.now() - conversation.processingAt.getTime() < 5 * 60000) return { error: 'Randy is still answering. Please wait.', status: 409 };
    if (conversation && await tx.workspaceRandyMessage.count({ where: { conversationId: conversation.id } }) >= 98) return { error: 'Start a new conversation to keep chatting.', status: 409 };
    if (!conversation) conversation = await tx.workspaceRandyConversation.create({ data: { calendarId: id, creatorId: creator.id, title: text.slice(0, 90) } });
+   if (pendingProposal) {
+    const documentId = `randy:${pendingProposal.id}`;
+    await tx.calendarBusinessDocument.create({
+     data: {
+      id: documentId,
+      calendarId: id,
+      originalName: `Randy · ${pendingProposal.title}`,
+      extractedText: `# Confirmed business addition\nConfirmed by workspace member ${creator.id} at ${new Date().toISOString()}\nThis addition does not automatically replace conflicting sources.\n\n${pendingProposal.text}${pendingProposal.sources?.length ? "\n\nSupporting sources (external findings remain hypotheses):\n" + pendingProposal.sources.map(source => source.title + (source.url ? " — " + source.url : "")).join("\n") : ""}`
+     }
+    });
+    await tx.workspaceRandyMessage.update({
+     where: { id: pendingProposal.id },
+     data: { knowledgeDocumentId: documentId }
+    });
+   }
    if (approvedResearch) {
     const topic = await tx.workspaceRandyMessage.findFirst({ where: { id: body.messageId, conversationId: conversation.id, role: 'assistant' } });
     const payload = topic?.body as BusinessChatAnswer | undefined;
-    if (!topic || payload?.researchStarted || payload?.researchPlan?.focus !== text) return { error: 'Research topic already started or unavailable.', status: 409 };
+    const expectedFocus = researchFocusText || text;
+    if (!topic || payload?.researchStarted || (payload?.researchPlan?.focus !== expectedFocus && payload?.researchPlan?.focus !== text)) return { error: 'Research topic already started or unavailable.', status: 409 };
     await tx.workspaceRandyMessage.update({ where: { id: topic.id }, data: { body: JSON.parse(JSON.stringify({ ...payload, researchStarted: true })) } });
    }
    await tx.workspaceRandyMessage.create({ data: { id: randomUUID(), conversationId: conversation.id, role: 'user', body: { text, mode: approvedResearch ? 'research-approved' : research ? 'research' : 'chat' } } });
@@ -98,7 +135,12 @@ export async function POST(req: NextRequest, { params }: Context) {
    return { conversationId: conversation.id };
   }, { timeout: 20000 });
   if ('error' in result) return reply({ error: result.error }, result.status);
-  after(async () => { try { await finishBusinessChat(result.conversationId, id, text, research, canManage, lease, approvedResearch); } catch { /* Keep the lease for interruption recovery; never log private message payloads. */ } });
+  after(async () => {
+   try {
+    const question = approvedResearch && researchFocusText ? researchFocusText : text;
+    await finishBusinessChat(result.conversationId, id, question, research, canManage, lease, approvedResearch, autoSavedTitle);
+   } catch { /* Keep the lease for interruption recovery; never log private message payloads. */ }
+  });
   return reply({ conversationId: result.conversationId }, 202);
  } catch { return reply({ error: 'Randy could not complete this action. Reload the conversation before retrying.' }, 503); }
 }
