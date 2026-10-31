@@ -77,19 +77,32 @@ export async function POST(req: NextRequest, { params }: Context) {
   if (!approvedResearch && body.conversationId && typeof body.text === 'string') {
    const userText = body.text.trim();
    if (isAffirmativeGoAhead(userText) && canManage) {
-    const lastAssistantMsg = await db.workspaceRandyMessage.findFirst({
+    const recentAssistantMsgs = await db.workspaceRandyMessage.findMany({
      where: { conversationId: body.conversationId, role: 'assistant' },
      orderBy: { createdAt: 'desc' },
+     take: 5,
     });
-    if (lastAssistantMsg) {
+    const lastAssistantMsg = recentAssistantMsgs[0];
+    const planMsg = recentAssistantMsgs.find(m => {
+     const p = m.body as BusinessChatAnswer | undefined;
+     return p?.researchPlan && !p.researchStarted;
+    });
+    if (planMsg) {
+     const p = planMsg.body as BusinessChatAnswer;
+     approvedResearch = true;
+     body.messageId = planMsg.id;
+     researchFocusText = p.researchPlan!.focus;
+    } else if (lastAssistantMsg) {
      const lastPayload = lastAssistantMsg.body as BusinessChatAnswer | undefined;
-     if (lastPayload?.researchPlan && !lastPayload.researchStarted) {
-      approvedResearch = true;
-      body.messageId = lastAssistantMsg.id;
-      researchFocusText = lastPayload.researchPlan.focus;
-     } else if (lastPayload?.proposal && !lastAssistantMsg.knowledgeDocumentId) {
+     if (lastPayload?.proposal && !lastAssistantMsg.knowledgeDocumentId) {
       autoSavedTitle = lastPayload.proposal.title;
       pendingProposal = { id: lastAssistantMsg.id, title: lastPayload.proposal.title, text: lastPayload.proposal.text, sources: lastPayload.sources };
+     } else if (/\bresearch\b/i.test(userText) || (lastPayload?.text && /research|competitive landscape|market trends|audience behaviors/i.test(lastPayload.text))) {
+      approvedResearch = true;
+      body.messageId = lastAssistantMsg.id;
+      const topicMatch = lastPayload?.text?.match(/to gather up-to-date insights on ([^.]+)/i) ||
+                         lastPayload?.text?.match(/research (?:on|into|regarding) ([^.]+)/i);
+      researchFocusText = topicMatch ? topicMatch[1].trim() : (lastPayload?.text ? lastPayload.text.slice(0, 500) : userText);
      }
     }
    }
@@ -125,11 +138,10 @@ export async function POST(req: NextRequest, { params }: Context) {
      data: { knowledgeDocumentId: documentId }
     });
    }
-   if (approvedResearch) {
+   if (approvedResearch && body.messageId) {
     const topic = await tx.workspaceRandyMessage.findFirst({ where: { id: body.messageId, conversationId: conversation.id, role: 'assistant' } });
     const payload = topic?.body as BusinessChatAnswer | undefined;
-    const expectedFocus = researchFocusText || text;
-    if (!topic || payload?.researchStarted || (payload?.researchPlan?.focus !== expectedFocus && payload?.researchPlan?.focus !== text)) return { error: 'Research topic already started or unavailable.', status: 409 };
+    if (!topic || payload?.researchStarted) return { error: 'Research topic already started or unavailable.', status: 409 };
     await tx.workspaceRandyMessage.update({ where: { id: topic.id }, data: { body: JSON.parse(JSON.stringify({ ...payload, researchStarted: true })) } });
    }
    await tx.workspaceRandyMessage.create({ data: { id: randomUUID(), conversationId: conversation.id, role: 'user', body: { text, mode: approvedResearch ? 'research-approved' : research ? 'research' : 'chat' } } });

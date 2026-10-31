@@ -1,7 +1,10 @@
 export type RandySource = { id: string; title: string; url?: string };
 export type BusinessChatAnswer = { text: string; sources: RandySource[]; proposal?: { title: string; text: string }; researchSuggested?: boolean; researchPlan?: { focus: string }; researchStarted?: boolean; contentBrief?: { title: string; prompt: string } };
-export function researchRequested(text: string) {
-  return /^(?:please\s+)?(?:research\b|look\s+up\b|search\s+(?:online|the web)\b)|\b(?:can|could|would) you (?:please )?(?:research|look up|search the web)\b/i.test(text.trim());
+export function researchRequested(text: string): boolean {
+  const clean = text.trim();
+  return /^(?:please\s+)?(?:research\b|look\s+up\b|search\s+(?:online|the web|for)\b|find\s+out\b|conduct\s+(?:an?\s+)?(?:internet\s+|web\s+)?research\b)/i.test(clean) ||
+         /\b(?:can|could|would) you (?:please )?(?:research|look up|search the web|find out)\b/i.test(clean) ||
+         /\b(?:proceed with|start|run|do|carry out|execute|continue with)\s+(?:the\s+)?(?:internet\s+|web\s+)?research\b/i.test(clean);
 }
 export function isAffirmativeGoAhead(text: string): boolean {
   const clean = text.trim().toLowerCase().replace(/[.!?,;:]+$/g, '').trim();
@@ -16,11 +19,14 @@ export function isAffirmativeGoAhead(text: string): boolean {
     'save', 'save it', 'add it', 'yes save', 'yes add',
     'yes please proceed', 'yes, please proceed', 'yes, go ahead',
     'go on', 'do that', 'please continue', 'perfect, do it',
-    'run research', 'run the research', 'do the research'
+    'run research', 'run the research', 'do the research',
+    'proceed with research', 'proceed with the research',
+    'go ahead with research', 'go ahead with the research',
+    'start the research', 'execute research', 'carry out the research'
   ]);
   if (affirmativeExact.has(clean)) return true;
   return /^(?:yes|sure|okay|ok|please|definitely|absolutely)\b.*(?:proceed|go ahead|do it|start|continue|research|save|confirm|add)/i.test(clean) ||
-         /\b(?:go ahead|please proceed|start research|proceed with (?:this|the|that)|do the research|run the research)\b/i.test(clean);
+         /\b(?:go ahead|please proceed|start research|proceed with (?:this|the|that|research)|do the research|run the research|proceed with the research)\b/i.test(clean);
 }
 export function parseBusinessChatAnswer(value: unknown, sources: RandySource[]): BusinessChatAnswer {
   const v = value as Record<string, unknown> | null;

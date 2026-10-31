@@ -13,7 +13,7 @@ function load(file) {
   return mod.exports;
 }
 
-const { isAffirmativeGoAhead } = load('lib/knowledge/randy/answer.ts');
+const { isAffirmativeGoAhead, researchRequested } = load('lib/knowledge/randy/answer.ts');
 
 test('isAffirmativeGoAhead detects single-word affirmations', () => {
   assert.equal(isAffirmativeGoAhead('yes'), true);
@@ -30,6 +30,8 @@ test('isAffirmativeGoAhead detects common action go-aheads', () => {
   assert.equal(isAffirmativeGoAhead('yes, go ahead!'), true);
   assert.equal(isAffirmativeGoAhead('proceed'), true);
   assert.equal(isAffirmativeGoAhead('please proceed'), true);
+  assert.equal(isAffirmativeGoAhead('Proceed with the research'), true);
+  assert.equal(isAffirmativeGoAhead('proceed with research'), true);
   assert.equal(isAffirmativeGoAhead('do it'), true);
   assert.equal(isAffirmativeGoAhead('please do that'), true);
   assert.equal(isAffirmativeGoAhead('start research'), true);
@@ -38,6 +40,16 @@ test('isAffirmativeGoAhead detects common action go-aheads', () => {
   assert.equal(isAffirmativeGoAhead('add it to knowledge'), true);
   assert.equal(isAffirmativeGoAhead('sounds good, do it'), true);
   assert.equal(isAffirmativeGoAhead('let\'s do it'), true);
+});
+
+test('researchRequested detects user research intent', () => {
+  assert.equal(researchRequested('Proceed with the research'), true);
+  assert.equal(researchRequested('proceed with research'), true);
+  assert.equal(researchRequested('Research competitors in Nigeria'), true);
+  assert.equal(researchRequested('Can you please research social media trends?'), true);
+  assert.equal(researchRequested('Do the research'), true);
+  assert.equal(researchRequested('Find out more about creator pricing'), true);
+  assert.equal(researchRequested('What is our brand positioning?'), false);
 });
 
 test('isAffirmativeGoAhead rejects non-affirmative or new conversational queries', () => {

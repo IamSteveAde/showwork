@@ -88,7 +88,7 @@ export async function finishBusinessChat(conversationId: string, calendarId: str
       ].filter(Boolean).join('\n\n');
       answer = await businessChatAnswer({ question, business: calendar.clientName, context: fullContext, history: history.slice(0, -1), sources, canManage, prepareResearch: research });
       if (!canManage) delete answer.proposal;
-      if (!research) delete answer.researchPlan;
+      if (!canManage) delete answer.researchPlan;
     }
     }
   } catch (error) {

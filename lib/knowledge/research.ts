@@ -10,7 +10,7 @@ export async function queueBusinessResearch(calendarId: string, focus: string) {
     await tx.businessResearchRun.updateMany({ where: { calendarId, status: { in: ["QUEUED", "RUNNING"] }, createdAt: { lt: new Date(Date.now() - 15 * 60000) } }, data: { status: "FAILED", phase: "Research interrupted", error: "The research did not finish. Please retry.", completedAt: new Date() } });
     const recent = await tx.businessResearchRun.findFirst({ where: { calendarId }, orderBy: { createdAt: "desc" } });
     if (recent && ["QUEUED", "RUNNING"].includes(recent.status)) return recent;
-    if (recent && Date.now() - recent.createdAt.getTime() < 10 * 60000) throw new Error("Please wait 10 minutes between research runs.");
+    if (recent && Date.now() - recent.createdAt.getTime() < 5 * 60000) throw new Error("Please wait 5 minutes between research runs.");
     const sources = await tx.calendarBusinessDocument.findMany({ where: { calendarId } });
     if (!sources.some(s => s.extractedText?.trim())) throw new Error("Add business documents or a website in Knowledge before researching.");
     return tx.businessResearchRun.create({ data: { calendarId, focus, sourceHash: sourceFingerprint(sources) } });
